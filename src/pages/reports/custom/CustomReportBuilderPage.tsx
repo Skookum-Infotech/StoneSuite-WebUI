@@ -14,12 +14,12 @@ const NO_SOURCES_TEXT = "No report sources are available for your role. Ask an a
 function Message({ children, tone = "info" }: { children: string; tone?: "info" | "error" }) {
   return (
     <div className="flex flex-1 flex-col gap-3 p-4 sm:p-6">
-      <Link to="/reports/custom" aria-label="Back to custom reports" className="text-label text-stone-500 hover:text-stone-800">
+      <Link to="/reports/custom" aria-label="Back to custom reports" className="text-label text-ink-muted hover:text-ink-strong">
         Custom Reports
       </Link>
       <p
         role={tone === "error" ? "alert" : "status"}
-        className="rounded-xl border border-stone-200 bg-white px-4 py-6 text-center text-sm text-stone-600"
+        className="rounded-xl border border-stone-200 bg-white px-4 py-6 text-center text-sm text-ink"
       >
         {children}
       </p>

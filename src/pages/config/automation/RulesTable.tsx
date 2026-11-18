@@ -54,7 +54,7 @@ export function RulesTable({ query, canConfigure, notSending, onPreview }: Props
     <div className="overflow-hidden rounded-2xl border border-stone-200 bg-white dark:border-stone-800 dark:bg-stone-900">
       <div
         aria-hidden="true"
-        className="hidden grid-cols-[minmax(0,2fr)_minmax(0,1.5fr)_minmax(0,1fr)_minmax(0,1.4fr)] gap-4 border-b border-stone-200 bg-stone-50 px-4 py-2 text-xs font-semibold text-stone-500 md:grid dark:border-stone-800 dark:bg-stone-900"
+        className="hidden grid-cols-[minmax(0,2fr)_minmax(0,1.5fr)_minmax(0,1fr)_minmax(0,1.4fr)] gap-4 border-b border-stone-200 bg-stone-50 px-4 py-2 text-xs font-semibold text-ink-muted md:grid dark:border-stone-800 dark:bg-stone-900"
       >
         {HEADERS.map((h) => (
           <span key={h}>{h}</span>

@@ -83,7 +83,7 @@ export function VersionDrawer({ salesOrderId, currentVersion, onRestored, onClos
         </ul>
 
         {preview && (
-          <div className="rounded border border-stone-200 p-2 text-xs text-stone-600">
+          <div className="rounded border border-stone-200 p-2 text-xs text-ink">
             {preview.areas.length} area{preview.areas.length === 1 ? '' : 's'}, {pieceCount} piece{pieceCount === 1 ? '' : 's'}
           </div>
         )}

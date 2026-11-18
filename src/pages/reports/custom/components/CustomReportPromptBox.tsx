@@ -56,7 +56,7 @@ export function CustomReportPromptBox({ onInterpreted }: CustomReportPromptBoxPr
           onChange={(e) => setPrompt(e.target.value)}
           rows={2}
           placeholder="e.g. Top 10 customers by invoice revenue this quarter"
-          className="min-h-[3rem] flex-1 resize-y rounded-lg border border-stone-200 px-3 py-2 text-sm text-stone-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400"
+          className="min-h-[3rem] flex-1 resize-y rounded-lg border border-stone-200 px-3 py-2 text-sm text-ink-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400"
         />
         <button
           type="submit"
@@ -74,7 +74,7 @@ export function CustomReportPromptBox({ onInterpreted }: CustomReportPromptBoxPr
             type="button"
             aria-label={example}
             onClick={() => setPrompt(example)}
-            className="rounded-full border border-stone-200 px-3 py-1 text-xs text-stone-600 transition-colors hover:bg-stone-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400"
+            className="rounded-full border border-stone-200 px-3 py-1 text-xs text-ink transition-colors hover:bg-stone-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400"
           >
             {example}
           </button>

@@ -21,7 +21,7 @@ export function ApprovalScopeToggle({ scope, onChange }: {
           onClick={() => onChange(o.value)}
           className={cn(
             'h-7 rounded-md px-3 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400',
-            scope === o.value ? 'bg-stone-900 text-white' : 'text-stone-600 hover:bg-stone-50',
+            scope === o.value ? 'bg-stone-900 text-white' : 'text-ink hover:bg-stone-50',
           )}
         >
           {o.label}

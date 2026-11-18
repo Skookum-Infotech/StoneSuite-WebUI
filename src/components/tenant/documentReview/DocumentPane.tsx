@@ -103,13 +103,13 @@ export function DocumentPane({ file, fileName, pages, focus }: DocumentPaneProps
             aria-label={`${fileName}, page ${page}`}
             className="h-full w-full"
           >
-            <p className="p-4 text-xs text-stone-600 dark:text-stone-300">This browser can't show the PDF here. Use the Text view instead.</p>
+            <p className="p-4 text-xs text-ink dark:text-stone-300">This browser can't show the PDF here. Use the Text view instead.</p>
           </object>
         )}
         {active === 'text' && (
-          <div className="space-y-4 p-3 font-mono text-xs text-stone-800 dark:text-stone-200">
+          <div className="space-y-4 p-3 font-mono text-xs text-ink-strong dark:text-stone-200">
             {!hasOriginal && (
-              <p className="font-sans text-stone-500 dark:text-stone-400">The original file isn't available in this tab, so only the extracted text is shown.</p>
+              <p className="font-sans text-ink-muted dark:text-stone-400">The original file isn't available in this tab, so only the extracted text is shown.</p>
             )}
             {pages.map((p) => (
               <section key={p.page} aria-label={`Page ${p.page}`}>

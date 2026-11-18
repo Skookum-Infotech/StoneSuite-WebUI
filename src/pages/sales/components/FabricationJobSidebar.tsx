@@ -63,15 +63,15 @@ export function FabricationJobSidebar({ id, job, salesOrderNumber, canEdit, canD
 
       {canEdit && (
         <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-          <p className="text-xs font-semibold text-stone-500">Status Actions</p>
+          <p className="type-card-title">Status Actions</p>
           <FabricationHoldResumeControl job={job} onChanged={onChanged} />
         </div>
       )}
 
       <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-        <p className="text-xs font-semibold text-stone-500">Status</p>
+        <p className="type-card-title">Status</p>
         <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
-          <span className="text-stone-500">Status</span>
+          <span className="text-ink-muted">Status</span>
           <FabricationStatusControl
             job={job}
             onChange={(code) => transition.mutate(code)}
@@ -81,27 +81,27 @@ export function FabricationJobSidebar({ id, job, salesOrderNumber, canEdit, canD
         </div>
         {job.approvalStatus !== 'none' && (
           <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
-            <span className="text-stone-500">Approval</span>
+            <span className="text-ink-muted">Approval</span>
             <Badge color={APPROVAL_STATUS_COLORS[job.approvalStatus]}>{APPROVAL_STATUS_LABELS[job.approvalStatus]}</Badge>
           </div>
         )}
         <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
-          <span className="text-stone-500">Customer</span>
-          <CustomerLink id={job.customer.id} name={job.customer.name} className="text-stone-700 truncate max-w-[140px] hover:text-accent-foreground hover:underline" />
+          <span className="text-ink-muted">Customer</span>
+          <CustomerLink id={job.customer.id} name={job.customer.name} className="text-ink truncate max-w-[140px] hover:text-accent-foreground hover:underline" />
         </div>
         <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
-          <span className="text-stone-500">Created</span>
-          <span className="text-stone-700">{fmtDate(job.createdAt)}</span>
+          <span className="text-ink-muted">Created</span>
+          <span className="text-ink">{fmtDate(job.createdAt)}</span>
         </div>
         <div className="flex justify-between items-center py-2 text-xs">
-          <span className="text-stone-500">Updated</span>
-          <span className="text-stone-700">{fmtDate(job.updatedAt)}</span>
+          <span className="text-ink-muted">Updated</span>
+          <span className="text-ink">{fmtDate(job.updatedAt)}</span>
         </div>
       </div>
 
       {canEdit && canCancel(job.statusCode) && (
         <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-          <p className="text-xs font-semibold text-stone-500">Cancel</p>
+          <p className="type-card-title">Cancel</p>
           <CancelFabricationJobDialog job={job} onCancelled={onChanged} />
         </div>
       )}

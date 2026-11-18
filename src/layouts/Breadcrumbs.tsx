@@ -10,13 +10,15 @@ interface BreadcrumbsProps {
   routes: RouteObject[];
 }
 
-const CRUMB_LINK_CLASS = 'rounded-sm text-stone-600 underline-offset-2 transition-colors hover:text-stone-900 hover:underline dark:hover:text-stone-200';
+// Approved design (DESIGN.md §5 Navigation): 13px regular gray links, the
+// current page 13px medium in the strongest ink.
+const CRUMB_LINK_CLASS = 'rounded-sm text-ink-muted underline-offset-2 transition-colors hover:text-ink-strong hover:underline dark:hover:text-stone-200';
 
 export function Breadcrumbs({ segments, labels, routes }: BreadcrumbsProps) {
   return (
     <nav
       aria-label="Breadcrumb"
-      className="px-4 pt-3 pb-1 sm:px-6 sm:pt-4 3xl:px-12 3xl:pt-5 4xl:px-16 text-xs font-semibold text-stone-500"
+      className="px-4 pt-3 pb-1 sm:px-6 sm:pt-4 3xl:px-12 3xl:pt-5 4xl:px-16 text-field text-ink-muted"
     >
       <ol className="flex flex-wrap items-center gap-1.5">
         <li>
@@ -32,7 +34,7 @@ export function Breadcrumbs({ segments, labels, routes }: BreadcrumbsProps) {
           return (
             <Fragment key={url}>
               <li aria-hidden="true" className="flex">
-                <ChevronRight className="size-3 xl:size-3.5 text-stone-400 shrink-0" />
+                <ChevronRight className="size-3 xl:size-3.5 text-ink-faint shrink-0" />
               </li>
               <li>
                 {isClickable ? (
@@ -40,7 +42,7 @@ export function Breadcrumbs({ segments, labels, routes }: BreadcrumbsProps) {
                 ) : (
                   <span
                     aria-current={isLast ? 'page' : undefined}
-                    className={cn(isLast ? 'text-stone-700 dark:text-stone-300 font-bold' : 'text-stone-500')}
+                    className={cn(isLast ? 'font-medium text-ink-strong dark:text-stone-300' : 'text-ink-muted')}
                   >
                     {label}
                   </span>

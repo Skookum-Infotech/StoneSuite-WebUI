@@ -17,7 +17,7 @@ interface Props {
   idPrefix: string;
 }
 
-const labelCls = 'mb-1 block text-xs font-medium text-stone-600';
+const labelCls = 'mb-1 block text-xs font-medium text-ink';
 
 /** The visit's own fields (type, when, crew, notes); the job is chosen above. */
 export function InstallVisitFields({ form, onChange, crewOptions, readOnlyCrew, idPrefix }: Props) {

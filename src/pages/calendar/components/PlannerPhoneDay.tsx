@@ -37,7 +37,7 @@ export function PlannerPhoneDay({ day, cards, selected, onSelect }: {
         aria-hidden="true"
         className={cn(
           'flex h-6 min-w-6 items-center justify-center rounded-full px-1 type-pill',
-          day.isToday ? 'bg-brand font-semibold text-stone-900' : day.inMonth ? 'text-stone-900' : 'text-stone-500',
+          day.isToday ? 'bg-brand font-semibold text-ink-strong' : day.inMonth ? 'text-ink-strong' : 'text-ink-muted',
         )}
       >
         {day.dayOfMonth}
@@ -48,7 +48,7 @@ export function PlannerPhoneDay({ day, cards, selected, onSelect }: {
           <span key={card.id} style={{ backgroundColor: card.chipColor }} className="size-1.5 rounded-full" />
         ))}
         {cards.length > MAX_DOTS && (
-          <span className="text-xs font-semibold leading-none text-stone-600">+{cards.length - MAX_DOTS}</span>
+          <span className="text-xs font-semibold leading-none text-ink">+{cards.length - MAX_DOTS}</span>
         )}
       </span>
     </button>

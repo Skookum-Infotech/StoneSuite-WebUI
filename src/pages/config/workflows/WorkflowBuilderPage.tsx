@@ -137,7 +137,7 @@ export default function WorkflowBuilderPage() {
                 <h1 className="truncate dark:text-white type-page-title">
                   {def.workflow.name}
                 </h1>
-                <span className="rounded-lg bg-stone-100 px-2 py-0.5 font-mono text-xs text-stone-500 dark:bg-stone-800">
+                <span className="rounded-lg bg-stone-100 px-2 py-0.5 font-mono text-xs text-ink-muted dark:bg-stone-800">
                   {def.workflow.key}
                 </span>
                 <label className="flex items-center gap-1.5 select-none">
@@ -147,13 +147,13 @@ export default function WorkflowBuilderPage() {
                     disabled={toggle.isPending}
                     aria-label={enabled ? `Disable ${def.workflow.name}` : `Enable ${def.workflow.name}`}
                   />
-                  <span className="text-xs font-semibold text-stone-500 dark:text-stone-400">
+                  <span className="text-xs font-semibold text-ink-muted dark:text-stone-400">
                     {toggle.isPending ? 'Saving…' : enabled ? 'Enabled' : 'Disabled'}
                   </span>
                 </label>
               </div>
               {def.workflow.description && (
-                <p className="text-sm text-stone-500 leading-relaxed">{def.workflow.description}</p>
+                <p className="text-sm text-ink-muted leading-relaxed">{def.workflow.description}</p>
               )}
               {toggleError && (
                 <div className="mt-1.5 max-w-xs">
@@ -166,7 +166,7 @@ export default function WorkflowBuilderPage() {
           <Link
             to="/config/workflows"
             aria-label="Back to All forms"
-            className="flex shrink-0 items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-stone-500 transition-colors hover:bg-stone-100 hover:text-stone-700 dark:hover:bg-stone-800 dark:hover:text-stone-200"
+            className="flex shrink-0 items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-ink-muted transition-colors hover:bg-stone-100 hover:text-ink dark:hover:bg-stone-800 dark:hover:text-stone-200"
           >
             <ChevronLeft className="size-3.5" />
             Back
@@ -204,7 +204,7 @@ export default function WorkflowBuilderPage() {
                   disabled={customFieldsToggle.isPending}
                   aria-label={def.workflow.customFieldsEnabled ? 'Disable custom fields section' : 'Enable custom fields section'}
                 />
-                <span className="text-xs font-semibold text-stone-500 dark:text-stone-400">
+                <span className="text-xs font-semibold text-ink-muted dark:text-stone-400">
                   {customFieldsToggle.isPending ? 'Saving…' : def.workflow.customFieldsEnabled ? 'Enabled' : 'Disabled'}
                 </span>
               </label>
@@ -280,7 +280,7 @@ function Section({
 
 function FieldsCounter({ count }: { count: number }) {
   return (
-    <span className="text-xs text-stone-500 tabular-nums">
+    <span className="text-xs text-ink-muted tabular-nums">
       {count} / {FIELD_CAP}
     </span>
   );
@@ -347,7 +347,7 @@ export function ApproversSection({ workflowId, approverUserIds }: { workflowId: 
               disabled={update.isPending}
               aria-label={enabled ? 'Disable approval chain' : 'Enable approval chain'}
             />
-            <span className="text-xs font-semibold text-stone-500 dark:text-stone-400">
+            <span className="text-xs font-semibold text-ink-muted dark:text-stone-400">
               {update.isPending ? 'Saving…' : enabled ? 'Enabled' : 'Disabled'}
             </span>
           </label>
@@ -415,7 +415,7 @@ function FieldsSection({
         <EmptyState>No custom fields yet — add one to extend this form.</EmptyState>
       ) : (
         <div className="overflow-x-auto">
-          <div className={cn('grid min-w-[560px] gap-x-3 border-b border-stone-200 pb-2 text-xs font-semibold text-stone-900 dark:border-stone-800 dark:text-stone-100', FIELD_COLS)}>
+          <div className={cn('grid min-w-[560px] gap-x-3 border-b border-stone-200 pb-2 text-xs font-semibold text-ink-strong dark:border-stone-800 dark:text-stone-100', FIELD_COLS)}>
             <span>Label</span>
             <span>Key</span>
             <span>Type</span>
@@ -435,19 +435,19 @@ function FieldsSection({
               key={f.id}
               className={cn('grid min-w-[560px] items-center gap-x-3 border-b border-stone-100 py-2.5 text-xs dark:border-stone-800/60', FIELD_COLS)}
             >
-              <span className="truncate font-semibold text-stone-900 dark:text-stone-100">{f.label}</span>
-              <span className="truncate font-mono text-xs text-stone-500">{f.key}</span>
-              <span className="text-xs text-stone-500">{f.dataType}</span>
+              <span className="truncate font-semibold text-ink-strong dark:text-stone-100">{f.label}</span>
+              <span className="truncate font-mono text-xs text-ink-muted">{f.key}</span>
+              <span className="text-xs text-ink-muted">{f.dataType}</span>
               <span className="text-xs font-semibold">
-                {f.required ? <span className="text-warning-ink dark:text-amber-400">Yes</span> : <span className="text-stone-500 dark:text-stone-600">—</span>}
+                {f.required ? <span className="text-warning-ink dark:text-amber-400">Yes</span> : <span className="text-ink-muted dark:text-stone-600">—</span>}
               </span>
-              <span className="truncate text-xs text-stone-500">{f.options.length > 0 ? f.options.join(', ') : '—'}</span>
+              <span className="truncate text-xs text-ink-muted">{f.options.length > 0 ? f.options.join(', ') : '—'}</span>
               <button
                 type="button"
                 aria-label={`Delete field ${f.label}`}
                 onClick={() => del.mutate(f.id)}
                 disabled={del.isPending}
-                className="justify-self-end rounded-lg p-1.5 text-stone-400 hover:bg-red-50 hover:text-danger-ink disabled:opacity-50 dark:hover:bg-red-950/30"
+                className="justify-self-end rounded-lg p-1.5 text-ink-muted hover:bg-red-50 hover:text-danger-ink disabled:opacity-50 dark:hover:bg-red-950/30"
               >
                 <Trash2 className="size-3.5" />
               </button>
@@ -511,7 +511,7 @@ function NewFieldRow({ workflowId, onDone, onCancel }: { workflowId: string; onD
         {dataType === 'enum' ? (
           <Input aria-label="New field options, comma-separated" value={options} onChange={(e) => setOptions(e.target.value)} placeholder="a, b, c" className="h-8 text-xs" />
         ) : (
-          <span className="text-xs text-stone-500 dark:text-stone-600">—</span>
+          <span className="text-xs text-ink-muted dark:text-stone-600">—</span>
         )}
         <div className="flex items-center justify-end gap-1">
           <button
@@ -527,7 +527,7 @@ function NewFieldRow({ workflowId, onDone, onCancel }: { workflowId: string; onD
             type="button"
             aria-label="Cancel new field"
             onClick={onCancel}
-            className="rounded-lg p-1.5 text-stone-500 hover:bg-stone-100 dark:hover:bg-stone-800"
+            className="rounded-lg p-1.5 text-ink-muted hover:bg-stone-100 dark:hover:bg-stone-800"
           >
             <X className="size-3.5" />
           </button>

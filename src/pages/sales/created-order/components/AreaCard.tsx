@@ -76,16 +76,16 @@ export function AreaCard({ area, errors, copyFromName, actions, isNew }: AreaCar
           className="flex min-w-0 flex-1 items-center gap-2.5 rounded-lg py-1 text-left outline-none focus-visible:ring-2 focus-visible:ring-brand/40"
         >
           <ChevronDown
-            className={cn('size-4 shrink-0 text-stone-400 transition-transform', !isOpen && '-rotate-90')}
+            className={cn('size-4 shrink-0 text-ink-faint transition-transform', !isOpen && '-rotate-90')}
             aria-hidden="true"
           />
-          <span className="truncate text-sm font-semibold text-stone-900">{area.name || 'Unnamed area'}</span>
+          <span className="truncate text-sm font-semibold text-ink-strong">{area.name || 'Unnamed area'}</span>
           {hasErrors ? (
             <span className="shrink-0 rounded-full bg-red-50 px-2 py-0.5 type-pill text-danger-ink">
               Needs attention
             </span>
           ) : (
-            <span className="shrink-0 text-xs text-stone-500">
+            <span className="shrink-0 text-xs text-ink-muted">
               {filled} of {total} filled
             </span>
           )}
@@ -107,7 +107,7 @@ export function AreaCard({ area, errors, copyFromName, actions, isNew }: AreaCar
               type="button"
               aria-label={`Copy Color, Finish and Edge from ${copyFromName}`}
               onClick={() => actions.onCopyStone(area.key)}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-stone-50 px-2.5 py-1.5 text-xs font-medium text-stone-600 outline-none ring-1 ring-stone-200 transition-colors hover:bg-stone-100 focus-visible:ring-2 focus-visible:ring-brand/40"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-stone-50 px-2.5 py-1.5 text-xs font-medium text-ink outline-none ring-1 ring-stone-200 transition-colors hover:bg-stone-100 focus-visible:ring-2 focus-visible:ring-brand/40"
             >
               <Copy className="size-3.5" aria-hidden="true" />
               Same stone as {copyFromName}
@@ -117,7 +117,7 @@ export function AreaCard({ area, errors, copyFromName, actions, isNew }: AreaCar
           <AreaFields area={area} errors={errors ?? {}} onChange={change} />
 
           <div className="space-y-1.5">
-            <p className="text-xs font-semibold text-stone-900">Faucet Spread</p>
+            <p className="text-xs font-semibold text-ink-strong">Faucet Spread</p>
             <FaucetSpreadSelector
               areaName={area.name}
               scale={spreadScale}
@@ -144,7 +144,7 @@ export function AreaCard({ area, errors, copyFromName, actions, isNew }: AreaCar
             <button
               type="button"
               onClick={() => setNotesOpen(true)}
-              className="inline-flex items-center gap-1.5 rounded-md text-xs font-medium text-stone-500 outline-none transition-colors hover:text-stone-900 focus-visible:ring-2 focus-visible:ring-brand/40"
+              className="inline-flex items-center gap-1.5 rounded-md text-xs font-medium text-ink-muted outline-none transition-colors hover:text-ink-strong focus-visible:ring-2 focus-visible:ring-brand/40"
             >
               <MessageSquarePlus className="size-3.5" aria-hidden="true" />
               Add notes

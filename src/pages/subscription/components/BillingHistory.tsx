@@ -47,13 +47,13 @@ export function BillingHistory() {
       {/* Filter bar */}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center px-4 py-3.5 border-b border-stone-100 bg-stone-50/60">
         <div className="relative flex-1">
-          <Search className="pointer-events-none absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-stone-400" />
+          <Search className="pointer-events-none absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-ink-faint" />
           <input
             type="text"
             placeholder="Search by invoice number…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="h-9 w-full rounded-xl border border-stone-200 bg-white pl-8.5 pr-3 placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-brand/40 focus:border-brand/50 transition type-input"
+            className="h-9 w-full rounded-xl border border-stone-200 bg-white pl-8.5 pr-3 placeholder:text-ink-muted focus:outline-none focus:ring-2 focus:ring-brand/40 focus:border-brand/50 transition type-input"
             aria-label="Search invoices"
           />
         </div>
@@ -68,13 +68,13 @@ export function BillingHistory() {
 
       {/* Table */}
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[520px] border-collapse text-xs">
+        <table className="w-full min-w-[520px] border-collapse type-cell">
           <thead>
             <tr className="border-b border-stone-100 bg-stone-50/40">
-              <th className="px-4 py-3 text-left font-semibold text-stone-500">Date</th>
-              <th className="px-4 py-3 text-left font-semibold text-stone-500">Invoice #</th>
-              <th className="px-4 py-3 text-right font-semibold text-stone-500">Amount</th>
-              <th className="px-4 py-3 text-left font-semibold text-stone-500">Status</th>
+              <th className="type-th px-4 py-3 text-left">Date</th>
+              <th className="type-th px-4 py-3 text-left">Invoice #</th>
+              <th className="type-th px-4 py-3 text-right">Amount</th>
+              <th className="type-th px-4 py-3 text-left">Status</th>
             </tr>
           </thead>
           <tbody>
@@ -83,9 +83,9 @@ export function BillingHistory() {
                 <td colSpan={4} className="px-4 py-16 text-center">
                   <div className="flex flex-col items-center gap-2">
                     <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-stone-100">
-                      <Search className="size-5 text-stone-400" />
+                      <Search className="size-5 text-ink-faint" />
                     </div>
-                    <p className="text-xs font-semibold text-stone-500">No invoices found</p>
+                    <p className="text-xs font-semibold text-ink-muted">No invoices found</p>
                     <p className="type-helper">Try a different search term</p>
                   </div>
                 </td>
@@ -99,11 +99,11 @@ export function BillingHistory() {
                     idx === filtered.length - 1 && 'border-b-0',
                   )}
                 >
-                  <td className="px-4 py-3.5 text-stone-600 whitespace-nowrap">{fmtDate(inv.date)}</td>
+                  <td className="type-cell px-4 py-3.5 whitespace-nowrap">{fmtDate(inv.date)}</td>
                   <td className="px-4 py-3.5">
                     <span className="type-record-id">{inv.id}</span>
                   </td>
-                  <td className="px-4 py-3.5 text-right font-bold text-stone-900 tabular-nums">{fmt.format(inv.amount)}</td>
+                  <td className="type-cell-strong px-4 py-3.5 text-right tabular-nums">{fmt.format(inv.amount)}</td>
                   <td className="px-4 py-3.5">
                     <StatusBadge status={inv.status} />
                   </td>

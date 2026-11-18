@@ -46,7 +46,7 @@ export default function VendorBillListPage() {
             </div>
             <div>
               <h1 className="type-page-title">Vendor Bills</h1>
-              <p className="text-sm text-stone-500">Record and approve bills received from vendors.</p>
+              <p className="type-page-subtitle">Record and approve bills received from vendors.</p>
             </div>
           </div>
           {canCreate && (

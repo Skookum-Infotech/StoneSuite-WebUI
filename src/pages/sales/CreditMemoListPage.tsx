@@ -20,7 +20,7 @@ export default function CreditMemoListPage() {
             </div>
             <div>
               <h1 className="type-page-title">Credit Memos</h1>
-              <p className="text-sm text-stone-500">Credits issued against customer invoices.</p>
+              <p className="type-page-subtitle">Credits issued against customer invoices.</p>
             </div>
           </div>
           {canCreate && (

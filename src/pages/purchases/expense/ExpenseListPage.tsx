@@ -20,7 +20,7 @@ export default function ExpenseListPage() {
             </div>
             <div>
               <h1 className="type-page-title">Expenses</h1>
-              <p className="text-sm text-stone-500">Submit and approve employee expense claims.</p>
+              <p className="type-page-subtitle">Submit and approve employee expense claims.</p>
             </div>
           </div>
           {canCreate && (

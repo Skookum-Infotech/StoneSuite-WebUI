@@ -49,8 +49,8 @@ export function FaucetSpreadSelector({ areaName, scale, value, onChange }: Fauce
               'focus-visible:ring-2 focus-visible:ring-brand/40',
               option.value === 'C' && 'min-w-12',
               selected
-                ? 'border-brand bg-brand text-stone-950 shadow-sm'
-                : 'border-stone-300 bg-white text-stone-600 hover:border-stone-400 hover:bg-stone-50',
+                ? 'border-brand bg-brand text-ink-strong shadow-sm'
+                : 'border-stone-300 bg-white text-ink hover:border-stone-400 hover:bg-stone-50',
             )}
           >
             {option.label}

@@ -136,7 +136,7 @@ export function CodeStep({ challenge, onSuccess, onBack, onActiveSession }: Code
   return (
     <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-5">
       <div className="flex items-center gap-2.5 rounded-xl border border-stone-200 bg-stone-50 px-4 py-3">
-        <Mail className="size-4 shrink-0 text-stone-400" aria-hidden="true" />
+        <Mail className="size-4 shrink-0 text-ink-faint" aria-hidden="true" />
         <span className="min-w-0 flex-1 truncate text-body font-medium text-ink">
           Code sent to {challenge.maskedEmail}
         </span>

@@ -3,7 +3,7 @@ import { DIMENSIONS_UNIT_HINT, normalizeUnit } from '@/lib/lineDimensions';
 import { sanitizeThickness } from '@/lib/lineThickness';
 
 const inputCls =
-  'w-[4.5rem] rounded border border-stone-200 bg-white px-2 py-1 pr-6 text-right text-xs tabular-nums text-stone-800 outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-900/5 placeholder:text-stone-500 transition-all disabled:cursor-not-allowed disabled:bg-stone-50 disabled:text-stone-300';
+  'w-[4.5rem] rounded border border-stone-200 bg-white px-2 py-1 pr-6 text-right text-xs tabular-nums text-ink-strong outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-900/5 placeholder:text-ink-muted transition-all disabled:cursor-not-allowed disabled:bg-stone-50 disabled:text-stone-300';
 
 /** Lands on a box with its value selected, so typing replaces it. */
 function selectAll(e: FocusEvent<HTMLInputElement>) {

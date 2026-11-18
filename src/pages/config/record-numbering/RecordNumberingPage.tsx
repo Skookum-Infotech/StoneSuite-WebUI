@@ -51,7 +51,7 @@ export default function RecordNumberingPage(): React.JSX.Element {
             </h1>
             <p className="mt-0.5 type-helper">
               Auto-generate sequential IDs like{" "}
-              <code className="font-mono bg-stone-100 text-stone-700 px-1.5 py-0.5 rounded-md text-micro">
+              <code className="font-mono bg-stone-100 text-ink px-1.5 py-0.5 rounded-md text-micro">
                 LEAD-0001
               </code>{" "}
               for each workflow.
@@ -76,8 +76,8 @@ export default function RecordNumberingPage(): React.JSX.Element {
           workflows.length === 0 &&
           !workflowsQ.isError && (
             <div className="flex flex-col items-center justify-center h-40 text-center">
-              <Hash className="size-8 text-stone-400 mb-2" />
-              <p className="text-sm text-stone-500">No workflows found.</p>
+              <Hash className="size-8 text-ink-faint mb-2" />
+              <p className="text-sm text-ink-muted">No workflows found.</p>
             </div>
           )}
         {workflows.length > 0 && (
@@ -207,12 +207,12 @@ function WorkflowRow({
 
   const cellInput = (hasError: boolean, disabled: boolean) =>
     cn(
-      "w-full rounded-lg border bg-transparent px-2.5 py-1.5 text-xs font-mono text-stone-800",
-      "placeholder:text-stone-500 transition-colors focus:outline-none",
+      "w-full rounded-lg border bg-transparent px-2.5 py-1.5 text-xs font-mono text-ink-strong",
+      "placeholder:text-ink-muted transition-colors focus:outline-none",
       hasError
         ? "border-red-300 bg-red-50/60 focus:border-red-400 focus:ring-1 focus:ring-red-200"
         : disabled
-          ? "border-transparent text-stone-500 cursor-default"
+          ? "border-transparent text-ink-muted cursor-default"
           : "border-stone-200 hover:border-stone-300 focus:border-brand focus:ring-1 focus:ring-brand/25",
     );
 
@@ -227,10 +227,10 @@ function WorkflowRow({
       <div
         className={cn(rowBase, "flex items-center justify-start")}
       >
-        <div className="flex items-center gap-2.5 text-xs text-stone-500 py-1">
+        <div className="flex items-center gap-2.5 text-xs text-ink-muted py-1">
           <Loader2 className="size-3.5 animate-spin" />
           <span className="font-semibold">{workflow.name}</span>
-          <span className="text-stone-500">—</span>
+          <span className="text-ink-muted">—</span>
           <span>Loading config…</span>
         </div>
       </div>
@@ -244,7 +244,7 @@ function WorkflowRow({
     >
       {/* Workflow name + key */}
       <div className="min-w-0">
-        <p className="text-xs font-semibold text-stone-800 truncate">
+        <p className="text-xs font-semibold text-ink-strong truncate">
           {workflow.name}
         </p>
         <p className="font-mono mt-0.5 truncate type-helper">
@@ -353,7 +353,7 @@ function WorkflowRow({
             <span className="font-mono text-link bg-brand/8 rounded-md px-2 py-0.5 truncate shrink-0 max-w-[100px] type-pill">
               {preview}
             </span>
-            <ChevronRight className="size-3 text-stone-400 shrink-0" />
+            <ChevronRight className="size-3 text-ink-faint shrink-0" />
             <span className="font-mono truncate type-subline">
               {previewNext}
             </span>
@@ -378,8 +378,8 @@ function WorkflowRow({
             saveSuccess
               ? "bg-emerald-500 text-white shadow-sm"
               : !isDirty
-                ? "bg-stone-100 text-stone-400 cursor-not-allowed"
-                : "bg-brand text-stone-950 shadow-sm hover:bg-brand/80 disabled:opacity-60",
+                ? "bg-stone-100 text-ink-muted cursor-not-allowed"
+                : "bg-brand text-ink-strong shadow-sm hover:bg-brand/80 disabled:opacity-60",
           )}
         >
           {save.isPending ? (

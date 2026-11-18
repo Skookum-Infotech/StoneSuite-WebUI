@@ -193,15 +193,15 @@ export default function BinTransferDetailPage() {
 
         <SalesDetailSidebar label="Bin Transfer Details">
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-            <p className="text-xs font-semibold text-stone-500">Quick Actions</p>
+            <p className="type-card-title">Quick Actions</p>
             <div className="space-y-0.5">
               {canUpdate && btIsEditable(transfer.statusCode) && (
                 <button
                   type="button"
                   onClick={() => navigate(`${LIST_PATH}/${id}/edit`)}
-                  className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-xs text-stone-700 transition-colors hover:bg-stone-50"
+                  className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-xs text-ink transition-colors hover:bg-stone-50"
                 >
-                  <Pencil className="size-4 shrink-0 text-stone-400" /> Edit transfer
+                  <Pencil className="size-4 shrink-0 text-ink-faint" /> Edit transfer
                 </button>
               )}
               <button
@@ -209,9 +209,9 @@ export default function BinTransferDetailPage() {
                 onClick={handleExportPdf}
                 disabled={exporting}
                 aria-label="Export as PDF"
-                className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-xs text-stone-700 transition-colors hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-60"
+                className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-xs text-ink transition-colors hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {exporting ? <Loader2 className="size-4 shrink-0 animate-spin text-stone-400" /> : <FileDown className="size-4 shrink-0 text-stone-400" />}
+                {exporting ? <Loader2 className="size-4 shrink-0 animate-spin text-ink-faint" /> : <FileDown className="size-4 shrink-0 text-ink-faint" />}
                 {exporting ? 'Exporting…' : 'Export PDF'}
               </button>
             </div>
@@ -220,28 +220,28 @@ export default function BinTransferDetailPage() {
 
           {(transfer.nextStatusCodes.length > 0) && (
             <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-              <p className="text-xs font-semibold text-stone-500">Actions</p>
+              <p className="type-card-title">Actions</p>
               <BinTransferActions transfer={transfer} can={{ transition: canTransition, approve: canApprove }} />
             </div>
           )}
 
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-            <p className="text-xs font-semibold text-stone-500">Status</p>
+            <p className="type-card-title">Status</p>
             <div className="flex items-center justify-between border-b border-stone-100 py-2 text-xs">
-              <span className="text-stone-500">Status</span>
+              <span className="text-ink-muted">Status</span>
               <Badge color={color}>{transfer.statusName}</Badge>
             </div>
             <div className="flex items-center justify-between border-b border-stone-100 py-2 text-xs">
-              <span className="text-stone-500">Requested by</span>
-              <span className="max-w-[140px] truncate text-stone-700">{transfer.ownerName || '—'}</span>
+              <span className="text-ink-muted">Requested by</span>
+              <span className="max-w-[140px] truncate text-ink">{transfer.ownerName || '—'}</span>
             </div>
             <div className="flex items-center justify-between border-b border-stone-100 py-2 text-xs">
-              <span className="text-stone-500">Created</span>
-              <span className="text-stone-700">{fmtDate(transfer.createdAt)}</span>
+              <span className="text-ink-muted">Created</span>
+              <span className="text-ink">{fmtDate(transfer.createdAt)}</span>
             </div>
             <div className="flex items-center justify-between py-2 text-xs">
-              <span className="text-stone-500">Updated</span>
-              <span className="text-stone-700">{fmtDate(transfer.updatedAt)}</span>
+              <span className="text-ink-muted">Updated</span>
+              <span className="text-ink">{fmtDate(transfer.updatedAt)}</span>
             </div>
           </div>
 

@@ -81,7 +81,7 @@ export function PostJournalEntryDialog({ journalEntryId, onPosted }: {
               </div>
             </div>
 
-            <p className="text-xs text-stone-600 mb-5">
+            <p className="text-xs text-ink mb-5">
               Once posted this journal entry can no longer be edited. To correct a mistake, reverse it instead.
             </p>
 

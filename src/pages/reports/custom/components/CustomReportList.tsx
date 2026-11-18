@@ -89,7 +89,7 @@ export function CustomReportList({ reports, sourceLabels, canCreate, onOpen, onN
               onClick={() => setTab(t.value)}
               className={cn(
                 "rounded-md px-3 py-1 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400",
-                tab === t.value ? "bg-white text-stone-900 shadow-sm" : "text-stone-600 hover:text-stone-900",
+                tab === t.value ? "bg-white text-ink-strong shadow-sm" : "text-ink hover:text-ink-strong",
               )}
             >
               {t.label}

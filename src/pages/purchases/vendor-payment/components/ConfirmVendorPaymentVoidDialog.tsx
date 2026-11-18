@@ -33,7 +33,7 @@ export function ConfirmVendorPaymentVoidDialog({ paymentNumber, pending, onConfi
             <p className="mt-0.5 type-helper">This action cannot be undone.</p>
           </div>
         </div>
-        <p className="mb-4 text-xs text-stone-600">A voided payment is final: it can no longer be scheduled, sent or edited.</p>
+        <p className="mb-4 text-xs text-ink">A voided payment is final: it can no longer be scheduled, sent or edited.</p>
         <div className="flex justify-end gap-2">
           <button
             type="button"

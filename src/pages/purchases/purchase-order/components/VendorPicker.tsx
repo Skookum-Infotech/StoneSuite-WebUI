@@ -86,13 +86,13 @@ export function VendorPicker({
   if (value) {
     return (
       <div className="flex items-center gap-2 rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm">
-        <Building className="size-3.5 shrink-0 text-stone-400" aria-hidden="true" />
-        <span className="flex-1 truncate font-medium text-stone-800">{value.name}</span>
+        <Building className="size-3.5 shrink-0 text-ink-faint" aria-hidden="true" />
+        <span className="flex-1 truncate font-medium text-ink-strong">{value.name}</span>
         <button
           type="button"
           onClick={() => onChange(null)}
           aria-label="Change vendor"
-          className="shrink-0 rounded p-0.5 text-stone-500 hover:bg-stone-100 hover:text-stone-600 transition-colors"
+          className="shrink-0 rounded p-0.5 text-ink-muted hover:bg-stone-100 hover:text-ink transition-colors"
         >
           <X className="size-3.5" />
         </button>
@@ -103,7 +103,7 @@ export function VendorPicker({
   return (
     <div ref={containerRef} className="relative">
       <div className="relative">
-        <Search className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-stone-400" />
+        <Search className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-ink-faint" />
         <input
           type="text"
           required={required}
@@ -115,7 +115,7 @@ export function VendorPicker({
           aria-label="Search vendor"
         />
         {isFetching && (
-          <Loader2 className="absolute right-2.5 top-1/2 -translate-y-1/2 size-3.5 animate-spin text-stone-400" />
+          <Loader2 className="absolute right-2.5 top-1/2 -translate-y-1/2 size-3.5 animate-spin text-ink-faint" />
         )}
       </div>
 
@@ -131,9 +131,9 @@ export function VendorPicker({
               key={v.id}
               type="button"
               onClick={() => select(v)}
-              className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-stone-700 hover:bg-accent/10 transition-colors"
+              className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-ink hover:bg-accent/10 transition-colors"
             >
-              <Building className="size-3.5 shrink-0 text-stone-400" aria-hidden="true" />
+              <Building className="size-3.5 shrink-0 text-ink-faint" aria-hidden="true" />
               <span className="truncate">{v.name}</span>
             </button>
           ))}
@@ -154,9 +154,9 @@ export function VendorPicker({
             <button
               type="button"
               onClick={createNew}
-              className="flex w-full items-center gap-2 border-t border-stone-100 px-3 py-2 text-left text-xs font-semibold text-stone-800 hover:bg-accent/10 transition-colors"
+              className="flex w-full items-center gap-2 border-t border-stone-100 px-3 py-2 text-left text-xs font-semibold text-ink-strong hover:bg-accent/10 transition-colors"
             >
-              <UserPlus className="size-3.5 shrink-0 text-stone-500" aria-hidden="true" />
+              <UserPlus className="size-3.5 shrink-0 text-ink-muted" aria-hidden="true" />
               <span className="truncate">Create “{debounced}” as a new vendor</span>
             </button>
           )}

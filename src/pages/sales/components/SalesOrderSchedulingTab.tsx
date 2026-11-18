@@ -99,18 +99,18 @@ export function SalesOrderSchedulingTab({ orderId, installDate, canEdit }: {
 
   return (
     <div className="space-y-3">
-      <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-xs text-stone-600">
+      <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-xs text-ink">
         {installDate && (
           <span>
-            Installation: <span className="font-semibold text-stone-900">{formatDisplayDate(installDate)}</span>
+            Installation: <span className="font-semibold text-ink-strong">{formatDisplayDate(installDate)}</span>
           </span>
         )}
         <span>
-          <span className="font-semibold text-stone-900">{progress.completed}</span> of {progress.total} completed
+          <span className="font-semibold text-ink-strong">{progress.completed}</span> of {progress.total} completed
         </span>
         {progress.inProgress > 0 && (
           <span>
-            <span className="font-semibold text-stone-900">{progress.inProgress}</span> in progress
+            <span className="font-semibold text-ink-strong">{progress.inProgress}</span> in progress
           </span>
         )}
         {progress.overdue > 0 && (
@@ -119,14 +119,14 @@ export function SalesOrderSchedulingTab({ orderId, installDate, canEdit }: {
       </div>
 
       <div className="overflow-x-auto modal-scrollbar rounded-lg border border-stone-200 bg-white">
-        <table className="w-full text-left text-xs">
+        <table className="w-full text-left type-cell">
           <thead className="bg-stone-50 border-b border-stone-200">
             <tr>
               {HEADERS.map((h) => (
                 <th key={h} scope="col" className="px-3 py-2.5 whitespace-nowrap type-th">{h}</th>
               ))}
               {canEdit && (
-                <th scope="col" className="w-10 px-3 py-2.5"><span className="sr-only">{ACTION_COLUMN_LABEL}</span></th>
+                <th scope="col" className="type-th w-10 px-3 py-2.5"><span className="sr-only">{ACTION_COLUMN_LABEL}</span></th>
               )}
             </tr>
           </thead>
@@ -139,7 +139,7 @@ export function SalesOrderSchedulingTab({ orderId, installDate, canEdit }: {
                   <tr key={a.code} className={cn(startsPhase && 'border-t-2 border-t-stone-200')}>
                     <td colSpan={HEADERS.length + 1} className="p-0">
                       <div className="border-l-2 border-l-brand">
-                        <p className="px-3 pt-3 text-xs font-semibold text-stone-900">{a.name}</p>
+                        <p className="px-3 pt-3 text-xs font-semibold text-ink-strong">{a.name}</p>
                         <SalesOrderScheduleRowEditor
                           activity={a}
                           saving={save.isPending}
@@ -157,25 +157,25 @@ export function SalesOrderSchedulingTab({ orderId, installDate, canEdit }: {
                   key={a.code}
                   className={cn('hover:bg-stone-50/50', startsPhase && 'border-t-2 border-t-stone-200')}
                 >
-                  <td className="px-3 py-2.5 font-medium text-stone-800 whitespace-nowrap">{a.name}</td>
+                  <td className="type-cell px-3 py-2.5 whitespace-nowrap font-medium">{a.name}</td>
                   <td className="px-3 py-2.5">
                     <Badge color={SCHEDULE_STATUS_COLORS[status]} size="sm">{SCHEDULE_STATUS_LABELS[status]}</Badge>
                   </td>
-                  <td className={cn('px-3 py-2.5 tabular-nums whitespace-nowrap', status === 'overdue' ? 'text-danger-ink' : 'text-stone-600')}>
+                  <td className={cn('px-3 py-2.5 tabular-nums whitespace-nowrap', status === 'overdue' ? 'text-danger-ink' : 'text-ink')}>
                     {formatWallClock(a.scheduledAt) || '—'}
                   </td>
-                  <td className="px-3 py-2.5 tabular-nums whitespace-nowrap text-stone-600">
-                    {formatWallClock(a.completedAt) || <span className="text-stone-500">—</span>}
+                  <td className="type-cell px-3 py-2.5 tabular-nums whitespace-nowrap">
+                    {formatWallClock(a.completedAt) || <span className="text-ink-muted">—</span>}
                   </td>
-                  <td className="max-w-xs px-3 py-2.5 text-stone-600">
-                    {a.notes ? <span className="block truncate" title={a.notes}>{a.notes}</span> : <span className="text-stone-500">—</span>}
+                  <td className="type-cell max-w-xs px-3 py-2.5">
+                    {a.notes ? <span className="block truncate" title={a.notes}>{a.notes}</span> : <span className="text-ink-muted">—</span>}
                   </td>
                   {canEdit && (
                     <td className="px-3 py-2.5 text-right">
                       <button
                         type="button"
                         onClick={() => startEditing(a.code)}
-                        className="rounded-md p-1.5 text-stone-500 transition-colors hover:bg-stone-100 hover:text-stone-700"
+                        className="rounded-md p-1.5 text-ink-muted transition-colors hover:bg-stone-100 hover:text-ink"
                         aria-label={`Edit ${a.name}`}
                       >
                         <Pencil className="size-3.5" aria-hidden="true" />

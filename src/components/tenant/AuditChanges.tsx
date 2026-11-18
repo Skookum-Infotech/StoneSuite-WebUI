@@ -19,10 +19,10 @@ export function AuditChanges({ oldValue, newValue }: Props) {
     <ul className="space-y-1" aria-label="Changed fields">
       {changes.map((c) => (
         <li key={c.field} className="flex flex-wrap items-baseline gap-x-2 text-micro">
-          <span className="min-w-[120px] font-medium text-stone-500">{c.label}</span>
-          <span className="break-all text-stone-500 line-through decoration-stone-300">{c.from}</span>
-          <ArrowRight className="size-3 shrink-0 self-center text-stone-400" aria-hidden="true" />
-          <span className="break-all font-medium text-stone-800">{c.to}</span>
+          <span className="min-w-[120px] font-medium text-ink-muted">{c.label}</span>
+          <span className="break-all text-ink-muted line-through decoration-stone-300">{c.from}</span>
+          <ArrowRight className="size-3 shrink-0 self-center text-ink-faint" aria-hidden="true" />
+          <span className="break-all font-medium text-ink-strong">{c.to}</span>
         </li>
       ))}
     </ul>

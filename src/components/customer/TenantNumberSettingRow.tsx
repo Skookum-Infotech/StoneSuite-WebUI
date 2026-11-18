@@ -45,7 +45,7 @@ export function TenantNumberSettingRow({ label, description, value, onChange, ex
           aria-invalid={Boolean(extra.error)}
           className="h-8 w-20 text-right text-sm"
         />
-        {extra.unit && <span className="w-14 text-xs text-stone-500">{extra.unit}</span>}
+        {extra.unit && <span className="w-14 text-xs text-ink-muted">{extra.unit}</span>}
       </div>
     </div>
   );

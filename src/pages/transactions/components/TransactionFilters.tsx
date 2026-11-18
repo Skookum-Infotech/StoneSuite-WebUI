@@ -52,7 +52,7 @@ function TypeMenu({
         className={cn(buttonVariants({ variant: 'outline' }), 'flex w-full justify-between gap-2 lg:w-auto lg:justify-start')}
       >
         {current}
-        <ChevronDown className="size-3.5 text-stone-400" />
+        <ChevronDown className="size-3.5 text-ink-faint" />
       </button>
       {open && (
         <div
@@ -84,11 +84,11 @@ function TypeOption({ label, selected, onPick }: { label: string; selected: bool
       onClick={onPick}
       className={cn(
         'flex w-full items-center justify-between gap-2 px-3.5 py-2 text-left text-xs font-semibold transition-colors cursor-pointer',
-        selected ? 'bg-stone-100 text-stone-900' : 'text-stone-600 hover:bg-stone-50',
+        selected ? 'bg-stone-100 text-ink-strong' : 'text-ink hover:bg-stone-50',
       )}
     >
       {label}
-      {selected && <Check className="size-3.5 text-stone-500" />}
+      {selected && <Check className="size-3.5 text-ink-muted" />}
     </button>
   );
 }
@@ -108,14 +108,14 @@ export function TransactionFilters({
   return (
     <div className="flex flex-col gap-2 border-b border-stone-100 bg-stone-50/60 px-3 py-3 sm:px-4 sm:py-3.5 lg:flex-row lg:items-center">
       <div className="relative flex-1">
-        <Search className="pointer-events-none absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-stone-400" />
+        <Search className="pointer-events-none absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-ink-faint" />
         <input
           type="search"
           aria-label="Search your transactions"
           placeholder="Search by reference, name, or customer/vendor…"
           value={search}
           onChange={(e) => onSearch(e.target.value)}
-          className="h-9 w-full rounded-xl border border-stone-200 bg-white pl-8.5 pr-3 transition placeholder:text-stone-500 focus:border-brand/50 focus:outline-none focus:ring-2 focus:ring-brand/40 type-input"
+          className="h-9 w-full rounded-xl border border-stone-200 bg-white pl-8.5 pr-3 transition placeholder:text-ink-muted focus:border-brand/50 focus:outline-none focus:ring-2 focus:ring-brand/40 type-input"
         />
       </div>
 
@@ -129,7 +129,7 @@ export function TransactionFilters({
             onClick={() => onRole(opt.value)}
             className={cn(
               'min-h-8 rounded-[10px] px-2 py-1 text-center text-xs font-semibold leading-tight transition-colors cursor-pointer lg:whitespace-nowrap lg:px-3',
-              role === opt.value ? 'bg-[#001219] text-white shadow-sm' : 'text-stone-600 hover:bg-stone-50',
+              role === opt.value ? 'bg-[#001219] text-white shadow-sm' : 'text-ink hover:bg-stone-50',
             )}
           >
             {opt.label}

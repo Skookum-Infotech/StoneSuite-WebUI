@@ -73,7 +73,7 @@ export function RefundApplicationsTab({ refund }: { refund: Refund }) {
       )}
 
       <div className="overflow-x-auto modal-scrollbar rounded-lg border border-stone-200 bg-white">
-        <table className="w-full text-left text-xs">
+        <table className="w-full text-left type-cell">
           <thead className="bg-stone-50 border-b border-stone-200">
             <tr className="divide-x divide-stone-200">
               {['Source', 'Document #', 'Amount', 'Applied Date', ''].map((h) => (
@@ -89,8 +89,8 @@ export function RefundApplicationsTab({ refund }: { refund: Refund }) {
               if (!source) return null;
               return (
                 <tr key={app.id} className="hover:bg-stone-50/50 divide-x divide-stone-100">
-                  <td className="px-3 py-2.5 text-stone-500 whitespace-nowrap">{SOURCE_KIND_LABELS[source.kind]}</td>
-                  <td className="px-3 py-2.5 font-medium text-stone-800">
+                  <td className="type-cell px-3 py-2.5 whitespace-nowrap">{SOURCE_KIND_LABELS[source.kind]}</td>
+                  <td className="type-cell px-3 py-2.5 font-medium">
                     <button
                       type="button"
                       onClick={() => navigate(sourceDetailPath(source))}
@@ -99,8 +99,8 @@ export function RefundApplicationsTab({ refund }: { refund: Refund }) {
                       {source.number}
                     </button>
                   </td>
-                  <td className="px-3 py-2.5 tabular-nums text-stone-700">{currency(app.amount)}</td>
-                  <td className="px-3 py-2.5 tabular-nums text-stone-500">{fmtDate(app.createdAt)}</td>
+                  <td className="type-cell px-3 py-2.5 tabular-nums">{currency(app.amount)}</td>
+                  <td className="type-cell px-3 py-2.5 tabular-nums">{fmtDate(app.createdAt)}</td>
                   <td className="px-3 py-2.5 text-right">
                     {canEdit && (
                       <button
@@ -120,7 +120,7 @@ export function RefundApplicationsTab({ refund }: { refund: Refund }) {
             })}
             {refund.applications.length === 0 && (
               <tr>
-                <td colSpan={5} className="py-8 text-center text-stone-500">
+                <td colSpan={5} className="type-cell py-8 text-center">
                   Not drawn from any source yet.
                 </td>
               </tr>

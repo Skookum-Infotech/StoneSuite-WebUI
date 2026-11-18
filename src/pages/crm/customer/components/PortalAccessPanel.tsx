@@ -289,7 +289,7 @@ function PortalUserRow({
                 onClick={onResend}
                 disabled={busy}
                 aria-label={`Resend invitation to ${user.email}`}
-                className={cn(actionBtnCls, "text-stone-600 hover:bg-stone-100 hover:text-stone-800")}
+                className={cn(actionBtnCls, "text-ink hover:bg-stone-100 hover:text-ink-strong")}
               >
                 <Send className="size-3.5" />
                 Resend

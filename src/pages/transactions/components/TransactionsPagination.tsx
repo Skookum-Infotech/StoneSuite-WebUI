@@ -5,7 +5,7 @@ import { PAGE_SIZE_OPTIONS, buildPageItems, pageCount, pageRange } from '@/lib/m
 
 // 36px touch targets on phones, the denser 32px from sm up.
 const NAV_BTN =
-  'flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-stone-200 bg-white text-stone-500 transition-colors hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer sm:h-8 sm:w-8';
+  'flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-stone-200 bg-white text-ink-muted transition-colors hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer sm:h-8 sm:w-8';
 
 /**
  * Numbered pagination for the My Transactions list: "Showing 26–50 of 132", a
@@ -36,15 +36,15 @@ export function TransactionsPagination({
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 lg:justify-start">
         <p className="type-helper" aria-live="polite">
           Showing{' '}
-          <span className="font-semibold text-stone-700">{from.toLocaleString()}–{to.toLocaleString()}</span>
-          {' '}of <span className="font-semibold text-stone-700">{total.toLocaleString()}</span>
+          <span className="font-semibold text-ink">{from.toLocaleString()}–{to.toLocaleString()}</span>
+          {' '}of <span className="font-semibold text-ink">{total.toLocaleString()}</span>
         </p>
         <label className="flex items-center gap-2 type-field-label">
           <span>Rows per page</span>
           <Select
             value={pageSize}
             onChange={(e) => onPageSize(Number(e.target.value))}
-            className="h-8 rounded-lg border border-stone-200 bg-white px-2 text-xs font-semibold text-stone-700 focus:outline-none focus:ring-2 focus:ring-brand/40 cursor-pointer"
+            className="h-8 rounded-lg border border-stone-200 bg-white px-2 text-xs font-semibold text-ink focus:outline-none focus:ring-2 focus:ring-brand/40 cursor-pointer"
           >
             {PAGE_SIZE_OPTIONS.map((size) => (
               <option key={size} value={size}>{size}</option>
@@ -86,7 +86,7 @@ export function TransactionsPagination({
                     'flex h-8 min-w-8 items-center justify-center rounded-lg px-2 text-xs font-semibold transition-colors cursor-pointer',
                     item === page
                       ? 'bg-[#001219] text-white shadow-sm'
-                      : 'border border-stone-200 bg-white text-stone-600 hover:bg-stone-50',
+                      : 'border border-stone-200 bg-white text-ink hover:bg-stone-50',
                   )}
                 >
                   {item}
@@ -97,7 +97,7 @@ export function TransactionsPagination({
             ),
           )}
         </ol>
-        <span className="px-2 text-xs font-semibold text-stone-600 sm:hidden">
+        <span className="px-2 text-xs font-semibold text-ink sm:hidden">
           Page {page} of {count}
         </span>
 

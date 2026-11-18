@@ -39,7 +39,7 @@ export const AssistantMarkdown = memo(function AssistantMarkdown({ text, canOpen
             </button>
           );
         }
-        return <sup className="mx-0.5 text-micro font-semibold text-stone-500">[{n}]</sup>;
+        return <sup className="mx-0.5 text-micro font-semibold text-ink-muted">[{n}]</sup>;
       }
       if (href?.startsWith('/')) {
         return (

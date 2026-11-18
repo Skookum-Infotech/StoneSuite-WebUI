@@ -20,7 +20,7 @@ export default function CustomerListPage() {
             </div>
             <div>
               <h1 className="type-page-title">Customers</h1>
-              <p className="text-sm text-stone-500">Closed deals and active customer accounts.</p>
+              <p className="type-page-subtitle">Closed deals and active customer accounts.</p>
             </div>
           </div>
           {canCreate && (

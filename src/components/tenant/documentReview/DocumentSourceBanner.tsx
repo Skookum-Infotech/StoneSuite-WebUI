@@ -45,7 +45,7 @@ export function DocumentSourceBanner({
   }
   const warn = phase !== 'ready' || aiUnavailable || injection;
   return (
-    <div role="status" aria-live="polite" className={warn ? 'border-b border-warning/40 dark:border-amber-500/30 bg-warning/10 dark:bg-amber-500/10 px-4 py-2 text-xs text-stone-800 dark:text-stone-200' : 'border-b border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-white/[0.03] px-4 py-2 text-xs text-stone-700 dark:text-stone-300'}>
+    <div role="status" aria-live="polite" className={warn ? 'border-b border-warning/40 dark:border-amber-500/30 bg-warning/10 dark:bg-amber-500/10 px-4 py-2 text-xs text-ink-strong dark:text-stone-200' : 'border-b border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-white/[0.03] px-4 py-2 text-xs text-ink dark:text-stone-300'}>
       {phase === 'loading' ? 'Loading document…' : messages.map((m, i) => <p key={i}>{m}</p>)}
     </div>
   );

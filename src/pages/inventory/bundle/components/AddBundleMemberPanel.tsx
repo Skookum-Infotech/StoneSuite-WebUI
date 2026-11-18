@@ -33,7 +33,7 @@ export function AddBundleMemberPanel({ bundle, onAdded }: { bundle: Bundle; onAd
 
   return (
     <div className="rounded-lg border border-dashed border-stone-300 p-3 space-y-2">
-      <p className="text-micro font-semibold text-stone-500">Add Member</p>
+      <p className="text-micro font-semibold text-ink-muted">Add Member</p>
       {!bundle.inventoryItemId && (
         <ItemPicker value={item} onChange={setItem} filters={[{ field: 'tracking', op: 'eq', value: TRACKING_SERIALIZED }]} />
       )}

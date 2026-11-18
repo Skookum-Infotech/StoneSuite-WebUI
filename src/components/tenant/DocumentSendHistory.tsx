@@ -29,12 +29,12 @@ export function DocumentSendHistory({ recordId }: { recordId: string }) {
   return (
     <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-3 space-y-2 mb-4">
       <div className="flex items-center justify-between">
-        <p className="text-xs font-semibold text-stone-500">Email history</p>
+        <p className="type-card-title">Email History</p>
         <button
           type="button"
           onClick={() => void sends.refetch()}
           aria-label="Refresh email history"
-          className="rounded p-1 text-stone-500 hover:bg-stone-100 hover:text-stone-700"
+          className="rounded p-1 text-ink-muted hover:bg-stone-100 hover:text-ink"
         >
           <RefreshCw className={cn('size-3.5', sends.isFetching && 'animate-spin')} />
         </button>
@@ -50,7 +50,7 @@ export function DocumentSendHistory({ recordId }: { recordId: string }) {
             return (
               <li key={s.id} className="space-y-0.5 border-b border-stone-100 pb-2 last:border-0 last:pb-0">
                 <div className="flex items-start justify-between gap-2">
-                  <p className="min-w-0 text-xs text-stone-700 break-words">{s.sentTo}</p>
+                  <p className="min-w-0 text-xs text-ink break-words">{s.sentTo}</p>
                   <EmailStatusBadge source={s} />
                 </div>
                 <p className="break-words type-helper" title={new Date(s.sentAt).toLocaleString()}>
@@ -65,7 +65,7 @@ export function DocumentSendHistory({ recordId }: { recordId: string }) {
       )}
 
       {hidden > 0 && (
-        <button type="button" onClick={() => setShowAll(true)} className="text-micro font-semibold text-stone-500 hover:text-stone-800">
+        <button type="button" onClick={() => setShowAll(true)} className="text-micro font-semibold text-ink-muted hover:text-ink-strong">
           Show {hidden} more
         </button>
       )}

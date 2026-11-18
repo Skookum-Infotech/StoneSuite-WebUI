@@ -30,7 +30,7 @@ export function CodeInput({
       value={value}
       onChange={(e) => onValueChange(digitsOnly(e.target.value, length))}
       className={cn(
-        'h-14 rounded-xl border-stone-200 bg-white pl-[0.4em] text-center font-mono text-2xl font-semibold tracking-code text-stone-950 placeholder:text-stone-500',
+        'h-14 rounded-xl border-stone-200 bg-white pl-[0.4em] text-center font-mono text-2xl font-semibold tracking-code text-ink-strong placeholder:text-ink-muted',
         className,
       )}
     />

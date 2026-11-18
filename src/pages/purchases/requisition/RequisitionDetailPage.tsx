@@ -300,7 +300,7 @@ export default function RequisitionDetailPage() {
 
           {activeTab === 'items' && (
             <div className="overflow-x-auto modal-scrollbar rounded-lg border border-stone-200 bg-white">
-              <table className="w-full text-left text-xs">
+              <table className="w-full text-left type-cell">
                 <thead className="bg-stone-50 border-b border-stone-200">
                   <tr className="divide-x divide-stone-200">
                     {[
@@ -322,21 +322,21 @@ export default function RequisitionDetailPage() {
                   {/* Lines added from a kit sit under the kit's heading, as in Sales. */}
                   <KitLineRows lines={reqn.items} colSpan={REQN_ITEM_COLUMNS} renderRow={(line, kitCls) => (
                     <tr className={cn('hover:bg-stone-50/50 divide-x divide-stone-100', kitCls)}>
-                      <td className="px-3 py-2.5 text-stone-500 tabular-nums">{line.lineNumber}</td>
-                      <td className="px-3 py-2.5 font-medium text-stone-800">
-                        {line.itemName || line.description || <span className="text-stone-500">—</span>}
+                      <td className="type-cell px-3 py-2.5 tabular-nums">{line.lineNumber}</td>
+                      <td className="type-cell px-3 py-2.5 font-medium">
+                        {line.itemName || line.description || <span className="text-ink-muted">—</span>}
                       </td>
-                      <td className="px-3 py-2.5 text-stone-500 max-w-[200px] truncate">{line.description || '—'}</td>
+                      <td className="type-cell px-3 py-2.5 max-w-[200px] truncate">{line.description || '—'}</td>
                       <td className="px-3 py-2.5 type-record-id">{line.sku || '—'}</td>
                       <LineSizeViewCells size={line} unit={line.dimensionUnit} units={line.unitCode} />
-                      <td className="px-3 py-2.5 text-stone-500">{line.unitCode || '—'}</td>
-                      <td className="px-3 py-2.5 tabular-nums text-right text-stone-600">{line.quantity}</td>
-                      <td className="px-3 py-2.5 tabular-nums text-right text-stone-600">{currency(line.estimatedUnitPrice)}</td>
-                      <td className="px-3 py-2.5 tabular-nums text-right text-stone-800 font-semibold">{currency(line.estimatedAmount)}</td>
+                      <td className="type-cell px-3 py-2.5">{line.unitCode || '—'}</td>
+                      <td className="type-cell px-3 py-2.5 tabular-nums text-right">{line.quantity}</td>
+                      <td className="type-cell px-3 py-2.5 tabular-nums text-right">{currency(line.estimatedUnitPrice)}</td>
+                      <td className="type-cell-strong px-3 py-2.5 tabular-nums text-right">{currency(line.estimatedAmount)}</td>
                     </tr>
                   )} />
                   {reqn.items.length === 0 && (
-                    <tr><td colSpan={REQN_ITEM_COLUMNS} className="py-8 text-center text-stone-500">No line items.</td></tr>
+                    <tr><td colSpan={REQN_ITEM_COLUMNS} className="type-cell py-8 text-center">No line items.</td></tr>
                   )}
                 </tbody>
               </table>
@@ -354,15 +354,15 @@ export default function RequisitionDetailPage() {
         <SalesDetailSidebar label="Requisition Details">
           <WorkflowCard module="requisition" statusCode={reqn.statusCode} statusLabel={reqn.status} workflow={reqn.workflow} links={{ purchaseOrderId: reqn.convertedPurchaseOrderId }} />
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-            <p className="text-xs font-semibold text-stone-500">Quick Actions</p>
+            <p className="type-card-title">Quick Actions</p>
             <div className="space-y-0.5">
               <button
                 type="button"
                 onClick={() => navigate(`/purchases/requisition/${id}/edit`, { state: { initialTab: 'files' } })}
                 aria-label="Upload a file to this requisition"
-                className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs text-stone-700 w-full transition-colors text-left"
+                className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-button text-ink w-full transition-colors text-left"
               >
-                <Upload className="size-4 text-stone-400 shrink-0" />
+                <Upload className="size-4 text-ink-faint shrink-0" />
                 Upload file
               </button>
               {canEdit && reqn.statusCode === 'DRFT' && (
@@ -370,9 +370,9 @@ export default function RequisitionDetailPage() {
                   type="button"
                   onClick={() => navigate(`/purchases/requisition/${id}/edit`)}
                   aria-label="Edit this requisition"
-                  className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs text-stone-700 w-full transition-colors text-left"
+                  className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-button text-ink w-full transition-colors text-left"
                 >
-                  <Pencil className="size-4 text-stone-400 shrink-0" />
+                  <Pencil className="size-4 text-ink-faint shrink-0" />
                   Edit requisition
                 </button>
               )}
@@ -383,10 +383,10 @@ export default function RequisitionDetailPage() {
                 type="button"
                 onClick={handleExportPdf}
                 disabled={exportingPdf}
-                className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs text-stone-700 w-full transition-colors text-left disabled:opacity-60 disabled:cursor-not-allowed"
+                className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-button text-ink w-full transition-colors text-left disabled:opacity-60 disabled:cursor-not-allowed"
                 aria-label="Export as PDF"
               >
-                {exportingPdf ? <Loader2 className="size-4 text-stone-400 shrink-0 animate-spin" /> : <FileDown className="size-4 text-stone-400 shrink-0" />}
+                {exportingPdf ? <Loader2 className="size-4 text-ink-faint shrink-0 animate-spin" /> : <FileDown className="size-4 text-ink-faint shrink-0" />}
                 {exportingPdf ? 'Exporting…' : 'Export PDF'}
               </button>
             </div>
@@ -397,7 +397,7 @@ export default function RequisitionDetailPage() {
 
           {showActions && (
             <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-              <p className="text-xs font-semibold text-stone-500">Actions</p>
+              <p className="type-card-title">Actions</p>
               <RequisitionStatusControl
                 order={{ statusCode: reqn.statusCode, approvalStatus: reqn.approvalStatus, gated: reqn.gated, nextStatusCodes: reqn.nextStatusCodes }}
                 onChange={(toCode) => transition.mutate(toCode)}
@@ -411,23 +411,23 @@ export default function RequisitionDetailPage() {
           )}
 
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-            <p className="text-xs font-semibold text-stone-500">Status</p>
+            <p className="type-card-title">Status</p>
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
-              <span className="text-stone-500">Status</span>
+              <span className="text-ink-muted">Status</span>
               <Badge color={color}>{reqn.status}</Badge>
             </div>
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
-              <span className="text-stone-500">Priority</span>
+              <span className="text-ink-muted">Priority</span>
               <Badge color={priorityColor}>{priorityLabel(reqn.priority)}</Badge>
             </div>
             {suggestedVendor && (
               <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
-                <span className="text-stone-500">Suggested Vendor</span>
+                <span className="text-ink-muted">Suggested Vendor</span>
                 <button
                   type="button"
                   onClick={() => navigate(`/purchases/vendor/${suggestedVendor.id}`)}
                   aria-label={`Open vendor ${suggestedVendor.name}`}
-                  className="text-stone-700 hover:text-accent-foreground truncate max-w-[140px] transition-colors"
+                  className="text-ink hover:text-accent-foreground truncate max-w-[140px] transition-colors"
                 >
                   {suggestedVendor.name}
                 </button>
@@ -435,12 +435,12 @@ export default function RequisitionDetailPage() {
             )}
             {reqn.convertedPurchaseOrderId && (
               <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
-                <span className="text-stone-500">Purchase Order</span>
+                <span className="text-ink-muted">Purchase Order</span>
                 <button
                   type="button"
                   onClick={() => navigate(`/purchases/purchase_order/${reqn.convertedPurchaseOrderId}`)}
                   aria-label="Open the purchase order this requisition became"
-                  className="inline-flex items-center gap-1 text-stone-700 hover:text-accent-foreground transition-colors"
+                  className="inline-flex items-center gap-1 text-ink hover:text-accent-foreground transition-colors"
                 >
                   View
                   <ExternalLink className="size-3" />
@@ -448,12 +448,12 @@ export default function RequisitionDetailPage() {
               </div>
             )}
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
-              <span className="text-stone-500">Created</span>
-              <span className="text-stone-700">{fmtDate(reqn.createdAt)}</span>
+              <span className="text-ink-muted">Created</span>
+              <span className="text-ink">{fmtDate(reqn.createdAt)}</span>
             </div>
             <div className="flex justify-between items-center py-2 text-xs">
-              <span className="text-stone-500">Updated</span>
-              <span className="text-stone-700">{fmtDate(reqn.updatedAt)}</span>
+              <span className="text-ink-muted">Updated</span>
+              <span className="text-ink">{fmtDate(reqn.updatedAt)}</span>
             </div>
           </div>
 
@@ -498,7 +498,7 @@ function ReadonlyField({ label, value, full }: { label: string; value?: ReactNod
   return (
     <div className={cn('space-y-1', full && 'col-span-full')}>
       <label className={fieldLabelCls}>{label}</label>
-      <div className={readonlyCls}>{value || <span className="text-stone-500">—</span>}</div>
+      <div className={readonlyCls}>{value || <span className="text-ink-muted">—</span>}</div>
     </div>
   );
 }
@@ -507,7 +507,7 @@ function Total({ label, value, bold }: { label: string; value: number; bold?: bo
   return (
     <div>
       <p className="type-overline">{label}</p>
-      <p className={cn('tabular-nums', bold ? 'text-sm font-bold text-stone-900' : 'text-xs font-semibold text-stone-600')}>
+      <p className={cn('tabular-nums', bold ? 'text-sm font-bold text-ink-strong' : 'text-xs font-semibold text-ink')}>
         {currency(value)}
       </p>
     </div>

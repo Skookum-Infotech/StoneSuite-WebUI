@@ -11,7 +11,7 @@ import type { TopCustomersData } from '@/types/dashboardData';
 const DELTA_TONE_CLASS: Record<'up' | 'warn' | 'neutral', string> = {
   up: 'text-link-hover',
   warn: 'text-warning',
-  neutral: 'text-stone-500',
+  neutral: 'text-ink-muted',
 };
 
 // Locale pinned to 'en-US' -- see SalesOrdersSnapshot.tsx's currency() for
@@ -50,7 +50,7 @@ export function TopCustomers({
   if (data.customers.length === 0) {
     return (
       <WidgetCard title="Top customers" subtitle="billed revenue">
-        <div className="flex-1 rounded-xl border border-dashed border-stone-300 p-4 text-center text-sm text-stone-500">
+        <div className="flex-1 rounded-xl border border-dashed border-stone-300 p-4 text-center text-sm text-ink-muted">
           No billed revenue to show.
         </div>
       </WidgetCard>

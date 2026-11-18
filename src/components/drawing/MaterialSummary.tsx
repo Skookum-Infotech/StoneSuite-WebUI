@@ -22,7 +22,7 @@ export function MaterialSummary({ bare }: { bare?: boolean } = {}) {
         const line = materialLines.find((l) => l.id === u.lineId);
         const ordered = line?.unitCode === AREA_UNIT_CODE ? line.quantity : undefined;
         return (
-          <div key={u.lineId ?? 'none'} className="rounded border border-stone-200 p-1.5 text-xs text-stone-700">
+          <div key={u.lineId ?? 'none'} className="rounded border border-stone-200 p-1.5 text-xs text-ink">
             <div className="font-medium">{line ? `${line.sku} — ${line.itemName}` : 'No material line'}</div>
             <div>{u.pieceCount} {u.pieceCount === 1 ? 'piece' : 'pieces'} · {sqFt(u.billableAreaMm2)} sq ft</div>
             {u.verticalAreaMm2 > 0 && (

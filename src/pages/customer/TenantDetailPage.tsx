@@ -34,7 +34,7 @@ function BackToCustomers() {
   return (
     <Link
       to={CUSTOMERS_PATH}
-      className="inline-flex items-center gap-1 text-xs font-semibold text-stone-500 hover:text-stone-800"
+      className="inline-flex items-center gap-1 text-xs font-semibold text-ink-muted hover:text-ink-strong"
     >
       <ArrowLeft className="size-3.5" aria-hidden="true" /> Back to customers
     </Link>
@@ -123,7 +123,7 @@ export default function TenantDetailPage() {
                   <h1 className="type-page-title">{tenant.displayName}</h1>
                   <div className="mt-1 flex flex-wrap items-center gap-2">
                     <TenantStatusBadges tenant={tenant} />
-                    <span className="font-mono text-label text-stone-500">{tenant.slug}</span>
+                    <span className="font-mono text-label text-ink-muted">{tenant.slug}</span>
                   </div>
                 </div>
               </div>

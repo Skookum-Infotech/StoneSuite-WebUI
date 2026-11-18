@@ -72,7 +72,7 @@ export function InstallAppointmentDialog({ mode, appointmentId, jobId, onClose, 
           <h2 id={titleId} className="type-dialog-title">
             {mode === 'edit' ? 'Edit visit' : 'New visit'}
           </h2>
-          <button type="button" onClick={onClose} aria-label="Close dialog" className="rounded-md p-1 text-stone-500 hover:bg-stone-100">
+          <button type="button" onClick={onClose} aria-label="Close dialog" className="rounded-md p-1 text-ink-muted hover:bg-stone-100">
             <X className="size-4" aria-hidden="true" />
           </button>
         </div>

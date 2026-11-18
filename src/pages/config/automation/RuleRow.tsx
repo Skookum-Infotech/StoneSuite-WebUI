@@ -33,10 +33,10 @@ interface Props {
 const LINK_CLASS = 'text-xs font-medium text-link underline-offset-2 hover:underline';
 
 function StatusLabel({ rule, notSending }: Pick<Props, 'rule' | 'notSending'>) {
-  if (!rule.enabled) return <span className="text-xs text-stone-500">Off</span>;
+  if (!rule.enabled) return <span className="text-xs text-ink-muted">Off</span>;
   const since = rule.enabledAt ? enabledSinceText(rule.enabledAt) : '';
   return (
-    <span className="text-xs text-stone-500">
+    <span className="text-xs text-ink-muted">
       {notSending ? 'On (not sending)' : 'On'}
       {since && <span className="block text-micro">{since}</span>}
     </span>
@@ -78,10 +78,10 @@ export function RuleRow({ rule, canConfigure, notSending, onPreview }: Props) {
         </div>
         <p className="mt-1 type-helper">{ruleDescription(rule.ruleKey)}</p>
       </div>
-      <div className="min-w-0 text-xs text-stone-600 dark:text-stone-300">
+      <div className="min-w-0 text-xs text-ink dark:text-stone-300">
         <p>{cadenceText(rule.ruleKey, rule.cadence)}</p>
         {/* The anomaly scan never stamps last_planned_at, so "Not run yet" would be wrong for it. */}
-        {!isAnomalyScan && <p className="mt-0.5 text-stone-500">{lastCheckedText(rule.lastPlannedAt)}</p>}
+        {!isAnomalyScan && <p className="mt-0.5 text-ink-muted">{lastCheckedText(rule.lastPlannedAt)}</p>}
       </div>
       <div className="flex items-center gap-3">
         {isAnomalyScan ? (

@@ -32,7 +32,7 @@ export default function ReorderPage() {
           </div>
           <div>
             <h1 className="type-page-title">Reorder</h1>
-            <p className="text-sm text-stone-500">
+            <p className="type-page-subtitle">
               Items the open POs and stock on hand won't cover next month, based on what was
               used{data && data.months.length > 0 ? ` in ${monthsPhrase(data.months)}` : ' recently'}.
             </p>
@@ -62,7 +62,7 @@ export default function ReorderPage() {
         {isLoading && <Spinner label="Working out what to reorder…" />}
         {error && <ErrorNote>{apiErrorMessage(error, 'Failed to load reorder suggestions.')}</ErrorNote>}
         {!isLoading && !error && items.length === 0 && (
-          <p className="py-10 text-center text-sm text-stone-500">
+          <p className="py-10 text-center text-sm text-ink-muted">
             Nothing needs reordering. Stock and open POs cover next month's usage.
           </p>
         )}

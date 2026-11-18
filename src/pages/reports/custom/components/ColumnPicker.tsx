@@ -22,14 +22,14 @@ export function ColumnPicker({ fields, columns, onToggle }: ColumnPickerProps) {
       <h3 className={SECTION_TITLE}>Columns</h3>
       <ul className="flex flex-wrap gap-1.5" aria-label="Chosen columns">
         {chosen.map((f) => (
-          <li key={f.key} className="inline-flex items-center gap-0.5 rounded-full border border-stone-200 bg-stone-50 pl-3 text-xs text-stone-700">
+          <li key={f.key} className="inline-flex items-center gap-0.5 rounded-full border border-stone-200 bg-stone-50 pl-3 text-xs text-ink">
             {f.label}
             <button type="button" aria-label={`Remove column ${f.label}`} onClick={() => onToggle(f.key)} className={ICON_BUTTON}>
               <X className="size-3" aria-hidden="true" />
             </button>
           </li>
         ))}
-        {chosen.length === 0 && <li className="text-xs text-stone-500">Pick at least one column to see the report.</li>}
+        {chosen.length === 0 && <li className="text-xs text-ink-muted">Pick at least one column to see the report.</li>}
       </ul>
       {full ? (
         <p className="type-helper">A report can show at most {CUSTOM_MAX_COLUMNS} columns.</p>

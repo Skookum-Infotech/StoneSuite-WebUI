@@ -12,7 +12,7 @@ import type { TransactionRow } from '@/types/myTransactions';
 
 /** The record's status, coloured by what the status code means; a dash if none. */
 export function StatusBadge({ row }: { row: Pick<TransactionRow, 'status' | 'statusCode'> }) {
-  if (!row.status) return <span className="text-stone-500">—</span>;
+  if (!row.status) return <span className="text-ink-muted">—</span>;
   const cfg = STATUS_TONE_CLASSES[statusTone(row.statusCode)];
   return (
     <span className={cn('inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-0.5 type-pill', cfg.badge)}>

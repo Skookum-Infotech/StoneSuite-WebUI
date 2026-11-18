@@ -109,7 +109,7 @@ function LineReviewRow({ meta, line, needsReview, reviewed, review }: LineReview
   return (
     <ReviewFieldFrame reviewKey={key} needsReview={needsReview} onFieldFocus={() => review.focusField(prov?.page, prov?.row)}>
       <div className="flex flex-wrap items-center gap-1.5">
-        <span className="font-semibold text-stone-900 dark:text-stone-100">{label}</span>
+        <span className="font-semibold text-ink-strong dark:text-stone-100">{label}</span>
         {visiblePills(meta, hasItem, pickedPrice, parseFloat(line.unitPrice) || 0).map((p) => (
           <LineStatusPill key={p.label} kind={p.kind} label={p.label} />
         ))}
@@ -117,15 +117,15 @@ function LineReviewRow({ meta, line, needsReview, reviewed, review }: LineReview
       {meta.requiresItem && !hasItem ? (
         <InventoryItemPicker value={text} onTextChange={setText} onPick={onPick} />
       ) : (
-        <p className="text-stone-800 dark:text-stone-200">{line.itemName} {'·'} {line.quantity} {line.units} {'×'} ${line.unitPrice}</p>
+        <p className="text-ink-strong dark:text-stone-200">{line.itemName} {'·'} {line.quantity} {line.units} {'×'} ${line.unitPrice}</p>
       )}
       <ProposedEntityChips
         extractionId={review.extractionId}
         entities={hasItem ? undefined : itemEntitiesFor(review, meta.docIndex)}
         onCreated={(entity, ref) => { void onItemCreated(entity, ref); }}
       />
-      <p className="text-stone-500 dark:text-stone-400">Document: {meta.docText || '(no text)'}</p>
-      {(pickNote || meta.conversionNote) && <p className="text-stone-500 dark:text-stone-400">{pickNote || meta.conversionNote}</p>}
+      <p className="text-ink-muted dark:text-stone-400">Document: {meta.docText || '(no text)'}</p>
+      {(pickNote || meta.conversionNote) && <p className="text-ink-muted dark:text-stone-400">{pickNote || meta.conversionNote}</p>}
       {poChoices.length > 1 && review.setPoLine && (
         <PoLineSelect
           label={label}

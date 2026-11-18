@@ -17,7 +17,7 @@ export default function VendorListPage() {
             </div>
             <div>
               <h1 className="type-page-title">Vendors</h1>
-              <p className="text-sm text-stone-500">Suppliers and contractors your business orders from.</p>
+              <p className="type-page-subtitle">Suppliers and contractors your business orders from.</p>
             </div>
           </div>
           <button

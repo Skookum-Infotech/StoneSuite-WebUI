@@ -71,7 +71,7 @@ export function TenantInvitesPanel({ tenant }: { tenant: Tenant }) {
         </div>
       )}
       {resentNote && (
-        <p className="mb-2 rounded-lg bg-brand/15 px-3 py-2 text-label font-medium text-stone-600">{resentNote}</p>
+        <p className="mb-2 rounded-lg bg-brand/15 px-3 py-2 text-label font-medium text-ink">{resentNote}</p>
       )}
       {invitesQ.data && invitesQ.data.length === 0 && <EmptyState>No invites yet.</EmptyState>}
 
@@ -81,17 +81,17 @@ export function TenantInvitesPanel({ tenant }: { tenant: Tenant }) {
           return (
             <div key={inv.id} className="rounded-lg border border-stone-200 bg-white p-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <span className="text-xs font-semibold text-stone-700">{inv.contactEmail}</span>
+                <span className="text-xs font-semibold text-ink">{inv.contactEmail}</span>
                 <Badge color={inv.expired ? EXPIRED_COLOR : TENANT_STATUS_COLOR[inv.status]}>{status}</Badge>
               </div>
               <div className="mt-2 flex items-center gap-2">
-                <KeyRound className="size-3.5 shrink-0 text-stone-400" />
-                <code className="flex-1 truncate rounded bg-stone-100 px-2 py-1 text-label text-stone-600">{inv.token}</code>
+                <KeyRound className="size-3.5 shrink-0 text-ink-faint" />
+                <code className="flex-1 truncate rounded bg-stone-100 px-2 py-1 text-label text-ink">{inv.token}</code>
                 <button
                   type="button"
                   onClick={() => copy(inv.token, `key-${inv.id}`)}
                   aria-label="Copy invite key"
-                  className="rounded p-1 text-stone-500 hover:bg-stone-100 hover:text-stone-700"
+                  className="rounded p-1 text-ink-muted hover:bg-stone-100 hover:text-ink"
                 >
                   <Copy className="size-3.5" />
                 </button>

@@ -28,7 +28,7 @@ export default function InventorySetupPage() {
           </div>
           <div>
             <h1 className="type-page-title">Inventory Setup</h1>
-            <p className="text-sm text-stone-500">Manage the vocabularies inventory forms draw from.</p>
+            <p className="type-page-subtitle">Manage the vocabularies inventory forms draw from.</p>
           </div>
         </div>
 

@@ -39,8 +39,8 @@ export function CrmApprovalsSection() {
           return (
             <li key={`${workflow.key}:${record.id}`} className="flex items-center justify-between gap-3 px-4 py-3 text-sm">
               <span className="min-w-0 truncate">
-                <span className="text-stone-500">{workflow.label}</span>{' '}
-                <Link to={href} className="font-semibold text-stone-900 underline-offset-2 hover:underline">
+                <span className="text-ink-muted">{workflow.label}</span>{' '}
+                <Link to={href} className="font-semibold text-ink-strong underline-offset-2 hover:underline">
                   {title}
                 </Link>
               </span>

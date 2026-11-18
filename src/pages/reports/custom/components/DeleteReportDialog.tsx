@@ -30,7 +30,7 @@ export function DeleteReportDialog({ name, pending, onConfirm, onCancel }: Delet
             Delete This Report?
           </h3>
         </div>
-        <p id="delete-report-desc" className="mb-5 text-xs text-stone-600">
+        <p id="delete-report-desc" className="mb-5 text-xs text-ink">
           &ldquo;{name}&rdquo; will be removed. If it is shared with the workspace, nobody will be able to open it any more.
         </p>
         <div className="flex justify-end gap-2">

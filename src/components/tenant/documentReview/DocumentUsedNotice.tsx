@@ -29,7 +29,7 @@ export function DocumentUsedNotice({ fileName, usedRecordUuid, docType }: Docume
         <h2 ref={ref} tabIndex={-1} className="mt-3 dark:text-stone-100 outline-none type-dialog-title">
           This Document Was Already Used
         </h2>
-        <p className="mt-1 text-sm text-stone-600 dark:text-stone-300">
+        <p className="mt-1 text-sm text-ink dark:text-stone-300">
           {fileName} has already been turned into a {routes.noun}, so it can't be used again.
         </p>
         <div className="mt-5 flex flex-wrap justify-center gap-2">

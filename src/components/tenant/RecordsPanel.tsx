@@ -155,7 +155,7 @@ function RecordRow({
       {/* Transition controls */}
       {targets.length > 0 && (
         <div className="mt-3 flex flex-wrap items-center gap-2">
-          <span className="text-label font-semibold text-stone-500">Move to:</span>
+          <span className="text-label font-semibold text-ink-muted">Move to:</span>
           {targets.map((t) => {
             const to = stateById.get(t.toStateId);
             return (

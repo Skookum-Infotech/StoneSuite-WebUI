@@ -67,7 +67,7 @@ export default function OverdueActivitiesPage() {
             getRowKey={(r) => `${r.orderId}:${r.code}`}
             onRowClick={(r) => navigate(`/sales/sales_order/${r.orderId}`)}
           />
-          <p className="text-label text-stone-500">{NOTE}</p>
+          <p className="text-label text-ink-muted">{NOTE}</p>
         </>
       )}
     </ReportPageShell>

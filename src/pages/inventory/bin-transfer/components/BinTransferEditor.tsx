@@ -163,7 +163,7 @@ export function BinTransferEditor({ initial, copy, onSubmit, status, onCancel }:
               <div className="space-y-3">
                 {summary.count > 0 && (
                   <p className="type-helper" aria-live="polite">
-                    <span className="font-semibold text-stone-800">{summary.count} slab{summary.count === 1 ? '' : 's'}</span>
+                    <span className="font-semibold text-ink-strong">{summary.count} slab{summary.count === 1 ? '' : 's'}</span>
                     {' · '}{summary.totalArea.toFixed(2)} {summary.areaUnitCode}
                     {summary.destinations > 0 && ` · ${summary.destinations} destination bin${summary.destinations === 1 ? '' : 's'}`}
                   </p>

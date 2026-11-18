@@ -41,7 +41,7 @@ export function PickerNotFound({ entity, term, existing, createHref }: {
           target="_blank"
           rel="noopener noreferrer"
           aria-label={`Open “${existing.name}” — opens in a new tab`}
-          className="mt-1 flex items-center gap-1.5 pl-5 text-micro font-semibold text-stone-700 transition-colors hover:text-stone-900"
+          className="mt-1 flex items-center gap-1.5 pl-5 text-micro font-semibold text-ink transition-colors hover:text-ink-strong"
         >
           Open it
         </a>
@@ -61,9 +61,9 @@ export function PickerNotFound({ entity, term, existing, createHref }: {
           target="_blank"
           rel="noopener noreferrer"
           aria-label={`Create “${term}” as a new ${entity} — opens in a new tab`}
-          className="mt-1.5 flex items-center gap-2 rounded px-1 py-1 text-xs font-semibold text-stone-800 transition-colors hover:bg-accent/10"
+          className="mt-1.5 flex items-center gap-2 rounded px-1 py-1 text-xs font-semibold text-ink-strong transition-colors hover:bg-accent/10"
         >
-          <Plus className="size-3.5 shrink-0 text-stone-500" aria-hidden="true" />
+          <Plus className="size-3.5 shrink-0 text-ink-muted" aria-hidden="true" />
           <span className="truncate">Create “{term}” as a new {entity}</span>
         </a>
       ) : (

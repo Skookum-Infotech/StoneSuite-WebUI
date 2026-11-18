@@ -36,7 +36,7 @@ export function ReviewHeader({ fileName, badges, progress, onConfirmAll, childre
       className="sticky top-0 z-10 space-y-2 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 py-2.5 pl-9 pr-4"
     >
       <div className="flex flex-wrap items-center gap-2">
-        <FileText className="size-4 text-stone-500 dark:text-stone-400" aria-hidden="true" />
+        <FileText className="size-4 text-ink-muted dark:text-stone-400" aria-hidden="true" />
         <h2
           ref={ref}
           tabIndex={-1}
@@ -46,14 +46,14 @@ export function ReviewHeader({ fileName, badges, progress, onConfirmAll, childre
           {fileName}
         </h2>
         {badgeLabels(badges).map((label) => (
-          <span key={label} className="rounded-full border border-stone-200 dark:border-stone-800 bg-stone-100 dark:bg-stone-800 px-2 py-0.5 text-stone-700 dark:text-stone-300 type-pill">
+          <span key={label} className="rounded-full border border-stone-200 dark:border-stone-800 bg-stone-100 dark:bg-stone-800 px-2 py-0.5 text-ink dark:text-stone-300 type-pill">
             {label}
           </span>
         ))}
       </div>
       <div className="flex flex-wrap items-center gap-3">
         <div className="min-w-32 flex-1">
-          <p className="text-xs font-medium text-stone-700 dark:text-stone-300">{progress.done} of {progress.total} fields reviewed</p>
+          <p className="text-xs font-medium text-ink dark:text-stone-300">{progress.done} of {progress.total} fields reviewed</p>
           <progress
             aria-label="Fields reviewed"
             value={progress.done}

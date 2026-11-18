@@ -78,7 +78,7 @@ export function PeriodBulkActionBar({ selectedPeriods, onClear }: {
             value={target}
             onChange={(e) => setTarget(e.target.value as LockTarget)}
             aria-label="Choose what to lock or unlock on the selected periods"
-            className="h-7 rounded-md border border-stone-200 bg-white px-2 text-xs text-stone-700 focus:outline-none focus:ring-2 focus:ring-brand/30"
+            className="h-7 rounded-md border border-stone-200 bg-white px-2 text-xs text-ink focus:outline-none focus:ring-2 focus:ring-brand/30"
           >
             {TARGETS.map((t) => (
               <option key={t} value={t}>{LOCK_TARGET_LABELS[t]}</option>
@@ -91,7 +91,7 @@ export function PeriodBulkActionBar({ selectedPeriods, onClear }: {
             onChange={(e) => setNote(e.target.value)}
             placeholder="Note (optional)"
             aria-label="Note for the selected periods"
-            className="h-7 min-w-0 flex-1 rounded-md border border-stone-200 bg-white px-2 placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-brand/30 type-input"
+            className="h-7 min-w-0 flex-1 rounded-md border border-stone-200 bg-white px-2 placeholder:text-ink-muted focus:outline-none focus:ring-2 focus:ring-brand/30 type-input"
           />
 
           {allOpen && (
@@ -128,7 +128,7 @@ export function PeriodBulkActionBar({ selectedPeriods, onClear }: {
             type="button"
             onClick={onClear}
             aria-label="Clear selection"
-            className="ml-auto rounded p-0.5 text-stone-500 transition-colors hover:bg-stone-100 hover:text-stone-600"
+            className="ml-auto rounded p-0.5 text-ink-muted transition-colors hover:bg-stone-100 hover:text-ink"
           >
             <X className="size-3.5" />
           </button>
@@ -136,13 +136,13 @@ export function PeriodBulkActionBar({ selectedPeriods, onClear }: {
       )}
 
       {resultMessage && (
-        <div role="status" className="flex items-center justify-between gap-2 rounded-lg bg-stone-50 px-3 py-1.5 text-xs text-stone-600">
+        <div role="status" className="flex items-center justify-between gap-2 rounded-lg bg-stone-50 px-3 py-1.5 text-xs text-ink">
           {resultMessage}
           <button
             type="button"
             onClick={() => setResultMessage(null)}
             aria-label="Dismiss"
-            className="shrink-0 rounded p-0.5 text-stone-500 transition-colors hover:bg-stone-100 hover:text-stone-600"
+            className="shrink-0 rounded p-0.5 text-ink-muted transition-colors hover:bg-stone-100 hover:text-ink"
           >
             <X className="size-3" />
           </button>

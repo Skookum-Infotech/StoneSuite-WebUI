@@ -11,7 +11,7 @@ function ReadonlyField({ label, value, full }: { label: string; value?: string; 
   return (
     <div className={cn('space-y-1', full && 'col-span-full')}>
       <span className={fieldLabelCls}>{label}</span>
-      <div className={readonlyCls}>{value || <span className="text-stone-500">—</span>}</div>
+      <div className={readonlyCls}>{value || <span className="text-ink-muted">—</span>}</div>
     </div>
   );
 }
@@ -46,8 +46,8 @@ export function BinTransferOverview({ transfer }: { transfer: BinTransfer }) {
       )}
       {transfer.statusCode === 'CANC' && (
         <div className="flex items-start gap-3 rounded-xl border border-stone-200 bg-stone-100 px-4 py-3">
-          <XCircle className="mt-0.5 size-4 shrink-0 text-stone-500" aria-hidden="true" />
-          <p className="text-xs text-stone-700">
+          <XCircle className="mt-0.5 size-4 shrink-0 text-ink-muted" aria-hidden="true" />
+          <p className="text-xs text-ink">
             Cancelled{transfer.cancelledAt ? ` on ${fmtDate(transfer.cancelledAt)}` : ''}. Nothing was moved.
             {transfer.cancelReason && <> Reason: {transfer.cancelReason}</>}
           </p>

@@ -91,13 +91,13 @@ export function PhoneNumberInput({
             disabled={disabled}
             aria-label={`Country code: ${selected.name} ${selected.code}`}
             className={cn(
-              'flex shrink-0 items-center gap-0.5 whitespace-nowrap rounded-l-[10px] rounded-r-none border border-r-0 border-stone-300 bg-stone-50 px-2 text-xs font-medium text-stone-600 outline-none transition-colors',
+              'flex shrink-0 items-center gap-0.5 whitespace-nowrap rounded-l-[10px] rounded-r-none border border-r-0 border-stone-300 bg-stone-50 px-2 text-xs font-medium text-ink outline-none transition-colors',
               'hover:bg-stone-100 focus-visible:z-10 focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/30',
               'disabled:cursor-not-allowed disabled:opacity-50',
             )}
           >
             <span>{selected.code}</span>
-            <ChevronDown className="size-3 text-stone-400" aria-hidden="true" />
+            <ChevronDown className="size-3 text-ink-faint" aria-hidden="true" />
           </button>
         </PopoverTrigger>
         <PopoverContent align="start" className="w-64 p-0">
@@ -129,13 +129,13 @@ export function PhoneNumberInput({
                   setQuery('');
                 }}
                 className={cn(
-                  'flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-left text-xs text-stone-700 outline-none transition-colors hover:bg-stone-100 focus-visible:bg-stone-100',
-                  d.iso === selected.iso && 'bg-brand/10 font-medium text-stone-900',
+                  'flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-left text-xs text-ink outline-none transition-colors hover:bg-stone-100 focus-visible:bg-stone-100',
+                  d.iso === selected.iso && 'bg-brand/10 font-medium text-ink-strong',
                 )}
               >
                 <span className="text-sm leading-none" aria-hidden="true">{d.flag}</span>
                 <span className="flex-1 truncate">{d.name}</span>
-                <span className="text-stone-500">{d.code}</span>
+                <span className="text-ink-muted">{d.code}</span>
                 {d.iso === selected.iso && <Check className="size-3.5 shrink-0 text-link" aria-hidden="true" />}
               </button>
             ))}

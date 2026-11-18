@@ -40,7 +40,7 @@ export function DuplicateCreateDialog({ docType, conflict, onOpenExisting, onCre
           </div>
           <h3 id="duplicate-so-title" className="dark:text-stone-100 type-card-title">This {manualNoun} may already exist</h3>
         </div>
-        <p id="duplicate-so-desc" className="mb-5 text-xs text-stone-600 dark:text-stone-300">{conflict.message}</p>
+        <p id="duplicate-so-desc" className="mb-5 text-xs text-ink dark:text-stone-300">{conflict.message}</p>
         <div className="flex flex-wrap justify-end gap-2">
           <button
             type="button"

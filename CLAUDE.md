@@ -132,7 +132,8 @@ Two separate, deliberately non-overlapping feedback mechanisms — don't conflat
   `type-cell`, `type-helper`, `type-error`, `type-record-id`, …) or a scale size
   (`text-micro`/`caption`/`button`/`field`/`body`), and `text-ink-*` / semantic inks
   (`text-danger-ink`, `text-warning-ink`, `text-success-ink`, `text-link`) for color. No
-  `text-2xs`, `text-[Npx]`, `tracking-[…]`, `text-red-*`/`text-destructive` text — ESLint's
+  `text-2xs`, `text-[Npx]`, `tracking-[…]`, `text-red-*`/`text-destructive` text, raw gray text
+  (`text-stone-400`…`900` — use the `text-ink*` tokens) — ESLint's
   "Design system guardrails" block fails the build on these.
 - Titles (page, card, section, dialog) are Title Case; labels, buttons, menu items and
   messages stay sentence case.

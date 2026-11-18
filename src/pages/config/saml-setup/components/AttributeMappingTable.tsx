@@ -12,13 +12,13 @@ interface AttributeMappingTableProps {
 export function AttributeMappingTable({ nameHeader, valueHeader, rows }: AttributeMappingTableProps) {
   return (
     <div className="overflow-hidden rounded-lg border border-stone-200">
-      <table className="w-full text-left text-xs">
+      <table className="w-full text-left type-cell">
         <thead>
           <tr className="bg-stone-50 type-th">
-            <th scope="col" className="px-3 py-2 font-semibold">
+            <th scope="col" className="type-th px-3 py-2">
               {nameHeader}
             </th>
-            <th scope="col" className="px-3 py-2 font-semibold">
+            <th scope="col" className="type-th px-3 py-2">
               {valueHeader}
             </th>
           </tr>
@@ -27,7 +27,7 @@ export function AttributeMappingTable({ nameHeader, valueHeader, rows }: Attribu
           {rows.map((row, idx) => (
             <tr key={row.name} className={idx === rows.length - 1 ? "" : "border-b border-stone-100"}>
               <td className="px-3 py-2">
-                <span className="rounded bg-stone-100 px-1.5 py-0.5 font-mono text-stone-700 type-pill">
+                <span className="rounded bg-stone-100 px-1.5 py-0.5 font-mono text-ink type-pill">
                   {row.name}
                 </span>
               </td>

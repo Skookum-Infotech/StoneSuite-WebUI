@@ -30,7 +30,7 @@ export function PieceCutoutList({ piece }: { piece: Piece }) {
               className="flex justify-between rounded border border-stone-200 px-2 py-1 text-left text-xs aria-pressed:border-brand aria-pressed:bg-brand/10"
             >
               <span>{name}</span>
-              <span className="text-stone-500">{sqIn} sq in</span>
+              <span className="text-ink-muted">{sqIn} sq in</span>
             </button>
             {problem && <span role="alert" className="text-micro text-danger-ink">{problem.message}</span>}
           </div>

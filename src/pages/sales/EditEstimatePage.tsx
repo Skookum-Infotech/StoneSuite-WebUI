@@ -181,7 +181,7 @@ export default function EditEstimatePage() {
           subtitle={estimate.customer.name}
         />
         <div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 text-center">
-          <Lock className="size-8 text-stone-400" aria-hidden="true" />
+          <Lock className="size-8 text-ink-faint" aria-hidden="true" />
           <p className="type-card-title">
             This estimate is {estimate.status} and can no longer be edited.
           </p>

@@ -34,21 +34,21 @@ const VALUE_TEXT = 'text-sm';
 const KEY_TILE = 'bg-accent';
 
 const LABEL_BY_EMPHASIS: Record<AmountEmphasis, string> = {
-  quiet: 'text-stone-500',
-  strong: 'text-stone-500',
+  quiet: 'text-ink-muted',
+  strong: 'text-ink-muted',
   key: 'font-medium text-accent-foreground',
 };
 
 const VALUE_BY_EMPHASIS: Record<AmountEmphasis, string> = {
-  quiet: 'font-medium text-stone-600',
-  strong: 'font-bold text-stone-950',
+  quiet: 'font-medium text-ink',
+  strong: 'font-bold text-ink-strong',
   key: 'font-bold text-accent-foreground',
 };
 
 // A component that is nothing (no discount, no adjustment) recedes so the
 // figures that do carry a value read first. Headline figures never recede —
 // a $0.00 balance is information, not filler.
-const ZERO_QUIET_VALUE = 'text-stone-500';
+const ZERO_QUIET_VALUE = 'text-ink-muted';
 
 export function AmountsStrip({ items, currencyCode = DEFAULT_CURRENCY_CODE }: {
   items: AmountItem[];

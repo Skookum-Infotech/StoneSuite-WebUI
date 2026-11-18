@@ -62,20 +62,20 @@ export function RecordCommunicationTab({ recordId, audience, canReply }: RecordC
   return (
     <div className="flex flex-1 flex-col gap-5">
       {!notesOnly && !enabled && (
-        <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-stone-700">
+        <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-ink">
           {copy.notCapturedNotice}
         </p>
       )}
 
       {messages.length === 0 ? (
         <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-stone-200 px-4 py-10 text-center">
-          <EmptyIcon className="size-5 text-stone-400" aria-hidden="true" />
-          <p className="text-sm font-medium text-stone-600">{copy.emptyTitle}</p>
+          <EmptyIcon className="size-5 text-ink-faint" aria-hidden="true" />
+          <p className="text-sm font-medium text-ink">{copy.emptyTitle}</p>
           <p className="type-helper">{copy.emptyHint}</p>
         </div>
       ) : (
         <>
-          <p className="text-xs font-medium text-stone-500">{conversationSummary(messages, audience)}</p>
+          <p className="text-xs font-medium text-ink-muted">{conversationSummary(messages, audience)}</p>
           <ol aria-label="Conversation" className="list-none">
             {messages.map((m, i) => (
               <CommunicationMessageCard key={m.id} message={m} audience={audience} isLast={i === messages.length - 1} />

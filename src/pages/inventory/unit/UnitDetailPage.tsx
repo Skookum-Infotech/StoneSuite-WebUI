@@ -218,14 +218,14 @@ export default function UnitDetailPage() {
           {activeTab === 'history' && (
             <div className="rounded-xl border border-stone-200 bg-white p-4">
               {history.length === 0 ? (
-                <p className="py-8 text-center text-sm text-stone-500">No history recorded yet.</p>
+                <p className="py-8 text-center text-sm text-ink-muted">No history recorded yet.</p>
               ) : (
                 <ul className="space-y-3">
                   {history.map((h, i) => (
                     <li key={i} className="flex items-start gap-3 border-b border-stone-100 pb-3 last:border-0 last:pb-0">
-                      <HistoryIcon className="mt-0.5 size-3.5 shrink-0 text-stone-400" aria-hidden="true" />
+                      <HistoryIcon className="mt-0.5 size-3.5 shrink-0 text-ink-faint" aria-hidden="true" />
                       <div className="min-w-0">
-                        <p className="text-xs font-medium text-stone-800">{historyActionLabel(h.action)}</p>
+                        <p className="text-xs font-medium text-ink-strong">{historyActionLabel(h.action)}</p>
                         {describeHistoryEntry(h) && <p className="type-helper">{describeHistoryEntry(h)}</p>}
                         <p className="type-helper">
                           {fmtDateTime(h.at)} · {h.byName}
@@ -251,10 +251,10 @@ export default function UnitDetailPage() {
 
         <SalesDetailSidebar label="Unit Details">
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-            <p className="text-xs font-semibold text-stone-500">Quick Actions</p>
+            <p className="type-card-title">Quick Actions</p>
             <div className="space-y-0.5">
-              <button type="button" onClick={handleExportPdf} disabled={exportingPdf} className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs text-stone-700 w-full transition-colors text-left disabled:opacity-60 disabled:cursor-not-allowed" aria-label="Export as PDF">
-                {exportingPdf ? <Loader2 className="size-4 text-stone-400 shrink-0 animate-spin" /> : <FileDown className="size-4 text-stone-400 shrink-0" />}
+              <button type="button" onClick={handleExportPdf} disabled={exportingPdf} className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-button text-ink w-full transition-colors text-left disabled:opacity-60 disabled:cursor-not-allowed" aria-label="Export as PDF">
+                {exportingPdf ? <Loader2 className="size-4 text-ink-faint shrink-0 animate-spin" /> : <FileDown className="size-4 text-ink-faint shrink-0" />}
                 {exportingPdf ? 'Exporting…' : 'Export PDF'}
               </button>
             </div>
@@ -263,17 +263,17 @@ export default function UnitDetailPage() {
 
           {canUpdate && (
             <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-0.5 mb-4" title={disabledReason}>
-              <p className="text-xs font-semibold text-stone-500 mb-2">Actions</p>
-              <button type="button" disabled={Boolean(disabledReason) || unit.inspectionStatus === 'pending' || unit.inspectionStatus === 'rejected'} onClick={() => setDialog('cut')} className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 text-xs text-stone-700 w-full transition-colors text-left disabled:opacity-40 disabled:cursor-not-allowed">
-                <Scissors className="size-4 text-stone-400 shrink-0" /> Cut
+              <p className="text-xs font-semibold text-ink-muted mb-2">Actions</p>
+              <button type="button" disabled={Boolean(disabledReason) || unit.inspectionStatus === 'pending' || unit.inspectionStatus === 'rejected'} onClick={() => setDialog('cut')} className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 text-xs text-ink w-full transition-colors text-left disabled:opacity-40 disabled:cursor-not-allowed">
+                <Scissors className="size-4 text-ink-faint shrink-0" /> Cut
               </button>
               {heldForCustomer ? (
-                <button type="button" disabled={isReleasing} onClick={() => releaseReservation()} className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 text-xs text-stone-700 w-full transition-colors text-left disabled:opacity-40 disabled:cursor-not-allowed">
-                  <UserX className="size-4 text-stone-400 shrink-0" /> Release reservation
+                <button type="button" disabled={isReleasing} onClick={() => releaseReservation()} className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 text-xs text-ink w-full transition-colors text-left disabled:opacity-40 disabled:cursor-not-allowed">
+                  <UserX className="size-4 text-ink-faint shrink-0" /> Release reservation
                 </button>
               ) : (
-                <button type="button" disabled={!actionable} onClick={() => setDialog('reserve')} className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 text-xs text-stone-700 w-full transition-colors text-left disabled:opacity-40 disabled:cursor-not-allowed">
-                  <UserCheck className="size-4 text-stone-400 shrink-0" /> Reserve for customer
+                <button type="button" disabled={!actionable} onClick={() => setDialog('reserve')} className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 text-xs text-ink w-full transition-colors text-left disabled:opacity-40 disabled:cursor-not-allowed">
+                  <UserCheck className="size-4 text-ink-faint shrink-0" /> Reserve for customer
                 </button>
               )}
               <button type="button" disabled={Boolean(scrapDisabledReason)} onClick={() => setDialog('scrap')} className="flex items-center gap-2.5 hover:bg-destructive/5 rounded-lg px-3 py-2 text-xs text-danger-ink w-full transition-colors text-left disabled:opacity-40 disabled:cursor-not-allowed">
@@ -285,14 +285,14 @@ export default function UnitDetailPage() {
           )}
 
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-            <p className="text-xs font-semibold text-stone-500">Status</p>
+            <p className="type-card-title">Status</p>
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
-              <span className="text-stone-500">Created</span>
-              <span className="text-stone-700">{fmtDateTime(unit.createdAt)}</span>
+              <span className="text-ink-muted">Created</span>
+              <span className="text-ink">{fmtDateTime(unit.createdAt)}</span>
             </div>
             <div className="flex justify-between items-center py-2 text-xs">
-              <span className="text-stone-500">Updated</span>
-              <span className="text-stone-700">{fmtDateTime(unit.updatedAt)}</span>
+              <span className="text-ink-muted">Updated</span>
+              <span className="text-ink">{fmtDateTime(unit.updatedAt)}</span>
             </div>
           </div>
         </SalesDetailSidebar>

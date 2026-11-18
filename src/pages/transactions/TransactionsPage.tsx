@@ -150,11 +150,11 @@ export default function TransactionsPage() {
             <div className="px-4 py-12 text-center sm:py-16">
               <div className="flex flex-col items-center gap-2">
                 <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-stone-100">
-                  <Search className="size-5 text-stone-400" />
+                  <Search className="size-5 text-ink-faint" />
                 </div>
                 {isFiltered ? (
                   <>
-                    <p className="text-xs font-semibold text-stone-500">No matching records</p>
+                    <p className="text-xs font-semibold text-ink-muted">No matching records</p>
                     <p className="type-helper">Try adjusting your search or filters</p>
                     <button
                       type="button"
@@ -166,7 +166,7 @@ export default function TransactionsPage() {
                   </>
                 ) : (
                   <>
-                    <p className="text-xs font-semibold text-stone-500">No activity yet</p>
+                    <p className="text-xs font-semibold text-ink-muted">No activity yet</p>
                     <p className="type-helper">Records you create or update will appear here</p>
                   </>
                 )}

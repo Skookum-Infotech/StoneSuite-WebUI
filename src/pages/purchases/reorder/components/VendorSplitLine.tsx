@@ -28,7 +28,7 @@ export function VendorSplitLine({ row, step, canRemove, onChange, onRemove }: {
         onClick={onRemove}
         disabled={!canRemove}
         aria-label="Remove this vendor"
-        className="flex h-10 items-center justify-center rounded-lg text-ink-muted transition-colors hover:bg-stone-100 hover:text-stone-700 disabled:cursor-not-allowed disabled:opacity-40"
+        className="flex h-10 items-center justify-center rounded-lg text-ink-muted transition-colors hover:bg-stone-100 hover:text-ink disabled:cursor-not-allowed disabled:opacity-40"
       >
         <X className="size-4" aria-hidden="true" />
       </button>

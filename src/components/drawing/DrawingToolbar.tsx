@@ -50,7 +50,7 @@ export function DrawingToolbar(
     toast.success(`Exported ${file.fileName}`);
   };
   const canSave = saveStatus === 'dirty' || saveStatus === 'error';
-  const statusTone = saveStatus === 'error' ? 'text-danger-ink' : saveStatus === 'dirty' ? 'text-amber-700' : 'text-stone-500';
+  const statusTone = saveStatus === 'error' ? 'text-danger-ink' : saveStatus === 'dirty' ? 'text-amber-700' : 'text-ink-muted';
 
   return (
     <div className="flex items-center gap-2">

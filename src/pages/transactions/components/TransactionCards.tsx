@@ -37,11 +37,11 @@ export function TransactionCards({ rows }: { rows: TransactionRow[] }) {
               <dl className="mt-3 grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-1 text-xs">
                 <div className="min-w-0">
                   <dt className="type-overline">Customer / Vendor</dt>
-                  <dd className="truncate font-semibold text-stone-800">{row.account || '—'}</dd>
+                  <dd className="truncate font-semibold text-ink-strong">{row.account || '—'}</dd>
                 </div>
                 <div className="text-right">
                   <dt className="type-overline">Amount</dt>
-                  <dd className="font-bold tabular-nums text-stone-900">{formatAmount(row.amount)}</dd>
+                  <dd className="font-bold tabular-nums text-ink-strong">{formatAmount(row.amount)}</dd>
                 </div>
               </dl>
 

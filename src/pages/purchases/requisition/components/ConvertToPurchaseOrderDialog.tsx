@@ -102,7 +102,7 @@ export function ConvertToPurchaseOrderDialog({
               </div>
             </div>
 
-            <p className="text-xs text-stone-600 mb-4">
+            <p className="text-xs text-ink mb-4">
               This creates a draft purchase order from the requisition&rsquo;s lines. Confirm the
               vendor to order from — a purchase order always needs one.
             </p>

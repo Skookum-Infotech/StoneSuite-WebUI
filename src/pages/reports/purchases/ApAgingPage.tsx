@@ -75,7 +75,7 @@ export default function ApAgingPage() {
             getRowKey={(r) => r.vendorId}
             onRowClick={(r) => navigate(`/purchases/vendor/${r.vendorId}`)}
           />
-          <p className="text-label text-stone-500">{NOTE}</p>
+          <p className="text-label text-ink-muted">{NOTE}</p>
         </>
       )}
     </ReportPageShell>

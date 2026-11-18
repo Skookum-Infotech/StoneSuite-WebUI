@@ -6,7 +6,7 @@ import { slabArea, type SlabGroup, type ItemReceiptDraftSlab, type SlabUnits } f
 import type { Bin } from '@/types/inventory';
 
 const inlineCls =
-  'w-full rounded border border-stone-200 bg-white px-2 py-1 text-right type-input outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-900/5 placeholder:text-stone-500 transition-all';
+  'w-full rounded border border-stone-200 bg-white px-2 py-1 text-right type-input outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-900/5 placeholder:text-ink-muted transition-all';
 
 const AREA_DISPLAY_DECIMALS = 3;
 
@@ -46,14 +46,14 @@ export function SlabGroupTable({ rows, bins, units, actions }: {
 }) {
   return (
     <div className="overflow-x-auto modal-scrollbar">
-      <table className="w-full text-left text-xs">
+      <table className="w-full text-left type-cell">
         <thead>
           <tr className="type-th">
-            <th className="w-24 px-1.5 py-1.5">Slabs</th>
-            {DIMENSION_COLUMNS.map((c) => <th key={c.key} className="w-28 px-1.5 py-1.5">{c.label} ({units.length}) *</th>)}
-            <th className="w-28 px-1.5 py-1.5 text-right">Area ({units.area})</th>
-            <th className="min-w-[160px] px-1.5 py-1.5">Bin</th>
-            <th className="w-20 px-1.5 py-1.5"><span className="sr-only">Actions</span></th>
+            <th className="type-th w-24 px-1.5 py-1.5">Slabs</th>
+            {DIMENSION_COLUMNS.map((c) => <th key={c.key} className="type-th w-28 px-1.5 py-1.5">{c.label} ({units.length}) *</th>)}
+            <th className="type-th w-28 px-1.5 py-1.5 text-right">Area ({units.area})</th>
+            <th className="type-th min-w-[160px] px-1.5 py-1.5">Bin</th>
+            <th className="type-th w-20 px-1.5 py-1.5"><span className="sr-only">Actions</span></th>
           </tr>
         </thead>
         <tbody>
@@ -63,7 +63,7 @@ export function SlabGroupTable({ rows, bins, units, actions }: {
             return (
               <tr key={group.sample.key} className="border-b border-stone-100">
                 <td className="px-1.5 py-1.5 align-top">
-                  <span className="inline-block py-1 font-medium text-stone-700">
+                  <span className="inline-block py-1 font-medium text-ink">
                     {group.count} slab{group.count === 1 ? '' : 's'}
                   </span>
                 </td>
@@ -78,7 +78,7 @@ export function SlabGroupTable({ rows, bins, units, actions }: {
                     />
                   </td>
                 ))}
-                <td className="px-1.5 py-1.5 align-top text-right tabular-nums text-stone-600">
+                <td className="type-cell px-1.5 py-1.5 align-top text-right tabular-nums">
                   <span className="inline-block py-1">{total > 0 ? total.toFixed(AREA_DISPLAY_DECIMALS) : '—'}</span>
                 </td>
                 <td className="px-1.5 py-1.5 align-top">
@@ -91,11 +91,11 @@ export function SlabGroupTable({ rows, bins, units, actions }: {
                   <div className="flex justify-end gap-0.5">
                     <button type="button" onClick={() => actions.expand(group.key)} aria-label={`Edit group ${n} slab by slab`}
                       title="Edit slab by slab"
-                      className="rounded p-1 text-stone-500 hover:bg-stone-100 hover:text-stone-600">
+                      className="rounded p-1 text-ink-muted hover:bg-stone-100 hover:text-ink">
                       <Pencil className="size-3.5" />
                     </button>
                     <button type="button" onClick={() => actions.remove(group.key)} aria-label={`Remove group ${n}`}
-                      className="rounded p-1 text-stone-500 hover:bg-red-50 hover:text-danger-ink">
+                      className="rounded p-1 text-ink-muted hover:bg-red-50 hover:text-danger-ink">
                       <Trash2 className="size-3.5" />
                     </button>
                   </div>

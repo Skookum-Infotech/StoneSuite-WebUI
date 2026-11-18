@@ -46,7 +46,7 @@ export function ModernSection({
         </div>
         <ChevronDown
           className={cn(
-            'size-4 text-stone-400 transition-transform duration-200 shrink-0',
+            'size-4 text-ink-faint transition-transform duration-200 shrink-0',
             !isOpen && '-rotate-90',
           )}
         />

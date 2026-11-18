@@ -146,7 +146,7 @@ export function SendToCustomerDialog({
       <div className="mx-4 w-full max-w-sm rounded-xl bg-white p-6 shadow-2xl">
         <div className="mb-4 flex items-center gap-3">
           <div className="flex size-9 flex-shrink-0 items-center justify-center rounded-full bg-brand/10">
-            <Send className="size-4 text-stone-700" />
+            <Send className="size-4 text-ink" />
           </div>
           <div>
             <h3 id="send-to-recipient-dialog-title" className="type-card-title">
@@ -156,7 +156,7 @@ export function SendToCustomerDialog({
           </div>
         </div>
 
-        <p className="text-xs text-stone-600 mb-4">
+        <p className="text-xs text-ink mb-4">
           {recipientEmail ? (
             <>
               <span className="font-semibold">{label}</span> will be emailed to{' '}

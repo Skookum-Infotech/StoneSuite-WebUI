@@ -22,7 +22,7 @@ export function UnitAllocationBanner({ unit }: { unit: InventoryUnit }) {
         allocation.held ? 'border-amber-200 bg-amber-50' : 'border-stone-200 bg-stone-100',
       )}
     >
-      <span className={cn('flex items-center gap-1.5 text-xs font-semibold', allocation.held ? 'text-amber-800' : 'text-stone-700')}>
+      <span className={cn('flex items-center gap-1.5 text-xs font-semibold', allocation.held ? 'text-amber-800' : 'text-ink')}>
         <Icon className="size-3.5 shrink-0" aria-hidden="true" />
         {allocation.held ? 'Reserved for' : 'Cut for'}
       </span>

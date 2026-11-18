@@ -76,14 +76,14 @@ export function KitTable() {
     <div ref={topRef} className="flex flex-col gap-3 scroll-mt-4">
       <div className="flex flex-wrap items-center gap-2">
         <div className="relative w-full sm:w-64">
-          <Search className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-stone-400" />
+          <Search className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-ink-faint" />
           <input
             type="text"
             placeholder="Search kit/packages by name…"
             aria-label="Search kit/packages"
             value={term}
             onChange={(e) => setTerm(e.target.value)}
-            className="h-8 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-3 placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150 type-input"
+            className="h-8 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-3 placeholder:text-ink-muted focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150 type-input"
           />
         </div>
         {term && (
@@ -102,7 +102,7 @@ export function KitTable() {
 
       <div className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm">
         <div className="overflow-x-auto modal-scrollbar">
-          <table className="w-full min-w-[640px] text-left text-xs">
+          <table className="w-full min-w-[640px] text-left type-cell">
             <thead className="border-b border-stone-200 bg-table-header">
               <tr>
                 <th className="px-4 py-3 type-th">Kit/Package</th>
@@ -128,13 +128,13 @@ export function KitTable() {
                       {canEdit ? (
                         <Link
                           to={`/inventory/kit/${kit.id}`}
-                          className="inline-flex items-center gap-2 text-xs font-semibold text-stone-900 hover:text-accent-foreground transition-colors"
+                          className="inline-flex items-center gap-2 text-xs font-semibold text-ink-strong hover:text-accent-foreground transition-colors"
                         >
                           <Boxes className="size-3.5 text-violet-500" aria-hidden="true" />
                           {kit.name}
                         </Link>
                       ) : (
-                        <span className="inline-flex items-center gap-2 text-xs font-semibold text-stone-900">
+                        <span className="inline-flex items-center gap-2 text-xs font-semibold text-ink-strong">
                           <Boxes className="size-3.5 text-violet-500" aria-hidden="true" />
                           {kit.name}
                         </span>
@@ -143,7 +143,7 @@ export function KitTable() {
                     <td className="px-4 py-3.5 tabular-nums text-right type-cell">{kit.itemCount}</td>
                     <td className="px-4 py-3.5 truncate max-w-[280px] type-cell">{kit.description || '—'}</td>
                     <td className="px-4 py-3.5">
-                      <span className={cn('inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 whitespace-nowrap type-pill', kit.isActive ? 'bg-emerald-50 text-emerald-700' : 'bg-stone-100 text-stone-500')}>
+                      <span className={cn('inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 whitespace-nowrap type-pill', kit.isActive ? 'bg-emerald-50 text-emerald-700' : 'bg-stone-100 text-ink-muted')}>
                         <span className={cn('size-1.5 shrink-0 rounded-full', kit.isActive ? 'bg-emerald-500' : 'bg-stone-400')} aria-hidden="true" />
                         {kit.isActive ? 'Active' : 'Inactive'}
                       </span>
@@ -153,7 +153,7 @@ export function KitTable() {
                         <Link
                           to={`/inventory/kit/${kit.id}`}
                           aria-label={`Edit kit/package ${kit.name}`}
-                          className="inline-flex items-center justify-center rounded-lg border border-stone-200 bg-white p-2 text-stone-500 transition-colors hover:bg-accent hover:border-accent hover:text-accent-foreground cursor-pointer"
+                          className="inline-flex items-center justify-center rounded-lg border border-stone-200 bg-white p-2 text-ink-muted transition-colors hover:bg-accent hover:border-accent hover:text-accent-foreground cursor-pointer"
                         >
                           <Pencil className="size-4" />
                         </Link>
@@ -166,7 +166,7 @@ export function KitTable() {
                   <td colSpan={colCount} className="py-16 text-center">
                     <div className="flex flex-col items-center gap-3">
                       <div className="rounded-2xl bg-violet-50 p-4">
-                        {debounced ? <Search className="size-6 text-stone-400" /> : <Boxes className="size-6 text-violet-400" />}
+                        {debounced ? <Search className="size-6 text-ink-faint" /> : <Boxes className="size-6 text-violet-400" />}
                       </div>
                       <p className="type-card-title">
                         {debounced ? 'No kit/packages match the current search.' : 'No kit/packages added yet.'}

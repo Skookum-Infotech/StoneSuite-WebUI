@@ -20,7 +20,7 @@ export default function RequisitionListPage() {
             </div>
             <div>
               <h1 className="type-page-title">Requisitions</h1>
-              <p className="text-sm text-stone-500">Raise and approve internal requests to buy.</p>
+              <p className="type-page-subtitle">Raise and approve internal requests to buy.</p>
             </div>
           </div>
           {canCreate && (

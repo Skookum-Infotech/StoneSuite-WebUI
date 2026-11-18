@@ -196,14 +196,14 @@ export default function ItemDetailPage() {
           {activeTab === 'history' && (
             <div className="rounded-xl border border-stone-200 bg-white p-4">
               {history.length === 0 ? (
-                <p className="py-8 text-center text-sm text-stone-500">No history recorded yet.</p>
+                <p className="py-8 text-center text-sm text-ink-muted">No history recorded yet.</p>
               ) : (
                 <ul className="space-y-3">
                   {history.map((h, i) => (
                     <li key={i} className="flex items-start gap-3 border-b border-stone-100 pb-3 last:border-0 last:pb-0">
-                      <HistoryIcon className="mt-0.5 size-3.5 shrink-0 text-stone-400" aria-hidden="true" />
+                      <HistoryIcon className="mt-0.5 size-3.5 shrink-0 text-ink-faint" aria-hidden="true" />
                       <div className="min-w-0">
-                        <p className="text-xs font-medium text-stone-800">{h.action}</p>
+                        <p className="text-xs font-medium text-ink-strong">{h.action}</p>
                         <p className="type-helper">{fmtDateTime(h.at)} · {h.byName}</p>
                       </div>
                     </li>
@@ -218,15 +218,15 @@ export default function ItemDetailPage() {
 
         <SalesDetailSidebar label="Item Details">
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-            <p className="text-xs font-semibold text-stone-500">Quick Actions</p>
+            <p className="type-card-title">Quick Actions</p>
             <div className="space-y-0.5">
               {canEdit && (
                 <button
                   type="button"
                   onClick={() => navigate(`/inventory/item/${id}/edit`)}
-                  className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs text-stone-700 w-full transition-colors text-left"
+                  className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-button text-ink w-full transition-colors text-left"
                 >
-                  <Pencil className="size-4 text-stone-400 shrink-0" />
+                  <Pencil className="size-4 text-ink-faint shrink-0" />
                   Edit item
                 </button>
               )}
@@ -237,10 +237,10 @@ export default function ItemDetailPage() {
                 type="button"
                 onClick={handleExportPdf}
                 disabled={exportingPdf}
-                className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs text-stone-700 w-full transition-colors text-left disabled:opacity-60 disabled:cursor-not-allowed"
+                className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-button text-ink w-full transition-colors text-left disabled:opacity-60 disabled:cursor-not-allowed"
                 aria-label="Export as PDF"
               >
-                {exportingPdf ? <Loader2 className="size-4 text-stone-400 shrink-0 animate-spin" /> : <FileDown className="size-4 text-stone-400 shrink-0" />}
+                {exportingPdf ? <Loader2 className="size-4 text-ink-faint shrink-0 animate-spin" /> : <FileDown className="size-4 text-ink-faint shrink-0" />}
                 {exportingPdf ? 'Exporting…' : 'Export PDF'}
               </button>
             </div>
@@ -248,18 +248,18 @@ export default function ItemDetailPage() {
           </div>
 
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-            <p className="text-xs font-semibold text-stone-500">Status</p>
+            <p className="type-card-title">Status</p>
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
-              <span className="text-stone-500">Status</span>
+              <span className="text-ink-muted">Status</span>
               <Badge color={item.isActive ? '#22c55e' : '#a8a29e'}>{item.isActive ? 'Active' : 'Inactive'}</Badge>
             </div>
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
-              <span className="text-stone-500">Created</span>
-              <span className="text-stone-700">{fmtDateTime(item.createdAt)}</span>
+              <span className="text-ink-muted">Created</span>
+              <span className="text-ink">{fmtDateTime(item.createdAt)}</span>
             </div>
             <div className="flex justify-between items-center py-2 text-xs">
-              <span className="text-stone-500">Updated</span>
-              <span className="text-stone-700">{fmtDateTime(item.updatedAt)}</span>
+              <span className="text-ink-muted">Updated</span>
+              <span className="text-ink">{fmtDateTime(item.updatedAt)}</span>
             </div>
           </div>
 
@@ -285,7 +285,7 @@ function ReadonlyField({ label, value }: { label: string; value?: string }) {
   return (
     <div className="space-y-1">
       <label className={fieldLabelCls}>{label}</label>
-      <div className={readonlyCls}>{value || <span className="text-stone-500">—</span>}</div>
+      <div className={readonlyCls}>{value || <span className="text-ink-muted">—</span>}</div>
     </div>
   );
 }

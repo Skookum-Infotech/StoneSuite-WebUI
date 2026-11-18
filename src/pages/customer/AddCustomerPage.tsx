@@ -38,12 +38,12 @@ export default function AddCustomerPage() {
         <div className="mx-auto w-full max-w-xl rounded-2xl border border-stone-200 bg-white p-8 text-center shadow-sm">
           <CheckCircle2 className="mx-auto mb-3 size-10 text-green-500" />
           <h1 className="type-page-title">Customer Onboarded</h1>
-          <p className="mt-1 text-sm text-stone-500">
+          <p className="mt-1 type-page-subtitle">
             Workspace <span className="font-semibold">{result.slug}</span> is provisioning. We emailed the
             super admin a link to set their password — share it directly if needed:
           </p>
           <div className="mt-4 flex items-center gap-2 rounded-lg border border-stone-200 bg-stone-50 p-2">
-            <code className="flex-1 truncate px-2 text-left text-xs text-stone-700">
+            <code className="flex-1 truncate px-2 text-left text-xs text-ink">
               {result.passwordSetupLink}
             </code>
             <button
@@ -81,7 +81,7 @@ export default function AddCustomerPage() {
       <button
         type="button"
         onClick={() => navigate('/customer/onboarding')}
-        className="mb-4 inline-flex items-center gap-1 text-xs font-semibold text-stone-500 hover:text-stone-800"
+        className="mb-4 inline-flex items-center gap-1 text-xs font-semibold text-ink-muted hover:text-ink-strong"
       >
         <ArrowLeft className="size-3.5" /> Customer Onboarding
       </button>

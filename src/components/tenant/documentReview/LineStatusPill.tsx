@@ -11,8 +11,8 @@ const TONE: Record<LinePillKind, string> = {
   matched: 'border-accent-foreground/20 bg-accent text-accent-foreground',
   learned: 'border-accent-foreground/20 bg-accent text-accent-foreground',
   pick_item: 'border-warning dark:border-amber-500/50 bg-warning/10 dark:bg-amber-500/10 text-warning dark:text-amber-400',
-  addon: 'border-stone-200 dark:border-stone-800 bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300',
-  converted: 'border-stone-200 dark:border-stone-800 bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300',
+  addon: 'border-stone-200 dark:border-stone-800 bg-stone-100 dark:bg-stone-800 text-ink dark:text-stone-300',
+  converted: 'border-stone-200 dark:border-stone-800 bg-stone-100 dark:bg-stone-800 text-ink dark:text-stone-300',
   price_differs: 'border-warning dark:border-amber-500/50 bg-warning/10 dark:bg-amber-500/10 text-warning dark:text-amber-400',
 };
 

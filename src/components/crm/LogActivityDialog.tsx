@@ -63,7 +63,7 @@ export function LogActivityDialog({ workflowKey, recordId, mode, activity, onClo
       <div ref={contentRef} tabIndex={-1} className="mx-4 w-full max-w-sm rounded-xl bg-white p-6 shadow-2xl">
         <div className="mb-4 flex items-center gap-3">
           <div className="flex size-9 flex-shrink-0 items-center justify-center rounded-full bg-stone-100">
-            <ClipboardList className="size-4 text-stone-600" aria-hidden="true" />
+            <ClipboardList className="size-4 text-ink" aria-hidden="true" />
           </div>
           <div>
             <h3 id="log-activity-dialog-title" className="type-card-title">
@@ -87,7 +87,7 @@ export function LogActivityDialog({ workflowKey, recordId, mode, activity, onClo
                     'rounded-lg border px-2.5 py-1.5 text-xs font-semibold transition-colors',
                     activityType === t
                       ? 'border-accent-foreground/20 bg-accent text-accent-foreground'
-                      : 'border-stone-200 bg-white text-stone-500 hover:border-stone-300 hover:text-stone-700',
+                      : 'border-stone-200 bg-white text-ink-muted hover:border-stone-300 hover:text-ink',
                   )}
                 >
                   {ACTIVITY_TYPE_LABELS[t]}

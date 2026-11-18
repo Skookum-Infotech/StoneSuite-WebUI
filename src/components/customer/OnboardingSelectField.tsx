@@ -43,13 +43,13 @@ export function OnboardingSelectField({
           aria-label={`${label}: ${displayText}`}
           className={cn(
             'flex w-full items-center justify-between gap-2 text-left outline-none transition',
-            !selected && 'text-stone-500',
+            !selected && 'text-ink-muted',
             className,
           )}
         >
           {selected?.flag && <Flag {...selected.flag} />}
           <span className="flex-1 truncate">{displayText}</span>
-          <ChevronDown className="size-3.5 shrink-0 text-stone-400" aria-hidden="true" />
+          <ChevronDown className="size-3.5 shrink-0 text-ink-faint" aria-hidden="true" />
         </button>
       </PopoverTrigger>
       <PopoverContent align="start" className="w-72 p-0">
@@ -76,8 +76,8 @@ export function OnboardingSelectField({
               aria-selected={o.value === value}
               onClick={() => { onChange(o.value); setOpen(false); setQuery(''); }}
               className={cn(
-                'flex w-full items-center justify-between gap-2 rounded-md px-2.5 py-1.5 text-left text-xs text-stone-700 outline-none transition-colors hover:bg-stone-100 focus-visible:bg-stone-100',
-                o.value === value && 'bg-brand/10 font-medium text-stone-900',
+                'flex w-full items-center justify-between gap-2 rounded-md px-2.5 py-1.5 text-left text-xs text-ink outline-none transition-colors hover:bg-stone-100 focus-visible:bg-stone-100',
+                o.value === value && 'bg-brand/10 font-medium text-ink-strong',
               )}
             >
               {o.flag && <Flag {...o.flag} reserveSpace />}

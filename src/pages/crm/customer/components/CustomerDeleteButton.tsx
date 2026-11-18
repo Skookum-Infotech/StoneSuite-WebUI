@@ -53,17 +53,17 @@ export function CustomerDeleteButton({
         blocked,
         content: (close) => (
           <div className="space-y-3">
-            <p className="text-xs text-stone-600">
+            <p className="text-xs text-ink">
               <span className="font-semibold">{company}</span> has{" "}
               {blockingUsers.length === 1 ? "a portal login" : `${blockingUsers.length} portal logins`} that
               can still access the workspace. Revoke portal access before deleting this customer.
             </p>
             <ul className="rounded-lg border border-stone-200 bg-stone-50 divide-y divide-stone-100">
               {blockingUsers.map((u) => (
-                <li key={u.id} className="flex items-center gap-2 px-3 py-2 text-xs text-stone-700">
-                  <KeyRound className="size-3.5 shrink-0 text-stone-400" />
+                <li key={u.id} className="flex items-center gap-2 px-3 py-2 text-xs text-ink">
+                  <KeyRound className="size-3.5 shrink-0 text-ink-faint" />
                   <span className="truncate">{u.email}</span>
-                  <span className="ml-auto shrink-0 text-stone-500 capitalize">{u.status}</span>
+                  <span className="ml-auto shrink-0 text-ink-muted capitalize">{u.status}</span>
                 </li>
               ))}
             </ul>

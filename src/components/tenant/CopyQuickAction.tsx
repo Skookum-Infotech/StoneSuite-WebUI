@@ -20,9 +20,9 @@ export function CopyQuickAction({ recordLabel, addPath, sourceId }: CopyQuickAct
       type="button"
       onClick={() => navigate(copyPath(addPath, sourceId))}
       aria-label={label}
-      className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs text-stone-700 w-full transition-colors text-left"
+      className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-button text-ink w-full transition-colors text-left"
     >
-      <Copy className="size-4 text-stone-400 shrink-0" />
+      <Copy className="size-4 text-ink-faint shrink-0" />
       {label}
     </button>
   );

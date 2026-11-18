@@ -12,16 +12,16 @@ export function PlannerEventDetail({ card }: { card: PlannerCard }) {
     <div className="flex flex-col gap-3 text-sm">
       <div className="flex flex-wrap items-center gap-2">
         <Badge color={card.statusColor}>{card.statusLabel}</Badge>
-        <span className="text-xs font-medium text-stone-500">{card.whenLabel}</span>
+        <span className="text-xs font-medium text-ink-muted">{card.whenLabel}</span>
       </div>
 
       <div className="min-w-0">
-        <p className="break-words text-base font-bold text-stone-900">{card.title}</p>
+        <p className="break-words text-base font-bold text-ink-strong">{card.title}</p>
         {card.origin && (
           <Link
             to={card.origin.href}
             aria-label={`Open ${card.origin.label}`}
-            className="text-xs font-medium text-stone-500 outline-none hover:underline focus-visible:underline"
+            className="text-xs font-medium text-ink-muted outline-none hover:underline focus-visible:underline"
           >
             From {card.origin.label}
           </Link>
@@ -29,8 +29,8 @@ export function PlannerEventDetail({ card }: { card: PlannerCard }) {
       </div>
 
       <div className="flex flex-col gap-0.5">
-        <p className="break-words text-stone-700">{card.customer}</p>
-        {card.stage && <p className="break-words font-medium text-stone-600">{card.stage}</p>}
+        <p className="break-words text-ink">{card.customer}</p>
+        {card.stage && <p className="break-words font-medium text-ink">{card.stage}</p>}
         {card.meta && <p className="break-words type-helper">{card.meta}</p>}
       </div>
 

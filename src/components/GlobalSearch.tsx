@@ -155,7 +155,7 @@ export function GlobalSearch({ className, inputClassName, autoFocus, onNavigate 
           aria-controls="global-search-results"
           autoComplete="off"
           className={cn(
-            'h-10 w-full rounded-full border border-white/[0.13] bg-white/[0.07] pl-4 pr-11 placeholder:text-stone-400 transition-all focus:outline-none focus:border-brand/60 focus:bg-white/[0.10] type-input',
+            'h-10 w-full rounded-full border border-white/[0.13] bg-white/[0.07] pl-4 pr-11 placeholder:text-ink-muted transition-all focus:outline-none focus:border-brand/60 focus:bg-white/[0.10] type-input',
             inputClassName,
           )}
           onChange={(e) => {
@@ -168,9 +168,9 @@ export function GlobalSearch({ className, inputClassName, autoFocus, onNavigate 
         />
         <div className="pointer-events-none absolute right-1.5 flex h-7 w-7 items-center justify-center rounded-full bg-white/[0.10]">
           {isFetching ? (
-            <Loader2 className="size-3.5 animate-spin text-stone-400" />
+            <Loader2 className="size-3.5 animate-spin text-ink-faint" />
           ) : (
-            <Search className="size-3.5 text-stone-400" />
+            <Search className="size-3.5 text-ink-faint" />
           )}
         </div>
       </div>
@@ -206,7 +206,7 @@ export function GlobalSearch({ className, inputClassName, autoFocus, onNavigate 
                             )}
                           >
                             <span className="min-w-0 flex-1">
-                              <span className="block truncate text-sm font-medium text-stone-900 dark:text-stone-100">
+                              <span className="block truncate text-sm font-medium text-ink-strong dark:text-stone-100">
                                 {hit.displayName || '(untitled)'}
                               </span>
                               {(hit.number || hit.subtitle) && (
@@ -216,7 +216,7 @@ export function GlobalSearch({ className, inputClassName, autoFocus, onNavigate 
                               )}
                             </span>
                             {idx === safeIndex && (
-                              <CornerDownLeft className="size-3.5 shrink-0 text-stone-400" aria-hidden="true" />
+                              <CornerDownLeft className="size-3.5 shrink-0 text-ink-faint" aria-hidden="true" />
                             )}
                           </button>
                         </li>
@@ -259,7 +259,7 @@ export function GlobalSearch({ className, inputClassName, autoFocus, onNavigate 
                     onMouseEnter={() => setActiveIndex(idx)}
                     onClick={() => go(`/search?q=${encodeURIComponent(debounced)}`)}
                     className={cn(
-                      'flex w-full items-center justify-center gap-1.5 border-t border-stone-100 px-4 py-2.5 text-xs font-semibold text-stone-600 transition-colors dark:border-stone-800 dark:text-stone-300',
+                      'flex w-full items-center justify-center gap-1.5 border-t border-stone-100 px-4 py-2.5 text-xs font-semibold text-ink transition-colors dark:border-stone-800 dark:text-stone-300',
                       idx === safeIndex ? 'bg-accent/15' : 'hover:bg-stone-50 dark:hover:bg-stone-900',
                     )}
                   >
@@ -270,7 +270,7 @@ export function GlobalSearch({ className, inputClassName, autoFocus, onNavigate 
               })()}
             </>
           ) : isFetching ? (
-            <div className="px-4 py-6 text-center text-sm text-stone-500 dark:text-stone-400">Searching…</div>
+            <div className="px-4 py-6 text-center text-sm text-ink-muted dark:text-stone-400">Searching…</div>
           ) : isError ? (
             <div className="px-4 py-6 text-center text-sm text-danger-ink">Search is unavailable right now.</div>
           ) : (

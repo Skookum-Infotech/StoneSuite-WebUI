@@ -27,7 +27,7 @@ export function CustomReportPreview({ definition, query, runnable }: CustomRepor
 
   if (!runnable) {
     const hint = definition.groupBy ? "Add a total to see the report." : "Pick at least one column to see the report.";
-    return <p className="rounded-xl border border-dashed border-stone-200 py-10 text-center text-sm text-stone-500">{hint}</p>;
+    return <p className="rounded-xl border border-dashed border-stone-200 py-10 text-center text-sm text-ink-muted">{hint}</p>;
   }
   if (query.error) {
     return (
@@ -38,7 +38,7 @@ export function CustomReportPreview({ definition, query, runnable }: CustomRepor
   }
   if (!result) {
     return (
-      <p role="status" className="py-10 text-center text-sm text-stone-500">
+      <p role="status" className="py-10 text-center text-sm text-ink-muted">
         Running report…
       </p>
     );
@@ -61,7 +61,7 @@ export function CustomReportPreview({ definition, query, runnable }: CustomRepor
         />
       )}
       {result.rows.length === 0 ? (
-        <p className="rounded-xl border border-dashed border-stone-200 py-10 text-center text-sm text-stone-500">
+        <p className="rounded-xl border border-dashed border-stone-200 py-10 text-center text-sm text-ink-muted">
           No rows match this report.
         </p>
       ) : (

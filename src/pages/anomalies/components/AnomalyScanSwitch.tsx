@@ -76,7 +76,7 @@ export function AnomalyScanSwitch() {
   return (
     <div className="ml-auto flex shrink-0 items-center gap-3 rounded-xl border border-stone-200 bg-white px-3 py-2">
       <div className="text-right">
-        <p className="text-xs font-medium text-stone-700">Anomaly scanning</p>
+        <p className="text-xs font-medium text-ink">Anomaly scanning</p>
         <p className="whitespace-nowrap type-helper">
           {rule.enabled ? 'On — checked every 15 minutes' : 'Off — nothing is checked or sent'}
         </p>

@@ -48,16 +48,16 @@ export function PurgeTenantDialog({ tenant, onClose, onPurged }: Props) {
       tone="danger"
       onClose={close}
     >
-      <p className="text-xs text-stone-600">This immediately and irreversibly removes:</p>
-      <ul className="mt-2 list-disc space-y-1 pl-5 text-xs text-stone-700">
+      <p className="text-xs text-ink">This immediately and irreversibly removes:</p>
+      <ul className="mt-2 list-disc space-y-1 pl-5 text-xs text-ink">
         {tenant.dbName && (
           <li>
-            the database <code className="font-mono text-stone-900">{tenant.dbName}</code> and everything in it
+            the database <code className="font-mono text-ink-strong">{tenant.dbName}</code> and everything in it
           </li>
         )}
         {tenant.r2Bucket && (
           <li>
-            the storage bucket <code className="font-mono text-stone-900">{tenant.r2Bucket}</code> and every uploaded
+            the storage bucket <code className="font-mono text-ink-strong">{tenant.r2Bucket}</code> and every uploaded
             file
           </li>
         )}
@@ -66,7 +66,7 @@ export function PurgeTenantDialog({ tenant, onClose, onPurged }: Props) {
 
       <div className="mt-4 space-y-1.5">
         <label htmlFor={inputId} className="type-field-label">
-          Type <span className="font-mono text-stone-900">{tenant.slug}</span> to confirm
+          Type <span className="font-mono text-ink-strong">{tenant.slug}</span> to confirm
         </label>
         <input
           id={inputId}

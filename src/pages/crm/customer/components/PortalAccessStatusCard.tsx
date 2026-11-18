@@ -30,12 +30,12 @@ export function PortalAccessStatusCard({
 
   return (
     <div className={cardCls}>
-      <p className="text-xs font-semibold text-stone-500">Portal Access</p>
+      <p className="type-card-title">Portal Access</p>
 
       <div className={rowCls}>
-        <span className="text-stone-500">Status</span>
+        <span className="text-ink-muted">Status</span>
         {usersQ.isLoading ? (
-          <span className="text-stone-500">Loading…</span>
+          <span className="text-ink-muted">Loading…</span>
         ) : active.length > 0 ? (
           <PortalUserStatusBadge status="active" />
         ) : suspended.length > 0 ? (
@@ -47,8 +47,8 @@ export function PortalAccessStatusCard({
 
       {!usersQ.isLoading && (active.length > 0 || suspended.length > 0) && (
         <div className="py-1 text-xs space-y-1">
-          <p className="text-stone-500">Login{(active.length || suspended.length) > 1 ? "s" : ""}</p>
-          <p className="font-medium text-stone-700">
+          <p className="text-ink-muted">Login{(active.length || suspended.length) > 1 ? "s" : ""}</p>
+          <p className="font-medium text-ink">
             {active.length > 0
               ? active.length === 1
                 ? active[0].email

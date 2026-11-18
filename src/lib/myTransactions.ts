@@ -34,7 +34,7 @@ export const STATUS_TONE_CLASSES: Record<StatusTone, { dot: string; badge: strin
   warning: { dot: 'bg-amber-400', badge: 'bg-amber-50 text-amber-700 border-amber-200' },
   danger: { dot: 'bg-red-500', badge: 'bg-red-50 text-danger-ink border-red-200' },
   info: { dot: 'bg-sky-400', badge: 'bg-sky-50 text-sky-700 border-sky-200' },
-  muted: { dot: 'bg-stone-400', badge: 'bg-stone-100 text-stone-600 border-stone-200' },
+  muted: { dot: 'bg-stone-400', badge: 'bg-stone-100 text-ink border-stone-200' },
 };
 
 /** Route-domain groups, in the order the type filter lists them. */
@@ -56,7 +56,7 @@ export const DOMAIN_BADGE: Record<string, string> = {
   inventory: 'bg-emerald-50 text-emerald-700',
   finance: 'bg-indigo-50 text-indigo-700',
 };
-export const FALLBACK_DOMAIN_BADGE = 'bg-stone-100 text-stone-700';
+export const FALLBACK_DOMAIN_BADGE = 'bg-stone-100 text-ink';
 
 export interface TypeGroup {
   domain: string;

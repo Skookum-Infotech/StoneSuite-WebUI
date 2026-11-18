@@ -17,7 +17,7 @@ import { cn } from '@/lib/utils';
  *  a variant rather than a second component. */
 type TriggerVariant = 'menu' | 'icon';
 
-const ICON_TRIGGER_CLASSES = 'rounded p-1 text-stone-500 transition-colors hover:bg-destructive/10 hover:text-danger-ink';
+const ICON_TRIGGER_CLASSES = 'rounded p-1 text-ink-muted transition-colors hover:bg-destructive/10 hover:text-danger-ink';
 
 // Mirrors DeleteVendorDialog's look, but — unlike it — wires up
 // useModalDialog: every other dialog/drawer in this module traps focus and
@@ -114,7 +114,7 @@ function DeleteAccountDialogContent({ label, del, onClose }: {
           </div>
         </div>
 
-        <p className="text-xs text-stone-600 mb-4">
+        <p className="text-xs text-ink mb-4">
           <span className="font-semibold">{label}</span> will be permanently deleted.
         </p>
 

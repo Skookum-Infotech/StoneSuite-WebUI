@@ -14,10 +14,10 @@ const STATUS_STYLES: Record<string, string> = {
   in_transit: 'bg-sky-50 text-sky-700',
   on_order: 'bg-violet-50 text-violet-700',
   received: 'bg-cyan-50 text-cyan-700',
-  consumed: 'bg-stone-100 text-stone-600',
+  consumed: 'bg-stone-100 text-ink',
   scrapped: 'bg-red-50 text-danger-ink',
 };
-const DEFAULT_STATUS_STYLE = 'bg-stone-100 text-stone-600';
+const DEFAULT_STATUS_STYLE = 'bg-stone-100 text-ink';
 
 function statusLabel(status: string): string {
   const spaced = status.replace(/_/g, ' ');
@@ -42,21 +42,21 @@ export function ReceiptLineSlabs({ line }: { line: ItemReceiptLine }) {
 
   return (
     <div className="overflow-x-auto modal-scrollbar rounded-lg border border-stone-200 bg-white">
-      <p className="border-b border-stone-100 bg-stone-50 px-3 py-2 text-xs font-semibold text-stone-700">
+      <p className="border-b border-stone-100 bg-stone-50 px-3 py-2 text-xs font-semibold text-ink">
         Line {line.lineNumber} — {line.itemName || line.sku}
-        <span className="ml-2 font-normal text-stone-500">{slabs.length} slab{slabs.length === 1 ? '' : 's'}</span>
+        <span className="ml-2 font-normal text-ink-muted">{slabs.length} slab{slabs.length === 1 ? '' : 's'}</span>
       </p>
-      <table className="w-full text-left text-xs">
+      <table className="w-full text-left type-cell">
         <thead>
           <tr className="type-th">
-            <th className="px-3 py-2">Serial</th>
-            <th className="px-3 py-2 text-right">Length ({unit})</th>
-            <th className="px-3 py-2 text-right">Width ({unit})</th>
-            <th className="px-3 py-2 text-right">Thickness ({unit})</th>
-            <th className="px-3 py-2 text-right">Area ({line.unitCode})</th>
-            <th className="px-3 py-2">Bin</th>
-            <th className="px-3 py-2">Details</th>
-            <th className="px-3 py-2">Status</th>
+            <th className="type-th px-3 py-2">Serial</th>
+            <th className="type-th px-3 py-2 text-right">Length ({unit})</th>
+            <th className="type-th px-3 py-2 text-right">Width ({unit})</th>
+            <th className="type-th px-3 py-2 text-right">Thickness ({unit})</th>
+            <th className="type-th px-3 py-2 text-right">Area ({line.unitCode})</th>
+            <th className="type-th px-3 py-2">Bin</th>
+            <th className="type-th px-3 py-2">Details</th>
+            <th className="type-th px-3 py-2">Status</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-stone-100">
@@ -74,27 +74,27 @@ export function ReceiptLineSlabs({ line }: { line: ItemReceiptLine }) {
                     <Link
                       to={`/inventory/unit/${slab.unitId}`}
                       aria-label={`Open slab ${slab.serial}`}
-                      className="font-semibold text-stone-900 hover:text-accent-foreground transition-colors"
+                      className="font-semibold text-ink-strong hover:text-accent-foreground transition-colors"
                     >
                       {slab.serial}
                     </Link>
                   ) : (
-                    <span className="text-stone-500">Assigned when posted</span>
+                    <span className="text-ink-muted">Assigned when posted</span>
                   )}
                 </td>
-                <td className="px-3 py-2 text-right tabular-nums text-stone-600">{mmToDimension(slab.lengthMm, unit)}</td>
-                <td className="px-3 py-2 text-right tabular-nums text-stone-600">{mmToDimension(slab.widthMm, unit)}</td>
-                <td className="px-3 py-2 text-right tabular-nums text-stone-600">{mmToDimension(slab.thicknessMm, unit)}</td>
-                <td className="px-3 py-2 text-right tabular-nums text-stone-800">{slab.area}</td>
-                <td className="px-3 py-2 text-stone-600">{slab.binPath || <span className="text-stone-500">—</span>}</td>
-                <td className="px-3 py-2 text-stone-500">{extras || <span className="text-stone-500">—</span>}</td>
+                <td className="type-cell px-3 py-2 text-right tabular-nums">{mmToDimension(slab.lengthMm, unit)}</td>
+                <td className="type-cell px-3 py-2 text-right tabular-nums">{mmToDimension(slab.widthMm, unit)}</td>
+                <td className="type-cell px-3 py-2 text-right tabular-nums">{mmToDimension(slab.thicknessMm, unit)}</td>
+                <td className="type-cell px-3 py-2 text-right tabular-nums">{slab.area}</td>
+                <td className="type-cell px-3 py-2">{slab.binPath || <span className="text-ink-muted">—</span>}</td>
+                <td className="type-cell px-3 py-2">{extras || <span className="text-ink-muted">—</span>}</td>
                 <td className="px-3 py-2">
                   {slab.unitStatus ? (
                     <span className={cn('rounded-full px-2 py-0.5 type-pill', STATUS_STYLES[slab.unitStatus] ?? DEFAULT_STATUS_STYLE)}>
                       {statusLabel(slab.unitStatus)}
                     </span>
                   ) : (
-                    <span className="text-stone-500">—</span>
+                    <span className="text-ink-muted">—</span>
                   )}
                 </td>
               </tr>

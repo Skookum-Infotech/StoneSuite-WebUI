@@ -50,7 +50,7 @@ export function QuoteField({ field, value, set, lookups, dependsOnValue, disable
     return (
       <ModernFieldShell label={field.label}>
         <div className={`${readonlyCls} cursor-not-allowed select-none`}>
-          {str || <span className="text-stone-500">—</span>}
+          {str || <span className="text-ink-muted">—</span>}
         </div>
       </ModernFieldShell>
     );

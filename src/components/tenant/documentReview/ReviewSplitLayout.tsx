@@ -44,7 +44,7 @@ function DocumentSheet({ pane, onClose }: DocumentSheetProps): React.JSX.Element
         type="button"
         onClick={onClose}
         aria-label="Close document"
-        className="absolute right-2 top-1.5 z-10 rounded-full p-1 text-stone-500 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-white/10"
+        className="absolute right-2 top-1.5 z-10 rounded-full p-1 text-ink-muted dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-white/10"
       >
         <X className="size-4" aria-hidden="true" />
       </button>
@@ -95,7 +95,7 @@ export function ReviewSplitLayout({ pane, focusNonce, children }: ReviewSplitLay
         <button
           type="button"
           onClick={() => setSheetOpen(true)}
-          className="fixed bottom-16 right-4 z-30 inline-flex items-center gap-1.5 rounded-full border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 px-3 py-2 text-xs font-semibold text-stone-800 dark:text-stone-200 shadow-lg"
+          className="fixed bottom-16 right-4 z-30 inline-flex items-center gap-1.5 rounded-full border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 px-3 py-2 text-xs font-semibold text-ink-strong dark:text-stone-200 shadow-lg"
         >
           <FileText className="size-3.5" aria-hidden="true" />
           View document
@@ -131,7 +131,7 @@ export function ReviewSplitLayout({ pane, focusNonce, children }: ReviewSplitLay
           onClick={() => setCollapsed((c) => !c)}
           aria-label={collapsed ? 'Show document pane' : 'Hide document pane'}
           aria-expanded={!collapsed}
-          className="absolute left-1 top-1 z-20 rounded-md border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 p-1 text-stone-500 dark:text-stone-400 shadow-sm hover:text-stone-800 dark:hover:text-stone-100"
+          className="absolute left-1 top-1 z-20 rounded-md border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 p-1 text-ink-muted dark:text-stone-400 shadow-sm hover:text-ink-strong dark:hover:text-stone-100"
         >
           {collapsed ? <PanelLeftOpen className="size-3.5" aria-hidden="true" /> : <PanelLeftClose className="size-3.5" aria-hidden="true" />}
         </button>

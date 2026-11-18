@@ -68,9 +68,9 @@ export function ManageUserRoles({ user }: { user: WorkspaceUser }) {
           {user.roles.map((r) => (
             <span
               key={r.id}
-              className="inline-flex items-center gap-1 rounded-lg border border-stone-200 bg-stone-50 py-1 pl-2.5 pr-1 text-xs font-semibold text-stone-700"
+              className="inline-flex items-center gap-1 rounded-lg border border-stone-200 bg-stone-50 py-1 pl-2.5 pr-1 text-xs font-semibold text-ink"
             >
-              <ShieldCheck className="size-3 text-stone-400" />
+              <ShieldCheck className="size-3 text-ink-faint" />
               {r.name}
               {canManageRoles && (
                 <button
@@ -78,7 +78,7 @@ export function ManageUserRoles({ user }: { user: WorkspaceUser }) {
                   aria-label={`Remove ${r.name} role`}
                   onClick={() => setPendingRemove({ id: r.id, name: r.name })}
                   disabled={removeMut.isPending}
-                  className="ml-0.5 rounded p-0.5 text-stone-400 transition hover:bg-stone-200 hover:text-stone-600 disabled:opacity-50"
+                  className="ml-0.5 rounded p-0.5 text-ink-muted transition hover:bg-stone-200 hover:text-ink disabled:opacity-50"
                 >
                   {removeMut.isPending && pendingRemove?.id === r.id ? (
                     <Loader2 className="size-3 animate-spin" />
@@ -133,7 +133,7 @@ export function ManageUserRoles({ user }: { user: WorkspaceUser }) {
             aria-label="Select a role to add"
             value={selectedRoleId}
             onChange={(e) => setSelectedRoleId(e.target.value)}
-            className="h-9 flex-1 min-w-0 rounded-lg border border-stone-200 bg-white px-2.5 text-xs text-stone-700 focus:outline-none focus:ring-2 focus:ring-brand/50"
+            className="h-9 flex-1 min-w-0 rounded-lg border border-stone-200 bg-white px-2.5 text-xs text-ink focus:outline-none focus:ring-2 focus:ring-brand/50"
           >
             <option value="">Add a role…</option>
             {availableRoles.map((r) => (

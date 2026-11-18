@@ -32,7 +32,7 @@ export function PlanCard({ tier, billingCycle, action, onSelect }: PlanCardProps
       )}
     >
       {isCurrent ? (
-        <span className="absolute -top-3 left-6 rounded-full bg-brand px-3 py-1 text-stone-950 type-pill">
+        <span className="absolute -top-3 left-6 rounded-full bg-brand px-3 py-1 text-ink-strong type-pill">
           Current Plan
         </span>
       ) : tier.highlighted ? (
@@ -44,11 +44,11 @@ export function PlanCard({ tier, billingCycle, action, onSelect }: PlanCardProps
       <h3 className="type-card-title">{tier.name}</h3>
       <div className="mt-2 flex items-baseline gap-1">
         {price === null ? (
-          <span className="text-2xl font-bold text-stone-900">Custom</span>
+          <span className="text-2xl font-bold text-ink-strong">Custom</span>
         ) : (
           <>
-            <span className="text-3xl font-bold tracking-tight text-stone-900">${price}</span>
-            <span className="text-xs font-semibold text-stone-500">{period}</span>
+            <span className="text-3xl font-bold tracking-tight text-ink-strong">${price}</span>
+            <span className="text-xs font-semibold text-ink-muted">{period}</span>
           </>
         )}
       </div>
@@ -59,7 +59,7 @@ export function PlanCard({ tier, billingCycle, action, onSelect }: PlanCardProps
             <div className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-brand/20 text-link">
               <Check className="size-2.5" strokeWidth={3} />
             </div>
-            <span className="text-xs text-stone-600">{feature}</span>
+            <span className="text-xs text-ink">{feature}</span>
           </li>
         ))}
       </ul>

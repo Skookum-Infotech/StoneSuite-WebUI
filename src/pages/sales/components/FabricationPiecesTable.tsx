@@ -8,7 +8,7 @@ import type { FabricationJobPiece } from '@/types/fabrication';
 export function FabricationPiecesTable({ pieces }: { pieces: FabricationJobPiece[] }) {
   return (
     <div className="overflow-x-auto modal-scrollbar rounded-lg border border-stone-200 bg-white">
-      <table className="w-full text-left text-xs">
+      <table className="w-full text-left type-cell">
         <thead className="bg-stone-50 border-b border-stone-200">
           <tr className="divide-x divide-stone-200">
             {[
@@ -30,20 +30,20 @@ export function FabricationPiecesTable({ pieces }: { pieces: FabricationJobPiece
         <tbody className="divide-y divide-stone-100">
           {pieces.map((p) => (
             <tr key={p.id} className="hover:bg-stone-50/50 divide-x divide-stone-100">
-              <td className="px-3 py-2.5 text-stone-500 tabular-nums">{p.pieceNumber}</td>
-              <td className="px-3 py-2.5 font-medium text-stone-800">{p.pieceName || <span className="text-stone-500">—</span>}</td>
-              <td className="px-3 py-2.5 text-stone-500">{p.pieceType || '—'}</td>
-              <td className="px-3 py-2.5 tabular-nums text-right text-stone-600">{p.lengthMm}</td>
-              <td className="px-3 py-2.5 tabular-nums text-right text-stone-600">{p.widthMm}</td>
-              <td className="px-3 py-2.5 tabular-nums text-right text-stone-600">{p.thicknessMm}</td>
-              <td className="px-3 py-2.5 tabular-nums text-right text-stone-500">{p.sinkCutoutCount}</td>
-              <td className="px-3 py-2.5 tabular-nums text-right text-stone-500">{p.cooktopCutoutCount}</td>
-              <td className="px-3 py-2.5 tabular-nums text-right text-stone-500">{p.seamCount}</td>
-              <td className="px-3 py-2.5 text-stone-500">{p.status || '—'}</td>
+              <td className="type-cell px-3 py-2.5 tabular-nums">{p.pieceNumber}</td>
+              <td className="type-cell px-3 py-2.5 font-medium">{p.pieceName || <span className="text-ink-muted">—</span>}</td>
+              <td className="type-cell px-3 py-2.5">{p.pieceType || '—'}</td>
+              <td className="type-cell px-3 py-2.5 tabular-nums text-right">{p.lengthMm}</td>
+              <td className="type-cell px-3 py-2.5 tabular-nums text-right">{p.widthMm}</td>
+              <td className="type-cell px-3 py-2.5 tabular-nums text-right">{p.thicknessMm}</td>
+              <td className="type-cell px-3 py-2.5 tabular-nums text-right">{p.sinkCutoutCount}</td>
+              <td className="type-cell px-3 py-2.5 tabular-nums text-right">{p.cooktopCutoutCount}</td>
+              <td className="type-cell px-3 py-2.5 tabular-nums text-right">{p.seamCount}</td>
+              <td className="type-cell px-3 py-2.5">{p.status || '—'}</td>
             </tr>
           ))}
           {pieces.length === 0 && (
-            <tr><td colSpan={10} className="py-8 text-center text-stone-500">No pieces on this job.</td></tr>
+            <tr><td colSpan={10} className="type-cell py-8 text-center">No pieces on this job.</td></tr>
           )}
         </tbody>
       </table>

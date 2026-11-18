@@ -103,7 +103,7 @@ export function KitSelect({ value, onChange }: {
       )}
 
       <div className="relative">
-        <Search className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-stone-400" />
+        <Search className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-ink-faint" />
         <input
           type="text"
           value={term}
@@ -114,7 +114,7 @@ export function KitSelect({ value, onChange }: {
           className={cn(fieldCls, 'pl-8')}
         />
         {(isFetching || create.isPending) && (
-          <Loader2 className="absolute right-2.5 top-1/2 -translate-y-1/2 size-3.5 animate-spin text-stone-400" aria-hidden="true" />
+          <Loader2 className="absolute right-2.5 top-1/2 -translate-y-1/2 size-3.5 animate-spin text-ink-faint" aria-hidden="true" />
         )}
       </div>
 
@@ -133,7 +133,7 @@ export function KitSelect({ value, onChange }: {
               className="flex w-full items-center gap-2 px-3 py-2 text-left transition-colors hover:bg-accent/10"
             >
               <Boxes className="size-3.5 shrink-0 text-violet-500" aria-hidden="true" />
-              <span className="min-w-0 flex-1 truncate text-xs font-medium text-stone-800">{kit.name}</span>
+              <span className="min-w-0 flex-1 truncate text-xs font-medium text-ink-strong">{kit.name}</span>
               <span className="shrink-0 type-subline">
                 {kit.itemCount} {kit.itemCount === 1 ? 'item' : 'items'}
               </span>
@@ -145,9 +145,9 @@ export function KitSelect({ value, onChange }: {
               onClick={() => create.mutate(debounced)}
               disabled={create.isPending}
               aria-label={`Add “${debounced}” as a new kit/package`}
-              className="flex w-full items-center gap-2 border-t border-stone-100 px-3 py-2 text-left text-xs font-semibold text-stone-800 transition-colors hover:bg-accent/10 disabled:opacity-50"
+              className="flex w-full items-center gap-2 border-t border-stone-100 px-3 py-2 text-left text-xs font-semibold text-ink-strong transition-colors hover:bg-accent/10 disabled:opacity-50"
             >
-              <Plus className="size-3.5 shrink-0 text-stone-500" aria-hidden="true" />
+              <Plus className="size-3.5 shrink-0 text-ink-muted" aria-hidden="true" />
               <span className="truncate">Add “{debounced}” as a new kit/package</span>
             </button>
           )}

@@ -90,7 +90,7 @@ export function HelpMenu() {
         aria-label={unreadCount > 0 ? `Help (${unreadCount} unread)` : 'Help'}
         aria-haspopup="menu"
         aria-expanded={menuOpen}
-        className="relative rounded-xl border border-white/10 p-2 text-stone-400 hover:bg-white/[0.06] hover:text-stone-200 transition-colors cursor-pointer"
+        className="relative rounded-xl border border-white/10 p-2 text-ink-muted hover:bg-white/[0.06] hover:text-stone-200 transition-colors cursor-pointer"
       >
         <CircleHelp className="size-4.5" />
         {unreadCount > 0 && (

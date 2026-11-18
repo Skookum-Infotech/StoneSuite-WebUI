@@ -101,20 +101,20 @@ export default function TransferDetailPage() {
 
           <ModernSection title={`Lines (${t.lines.length})`} index={1}>
             <div className="overflow-x-auto modal-scrollbar rounded-lg border border-stone-200">
-              <table className="w-full text-left text-xs">
+              <table className="w-full text-left type-cell">
                 <thead className="bg-stone-50 border-b border-stone-200">
                   <tr>
-                    <th className="px-3 py-2 font-semibold text-stone-500">Item</th>
-                    <th className="px-3 py-2 font-semibold text-stone-500">Unit</th>
-                    <th className="px-3 py-2 font-semibold text-stone-500 text-right">Qty</th>
+                    <th className="type-th px-3 py-2">Item</th>
+                    <th className="type-th px-3 py-2">Unit</th>
+                    <th className="type-th px-3 py-2 text-right">Qty</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-stone-100">
                   {t.lines.map((line) => (
                     <tr key={line.id}>
-                      <td className="px-3 py-2.5 text-stone-800">{line.inventoryItemName || '—'}</td>
-                      <td className="px-3 py-2.5 text-stone-500">{line.unitSerial || '—'}</td>
-                      <td className="px-3 py-2.5 text-right tabular-nums text-stone-700">{line.qty}</td>
+                      <td className="type-cell px-3 py-2.5">{line.inventoryItemName || '—'}</td>
+                      <td className="type-cell px-3 py-2.5">{line.unitSerial || '—'}</td>
+                      <td className="type-cell px-3 py-2.5 text-right tabular-nums">{line.qty}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -126,8 +126,8 @@ export default function TransferDetailPage() {
         <SalesDetailSidebar label="Transfer Details">
           {canUpdate && isDraft && (
             <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-0.5 mb-4">
-              <button type="button" onClick={() => navigate(`/inventory/transfer/${id}/edit`)} className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 text-xs text-stone-700 w-full transition-colors text-left">
-                <Pencil className="size-4 text-stone-400 shrink-0" /> Edit transfer
+              <button type="button" onClick={() => navigate(`/inventory/transfer/${id}/edit`)} className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 text-xs text-ink w-full transition-colors text-left">
+                <Pencil className="size-4 text-ink-faint shrink-0" /> Edit transfer
               </button>
             </div>
           )}
@@ -164,7 +164,7 @@ function ReadonlyField({ label, value }: { label: string; value?: string }) {
   return (
     <div className="space-y-1">
       <label className={fieldLabelCls}>{label}</label>
-      <div className={readonlyCls}>{value || <span className="text-stone-500">—</span>}</div>
+      <div className={readonlyCls}>{value || <span className="text-ink-muted">—</span>}</div>
     </div>
   );
 }

@@ -22,7 +22,7 @@ export default function PaymentListPage() {
             </div>
             <div>
               <h1 className="type-page-title">Payments</h1>
-              <p className="text-sm text-stone-500">Payments received from customers.</p>
+              <p className="type-page-subtitle">Payments received from customers.</p>
             </div>
           </div>
           {!isCustomer && (

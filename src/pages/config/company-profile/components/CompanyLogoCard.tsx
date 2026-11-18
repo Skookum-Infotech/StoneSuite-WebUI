@@ -60,7 +60,7 @@ export function CompanyLogoCard({ canConfigure }: { canConfigure: boolean }) {
           {logoUrl ? (
             <img src={logoUrl} alt="Company logo" className="h-full w-full object-contain" />
           ) : (
-            <ImageIcon className="size-6 text-stone-400" aria-hidden="true" />
+            <ImageIcon className="size-6 text-ink-faint" aria-hidden="true" />
           )}
         </div>
 

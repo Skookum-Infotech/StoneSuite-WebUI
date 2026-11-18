@@ -44,7 +44,7 @@ export function AddUnexpectedDialog({ countId, warehouseId, onClose, onAdded }: 
             <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-accent"><PackagePlus className="size-4 text-accent-foreground" /></div>
             <h3 id="add-unexpected-title" className="type-card-title">Add Unexpected Unit</h3>
           </div>
-          <button type="button" onClick={onClose} aria-label="Close" className="rounded p-1 text-stone-400 hover:bg-stone-100"><X className="size-4" /></button>
+          <button type="button" onClick={onClose} aria-label="Close" className="rounded p-1 text-ink-muted hover:bg-stone-100"><X className="size-4" /></button>
         </div>
 
         <div className="space-y-3">

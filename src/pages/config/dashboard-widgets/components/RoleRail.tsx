@@ -34,7 +34,7 @@ function RoleRow({
       )}
     >
       <span className="flex items-center justify-between gap-2">
-        <span className="flex min-w-0 items-center gap-1.5 truncate text-xs font-medium text-stone-800">
+        <span className="flex min-w-0 items-center gap-1.5 truncate text-xs font-medium text-ink-strong">
           {children}
         </span>
         {trailing}
@@ -80,7 +80,7 @@ export function RoleRail({
               onSelect={() => onSelectRole(role.id)}
               progress={totalCount > 0 ? (count / totalCount) * 100 : 0}
               trailing={
-                <span className={cn('text-micro shrink-0', count === 0 ? 'text-danger-ink' : 'text-stone-500')}>
+                <span className={cn('text-micro shrink-0', count === 0 ? 'text-danger-ink' : 'text-ink-muted')}>
                   {count}/{totalCount}
                 </span>
               }
@@ -108,8 +108,8 @@ export function RoleRail({
               onSelect={() => onSelectRole(role.id)}
               trailing={<span className="shrink-0 type-subline">All</span>}
             >
-              <Lock className="size-3 shrink-0 text-stone-400" aria-hidden="true" />
-              <span className="truncate text-stone-500">{role.name}</span>
+              <Lock className="size-3 shrink-0 text-ink-faint" aria-hidden="true" />
+              <span className="truncate text-ink-muted">{role.name}</span>
             </RoleRow>
           ))}
         </div>

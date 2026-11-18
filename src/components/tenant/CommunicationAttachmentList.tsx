@@ -50,25 +50,25 @@ export function CommunicationAttachmentList({ recordId, attachments, missingCoun
                   disabled={downloadingId === a.id}
                   aria-label={`Download ${a.fileName}`}
                   title={`Download ${a.fileName}`}
-                  className={`${CHIP_BASE} border-stone-200 bg-stone-50 font-medium text-stone-700 transition-colors hover:border-stone-300 hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 disabled:cursor-wait disabled:opacity-70`}
+                  className={`${CHIP_BASE} border-stone-200 bg-stone-50 font-medium text-ink transition-colors hover:border-stone-300 hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 disabled:cursor-wait disabled:opacity-70`}
                 >
                   {downloadingId === a.id ? (
                     <Loader2 className="size-3.5 shrink-0 animate-spin" aria-hidden="true" />
                   ) : (
-                    <Paperclip className="size-3.5 shrink-0 text-stone-400" aria-hidden="true" />
+                    <Paperclip className="size-3.5 shrink-0 text-ink-faint" aria-hidden="true" />
                   )}
                   <span className="truncate">{a.fileName}</span>
-                  {a.sizeBytes > 0 && <span className="shrink-0 font-normal text-stone-500">{formatFileSize(a.sizeBytes)}</span>}
-                  <Download className="size-3.5 shrink-0 text-stone-400" aria-hidden="true" />
+                  {a.sizeBytes > 0 && <span className="shrink-0 font-normal text-ink-muted">{formatFileSize(a.sizeBytes)}</span>}
+                  <Download className="size-3.5 shrink-0 text-ink-faint" aria-hidden="true" />
                 </button>
               ) : a.status === 'pending' ? (
-                <span title="This file is being copied and will be ready shortly." className={`${CHIP_BASE} border-dashed border-stone-200 text-stone-500`}>
+                <span title="This file is being copied and will be ready shortly." className={`${CHIP_BASE} border-dashed border-stone-200 text-ink-muted`}>
                   <Loader2 className="size-3.5 shrink-0 animate-spin" aria-hidden="true" />
                   <span className="truncate">{a.fileName}</span>
-                  <span className="shrink-0 text-stone-500">Copying…</span>
+                  <span className="shrink-0 text-ink-muted">Copying…</span>
                 </span>
               ) : (
-                <span title={NOT_KEPT_REASONS[a.status].detail} className={`${CHIP_BASE} border-stone-100 bg-stone-50/60 text-stone-500`}>
+                <span title={NOT_KEPT_REASONS[a.status].detail} className={`${CHIP_BASE} border-stone-100 bg-stone-50/60 text-ink-muted`}>
                   <FileX className="size-3.5 shrink-0" aria-hidden="true" />
                   <span className="truncate">{a.fileName}</span>
                   <span className="shrink-0">{NOT_KEPT_REASONS[a.status].label}</span>

@@ -56,14 +56,14 @@ export function VendorCreditFilterDrawer({ onClose, value, onApply }: {
       <div ref={contentRef} tabIndex={-1} className="flex h-full w-full max-w-sm flex-col bg-white shadow-2xl outline-none">
         <div className="flex items-center justify-between border-b border-stone-200 px-4 py-3.5 shrink-0">
           <div className="flex items-center gap-2">
-            <Filter className="size-4 text-stone-500" aria-hidden="true" />
+            <Filter className="size-4 text-ink-muted" aria-hidden="true" />
             <h2 id="vc-filter-drawer-title" className="type-dialog-title">Filters</h2>
           </div>
           <button
             type="button"
             onClick={onClose}
             aria-label="Close filters"
-            className="rounded p-1 text-stone-500 hover:bg-stone-100 hover:text-stone-600 transition-colors"
+            className="rounded p-1 text-ink-muted hover:bg-stone-100 hover:text-ink transition-colors"
           >
             <X className="size-4" />
           </button>

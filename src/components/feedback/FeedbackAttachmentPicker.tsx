@@ -19,7 +19,7 @@ function fileTypeConfig(fileName: string, contentType: string): FileTypeConfig {
   if (['png', 'jpg', 'jpeg'].includes(ext) || contentType.startsWith('image/')) {
     return { color: 'text-file-image-text', bg: 'bg-file-image-bg', Icon: ImageIcon };
   }
-  return { color: 'text-stone-500', bg: 'bg-stone-100 dark:bg-white/10', Icon: FileIcon };
+  return { color: 'text-ink-muted', bg: 'bg-stone-100 dark:bg-white/10', Icon: FileIcon };
 }
 
 // Staged file picker for the New Ticket form — files are only validated and
@@ -103,10 +103,10 @@ export function FeedbackAttachmentPicker({
             accept=".pdf,.docx,.xlsx,.png,.jpg,.jpeg" className="sr-only" onChange={onFileChange}
           />
           <Upload
-            className={cn('mx-auto mb-2 size-5 transition-colors', dragging ? 'text-link' : 'text-stone-400')}
+            className={cn('mx-auto mb-2 size-5 transition-colors', dragging ? 'text-link' : 'text-ink-muted')}
             aria-hidden="true"
           />
-          <p className="text-sm font-medium text-stone-700 dark:text-stone-200">
+          <p className="text-sm font-medium text-ink dark:text-stone-200">
             {dragging ? 'Release to attach' : 'Drop a screenshot or file, or click to browse'}
           </p>
           <p className="mt-1 dark:text-stone-400 type-helper">
@@ -136,15 +136,15 @@ export function FeedbackAttachmentPicker({
                   <ft.Icon className={cn('size-4', ft.color)} />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-xs font-medium text-stone-700 dark:text-stone-200">{file.name}</p>
-                  <span className="text-xs text-stone-500">{formatFeedbackFileSize(file.size)}</span>
+                  <p className="truncate text-xs font-medium text-ink dark:text-stone-200">{file.name}</p>
+                  <span className="text-xs text-ink-muted">{formatFeedbackFileSize(file.size)}</span>
                 </div>
                 <button
                   type="button"
                   onClick={() => removeFile(i)}
                   disabled={disabled}
                   aria-label={`Remove ${file.name}`}
-                  className="shrink-0 text-stone-300 hover:text-stone-500 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="shrink-0 text-stone-300 hover:text-ink-muted disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   <X className="size-3.5" />
                 </button>

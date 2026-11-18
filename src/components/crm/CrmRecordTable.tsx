@@ -279,7 +279,7 @@ export function CrmRecordTable({ config }: Props) {
 
         {/* Search */}
         <div className="relative w-full sm:w-52">
-          <Search className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-stone-400" />
+          <Search className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-ink-faint" />
           <input
             type="text"
             placeholder={`Search ${lowerLabel}s…`}
@@ -296,7 +296,7 @@ export function CrmRecordTable({ config }: Props) {
             onChange={(e) => { setStatusFilter(e.target.value); setCursor(''); setPrevCursors([]); }}
             className={cn(
               'h-8 w-full rounded-lg border border-stone-200 bg-white pl-3 pr-7 type-input focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150 appearance-none',
-              statusFilter === '' ? 'text-stone-500' : 'text-stone-900',
+              statusFilter === '' ? 'text-ink-muted' : 'text-ink-strong',
             )}
             aria-label="Filter by status"
           >
@@ -305,7 +305,7 @@ export function CrmRecordTable({ config }: Props) {
               <option key={s.stateId} value={s.stateId}>{s.statusLabel}</option>
             ))}
           </Select>
-          <ChevronRight className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 size-3 text-stone-400 rotate-90" />
+          <ChevronRight className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 size-3 text-ink-faint rotate-90" />
         </div>
 
         {/* Divider */}
@@ -322,7 +322,7 @@ export function CrmRecordTable({ config }: Props) {
                 'flex items-center gap-1.5 rounded-md px-2.5 py-1 text-micro font-semibold transition-colors',
                 sortBy === field
                   ? 'bg-accent text-accent-foreground ring-1 ring-accent-foreground/20'
-                  : 'bg-white border border-stone-200 text-stone-500 hover:border-stone-300 hover:text-stone-700',
+                  : 'bg-white border border-stone-200 text-ink-muted hover:border-stone-300 hover:text-ink',
               )}
             >
               {label}
@@ -371,7 +371,7 @@ export function CrmRecordTable({ config }: Props) {
       {/* ── Table ── */}
       <div className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm">
         <div className="overflow-x-auto modal-scrollbar">
-          <table className="w-full min-w-[520px] text-left text-xs">
+          <table className="w-full min-w-[520px] text-left type-cell">
             <thead className="border-b border-stone-200 bg-table-header">
               <tr>
                 <th className="px-4 py-3 type-th">Company</th>
@@ -426,7 +426,7 @@ export function CrmRecordTable({ config }: Props) {
                           <div className="min-w-0">
                             <Link
                               to={config.detailPath(record.id)}
-                              className="text-left text-xs font-semibold text-stone-900 hover:text-accent-foreground transition-colors truncate max-w-[200px] block"
+                              className="text-left text-xs font-semibold text-ink-strong hover:text-accent-foreground transition-colors truncate max-w-[200px] block"
                             >
                               {company}
                             </Link>
@@ -451,12 +451,12 @@ export function CrmRecordTable({ config }: Props) {
                             gated={gated}
                           />
                         ) : (
-                          <span className="text-xs text-stone-500">—</span>
+                          <span className="text-xs text-ink-muted">—</span>
                         )}
                       </td>
                       <td className="px-4 py-3.5 truncate max-w-[160px] type-cell">
                         {(record.ownerUserId && userMap.get(record.ownerUserId)) || (
-                          <span className="text-stone-500">—</span>
+                          <span className="text-ink-muted">—</span>
                         )}
                       </td>
                       {config.showEmail && (
@@ -470,7 +470,7 @@ export function CrmRecordTable({ config }: Props) {
                           <Link
                             to={config.editPath(record.id)}
                             aria-label={`Edit ${label}`}
-                            className="inline-flex items-center justify-center rounded-lg border border-stone-200 bg-white p-2 text-stone-500 transition-colors hover:bg-accent hover:border-accent hover:text-accent-foreground cursor-pointer"
+                            className="inline-flex items-center justify-center rounded-lg border border-stone-200 bg-white p-2 text-ink-muted transition-colors hover:bg-accent hover:border-accent hover:text-accent-foreground cursor-pointer"
                           >
                             <Pencil className="size-4" />
                           </Link>
@@ -485,7 +485,7 @@ export function CrmRecordTable({ config }: Props) {
                     {!hasFilters ? (
                       <div className="flex flex-col items-center gap-3">
                         <div className="rounded-2xl bg-stone-100 p-4">
-                          <Inbox className="size-6 text-stone-400" />
+                          <Inbox className="size-6 text-ink-faint" />
                         </div>
                         <p className="type-card-title">No {lowerLabel}s added yet.</p>
                         <p className="type-helper">Create your first {lowerLabel} to get started.</p>
@@ -493,7 +493,7 @@ export function CrmRecordTable({ config }: Props) {
                     ) : (
                       <div className="flex flex-col items-center gap-3">
                         <div className="rounded-2xl bg-stone-100 p-4">
-                          <Search className="size-6 text-stone-400" />
+                          <Search className="size-6 text-ink-faint" />
                         </div>
                         <p className="type-card-title">No {lowerLabel}s match the current filters.</p>
                         <p className="type-helper">Try adjusting your search or status filter.</p>

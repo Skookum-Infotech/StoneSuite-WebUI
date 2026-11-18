@@ -12,8 +12,8 @@ export function UnitUsageHero({ unit }: { unit: InventoryUnit }) {
     <ModernSection title="Usage" index={0}>
       <div className="space-y-5">
         <div>
-          <p className="text-3xl font-bold tracking-tight tabular-nums text-stone-950">{usageHeadline(unit)}</p>
-          <p className="mt-1 text-sm text-stone-500">{sentence}</p>
+          <p className="text-3xl font-bold tracking-tight tabular-nums text-ink-strong">{usageHeadline(unit)}</p>
+          <p className="mt-1 text-sm text-ink-muted">{sentence}</p>
         </div>
 
         <UnitConsumptionBar size="md" segments={unitSegments(unit)} label={sentence} />
@@ -25,7 +25,7 @@ export function UnitUsageHero({ unit }: { unit: InventoryUnit }) {
                 {tile.tone && <span className={cn('size-2 shrink-0 rounded-full', BAR_TONE_CLASS[tile.tone])} aria-hidden="true" />}
                 {tile.label}
               </dt>
-              <dd className="mt-1 text-lg font-bold tabular-nums text-stone-950">{tile.value}</dd>
+              <dd className="mt-1 text-lg font-bold tabular-nums text-ink-strong">{tile.value}</dd>
               {tile.note && <dd className="type-subline">{tile.note}</dd>}
             </div>
           ))}

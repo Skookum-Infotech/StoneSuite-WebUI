@@ -126,7 +126,7 @@ function PostReceiptDialogContent({
               <p className="mt-0.5 type-helper">This moves stock and advances the purchase order.</p>
             </div>
           </div>
-          <p className="text-xs text-stone-600 mb-5">
+          <p className="text-xs text-ink mb-5">
             Once posted this receipt can no longer be edited. To correct a mistake, void it and receive again.
           </p>
           {error && (

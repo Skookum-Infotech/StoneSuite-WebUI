@@ -46,7 +46,7 @@ export function WidgetAllocationMatrix({
               <h3 className="type-overline">{categoryLabel}</h3>
             </div>
             <div className="overflow-x-auto modal-scrollbar">
-              <table className="w-full table-fixed text-xs">
+              <table className="w-full table-fixed type-cell">
                 <colgroup>
                   <col className="w-48" />
                   {orderedRoles.map((role) => (
@@ -61,10 +61,10 @@ export function WidgetAllocationMatrix({
                     {orderedRoles.map((role) => {
                       const allOn = role.locked || categoryIds.every((id) => isChecked(role, id));
                       return (
-                        <th key={role.id} className="px-2 py-2 text-center">
+                        <th key={role.id} className="type-th px-2 py-2 text-center">
                           {role.locked ? (
                             <span
-                              className="inline-flex items-center justify-center gap-1 text-micro font-bold text-stone-500"
+                              className="inline-flex items-center justify-center gap-1 text-micro font-bold text-ink-muted"
                               title={`${role.name} always has every widget`}
                             >
                               <Lock className="size-2.5" aria-hidden="true" />
@@ -79,7 +79,7 @@ export function WidgetAllocationMatrix({
                                 'mx-auto flex items-center justify-center rounded px-1.5 py-1 text-micro font-bold transition',
                                 allOn
                                   ? 'bg-brand/15 text-link hover:bg-brand/25'
-                                  : 'text-stone-500 hover:bg-stone-100',
+                                  : 'text-ink-muted hover:bg-stone-100',
                               )}
                             >
                               {role.name}
@@ -102,7 +102,7 @@ export function WidgetAllocationMatrix({
                             className="block truncate text-left transition hover:opacity-70"
                             title={allRolesOn ? 'Clear widget for every role' : 'Grant widget to every role'}
                           >
-                            <p className="truncate text-xs font-semibold text-stone-700">{widget.title}</p>
+                            <p className="truncate text-xs font-semibold text-ink">{widget.title}</p>
                           </button>
                         </td>
                         {orderedRoles.map((role) => (

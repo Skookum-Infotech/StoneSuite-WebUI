@@ -14,7 +14,7 @@ export function LineDimensionViewCells({ length, width, slabs, unit, afterWidth 
   /** A cell to render between Width and Slabs (the Sales tables' thickness). */
   afterWidth?: ReactNode;
 }) {
-  const cellCls = 'px-2.5 py-2.5 tabular-nums text-right text-stone-600 whitespace-nowrap';
+  const cellCls = 'px-2.5 py-2.5 tabular-nums text-right text-ink whitespace-nowrap';
   const blank = (v: Dimension) => v === null || v === undefined || v === '';
   const size = (v: Dimension) => (blank(v) ? '—' : `${v} ${unit || 'cm'}`);
   return (

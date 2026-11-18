@@ -48,7 +48,7 @@ export function BlockingSlotsDialog({
           </div>
         </div>
 
-        <p className="text-xs text-stone-600 mb-3">{message}</p>
+        <p className="text-xs text-ink mb-3">{message}</p>
 
         <ul className="mb-4 space-y-1">
           {slots.map((key) => (

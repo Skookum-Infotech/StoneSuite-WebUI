@@ -89,7 +89,7 @@ export function WorkflowStageRow({ stage, isLast, hereStatusCode, lineColor, ope
       </span>
       <span className="min-w-0 flex-1">
         <span className="flex items-center justify-between gap-1.5">
-          <span className={cn('text-xs font-medium', stage.state === 'upcoming' ? 'text-stone-400' : 'text-stone-900')}>
+          <span className={cn('text-xs font-medium', stage.state === 'upcoming' ? 'text-ink-muted' : 'text-ink-strong')}>
             {stage.label}
             {stage.state === 'done' && <span className="sr-only"> (completed)</span>}
           </span>
@@ -102,7 +102,7 @@ export function WorkflowStageRow({ stage, isLast, hereStatusCode, lineColor, ope
             </span>
           )}
         </span>
-        <span className={cn('block truncate text-micro', stage.state === 'void' ? 'text-danger-ink' : stage.state === 'upcoming' ? 'text-stone-400' : 'text-stone-500')}>
+        <span className={cn('block truncate text-micro', stage.state === 'void' ? 'text-danger-ink' : stage.state === 'upcoming' ? 'text-ink-muted' : 'text-ink-muted')}>
           {statusCode && stage.state !== 'void' ? withStatusColour(stage, single?.number, statusCode) : stage.subtitle}
         </span>
       </span>

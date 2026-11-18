@@ -27,7 +27,7 @@ export function InstallCrewPicker({ value, onChange, options }: Props) {
 
   return (
     <fieldset className="min-w-0">
-      <legend className="mb-1 text-xs font-medium text-stone-600">Crew</legend>
+      <legend className="mb-1 text-xs font-medium text-ink">Crew</legend>
       <label className="mb-1 flex items-center gap-2 type-field-label">
         <input
           type="radio"
@@ -47,8 +47,8 @@ export function InstallCrewPicker({ value, onChange, options }: Props) {
                 checked={roleOf(o.employeeId) !== undefined}
                 onChange={(e) => toggle(o.employeeId, e.target.checked)}
               />
-              <span className="truncate text-stone-800">{o.name}</span>
-              {!o.hasLogin && <span className="shrink-0 text-xs text-stone-500">(no login)</span>}
+              <span className="truncate text-ink-strong">{o.name}</span>
+              {!o.hasLogin && <span className="shrink-0 text-xs text-ink-muted">(no login)</span>}
             </label>
             <label className="flex shrink-0 items-center gap-1.5 type-field-label">
               <input

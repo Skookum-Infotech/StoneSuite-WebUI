@@ -29,7 +29,7 @@ const ACTION_COLORS: Record<string, string> = {
   delete: 'bg-destructive/10 text-danger-ink',
   update: 'bg-workflow-prospect-bg text-workflow-prospect-text',
   activate: 'bg-emerald-100 text-emerald-700',
-  deactivate: 'bg-stone-100 text-stone-600',
+  deactivate: 'bg-stone-100 text-ink',
   show: 'bg-sky-100 text-sky-700',
   hide: 'bg-amber-100 text-amber-700',
   repoint_slot: 'bg-violet-100 text-violet-700',
@@ -70,7 +70,7 @@ export function AccountHistoryTab({ accountId }: { accountId?: string }) {
 
   return (
     <div className="overflow-x-auto rounded-lg border border-stone-200 bg-white">
-      <table className="w-full text-xs border-collapse">
+      <table className="w-full type-cell border-collapse">
         <thead>
           <tr className="border-b border-stone-100">
             {['Action', 'Field', 'Change', 'By', 'Date'].map((h) => (
@@ -98,27 +98,27 @@ function HistoryRow({ entry, employeeNames }: { entry: AccountHistoryEntry; empl
         <span
           className={cn(
             'inline-flex items-center rounded px-1.5 py-0.5 capitalize type-pill',
-            ACTION_COLORS[entry.action] ?? 'bg-stone-100 text-stone-600',
+            ACTION_COLORS[entry.action] ?? 'bg-stone-100 text-ink',
           )}
         >
           {entry.action.replace('_', ' ')}
         </span>
       </td>
-      <td className="py-2.5 px-3 text-stone-700">{FIELD_LABELS[entry.field] ?? entry.field}</td>
-      <td className="py-2.5 px-3 text-stone-600">
+      <td className="type-cell py-2.5 px-3">{FIELD_LABELS[entry.field] ?? entry.field}</td>
+      <td className="py-2.5 px-3 text-ink">
         {redacted ? (
-          <span className="italic text-stone-500">changed</span>
+          <span className="italic text-ink-muted">changed</span>
         ) : entry.action === 'create' ? (
-          <span className="font-medium text-stone-800">{fmtValue(entry.field, entry.newValue)}</span>
+          <span className="font-medium text-ink-strong">{fmtValue(entry.field, entry.newValue)}</span>
         ) : (
           <span>
-            <span className="text-stone-500">{fmtValue(entry.field, entry.oldValue)}</span>
-            <span className="mx-1.5 text-stone-500">→</span>
-            <span className="font-medium text-stone-800">{fmtValue(entry.field, entry.newValue)}</span>
+            <span className="text-ink-muted">{fmtValue(entry.field, entry.oldValue)}</span>
+            <span className="mx-1.5 text-ink-muted">→</span>
+            <span className="font-medium text-ink-strong">{fmtValue(entry.field, entry.newValue)}</span>
           </span>
         )}
       </td>
-      <td className="py-2.5 px-3 text-stone-500">{byName ?? <span className="italic text-stone-500">system</span>}</td>
+      <td className="type-cell py-2.5 px-3">{byName ?? <span className="italic text-ink-muted">system</span>}</td>
       <td className="py-2.5 px-3 whitespace-nowrap type-cell">{new Date(entry.at).toLocaleString()}</td>
     </tr>
   );

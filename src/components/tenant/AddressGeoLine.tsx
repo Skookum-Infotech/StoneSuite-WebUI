@@ -30,7 +30,7 @@ export function AddressGeoLine({ stateId, countryId }: { stateId?: number | null
   const { state, country } = resolveGeo(lookups, stateId, countryId);
   if (!state && !country) return null;
   return (
-    <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-stone-600">
+    <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-ink">
       {state && <GeoName part={state} />}
       {country && <GeoName part={country} />}
     </p>

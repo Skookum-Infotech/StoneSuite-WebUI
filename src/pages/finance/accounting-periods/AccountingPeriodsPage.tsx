@@ -52,7 +52,7 @@ export default function AccountingPeriodsPage() {
             </div>
             <div>
               <h1 className="type-page-title">Accounting Periods</h1>
-              <p className="text-sm text-stone-500">
+              <p className="type-page-subtitle">
                 {calendar?.configured && currentPeriod
                   ? `Current period: ${currentPeriod.name}`
                   : 'Fiscal calendar, monthly period open/close, and the audit trail behind every close.'}

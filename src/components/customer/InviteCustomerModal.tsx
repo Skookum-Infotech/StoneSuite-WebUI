@@ -69,7 +69,7 @@ export function InviteCustomerModal({ onClose }: { onClose: () => void }) {
             </div>
             <h2 className="type-card-title">Invite Customer</h2>
           </div>
-          <button type="button" onClick={onClose} aria-label="Close" className="rounded p-1 text-stone-500 hover:bg-stone-100 hover:text-stone-600">
+          <button type="button" onClick={onClose} aria-label="Close" className="rounded p-1 text-ink-muted hover:bg-stone-100 hover:text-ink">
             <X className="size-4" />
           </button>
         </div>
@@ -81,12 +81,12 @@ export function InviteCustomerModal({ onClose }: { onClose: () => void }) {
               their onboarding{result.emailSent ? '' : ' (the email could not be sent — copy it)'}:
             </p>
             <div className="flex items-center gap-2 rounded-lg border border-stone-200 bg-stone-50 p-2">
-              <code className="flex-1 truncate px-2 text-label text-stone-700">{result.inviteLink}</code>
+              <code className="flex-1 truncate px-2 text-label text-ink">{result.inviteLink}</code>
               <button type="button" onClick={copyLink} aria-label="Copy invite link" className={cn(buttonVariants({ size: 'sm' }), 'flex')}>
                 <Copy className="size-3.5" /> {copied ? 'Copied' : 'Copy'}
               </button>
             </div>
-            <button type="button" onClick={onClose} className="w-full rounded-lg bg-brand py-2 text-xs font-semibold text-stone-950">
+            <button type="button" onClick={onClose} aria-label="Done" className={cn(buttonVariants(), 'w-full')}>
               Done
             </button>
           </div>

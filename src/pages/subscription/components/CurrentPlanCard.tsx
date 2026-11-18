@@ -7,7 +7,7 @@ const STATUS_CONFIG: Record<SubscriptionStatus, { label: string; dot: string; te
   active:    { label: 'Active',    dot: 'bg-emerald-500', text: 'text-emerald-700' },
   trialing:  { label: 'Trial',     dot: 'bg-blue-500',    text: 'text-blue-700'    },
   past_due:  { label: 'Past Due',  dot: 'bg-amber-400',   text: 'text-amber-700'   },
-  canceled:  { label: 'Canceled',  dot: 'bg-stone-400',   text: 'text-stone-500'   },
+  canceled:  { label: 'Canceled',  dot: 'bg-stone-400',   text: 'text-ink-muted'   },
 }
 
 const fmtDate = (d: string) =>
@@ -40,7 +40,7 @@ export function CurrentPlanCard({ plan, onUpgrade, onCancel }: CurrentPlanCardPr
             </div>
             <p className="mt-1 type-helper">
               {isEnterprise ? 'Custom pricing' : `$${plan.tier.pricePerMonth}/mo`}
-              <span className="mx-1.5 text-stone-500">•</span>
+              <span className="mx-1.5 text-ink-muted">•</span>
               Renews {fmtDate(plan.renewalDate)}
             </p>
           </div>
@@ -48,7 +48,7 @@ export function CurrentPlanCard({ plan, onUpgrade, onCancel }: CurrentPlanCardPr
         <div className="flex items-center gap-3 sm:gap-4 shrink-0 self-end sm:self-auto">
           <button
             onClick={onCancel}
-            className="text-xs font-semibold text-stone-500 hover:text-stone-700 transition-colors cursor-pointer"
+            className="text-xs font-semibold text-ink-muted hover:text-ink transition-colors cursor-pointer"
             aria-label="Cancel subscription"
           >
             Cancel

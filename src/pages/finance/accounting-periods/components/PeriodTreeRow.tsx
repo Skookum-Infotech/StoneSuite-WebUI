@@ -9,14 +9,14 @@ import {
 function StatusIcon({ status }: { status: PeriodStatus }) {
   return status === 'closed'
     ? <CheckCircle2 className="mx-auto size-4 text-emerald-500" aria-hidden="true" />
-    : <Circle className="mx-auto size-4 text-stone-400" aria-hidden="true" />;
+    : <Circle className="mx-auto size-4 text-ink-faint" aria-hidden="true" />;
 }
 
 function LockIcon({ status, lockedForever }: { status: PeriodStatus; lockedForever?: boolean }) {
   if (status === 'closed') {
-    return <Lock className={cn('mx-auto size-4', lockedForever ? 'text-stone-400' : 'text-warning-ink')} aria-hidden="true" />;
+    return <Lock className={cn('mx-auto size-4', lockedForever ? 'text-ink-muted' : 'text-warning-ink')} aria-hidden="true" />;
   }
-  return <Unlock className="mx-auto size-4 text-stone-400" aria-hidden="true" />;
+  return <Unlock className="mx-auto size-4 text-ink-faint" aria-hidden="true" />;
 }
 
 function AllowNonGlIcon() {
@@ -101,9 +101,9 @@ export function PeriodTreeRow({
             onClick={() => onToggleGroup(row.key)}
             aria-expanded={!row.collapsed}
             aria-label={`${row.collapsed ? 'Expand' : 'Collapse'} ${fiscalYearDisplayLabel(fiscalYear.name)}`}
-            className="flex items-center gap-1.5 font-bold text-stone-900"
+            className="flex items-center gap-1.5 font-bold text-ink-strong"
           >
-            {row.collapsed ? <ChevronRight className="size-3.5 text-stone-400" /> : <ChevronDown className="size-3.5 text-stone-400" />}
+            {row.collapsed ? <ChevronRight className="size-3.5 text-ink-faint" /> : <ChevronDown className="size-3.5 text-ink-faint" />}
             {fiscalYearDisplayLabel(fiscalYear.name)}
           </button>
         </td>
@@ -128,9 +128,9 @@ export function PeriodTreeRow({
             onClick={() => onToggleGroup(row.key)}
             aria-expanded={!row.collapsed}
             aria-label={`${row.collapsed ? 'Expand' : 'Collapse'} ${q.label}`}
-            className="flex items-center gap-1.5 font-semibold text-stone-700"
+            className="flex items-center gap-1.5 font-semibold text-ink"
           >
-            {row.collapsed ? <ChevronRight className="size-3.5 text-stone-400" /> : <ChevronDown className="size-3.5 text-stone-400" />}
+            {row.collapsed ? <ChevronRight className="size-3.5 text-ink-faint" /> : <ChevronDown className="size-3.5 text-ink-faint" />}
             {q.label}
           </button>
         </td>
@@ -162,10 +162,10 @@ export function PeriodTreeRow({
           />
         </td>
       )}
-      <td className="px-4 py-2 pl-14 text-stone-700">
+      <td className="type-cell px-4 py-2 pl-14">
         {period.name}
         {period.isBasePeriod && (
-          <span className="ml-1.5 rounded bg-stone-100 px-1 py-0.5 text-stone-500 type-pill">
+          <span className="ml-1.5 rounded bg-stone-100 px-1 py-0.5 text-ink-muted type-pill">
             Base period
           </span>
         )}
@@ -203,7 +203,7 @@ export function PeriodTreeRow({
           onClick={() => onOpenHistory(period)}
           aria-label={`View history for ${period.name}`}
           title="History"
-          className="mx-auto flex rounded p-1 text-stone-500 transition-colors hover:bg-stone-100 hover:text-stone-700"
+          className="mx-auto flex rounded p-1 text-ink-muted transition-colors hover:bg-stone-100 hover:text-ink"
         >
           <History className="size-3.5" />
         </button>

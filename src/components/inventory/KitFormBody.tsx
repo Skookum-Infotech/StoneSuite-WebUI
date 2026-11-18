@@ -73,17 +73,17 @@ export function KitFormBody({ data, onChange }: {
         {notice && <p role="status" className="mt-1.5 text-xs font-medium text-warning-ink">{notice}</p>}
 
         {data.members.length === 0 ? (
-          <div className="mt-4 flex items-center gap-2 rounded-lg border border-dashed border-stone-200 px-4 py-6 text-sm text-stone-500">
-            <Boxes className="size-4 shrink-0 text-stone-400" aria-hidden="true" />
+          <div className="mt-4 flex items-center gap-2 rounded-lg border border-dashed border-stone-200 px-4 py-6 text-sm text-ink-muted">
+            <Boxes className="size-4 shrink-0 text-ink-faint" aria-hidden="true" />
             No items yet. Search above to add the first one.
           </div>
         ) : (
           <ul aria-label="Items in this kit" className="mt-4 divide-y divide-stone-100 rounded-lg border border-stone-200">
             {data.members.map((m) => (
               <li key={m.itemId} className="flex items-center gap-3 px-3 py-2">
-                <Package className="size-4 shrink-0 text-stone-400" aria-hidden="true" />
+                <Package className="size-4 shrink-0 text-ink-faint" aria-hidden="true" />
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-sm font-medium text-stone-800">{m.name}</span>
+                  <span className="block truncate text-sm font-medium text-ink-strong">{m.name}</span>
                   <span className="block truncate font-mono type-subline">
                     {m.sku}{!m.isActive && ' · Inactive'}
                   </span>
@@ -101,7 +101,7 @@ export function KitFormBody({ data, onChange }: {
                   type="button"
                   onClick={() => onChange(removeMember(data, m.itemId))}
                   aria-label={`Remove ${m.name} from this kit`}
-                  className="shrink-0 rounded p-1 text-stone-500 transition-colors hover:bg-stone-100 hover:text-danger-ink"
+                  className="shrink-0 rounded p-1 text-ink-muted transition-colors hover:bg-stone-100 hover:text-danger-ink"
                 >
                   <Trash2 className="size-4" />
                 </button>

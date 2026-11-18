@@ -37,7 +37,7 @@ export default function CreatedOrderDetailPage() {
         subtitle={address || undefined}
         statusBadge={
           order ? (
-            <span className="inline-flex items-center rounded-full border border-stone-200 bg-stone-100 px-2.5 py-0.5 text-stone-600 type-pill">
+            <span className="inline-flex items-center rounded-full border border-stone-200 bg-stone-100 px-2.5 py-0.5 text-ink type-pill">
               {orderStatusLabel(order.status)}
             </span>
           ) : undefined
@@ -71,7 +71,7 @@ export default function CreatedOrderDetailPage() {
         {order && !order.editable && (
           <p
             role="status"
-            className="rounded-xl border border-stone-200 bg-stone-50 px-4 py-3 text-sm text-stone-600"
+            className="rounded-xl border border-stone-200 bg-stone-50 px-4 py-3 text-sm text-ink"
           >
             This order is now being processed, so it can't be changed here. Please contact us if
             something needs to change.

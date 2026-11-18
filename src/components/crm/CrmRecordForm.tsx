@@ -186,7 +186,7 @@ function CrmFieldInput({
         />
         <label
           htmlFor={field.key}
-          className={`${checkboxLabelCls} cursor-pointer select-none hover:text-stone-900 transition-colors flex-1`}
+          className={`${checkboxLabelCls} cursor-pointer select-none hover:text-ink-strong transition-colors flex-1`}
         >
           {field.label}
           {field.required && <span className="ml-0.5 text-danger-ink">*</span>}

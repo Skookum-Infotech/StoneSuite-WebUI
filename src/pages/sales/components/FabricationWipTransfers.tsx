@@ -33,7 +33,7 @@ export function FabricationWipTransfers({ jobId, version }: { jobId: string; ver
     <div><h3 id="wip-heading" className="type-card-title">Move Material to the Workshop</h3><p className="mt-1 type-helper">Move an inspected, allocated slab into a shared WIP area or a saw’s work area. Moving material does not consume stock.</p></div>
     {(options.isLoading || bins.isLoading) && <p role="status" className="text-sm">Loading work areas…</p>}
     {(options.error || bins.error) && <p role="alert" className="text-sm text-danger-ink">Unable to load material or work areas.</p>}
-    {options.data?.length === 0 && <p className="text-sm text-stone-500">No material is available to move with your current permissions.</p>}
+    {options.data?.length === 0 && <p className="text-sm text-ink-muted">No material is available to move with your current permissions.</p>}
     {options.data && options.data.length > 0 && <form className="space-y-3" onSubmit={(event) => { event.preventDefault(); setSaved(false); if (selected?.action.enabled && binId) action.run({ slabId, binId, note }); }}>
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="space-y-1 type-field-label">Allocated slab<Select aria-label="Allocated slab" className={fieldCls} value={slabId} onChange={(event) => { setSlabId(event.target.value); setBinId(''); }} required disabled={action.isPending}><option value="">Choose a slab</option>{options.data.map((option) => <option key={option.slabId} value={option.slabId}>{option.serial}</option>)}</Select></label>

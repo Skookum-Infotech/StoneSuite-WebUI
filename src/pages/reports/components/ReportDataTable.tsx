@@ -25,22 +25,22 @@ const DEFAULT_EMPTY_TEXT = "No records in this period.";
 export function ReportDataTable<Row>({ copy, columns, rows, getRowKey, onRowClick }: ReportDataTableProps<Row>) {
   if (rows.length === 0) {
     return (
-      <p className="rounded-xl border border-dashed border-stone-200 py-10 text-center text-sm text-stone-500">
+      <p className="rounded-xl border border-dashed border-stone-200 py-10 text-center text-sm text-ink-muted">
         {copy.empty ?? DEFAULT_EMPTY_TEXT}
       </p>
     );
   }
   return (
     <div className="overflow-x-auto rounded-xl border border-stone-200 bg-white">
-      <table className="w-full text-sm">
+      <table className="w-full type-cell">
         <caption className="sr-only">{copy.caption}</caption>
-        <thead className="bg-stone-50 text-label text-stone-500">
+        <thead className="bg-stone-50 text-label text-ink-muted">
           <tr>
             {columns.map((c) => (
               <th
                 key={c.key}
                 scope="col"
-                className={cn("px-3 py-2 font-medium", c.align === "right" ? "text-right" : "text-left")}
+                className={cn("px-3 py-2 type-th", c.align === "right" ? "text-right" : "text-left")}
               >
                 {c.label}
               </th>
@@ -59,7 +59,7 @@ export function ReportDataTable<Row>({ copy, columns, rows, getRowKey, onRowClic
                 return (
                   <td
                     key={c.key}
-                    className={cn("px-3 py-2 text-stone-700", c.align === "right" ? "text-right tabular-nums" : "text-left")}
+                    className={cn("px-3 py-2 text-ink", c.align === "right" ? "text-right tabular-nums" : "text-left")}
                   >
                     {i === 0 && onRowClick ? (
                       <button
@@ -69,7 +69,7 @@ export function ReportDataTable<Row>({ copy, columns, rows, getRowKey, onRowClic
                           e.stopPropagation();
                           onRowClick(row);
                         }}
-                        className="text-left font-medium text-stone-900 underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400"
+                        className="text-left font-medium text-ink-strong underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400"
                       >
                         {text}
                       </button>

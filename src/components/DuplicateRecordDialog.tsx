@@ -45,7 +45,7 @@ export function DuplicateRecordDialog({
           </h3>
         </div>
 
-        <p id="duplicate-record-desc" className="mb-5 text-xs text-stone-600">
+        <p id="duplicate-record-desc" className="mb-5 text-xs text-ink">
           {copy.body}
         </p>
 

@@ -29,7 +29,7 @@ export function CurrentStatusField({ workflowKey, statusId }: Props) {
       {current ? (
         <Badge color={resolveStatusColor(current.stateKey, current.color)}>{current.statusLabel}</Badge>
       ) : (
-        <span className="text-stone-500">{isLoading ? 'Loading…' : '—'}</span>
+        <span className="text-ink-muted">{isLoading ? 'Loading…' : '—'}</span>
       )}
     </div>
   );

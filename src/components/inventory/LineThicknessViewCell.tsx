@@ -6,7 +6,7 @@ export function LineThicknessViewCell({ value, unit }: {
 }) {
   const blank = value === null || value === undefined || value === '';
   return (
-    <td className="px-2.5 py-2.5 tabular-nums text-right text-stone-600 whitespace-nowrap">
+    <td className="type-cell px-2.5 py-2.5 tabular-nums text-right whitespace-nowrap">
       {blank ? '—' : `${value} ${unit || 'in'}`}
     </td>
   );

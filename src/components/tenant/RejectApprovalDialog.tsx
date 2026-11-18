@@ -108,7 +108,7 @@ function RejectDialogContent<T>({ noun, run, warning, onClose, onRejected }: {
           </div>
         </div>
 
-        {warning && <p className="mb-3 text-xs text-stone-600">{warning}</p>}
+        {warning && <p className="mb-3 text-xs text-ink">{warning}</p>}
 
         <label htmlFor={reasonId} className="type-field-label">
           Reason

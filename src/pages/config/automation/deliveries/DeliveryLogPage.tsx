@@ -22,7 +22,7 @@ const HEADERS = [
 ];
 const BAD_CURSOR_MESSAGE = 'The list changed while you were paging. Showing the first page again.';
 const BUTTON_CLASS =
-  'rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-50 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-200';
+  'rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-ink hover:bg-stone-50 disabled:opacity-50 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-200';
 
 function httpStatus(err: unknown): number | undefined {
   return isAxiosError(err) ? err.response?.status : undefined;
@@ -131,7 +131,7 @@ export default function DeliveryLogPage() {
         <div className="overflow-hidden rounded-2xl border border-stone-200 bg-white dark:border-stone-800 dark:bg-stone-900">
           <div
             aria-hidden="true"
-            className={`hidden border-b border-stone-200 bg-stone-50 px-4 py-2 text-xs font-semibold text-stone-500 dark:border-stone-800 dark:bg-stone-900 ${DELIVERY_GRID}`}
+            className={`hidden border-b border-stone-200 bg-stone-50 px-4 py-2 text-xs font-semibold text-ink-muted dark:border-stone-800 dark:bg-stone-900 ${DELIVERY_GRID}`}
           >
             {HEADERS.map((h) => (
               <span key={h} className="text-center">

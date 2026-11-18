@@ -86,21 +86,21 @@ export function LookupVocabularyTable({ kind, label }: { kind: LookupKind; label
       {error && <p className="type-error">{apiErrorMessage(error, `Failed to load ${label.toLowerCase()}.`)}</p>}
 
       <div className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm">
-        <table className="w-full text-left text-xs">
+        <table className="w-full text-left type-cell">
           <thead className="border-b border-stone-200 bg-table-header">
             <tr>
-              {isColors && <th className="px-4 py-2.5 font-semibold uppercase tracking-wider text-stone-500">Swatch</th>}
-              <th className="px-4 py-2.5 font-semibold uppercase tracking-wider text-stone-500">Name</th>
-              <th className="px-4 py-2.5 font-semibold uppercase tracking-wider text-stone-500">Code</th>
-              <th className="px-4 py-2.5 font-semibold uppercase tracking-wider text-stone-500">Status</th>
-              {writable && <th className="px-4 py-2.5 font-semibold uppercase tracking-wider text-stone-500 text-right">Actions</th>}
+              {isColors && <th className="type-th px-4 py-2.5">Swatch</th>}
+              <th className="type-th px-4 py-2.5">Name</th>
+              <th className="type-th px-4 py-2.5">Code</th>
+              <th className="type-th px-4 py-2.5">Status</th>
+              {writable && <th className="type-th px-4 py-2.5 text-right">Actions</th>}
             </tr>
           </thead>
           <tbody className="divide-y divide-stone-100">
             {isLoading ? (
-              <tr><td colSpan={colCount} className="px-4 py-6 text-center text-stone-500">Loading…</td></tr>
+              <tr><td colSpan={colCount} className="type-cell px-4 py-6 text-center">Loading…</td></tr>
             ) : items.length === 0 && editingId !== 'new' ? (
-              <tr><td colSpan={colCount} className="px-4 py-6 text-center text-stone-500">No {label.toLowerCase()} yet.</td></tr>
+              <tr><td colSpan={colCount} className="type-cell px-4 py-6 text-center">No {label.toLowerCase()} yet.</td></tr>
             ) : (
               items.map((item) => {
                 const itemHex = typeof item.extra?.hex === 'string' ? item.extra.hex : '';
@@ -124,18 +124,18 @@ export function LookupVocabularyTable({ kind, label }: { kind: LookupKind; label
                         />
                       </td>
                     )}
-                    <td className="px-4 py-2.5 font-medium text-stone-800">{item.name}</td>
-                    <td className="px-4 py-2.5 font-mono text-stone-500">{item.code}</td>
+                    <td className="type-cell px-4 py-2.5 font-medium">{item.name}</td>
+                    <td className="type-cell px-4 py-2.5 font-mono">{item.code}</td>
                     <td className="px-4 py-2.5">
-                      <span className={item.isActive ? 'text-emerald-600 font-semibold' : 'text-stone-500'}>{item.isActive ? 'Active' : 'Inactive'}</span>
+                      <span className={item.isActive ? 'text-emerald-600 font-semibold' : 'text-ink-muted'}>{item.isActive ? 'Active' : 'Inactive'}</span>
                     </td>
                     {writable && (
                       <td className="px-4 py-2.5 text-right">
                         <div className="flex items-center justify-end gap-1.5">
                           {!item.isSystem && (
                             <>
-                              <button type="button" onClick={() => startEdit(item)} aria-label={`Edit ${item.name}`} className="inline-flex items-center justify-center rounded-lg border border-stone-200 bg-white p-1.5 text-stone-500 hover:bg-accent hover:border-accent hover:text-accent-foreground transition-colors"><Pencil className="size-3.5" /></button>
-                              <button type="button" onClick={() => remove(item.id)} aria-label={`Delete ${item.name}`} className="inline-flex items-center justify-center rounded-lg border border-stone-200 bg-white p-1.5 text-stone-500 hover:bg-destructive/10 hover:border-destructive/30 hover:text-danger-ink transition-colors"><Trash2 className="size-3.5" /></button>
+                              <button type="button" onClick={() => startEdit(item)} aria-label={`Edit ${item.name}`} className="inline-flex items-center justify-center rounded-lg border border-stone-200 bg-white p-1.5 text-ink-muted hover:bg-accent hover:border-accent hover:text-accent-foreground transition-colors"><Pencil className="size-3.5" /></button>
+                              <button type="button" onClick={() => remove(item.id)} aria-label={`Delete ${item.name}`} className="inline-flex items-center justify-center rounded-lg border border-stone-200 bg-white p-1.5 text-ink-muted hover:bg-destructive/10 hover:border-destructive/30 hover:text-danger-ink transition-colors"><Trash2 className="size-3.5" /></button>
                             </>
                           )}
                         </div>
@@ -218,10 +218,10 @@ function EditRow({ draft, onChange, actions, colSpanActions, kind }: {
       {colSpanActions && (
         <td className="px-4 py-2 text-right">
           <div className="flex items-center justify-end gap-1.5">
-            <button type="button" disabled={saving || !draft.name.trim() || !draft.code.trim() || !hexValid} onClick={onSave} aria-label="Save" className="inline-flex items-center justify-center rounded-lg bg-brand p-1.5 text-stone-950 hover:bg-brand-hover disabled:opacity-50 transition-colors">
+            <button type="button" disabled={saving || !draft.name.trim() || !draft.code.trim() || !hexValid} onClick={onSave} aria-label="Save" className="inline-flex items-center justify-center rounded-lg bg-brand p-1.5 text-ink-strong hover:bg-brand-hover disabled:opacity-50 transition-colors">
               {saving ? <Loader2 className="size-3.5 animate-spin" /> : <Check className="size-3.5" />}
             </button>
-            <button type="button" disabled={saving} onClick={onCancel} aria-label="Cancel" className="inline-flex items-center justify-center rounded-lg border border-stone-200 bg-white p-1.5 text-stone-500 hover:bg-stone-50 transition-colors">
+            <button type="button" disabled={saving} onClick={onCancel} aria-label="Cancel" className="inline-flex items-center justify-center rounded-lg border border-stone-200 bg-white p-1.5 text-ink-muted hover:bg-stone-50 transition-colors">
               <X className="size-3.5" />
             </button>
           </div>

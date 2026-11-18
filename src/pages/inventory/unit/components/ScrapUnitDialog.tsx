@@ -45,7 +45,7 @@ export function ScrapUnitDialog({ unit, onClose, onScrapped }: {
               <p className="mt-0.5 type-helper">{unit.serial} · {unit.area.toFixed(2)} sq</p>
             </div>
           </div>
-          <button type="button" onClick={onClose} aria-label="Close" className="rounded p-1 text-stone-400 hover:bg-stone-100"><X className="size-4" /></button>
+          <button type="button" onClick={onClose} aria-label="Close" className="rounded p-1 text-ink-muted hover:bg-stone-100"><X className="size-4" /></button>
         </div>
 
         <div className="space-y-3">

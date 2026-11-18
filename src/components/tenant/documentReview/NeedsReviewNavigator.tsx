@@ -43,7 +43,7 @@ export function NeedsReviewNavigator({ pending, onJump }: NeedsReviewNavigatorPr
         onClick={() => step(1)}
         disabled={pending.length === 0}
         aria-label={`Needs review, ${pending.length} remaining. Jump to next`}
-        className="inline-flex items-center gap-1.5 rounded-lg border border-warning dark:border-amber-500/50 bg-warning/10 dark:bg-amber-500/10 px-2.5 py-1 text-xs font-semibold text-warning-ink dark:text-amber-400 transition-colors hover:bg-warning/20 dark:hover:bg-amber-500/20 disabled:border-stone-200 dark:disabled:border-stone-700 disabled:bg-stone-50 dark:disabled:bg-white/[0.03] disabled:text-stone-400"
+        className="inline-flex items-center gap-1.5 rounded-lg border border-warning dark:border-amber-500/50 bg-warning/10 dark:bg-amber-500/10 px-2.5 py-1 text-xs font-semibold text-warning-ink dark:text-amber-400 transition-colors hover:bg-warning/20 dark:hover:bg-amber-500/20 disabled:border-stone-200 dark:disabled:border-stone-700 disabled:bg-stone-50 dark:disabled:bg-white/[0.03] disabled:text-ink-muted"
       >
         <Flag className="size-3" aria-hidden="true" />
         Needs review ({pending.length})
@@ -53,14 +53,14 @@ export function NeedsReviewNavigator({ pending, onJump }: NeedsReviewNavigatorPr
           <button
             type="button"
             aria-label="Keyboard shortcuts"
-            className="inline-flex size-6 items-center justify-center rounded-full text-stone-500 dark:text-stone-400 transition-colors hover:text-stone-700 dark:hover:text-stone-200"
+            className="inline-flex size-6 items-center justify-center rounded-full text-ink-muted dark:text-stone-400 transition-colors hover:text-ink dark:hover:text-stone-200"
           >
             <CircleHelp className="size-4" aria-hidden="true" />
           </button>
         </PopoverTrigger>
         <PopoverContent className="w-60 text-xs">
-          <p className="mb-1.5 font-semibold text-stone-900 dark:text-stone-100">Review shortcuts</p>
-          <dl className="space-y-1 text-stone-600 dark:text-stone-300">
+          <p className="mb-1.5 font-semibold text-ink-strong dark:text-stone-100">Review shortcuts</p>
+          <dl className="space-y-1 text-ink dark:text-stone-300">
             <div className="flex justify-between gap-2"><dt>Next field to review</dt><dd><kbd>Alt</kbd> + <kbd>{'↓'}</kbd></dd></div>
             <div className="flex justify-between gap-2"><dt>Previous field</dt><dd><kbd>Alt</kbd> + <kbd>{'↑'}</kbd></dd></div>
           </dl>

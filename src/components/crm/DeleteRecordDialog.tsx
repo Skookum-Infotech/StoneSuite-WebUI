@@ -77,7 +77,7 @@ export function DeleteRecordDialog({ recordId, workflowKey, label, onDeleted, gu
               guard.content(handleClose)
             ) : (
               <>
-                <p className="text-xs text-stone-600 mb-4">
+                <p className="text-xs text-ink mb-4">
                   <span className="font-semibold">{label}</span> will be permanently deleted.
                 </p>
 
@@ -91,7 +91,7 @@ export function DeleteRecordDialog({ recordId, workflowKey, label, onDeleted, gu
                     onChange={(e) => setReason(e.target.value)}
                     placeholder="Briefly explain why you're deleting this record…"
                     rows={3}
-                    className="w-full rounded-lg border border-stone-200 bg-stone-50 px-3 py-2 text-xs text-stone-800 placeholder:text-stone-500 focus:border-destructive/30 focus:outline-none focus:ring-2 focus:ring-destructive/10 resize-none"
+                    className="w-full rounded-lg border border-stone-200 bg-stone-50 px-3 py-2 text-xs text-ink-strong placeholder:text-ink-muted focus:border-destructive/30 focus:outline-none focus:ring-2 focus:ring-destructive/10 resize-none"
                   />
                 </div>
 

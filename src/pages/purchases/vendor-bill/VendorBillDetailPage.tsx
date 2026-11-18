@@ -344,7 +344,7 @@ export default function VendorBillDetailPage() {
 
           {activeTab === 'items' && (
             <div className="overflow-x-auto modal-scrollbar rounded-lg border border-stone-200 bg-white">
-              <table className="w-full text-left text-xs">
+              <table className="w-full text-left type-cell">
                 <thead className="bg-stone-50 border-b border-stone-200">
                   <tr className="divide-x divide-stone-200">
                     {[
@@ -368,25 +368,25 @@ export default function VendorBillDetailPage() {
                   {/* Lines added from a kit sit under the kit's heading, as in Sales. */}
                   <KitLineRows lines={bill.items} colSpan={VB_ITEM_COLUMNS} renderRow={(line, kitCls) => (
                     <tr className={cn('hover:bg-stone-50/50 divide-x divide-stone-100', kitCls)}>
-                      <td className="px-3 py-2.5 text-stone-500 tabular-nums">{line.lineNumber}</td>
-                      <td className="px-3 py-2.5 font-medium text-stone-800">
-                        {line.itemName || line.description || <span className="text-stone-500">—</span>}
+                      <td className="type-cell px-3 py-2.5 tabular-nums">{line.lineNumber}</td>
+                      <td className="type-cell px-3 py-2.5 font-medium">
+                        {line.itemName || line.description || <span className="text-ink-muted">—</span>}
                       </td>
-                      <td className="px-3 py-2.5 text-stone-500 max-w-[200px] truncate">{line.description || '—'}</td>
+                      <td className="type-cell px-3 py-2.5 max-w-[200px] truncate">{line.description || '—'}</td>
                       <td className="px-3 py-2.5 type-record-id">{line.sku || '—'}</td>
                       <LineSizeViewCells size={line} unit={line.dimensionUnit} units={line.unitCode} />
-                      <td className="px-3 py-2.5 text-stone-500 whitespace-nowrap" title={line.unitCode || undefined}>
-                        {unitLabel(line.unitCode) || <span className="text-stone-500">—</span>}
+                      <td className="type-cell px-3 py-2.5 whitespace-nowrap" title={line.unitCode || undefined}>
+                        {unitLabel(line.unitCode) || <span className="text-ink-muted">—</span>}
                       </td>
-                      <td className="px-3 py-2.5 tabular-nums text-right text-stone-600">{line.quantity}</td>
-                      <td className="px-3 py-2.5 tabular-nums text-right text-stone-600">{currency(line.unitPrice)}</td>
-                      <td className="px-3 py-2.5 tabular-nums text-right text-stone-500">{line.discountPercent}%</td>
-                      <td className="px-3 py-2.5 tabular-nums text-right text-stone-500">{line.taxPercent}%</td>
-                      <td className="px-3 py-2.5 tabular-nums text-right text-stone-800 font-semibold">{currency(line.lineTotal)}</td>
+                      <td className="type-cell px-3 py-2.5 tabular-nums text-right">{line.quantity}</td>
+                      <td className="type-cell px-3 py-2.5 tabular-nums text-right">{currency(line.unitPrice)}</td>
+                      <td className="type-cell px-3 py-2.5 tabular-nums text-right">{line.discountPercent}%</td>
+                      <td className="type-cell px-3 py-2.5 tabular-nums text-right">{line.taxPercent}%</td>
+                      <td className="type-cell-strong px-3 py-2.5 tabular-nums text-right">{currency(line.lineTotal)}</td>
                     </tr>
                   )} />
                   {bill.items.length === 0 && (
-                    <tr><td colSpan={VB_ITEM_COLUMNS} className="py-8 text-center text-stone-500">No line items.</td></tr>
+                    <tr><td colSpan={VB_ITEM_COLUMNS} className="type-cell py-8 text-center">No line items.</td></tr>
                   )}
                 </tbody>
               </table>
@@ -406,23 +406,23 @@ export default function VendorBillDetailPage() {
         <SalesDetailSidebar label="Vendor Bill Details">
           <WorkflowCard module="vendorBill" statusCode={bill.statusCode} statusLabel={bill.status} workflow={bill.workflow} links={{ vendorBillId: bill.id, purchaseOrderId: bill.purchaseOrder?.id }} />
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-            <p className="text-xs font-semibold text-stone-500">Quick Actions</p>
+            <p className="type-card-title">Quick Actions</p>
             <div className="space-y-0.5">
               <button
                 type="button"
                 onClick={() => navigate(`/purchases/vendor_bill/${id}/edit`, { state: { initialTab: 'files' } })}
-                className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs text-stone-700 w-full transition-colors text-left"
+                className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-button text-ink w-full transition-colors text-left"
               >
-                <Upload className="size-4 text-stone-400 shrink-0" />
+                <Upload className="size-4 text-ink-faint shrink-0" />
                 Upload file
               </button>
               {canEdit && bill.statusCode === 'DRFT' && (
                 <button
                   type="button"
                   onClick={() => navigate(`/purchases/vendor_bill/${id}/edit`)}
-                  className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs text-stone-700 w-full transition-colors text-left"
+                  className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-button text-ink w-full transition-colors text-left"
                 >
-                  <Pencil className="size-4 text-stone-400 shrink-0" />
+                  <Pencil className="size-4 text-ink-faint shrink-0" />
                   Edit vendor bill
                 </button>
               )}
@@ -433,10 +433,10 @@ export default function VendorBillDetailPage() {
                 type="button"
                 onClick={handleExportPdf}
                 disabled={exportingPdf}
-                className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs text-stone-700 w-full transition-colors text-left disabled:opacity-60 disabled:cursor-not-allowed"
+                className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-button text-ink w-full transition-colors text-left disabled:opacity-60 disabled:cursor-not-allowed"
                 aria-label="Export as PDF"
               >
-                {exportingPdf ? <Loader2 className="size-4 text-stone-400 shrink-0 animate-spin" /> : <FileDown className="size-4 text-stone-400 shrink-0" />}
+                {exportingPdf ? <Loader2 className="size-4 text-ink-faint shrink-0 animate-spin" /> : <FileDown className="size-4 text-ink-faint shrink-0" />}
                 {exportingPdf ? 'Exporting…' : 'Export PDF'}
               </button>
             </div>
@@ -447,7 +447,7 @@ export default function VendorBillDetailPage() {
 
           {showActions && (
             <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-              <p className="text-xs font-semibold text-stone-500">Actions</p>
+              <p className="type-card-title">Actions</p>
               <VendorBillStatusControl
                 order={{ statusCode: bill.statusCode, approvalStatus: bill.approvalStatus, gated: bill.gated, nextStatusCodes: pillCodes }}
                 onChange={requestTransition}
@@ -458,48 +458,48 @@ export default function VendorBillDetailPage() {
           )}
 
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-            <p className="text-xs font-semibold text-stone-500">Status</p>
+            <p className="type-card-title">Status</p>
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
-              <span className="text-stone-500">Status</span>
+              <span className="text-ink-muted">Status</span>
               <Badge color={color}>{bill.status}</Badge>
             </div>
             {bill.approvalStatus && bill.approvalStatus !== 'none' && (
               <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
-                <span className="text-stone-500">Approval</span>
+                <span className="text-ink-muted">Approval</span>
                 <span className={cn('font-medium', bill.approvalStatus === 'approved' ? 'text-success-ink' : 'text-warning-ink')}>
                   {bill.approvalStatus === 'approved' ? 'Approved' : 'Pending Approval'}
                 </span>
               </div>
             )}
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
-              <span className="text-stone-500">Vendor</span>
+              <span className="text-ink-muted">Vendor</span>
               <button
                 type="button"
                 onClick={() => navigate(`/purchases/vendor/${bill.vendor.id}`)}
-                className="text-stone-700 hover:text-accent-foreground truncate max-w-[140px] transition-colors"
+                className="text-ink hover:text-accent-foreground truncate max-w-[140px] transition-colors"
               >
                 {bill.vendor.name}
               </button>
             </div>
             {bill.purchaseOrder && (
               <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
-                <span className="text-stone-500">Purchase Order</span>
+                <span className="text-ink-muted">Purchase Order</span>
                 <button
                   type="button"
                   onClick={() => navigate(`/purchases/purchase_order/${bill.purchaseOrder!.id}`)}
-                  className="text-stone-700 hover:text-accent-foreground truncate max-w-[140px] transition-colors"
+                  className="text-ink hover:text-accent-foreground truncate max-w-[140px] transition-colors"
                 >
                   {bill.purchaseOrder.number}
                 </button>
               </div>
             )}
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
-              <span className="text-stone-500">Created</span>
-              <span className="text-stone-700">{fmtDate(bill.createdAt)}</span>
+              <span className="text-ink-muted">Created</span>
+              <span className="text-ink">{fmtDate(bill.createdAt)}</span>
             </div>
             <div className="flex justify-between items-center py-2 text-xs">
-              <span className="text-stone-500">Updated</span>
-              <span className="text-stone-700">{fmtDate(bill.updatedAt)}</span>
+              <span className="text-ink-muted">Updated</span>
+              <span className="text-ink">{fmtDate(bill.updatedAt)}</span>
             </div>
           </div>
 
@@ -548,7 +548,7 @@ function ReadonlyField({ label, value, full }: { label: string; value?: string; 
   return (
     <div className={cn('space-y-1', full && 'col-span-full')}>
       <label className={fieldLabelCls}>{label}</label>
-      <div className={readonlyCls}>{value || <span className="text-stone-500">—</span>}</div>
+      <div className={readonlyCls}>{value || <span className="text-ink-muted">—</span>}</div>
     </div>
   );
 }
@@ -557,7 +557,7 @@ function Total({ label, value, bold, currencyCode }: { label: string; value: num
   return (
     <div>
       <p className="type-overline">{label}</p>
-      <p className={cn('tabular-nums', bold ? 'text-sm font-bold text-stone-900' : 'text-xs font-semibold text-stone-600')}>
+      <p className={cn('tabular-nums', bold ? 'text-sm font-bold text-ink-strong' : 'text-xs font-semibold text-ink')}>
         {formatMoney(value, currencyCode)}
       </p>
     </div>

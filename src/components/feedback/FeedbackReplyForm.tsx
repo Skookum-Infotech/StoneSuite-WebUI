@@ -84,7 +84,7 @@ export function FeedbackReplyForm({ ticketId }: { ticketId: string }) {
             {apiErrorMessage(replyMutation.error, 'Failed to send reply.')}
           </p>
         ) : (
-          <p className="text-stone-500">Press Ctrl + Enter to send</p>
+          <p className="text-ink-muted">Press Ctrl + Enter to send</p>
         )}
       </div>
     </form>

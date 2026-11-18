@@ -7,8 +7,8 @@ export function ReorderStat({ label, value, emphasis = false }: {
   emphasis?: boolean;
 }) {
   return (
-    <div className={cn('rounded-lg px-3 py-2', emphasis ? 'bg-amber-50 text-amber-800' : 'bg-stone-50 text-stone-800')}>
-      <p className={cn('text-micro', emphasis ? 'text-amber-700' : 'text-stone-500')}>{label}</p>
+    <div className={cn('rounded-lg px-3 py-2', emphasis ? 'bg-amber-50 text-amber-800' : 'bg-stone-50 text-ink-strong')}>
+      <p className={cn('text-micro', emphasis ? 'text-amber-700' : 'text-ink-muted')}>{label}</p>
       <p className="text-lg font-semibold">{value}</p>
     </div>
   );

@@ -21,10 +21,10 @@ const SAVED_BANNER_MS = 4000
 // Everywhere the signed-in user's name is listed from a cached query.
 const NAME_QUERY_KEYS = [['users'], ['assignable-users']] as const
 
-const INPUT_BASE_CLASS = 'h-11 rounded-xl border-stone-200 text-stone-950 placeholder:text-stone-500'
+const INPUT_BASE_CLASS = 'h-11 rounded-xl border-stone-200 text-ink-strong placeholder:text-ink-muted'
 const INPUT_EDITING_CLASS = `${INPUT_BASE_CLASS} bg-white`
 // Locked look while not editing: same box, muted, so it reads as a display value.
-const INPUT_LOCKED_CLASS = `${INPUT_BASE_CLASS} bg-stone-50 text-stone-600 cursor-default`
+const INPUT_LOCKED_CLASS = `${INPUT_BASE_CLASS} bg-stone-50 text-ink cursor-default`
 
 export function ProfileNameForm({ fullName, email }: { fullName: string; email: string }) {
   const queryClient = useQueryClient()
@@ -101,7 +101,7 @@ export function ProfileNameForm({ fullName, email }: { fullName: string; email: 
 
       <div className="grid gap-4 sm:gap-5 sm:grid-cols-2">
         <div className="space-y-1.5">
-          <Label htmlFor="firstName" className="text-xs font-semibold text-stone-500">
+          <Label htmlFor="firstName" className="text-xs font-semibold text-ink-muted">
             First Name
           </Label>
           <Input
@@ -115,7 +115,7 @@ export function ProfileNameForm({ fullName, email }: { fullName: string; email: 
           {errors.firstName && <p className="type-error">{errors.firstName.message}</p>}
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="lastName" className="text-xs font-semibold text-stone-500">
+          <Label htmlFor="lastName" className="text-xs font-semibold text-ink-muted">
             Last Name
           </Label>
           <Input

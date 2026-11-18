@@ -84,7 +84,7 @@ export function FabricationMaterialsTab({ jobId, pieces, canAllocate, workflowVe
       {workflowVersion === 2 && version !== undefined && canAllocate && hasPermission('purchase_order', 'create') && hasPermission('vendor', 'read') && <FabricationShortagePurchase jobId={jobId} version={version} materials={materials} canReadPurchase={hasPermission('purchase_order', 'read')} />}
 
       <div>
-        <h4 className="mb-2 text-xs font-semibold text-stone-500">Allocated slabs</h4>
+        <h4 className="mb-2 text-xs font-semibold text-ink-muted">Allocated slabs</h4>
         <FabricationAllocatedSlabs jobId={jobId} canRelease={canAllocate && (workflowVersion !== 2 || hasPermission('inventory_unit', 'update'))} workflowVersion={workflowVersion} version={version} />
       </div>
 

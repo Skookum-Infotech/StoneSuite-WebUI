@@ -22,7 +22,7 @@ export function PlannerEventCard({ card }: { card: PlannerCard }) {
     >
       {/* Wraps in a narrow column: the pill drops under the time. */}
       <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
-        <span className="font-semibold tabular-nums text-stone-700">{card.timeLabel}</span>
+        <span className="font-semibold tabular-nums text-ink">{card.timeLabel}</span>
         <Badge color={card.statusColor} size="sm">{card.statusLabel}</Badge>
       </div>
 
@@ -31,7 +31,7 @@ export function PlannerEventCard({ card }: { card: PlannerCard }) {
         aria-label={card.ariaLabel}
         className={cn(
           // The number is the card's identity: it wraps rather than truncates.
-          'mt-1 block break-words text-sm font-bold text-stone-900 outline-none hover:underline focus-visible:underline',
+          'mt-1 block break-words text-sm font-bold text-ink-strong outline-none hover:underline focus-visible:underline',
           // Stretched link: the card's whole surface is the click target.
           "after:absolute after:inset-0 after:content-['']",
         )}
@@ -44,17 +44,17 @@ export function PlannerEventCard({ card }: { card: PlannerCard }) {
         <Link
           to={card.origin.href}
           aria-label={`Open ${card.origin.label}`}
-          className="relative block truncate font-medium text-stone-500 outline-none hover:underline focus-visible:underline"
+          className="relative block truncate font-medium text-ink-muted outline-none hover:underline focus-visible:underline"
         >
           From {card.origin.label}
         </Link>
       )}
 
-      <p className="line-clamp-2 break-words text-stone-700">{card.customer}</p>
-      {card.stage && <p className="line-clamp-2 font-medium text-stone-600">{card.stage}</p>}
-      {card.meta && <p className="line-clamp-2 text-stone-500">{card.meta}</p>}
+      <p className="line-clamp-2 break-words text-ink">{card.customer}</p>
+      {card.stage && <p className="line-clamp-2 font-medium text-ink">{card.stage}</p>}
+      {card.meta && <p className="line-clamp-2 text-ink-muted">{card.meta}</p>}
       {card.notes && (
-        <p className="mt-1 line-clamp-2 italic text-stone-500" title={card.notes}>
+        <p className="mt-1 line-clamp-2 italic text-ink-muted" title={card.notes}>
           {card.notes}
         </p>
       )}

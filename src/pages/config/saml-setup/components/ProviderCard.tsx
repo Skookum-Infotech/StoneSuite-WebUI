@@ -39,7 +39,7 @@ export function ProviderCard({ to, icon, label, description, status }: ProviderC
           aria-hidden="true"
           className={cn(
             "absolute left-4 top-4 inline-flex items-center gap-1 rounded-full px-2 py-1 type-pill",
-            status === "active" ? "bg-green-50 text-green-700" : "bg-stone-100 text-stone-500",
+            status === "active" ? "bg-green-50 text-green-700" : "bg-stone-100 text-ink-muted",
           )}
         >
           <Check className="size-3" strokeWidth={3} />
@@ -56,7 +56,7 @@ export function ProviderCard({ to, icon, label, description, status }: ProviderC
         <Icon className="size-8" />
       </div>
       <div>
-        <p className="text-base font-bold text-stone-900">{label}</p>
+        <p className="text-base font-bold text-ink-strong">{label}</p>
         <p className="mt-1.5 type-helper">{description}</p>
       </div>
     </Link>

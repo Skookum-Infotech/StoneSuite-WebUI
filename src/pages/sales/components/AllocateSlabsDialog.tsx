@@ -125,7 +125,7 @@ export function AllocateSlabsDialog({ jobId, material, pieces, onClose }: {
 
         <div className="mb-3 flex flex-wrap items-center gap-2">
           <div className="relative min-w-[200px] flex-1">
-            <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-stone-400" aria-hidden="true" />
+            <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-ink-faint" aria-hidden="true" />
             <input
               type="text"
               value={term}
@@ -168,10 +168,10 @@ export function AllocateSlabsDialog({ jobId, material, pieces, onClose }: {
               {debounced ? 'No slabs match that search.' : `No unallocated ${material.name} is in stock.`}
             </p>
           ) : (
-            <table className="w-full min-w-[560px] text-left text-xs" aria-label="Slabs in stock">
+            <table className="w-full min-w-[560px] text-left type-cell" aria-label="Slabs in stock">
               <thead className="sticky top-0 border-b border-stone-200 bg-stone-50">
                 <tr>
-                  <th className="w-8 px-3 py-2"><span className="sr-only">Select</span></th>
+                  <th className="type-th w-8 px-3 py-2"><span className="sr-only">Select</span></th>
                   {['Serial', 'Kind', 'Size (mm)', 'Area', 'Location', 'Lot'].map((h) => (
                     <th key={h} className="px-3 py-2 type-th">{h}</th>
                   ))}
@@ -190,11 +190,11 @@ export function AllocateSlabsDialog({ jobId, material, pieces, onClose }: {
                       />
                     </td>
                     <td className="px-3 py-2 type-record-id">{s.serial}</td>
-                    <td className="px-3 py-2 capitalize text-stone-500">{s.kind}</td>
-                    <td className="px-3 py-2 tabular-nums text-stone-600">{s.lengthMm} × {s.widthMm} × {s.thicknessMm}</td>
-                    <td className="whitespace-nowrap px-3 py-2 tabular-nums text-stone-700">{formatStockQty(s.area, material.unitCode)}</td>
-                    <td className="max-w-[160px] truncate px-3 py-2 text-stone-500">{s.binPath || s.warehouseName || '—'}</td>
-                    <td className="px-3 py-2 text-stone-500">{s.lot || '—'}</td>
+                    <td className="type-cell px-3 py-2 capitalize">{s.kind}</td>
+                    <td className="type-cell px-3 py-2 tabular-nums">{s.lengthMm} × {s.widthMm} × {s.thicknessMm}</td>
+                    <td className="type-cell whitespace-nowrap px-3 py-2 tabular-nums">{formatStockQty(s.area, material.unitCode)}</td>
+                    <td className="type-cell max-w-[160px] truncate px-3 py-2">{s.binPath || s.warehouseName || '—'}</td>
+                    <td className="type-cell px-3 py-2">{s.lot || '—'}</td>
                   </tr>
                 ))}
               </tbody>
@@ -208,7 +208,7 @@ export function AllocateSlabsDialog({ jobId, material, pieces, onClose }: {
         {failureMessage && <p role="alert" className="mt-3 type-error">{failureMessage}</p>}
 
         <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-          <p className="text-xs text-stone-600" aria-live="polite">
+          <p className="text-xs text-ink" aria-live="polite">
             <span className="font-semibold tabular-nums">{formatStockQty(selectedArea, material.unitCode)}</span> selected
             {selected.size > 0 && ` (${selected.size} ${selected.size === 1 ? 'slab' : 'slabs'})`}
             {material.shortfall > EPSILON && (

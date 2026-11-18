@@ -134,14 +134,14 @@ export function AccountPicker({
   if (value) {
     return (
       <div className="flex items-center gap-2 rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm">
-        <Landmark className="size-3.5 shrink-0 text-stone-400" aria-hidden="true" />
+        <Landmark className="size-3.5 shrink-0 text-ink-faint" aria-hidden="true" />
         <span className="font-mono shrink-0 type-subline">{value.code}</span>
-        <span className="flex-1 truncate font-medium text-stone-800">{value.name}</span>
+        <span className="flex-1 truncate font-medium text-ink-strong">{value.name}</span>
         <button
           type="button"
           onClick={() => onChange(null)}
           aria-label="Change account"
-          className="shrink-0 rounded p-0.5 text-stone-500 hover:bg-stone-100 hover:text-stone-600 transition-colors"
+          className="shrink-0 rounded p-0.5 text-ink-muted hover:bg-stone-100 hover:text-ink transition-colors"
         >
           <X className="size-3.5" />
         </button>
@@ -152,7 +152,7 @@ export function AccountPicker({
   return (
     <div ref={containerRef} className="relative">
       <div className="relative">
-        <Search className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-stone-400" />
+        <Search className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-ink-faint" />
         <input
           type="text"
           required={required}
@@ -164,7 +164,7 @@ export function AccountPicker({
           aria-label={ariaLabel}
         />
         {isFetching && (
-          <Loader2 className="absolute right-2.5 top-1/2 -translate-y-1/2 size-3.5 animate-spin text-stone-400" />
+          <Loader2 className="absolute right-2.5 top-1/2 -translate-y-1/2 size-3.5 animate-spin text-ink-faint" />
         )}
       </div>
 
@@ -180,7 +180,7 @@ export function AccountPicker({
               key={a.id}
               type="button"
               onClick={() => select(a)}
-              className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-stone-700 hover:bg-accent/10 transition-colors"
+              className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-ink hover:bg-accent/10 transition-colors"
             >
               <span className="font-mono shrink-0 type-subline">{a.code}</span>
               <span className="truncate">{a.name}</span>

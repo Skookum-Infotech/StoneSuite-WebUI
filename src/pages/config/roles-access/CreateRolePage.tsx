@@ -355,7 +355,7 @@ export default function CreateRolePage() {
               <h1 className="truncate type-page-title">
                 {name || "Create New Role"}
               </h1>
-              <p className="text-label text-stone-500 truncate">
+              <p className="text-label text-ink-muted truncate">
                 {resourcesGiven === 0
                   ? "Define permissions and access scope."
                   : `${totalGrants} permission${totalGrants !== 1 ? "s" : ""} across ${resourcesGiven} resource${resourcesGiven !== 1 ? "s" : ""}.`}
@@ -373,7 +373,7 @@ export default function CreateRolePage() {
             <aside className="lg:sticky lg:top-6 lg:self-start">
               <div className="rounded-xl border border-stone-200 bg-white">
                 <div className="border-b border-stone-100 px-4 py-3">
-                  <h2 className="text-xs font-bold uppercase tracking-widest text-stone-500">
+                  <h2 className="text-xs font-bold uppercase tracking-widest text-ink-muted">
                     Role Details
                   </h2>
                 </div>
@@ -382,7 +382,7 @@ export default function CreateRolePage() {
                   <div className="space-y-1.5">
                     <Label
                       htmlFor="rname"
-                      className="text-xs font-medium text-stone-600"
+                      className="text-xs font-medium text-ink"
                     >
                       Display name <span className="text-red-400">*</span>
                     </Label>
@@ -405,7 +405,7 @@ export default function CreateRolePage() {
                   <div className="space-y-1.5">
                     <Label
                       htmlFor="rkey"
-                      className="text-xs font-medium text-stone-600"
+                      className="text-xs font-medium text-ink"
                     >
                       Key <span className="text-red-400">*</span>
                     </Label>
@@ -426,7 +426,7 @@ export default function CreateRolePage() {
                   <div className="space-y-1.5">
                     <Label
                       htmlFor="rdesc"
-                      className="text-xs font-medium text-stone-600"
+                      className="text-xs font-medium text-ink"
                     >
                       Description
                     </Label>
@@ -436,7 +436,7 @@ export default function CreateRolePage() {
                       onChange={(e) => setDescription(e.target.value)}
                       placeholder="Optional"
                       rows={3}
-                      className="w-full rounded-md border border-stone-200 px-2.5 py-1.5 text-xs text-stone-700 placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-brand/30 resize-none"
+                      className="w-full rounded-md border border-stone-200 px-2.5 py-1.5 text-xs text-ink placeholder:text-ink-muted focus:outline-none focus:ring-2 focus:ring-brand/30 resize-none"
                     />
                   </div>
 
@@ -447,7 +447,7 @@ export default function CreateRolePage() {
                     </p>
                     <div className="grid grid-cols-2 gap-2">
                       <div>
-                        <p className="text-base font-bold text-stone-800 leading-none">
+                        <p className="text-base font-bold text-ink-strong leading-none">
                           {resourcesGiven}
                         </p>
                         <p className="mt-0.5 type-helper">
@@ -455,7 +455,7 @@ export default function CreateRolePage() {
                         </p>
                       </div>
                       <div>
-                        <p className="text-base font-bold text-stone-800 leading-none">
+                        <p className="text-base font-bold text-ink-strong leading-none">
                           {totalGrants}
                         </p>
                         <p className="mt-0.5 type-helper">
@@ -474,10 +474,10 @@ export default function CreateRolePage() {
                 {/* Section header */}
                 <div className="flex items-center justify-between gap-4 border-b border-stone-200 px-4 py-3">
                   <div>
-                    <h2 className="text-xs font-bold uppercase tracking-widest text-stone-500">
+                    <h2 className="text-xs font-bold uppercase tracking-widest text-ink-muted">
                       Permissions Matrix
                     </h2>
-                    <p className="mt-0.5 text-label text-stone-500">
+                    <p className="mt-0.5 text-label text-ink-muted">
                       Click column headers to toggle that action across the
                       module. Click row labels to grant everything.
                     </p>
@@ -538,8 +538,8 @@ export default function CreateRolePage() {
                               className="flex flex-1 items-center justify-between text-left"
                             >
                               <div className="flex items-center gap-2">
-                                <Icon className="size-3.5 text-stone-400" />
-                                <span className="text-xs font-bold text-stone-700">
+                                <Icon className="size-3.5 text-ink-faint" />
+                                <span className="text-xs font-bold text-ink">
                                   {mod.label}
                                 </span>
                                 <span className="type-subline">
@@ -554,7 +554,7 @@ export default function CreateRolePage() {
                               </div>
                               <ChevronDown
                                 className={cn(
-                                  "size-3.5 text-stone-400 transition-transform",
+                                  "size-3.5 text-ink-muted transition-transform",
                                   open && "rotate-180",
                                 )}
                               />
@@ -564,7 +564,7 @@ export default function CreateRolePage() {
                           {/* Matrix table */}
                           {open && (
                             <div className="overflow-x-auto modal-scrollbar">
-                              <table className="w-full text-xs">
+                              <table className="w-full type-cell">
                                 <thead>
                                   <tr className="border-y border-stone-100 bg-white">
                                     <th className="sticky left-0 z-10 bg-white py-2 pl-4 pr-3 text-left w-48 type-th">
@@ -586,7 +586,7 @@ export default function CreateRolePage() {
                                       return (
                                         <th
                                           key={action}
-                                          className="w-20 py-2 text-center"
+                                          className="type-th w-20 py-2 text-center"
                                         >
                                           <button
                                             type="button"
@@ -597,7 +597,7 @@ export default function CreateRolePage() {
                                               "mx-auto flex items-center justify-center rounded px-2 py-1 type-overline transition",
                                               allHave
                                                 ? "bg-brand/15 text-link hover:bg-brand/25"
-                                                : "text-stone-500 hover:bg-stone-100 hover:text-stone-700",
+                                                : "text-ink-muted hover:bg-stone-100 hover:text-ink",
                                             )}
                                             title={`Toggle ${ACTION_LABELS[action]} for all rows`}
                                           >
@@ -648,7 +648,7 @@ export default function CreateRolePage() {
                                                 : "Grant all actions"
                                             }
                                           >
-                                            <p className="text-xs font-semibold text-stone-700">
+                                            <p className="text-xs font-semibold text-ink">
                                               {row.label}
                                             </p>
                                             <p className="font-mono type-helper">
@@ -704,7 +704,7 @@ export default function CreateRolePage() {
                                               "h-7 w-full rounded-md border px-1.5 text-label transition",
                                               "focus:outline-none focus:ring-2 focus:ring-brand/30",
                                               hasAny
-                                                ? "border-stone-200 bg-white text-stone-700 hover:border-stone-300 cursor-pointer"
+                                                ? "border-stone-200 bg-white text-ink hover:border-stone-300 cursor-pointer"
                                                 : "border-stone-100 bg-stone-50 text-stone-300 cursor-not-allowed",
                                             )}
                                           >
@@ -770,7 +770,7 @@ export default function CreateRolePage() {
               disabled={!canSubmit}
               className={cn(
                 "inline-flex items-center gap-2 rounded-lg px-4 py-2 text-xs font-semibold shadow-sm transition",
-                "bg-brand text-stone-950 hover:bg-brand/80 active:scale-[0.98]",
+                "bg-brand text-ink-strong hover:bg-brand/80 active:scale-[0.98]",
                 "disabled:cursor-not-allowed disabled:opacity-50",
               )}
             >

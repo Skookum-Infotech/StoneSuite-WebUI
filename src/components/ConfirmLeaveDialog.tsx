@@ -101,7 +101,7 @@ export function ConfirmLeaveDialog({
           </h3>
         </div>
 
-        <p id="confirm-leave-desc" className="mb-5 text-xs text-stone-600">
+        <p id="confirm-leave-desc" className="mb-5 text-xs text-ink">
           {describe(variant, recordNoun)}
         </p>
 

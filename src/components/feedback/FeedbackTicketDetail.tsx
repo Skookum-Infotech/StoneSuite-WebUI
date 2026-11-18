@@ -18,7 +18,7 @@ import type { FeedbackAttachment } from '@/types/feedback';
 import { buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 const CHIP_CLS =
-  'inline-flex items-center gap-1.5 rounded-md bg-stone-100 px-2 py-1 font-medium text-stone-600 dark:bg-white/10 dark:text-stone-300';
+  'inline-flex items-center gap-1.5 rounded-md bg-stone-100 px-2 py-1 font-medium text-ink dark:bg-white/10 dark:text-stone-300';
 
 function BackButton({ onBack }: { onBack: () => void }) {
   return (
@@ -26,7 +26,7 @@ function BackButton({ onBack }: { onBack: () => void }) {
       type="button"
       onClick={onBack}
       aria-label="Back to tickets"
-      className="mb-3 inline-flex items-center gap-1.5 text-xs font-medium text-stone-500 transition-colors hover:text-stone-800 dark:hover:text-stone-200"
+      className="mb-3 inline-flex items-center gap-1.5 text-xs font-medium text-ink-muted transition-colors hover:text-ink-strong dark:hover:text-stone-200"
     >
       <ArrowLeft className="size-3.5" aria-hidden="true" />
       Back to tickets
@@ -95,7 +95,7 @@ export function FeedbackTicketDetail({ ticketId, onBack }: { ticketId: string; o
       <header className="shrink-0 border-b border-stone-200 px-5 py-4 dark:border-white/10">
         {onBack && <BackButton onBack={onBack} />}
         <div className="flex flex-wrap items-center gap-2.5">
-          <h2 className="text-xl font-bold tracking-tight text-stone-900 dark:text-stone-100">{ticket.ticketNumber}</h2>
+          <h2 className="text-xl font-bold tracking-tight text-ink-strong dark:text-stone-100">{ticket.ticketNumber}</h2>
           <FeedbackStatusPill status={ticket.status} />
           {rated && (
             <span aria-label={`Rated ${ticket.rating} out of 5`} className="inline-flex items-center gap-1 text-xs font-medium text-warning-ink dark:text-amber-400">
@@ -104,7 +104,7 @@ export function FeedbackTicketDetail({ ticketId, onBack }: { ticketId: string; o
             </span>
           )}
         </div>
-        <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-stone-500 dark:text-stone-400">
+        <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-ink-muted dark:text-stone-400">
           <span className={CHIP_CLS}>
             <category.icon className="size-3.5" aria-hidden="true" />
             {category.label}
@@ -118,13 +118,13 @@ export function FeedbackTicketDetail({ ticketId, onBack }: { ticketId: string; o
       <div className="modal-scrollbar min-h-0 flex-1 space-y-7 overflow-y-auto px-5 py-5">
         <section aria-label="Your report" className="space-y-3">
           <h3 className="type-overline">Your report</h3>
-          <p className="whitespace-pre-wrap break-words text-sm leading-relaxed text-stone-800 dark:text-stone-100">
+          <p className="whitespace-pre-wrap break-words text-sm leading-relaxed text-ink-strong dark:text-stone-100">
             {ticket.description}
           </p>
           {ticket.pageUrl && (
             <p className="dark:text-stone-400 type-helper">
               Reported from{' '}
-              <code className="rounded bg-stone-100 px-1.5 py-0.5 font-mono text-field text-stone-600 dark:bg-white/10 dark:text-stone-300">
+              <code className="rounded bg-stone-100 px-1.5 py-0.5 font-mono text-field text-ink dark:bg-white/10 dark:text-stone-300">
                 {ticket.pageUrl}
               </code>
             </p>
@@ -139,10 +139,10 @@ export function FeedbackTicketDetail({ ticketId, onBack }: { ticketId: string; o
                     aria-label={`Download ${attachment.fileName}`}
                     className={cn(buttonVariants({ variant: 'outline' }), 'gap-2 dark:border-white/10 dark:bg-white/[0.04] dark:text-stone-200 dark:hover:bg-white/[0.08]')}
                   >
-                    <Paperclip className="size-3.5 text-stone-400" aria-hidden="true" />
+                    <Paperclip className="size-3.5 text-ink-faint" aria-hidden="true" />
                     {attachment.fileName}
-                    <span className="text-stone-500">{formatFeedbackFileSize(attachment.sizeBytes)}</span>
-                    <Download className="size-3.5 text-stone-400" aria-hidden="true" />
+                    <span className="text-ink-muted">{formatFeedbackFileSize(attachment.sizeBytes)}</span>
+                    <Download className="size-3.5 text-ink-faint" aria-hidden="true" />
                   </button>
                 </li>
               ))}

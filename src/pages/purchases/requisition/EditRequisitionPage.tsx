@@ -175,7 +175,7 @@ export default function EditRequisitionPage() {
           subtitle={reqn.department || undefined}
         />
         <div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 text-center">
-          <Lock className="size-8 text-stone-400" aria-hidden="true" />
+          <Lock className="size-8 text-ink-faint" aria-hidden="true" />
           <p className="type-card-title">
             This requisition is {reqn.status} and can no longer be edited.
           </p>

@@ -15,7 +15,7 @@ interface SelectionStripProps {
 export function SelectionStrip({ count, panelOpen, onConfigure, onClear }: SelectionStripProps) {
   return (
     <div className="flex items-center justify-between gap-2 border-t border-stone-100 bg-white px-3 py-2">
-      <p className="text-xs font-semibold text-stone-700">{count} selected</p>
+      <p className="text-xs font-semibold text-ink">{count} selected</p>
       <div className="flex items-center gap-2">
         {!panelOpen && (
           <button
@@ -32,7 +32,7 @@ export function SelectionStrip({ count, panelOpen, onConfigure, onClear }: Selec
           type="button"
           onClick={onClear}
           aria-label="Clear selection in list"
-          className="text-micro font-semibold text-stone-500 transition-colors hover:text-stone-700"
+          className="text-micro font-semibold text-ink-muted transition-colors hover:text-ink"
         >
           Clear
         </button>

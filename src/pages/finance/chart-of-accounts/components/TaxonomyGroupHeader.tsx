@@ -19,7 +19,7 @@ export interface TaxonomyGroupActions {
 }
 
 const LABEL_CLASSES: Record<TaxonomyGroup['level'], string> = {
-  category: 'text-xs font-semibold text-stone-700',
+  category: 'text-xs font-semibold text-ink',
   subcategory: 'type-overline',
 };
 
@@ -54,7 +54,7 @@ export function TaxonomyGroupHeader({ group, collapsed, perms, actions }: {
         aria-label={`${collapsed ? 'Expand' : 'Collapse'} ${label}`}
         className="flex flex-1 min-w-0 items-center gap-2 text-left"
       >
-        <Chevron className="size-3.5 shrink-0 text-stone-400" />
+        <Chevron className="size-3.5 shrink-0 text-ink-faint" />
         <span className={cn('truncate', LABEL_CLASSES[group.level])}>{label}</span>
       </button>
 
@@ -65,7 +65,7 @@ export function TaxonomyGroupHeader({ group, collapsed, perms, actions }: {
             onClick={() => actions.onAddAccount(group)}
             aria-label={`Add an account under ${label}`}
             title={`Add account under this ${NOUN[group.level]}`}
-            className="rounded p-1 text-stone-500 transition-colors hover:bg-stone-100 hover:text-stone-700"
+            className="rounded p-1 text-ink-muted transition-colors hover:bg-stone-100 hover:text-ink"
           >
             <Plus className="size-3.5" />
           </button>
@@ -76,7 +76,7 @@ export function TaxonomyGroupHeader({ group, collapsed, perms, actions }: {
             onClick={() => actions.onAddSubCategory(group)}
             aria-label={`Add a sub-category under ${label}`}
             title="Add sub-category"
-            className="rounded p-1 text-stone-500 transition-colors hover:bg-stone-100 hover:text-stone-700"
+            className="rounded p-1 text-ink-muted transition-colors hover:bg-stone-100 hover:text-ink"
           >
             <FolderPlus className="size-3.5" />
           </button>
@@ -87,7 +87,7 @@ export function TaxonomyGroupHeader({ group, collapsed, perms, actions }: {
             onClick={() => actions.onRename(group)}
             aria-label={`Rename ${label}`}
             title={`Rename ${NOUN[group.level]}`}
-            className="rounded p-1 text-stone-500 transition-colors hover:bg-stone-100 hover:text-stone-700"
+            className="rounded p-1 text-ink-muted transition-colors hover:bg-stone-100 hover:text-ink"
           >
             <Pencil className="size-3.5" />
           </button>

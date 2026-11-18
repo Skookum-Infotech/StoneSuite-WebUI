@@ -32,9 +32,9 @@ export function DeleteBinDialog({ bin, onClose, onDeleted }: { bin: Bin; onClose
               <p className="mt-0.5 type-helper">This action cannot be undone.</p>
             </div>
           </div>
-          <button type="button" onClick={onClose} aria-label="Close" className="rounded p-1 text-stone-400 hover:bg-stone-100"><X className="size-4" /></button>
+          <button type="button" onClick={onClose} aria-label="Close" className="rounded p-1 text-ink-muted hover:bg-stone-100"><X className="size-4" /></button>
         </div>
-        <p className="text-xs text-stone-600 mb-4"><span className="font-semibold">{bin.path || bin.name}</span> will be permanently deleted.</p>
+        <p className="text-xs text-ink mb-4"><span className="font-semibold">{bin.path || bin.name}</span> will be permanently deleted.</p>
         {error && <p className="mb-3 type-error">{apiErrorMessage(error, 'Failed to delete bin.')}</p>}
         <div className="flex justify-end gap-2">
           <button type="button" onClick={onClose} disabled={isPending} className={buttonVariants({ variant: 'outline' })}>Cancel</button>

@@ -39,7 +39,7 @@ export function CustomizePanel({
             type="button"
             onClick={onClose}
             aria-label="Close customize panel"
-            className="rounded-lg p-1.5 text-stone-500 transition hover:bg-stone-100 hover:text-stone-600"
+            className="rounded-lg p-1.5 text-ink-muted transition hover:bg-stone-100 hover:text-ink"
           >
             <X className="size-4" />
           </button>
@@ -58,7 +58,7 @@ export function CustomizePanel({
                   className="flex cursor-pointer items-center justify-between gap-3 rounded-lg px-2 py-2.5 hover:bg-stone-50"
                 >
                   <span className="min-w-0">
-                    <span className="block text-xs font-semibold text-stone-900">{w.title}</span>
+                    <span className="block text-xs font-semibold text-ink-strong">{w.title}</span>
                     <span className="block type-subline">{w.description}</span>
                   </span>
                   <Switch

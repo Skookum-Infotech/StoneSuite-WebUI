@@ -124,9 +124,9 @@ export const OTHER_GROUP: WorkflowGroup = {
   description: 'Custom workflows not assigned to a module.',
   icon: Boxes,
   accent: {
-    chip: 'bg-stone-100 text-stone-500 dark:bg-stone-800 dark:text-stone-400',
+    chip: 'bg-stone-100 text-ink-muted dark:bg-stone-800 dark:text-stone-400',
     rail: 'bg-stone-200 dark:bg-stone-700',
-    count: 'bg-stone-100 text-stone-500 dark:bg-stone-800 dark:text-stone-400',
+    count: 'bg-stone-100 text-ink-muted dark:bg-stone-800 dark:text-stone-400',
   },
   keys: [],
 };

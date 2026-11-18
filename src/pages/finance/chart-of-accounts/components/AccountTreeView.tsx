@@ -209,13 +209,13 @@ export function AccountTreeView() {
 
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative w-full sm:w-64">
-          <Search className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-stone-400" />
+          <Search className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-ink-faint" />
           <input
             type="text"
             placeholder="Search code or name…"
             value={term}
             onChange={(e) => setTerm(e.target.value)}
-            className="h-8 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-8 placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150 type-input"
+            className="h-8 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-8 placeholder:text-ink-muted focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150 type-input"
             aria-label="Search accounts by code or name"
           />
           {term && (
@@ -223,7 +223,7 @@ export function AccountTreeView() {
               type="button"
               onClick={() => setTerm('')}
               aria-label="Clear search"
-              className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-0.5 text-stone-500 hover:bg-stone-100 hover:text-stone-600"
+              className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-0.5 text-ink-muted hover:bg-stone-100 hover:text-ink"
             >
               <X className="size-3.5" />
             </button>
@@ -245,16 +245,16 @@ export function AccountTreeView() {
               type="button"
               onClick={() => setCollapsed(new Set())}
               aria-label="Expand all sections and categories"
-              className="inline-flex items-center gap-1.5 text-xs font-medium text-stone-500 hover:text-stone-800"
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-ink-muted hover:text-ink-strong"
             >
               <ChevronsDown className="size-3.5" /> Expand All
             </button>
-            <span className="text-stone-500" aria-hidden="true">|</span>
+            <span className="text-ink-muted" aria-hidden="true">|</span>
             <button
               type="button"
               onClick={() => setCollapsed(new Set(allGroupKeys(sections)))}
               aria-label="Collapse all sections and categories"
-              className="inline-flex items-center gap-1.5 text-xs font-medium text-stone-500 hover:text-stone-800"
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-ink-muted hover:text-ink-strong"
             >
               <ChevronsUp className="size-3.5" /> Collapse All
             </button>
@@ -335,8 +335,8 @@ export function AccountTreeView() {
                 aria-expanded={!secCollapsed}
                 className="flex w-full items-center gap-1.5 rounded-t-xl bg-stone-50/60 px-4 py-3 border-b border-stone-100 hover:bg-stone-50"
               >
-                {secCollapsed ? <ChevronRight className="size-3.5 text-stone-400" /> : <ChevronDown className="size-3.5 text-stone-400" />}
-                <span className="text-sm font-bold text-stone-900">{section.label}</span>
+                {secCollapsed ? <ChevronRight className="size-3.5 text-ink-faint" /> : <ChevronDown className="size-3.5 text-ink-faint" />}
+                <span className="text-sm font-bold text-ink-strong">{section.label}</span>
               </button>
 
               {!secCollapsed && (

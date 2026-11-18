@@ -65,14 +65,14 @@ export default function ProfitLossPage() {
         <>
           <ReportKpiGrid items={kpis} />
           {isEmptyProfitLoss(q.data) ? (
-            <p className="rounded-xl border border-dashed border-stone-200 py-10 text-center text-sm text-stone-500">{EMPTY_TEXT}</p>
+            <p className="rounded-xl border border-dashed border-stone-200 py-10 text-center text-sm text-ink-muted">{EMPTY_TEXT}</p>
           ) : (
             <>
               <ReportTopBarChart data={chartData} label="Amount by category" names={{ primary: "Amount" }} />
               <ProfitLossStatement report={q.data} onAccountClick={setAccount} />
             </>
           )}
-          <p className="text-label text-stone-500">{NOTE}</p>
+          <p className="text-label text-ink-muted">{NOTE}</p>
         </>
       )}
       {account && (

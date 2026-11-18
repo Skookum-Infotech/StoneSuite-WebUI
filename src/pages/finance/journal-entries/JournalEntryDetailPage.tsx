@@ -173,7 +173,7 @@ export default function JournalEntryDetailPage() {
               <ModernSection title="Transfer" index={0}>
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <div className="flex items-center gap-2.5 rounded-lg border border-stone-200 bg-stone-50/60 px-4 py-3">
-                    <Landmark className="size-4 shrink-0 text-stone-400" aria-hidden="true" />
+                    <Landmark className="size-4 shrink-0 text-ink-faint" aria-hidden="true" />
                     <div className="min-w-0">
                       <p className="type-overline">From</p>
                       <p className="truncate type-card-title">{je.fromAccount.name}</p>
@@ -181,7 +181,7 @@ export default function JournalEntryDetailPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2.5 rounded-lg border border-stone-200 bg-stone-50/60 px-4 py-3">
-                    <Landmark className="size-4 shrink-0 text-stone-400" aria-hidden="true" />
+                    <Landmark className="size-4 shrink-0 text-ink-faint" aria-hidden="true" />
                     <div className="min-w-0">
                       <p className="type-overline">To</p>
                       <p className="truncate type-card-title">{je.toAccount.name}</p>
@@ -212,23 +212,23 @@ export default function JournalEntryDetailPage() {
         {/* Right sidebar */}
         <SalesDetailSidebar label="Journal Entry Details">
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-            <p className="text-xs font-semibold text-stone-500">Quick Actions</p>
+            <p className="type-card-title">Quick Actions</p>
             <div className="space-y-0.5">
               <button
                 type="button"
                 onClick={() => navigate(`/finance/journal-entries/${id}/edit`, { state: { initialTab: 'files' } })}
-                className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs text-stone-700 w-full transition-colors text-left"
+                className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-button text-ink w-full transition-colors text-left"
               >
-                <Upload className="size-4 text-stone-400 shrink-0" />
+                <Upload className="size-4 text-ink-faint shrink-0" />
                 Upload file
               </button>
               {canEditHere && (
                 <button
                   type="button"
                   onClick={() => navigate(`/finance/journal-entries/${id}/edit`)}
-                  className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs text-stone-700 w-full transition-colors text-left"
+                  className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-button text-ink w-full transition-colors text-left"
                 >
-                  <Pencil className="size-4 text-stone-400 shrink-0" />
+                  <Pencil className="size-4 text-ink-faint shrink-0" />
                   Edit journal entry
                 </button>
               )}
@@ -236,10 +236,10 @@ export default function JournalEntryDetailPage() {
                 type="button"
                 onClick={handleExportPdf}
                 disabled={exportingPdf}
-                className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs text-stone-700 w-full transition-colors text-left disabled:opacity-60 disabled:cursor-not-allowed"
+                className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-button text-ink w-full transition-colors text-left disabled:opacity-60 disabled:cursor-not-allowed"
                 aria-label="Export as PDF"
               >
-                {exportingPdf ? <Loader2 className="size-4 text-stone-400 shrink-0 animate-spin" /> : <FileDown className="size-4 text-stone-400 shrink-0" />}
+                {exportingPdf ? <Loader2 className="size-4 text-ink-faint shrink-0 animate-spin" /> : <FileDown className="size-4 text-ink-faint shrink-0" />}
                 {exportingPdf ? 'Exporting…' : 'Export PDF'}
               </button>
             </div>
@@ -250,7 +250,7 @@ export default function JournalEntryDetailPage() {
 
           {(canApproveHere || canPostHere || canReverseHere) && (
             <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-2.5 mb-4">
-              <p className="text-xs font-semibold text-stone-500">Actions</p>
+              <p className="type-card-title">Actions</p>
               {canApproveHere && <ApproveJournalEntryDialog journalEntryId={id} onApproved={refresh} />}
               {canPostHere && <PostJournalEntryDialog journalEntryId={id} onPosted={refresh} />}
               {canReverseHere && <ReverseJournalEntryDialog journalEntryId={id} onReversed={refresh} />}
@@ -258,30 +258,30 @@ export default function JournalEntryDetailPage() {
           )}
 
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-            <p className="text-xs font-semibold text-stone-500">Status</p>
+            <p className="type-card-title">Status</p>
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
-              <span className="text-stone-500">Status</span>
+              <span className="text-ink-muted">Status</span>
               <Badge color={color}>{je.status}</Badge>
             </div>
             {je.postedAt && (
               <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
-                <span className="text-stone-500">Posted</span>
-                <span className="text-stone-700">{fmtDateTime(je.postedAt)}</span>
+                <span className="text-ink-muted">Posted</span>
+                <span className="text-ink">{fmtDateTime(je.postedAt)}</span>
               </div>
             )}
             {je.reversedAt && (
               <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
-                <span className="text-stone-500">Reversed</span>
-                <span className="text-stone-700">{fmtDateTime(je.reversedAt)}</span>
+                <span className="text-ink-muted">Reversed</span>
+                <span className="text-ink">{fmtDateTime(je.reversedAt)}</span>
               </div>
             )}
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
-              <span className="text-stone-500">Created</span>
-              <span className="text-stone-700">{fmtDate(je.createdAt)}</span>
+              <span className="text-ink-muted">Created</span>
+              <span className="text-ink">{fmtDate(je.createdAt)}</span>
             </div>
             <div className="flex justify-between items-center py-2 text-xs">
-              <span className="text-stone-500">Updated</span>
-              <span className="text-stone-700">{fmtDate(je.updatedAt)}</span>
+              <span className="text-ink-muted">Updated</span>
+              <span className="text-ink">{fmtDate(je.updatedAt)}</span>
             </div>
           </div>
 
@@ -312,7 +312,7 @@ function ReadonlyField({ label, value, full }: { label: string; value?: string; 
   return (
     <div className={cn('space-y-1', full && 'col-span-full')}>
       <label className={fieldLabelCls}>{label}</label>
-      <div className={readonlyCls}>{value || <span className="text-stone-500">—</span>}</div>
+      <div className={readonlyCls}>{value || <span className="text-ink-muted">—</span>}</div>
     </div>
   );
 }

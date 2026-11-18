@@ -43,7 +43,7 @@ const LIST_SEPARATOR = String.fromCharCode(UNIT_SEPARATOR_CODE);
 const CHIP_ON =
   "inline-flex h-7 items-center rounded-full border border-stone-900 bg-stone-900 px-3 text-xs font-medium text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400";
 const CHIP_OFF =
-  "inline-flex h-7 items-center rounded-full border border-stone-200 bg-white px-3 text-xs font-medium text-stone-600 hover:bg-stone-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400";
+  "inline-flex h-7 items-center rounded-full border border-stone-200 bg-white px-3 text-xs font-medium text-ink hover:bg-stone-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400";
 
 function splitList(text: string): string[] {
   return text
@@ -125,7 +125,7 @@ export function FilterRow({ label, rule, fields, onChange, onRemove }: FilterRow
           {(rule.preset ?? "custom") === "custom" && (
             <div className="flex items-center gap-2">
               <DatePicker label={`${label} from date`} value={rule.values[0] ?? ""} onChange={(v) => setValue(0, v)} />
-              <span className="text-xs text-stone-500" aria-hidden="true">
+              <span className="text-xs text-ink-muted" aria-hidden="true">
                 to
               </span>
               <DatePicker
@@ -141,7 +141,7 @@ export function FilterRow({ label, rule, fields, onChange, onRemove }: FilterRow
       {rule.op === "between" && (
         <div className="flex items-center gap-2">
           <Input aria-label={`${label} from`} inputMode="decimal" value={rule.values[0] ?? ""} onChange={(e) => setValue(0, e.target.value)} />
-          <span className="text-xs text-stone-500" aria-hidden="true">
+          <span className="text-xs text-ink-muted" aria-hidden="true">
             and
           </span>
           <Input aria-label={`${label} to`} inputMode="decimal" value={rule.values[1] ?? ""} onChange={(e) => setValue(1, e.target.value)} />

@@ -233,7 +233,7 @@ Text keeps the same size on phones, tablets and laptops; only the page title (20
 
 **The Title Case Rule.** Titles (page, card, section, dialog, sign-in) use Title Case. Labels, buttons, menu items, messages, tooltips and sentences keep sentence case.
 
-**The Role Rule.** Use a `type-*` role or a scale size (`text-micro` 11 · `text-caption` 12 · `text-button` 12.5 · `text-field` 13 · `text-body` 14). No `text-2xs`, no `text-[Npx]`, no `tracking-[…]`, no `text-red-*`/`text-destructive` text — ESLint enforces this (`eslint.config.js`, "Design system guardrails").
+**The Role Rule.** Use a `type-*` role or a scale size (`text-micro` 11 · `text-caption` 12 · `text-button` 12.5 · `text-field` 13 · `text-body` 14). No `text-2xs`, no `text-[Npx]`, no `tracking-[…]`, no `text-red-*`/`text-destructive` text, no raw gray text (`text-stone-400`…`900`; use `text-ink-*`) — ESLint enforces this (`eslint.config.js`, "Design system guardrails").
 
 ## 4. Elevation
 

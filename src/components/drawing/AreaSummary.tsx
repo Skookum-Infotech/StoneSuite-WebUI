@@ -18,7 +18,7 @@ export function AreaSummary() {
   const total = drawingMetrics(state.present.areas);
 
   return (
-    <div className="flex flex-wrap gap-x-4 text-xs text-stone-600">
+    <div className="flex flex-wrap gap-x-4 text-xs text-ink">
       <span>{active.pieceCount} pieces</span>
       <span>{roundSqFt(active.grossAreaMm2)} sq ft</span>
       <span>{roundSqFt(total.grossAreaMm2)} sq ft total</span>

@@ -81,7 +81,7 @@ export function ApproverPicker({
             return (
               <span
                 key={id}
-                className="inline-flex items-center gap-1.5 rounded-full border border-stone-200 bg-stone-50 py-1 pl-2.5 pr-1 text-xs font-semibold text-stone-700 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-200"
+                className="inline-flex items-center gap-1.5 rounded-full border border-stone-200 bg-stone-50 py-1 pl-2.5 pr-1 text-xs font-semibold text-ink dark:border-stone-700 dark:bg-stone-800 dark:text-stone-200"
               >
                 {label}
                 <button
@@ -89,7 +89,7 @@ export function ApproverPicker({
                   aria-label={`Remove approver ${label}`}
                   onClick={() => onRemove(id)}
                   disabled={disabled}
-                  className="rounded-full p-0.5 text-stone-400 transition hover:bg-stone-200 hover:text-stone-600 disabled:opacity-50"
+                  className="rounded-full p-0.5 text-ink-muted transition hover:bg-stone-200 hover:text-ink disabled:opacity-50"
                 >
                   <X className="size-3" />
                 </button>
@@ -137,8 +137,8 @@ export function ApproverPicker({
                     }}
                     className="flex w-full flex-col items-start px-3.5 py-2 text-left text-xs transition hover:bg-stone-50 dark:hover:bg-stone-800"
                   >
-                    <span className="font-semibold text-stone-700 dark:text-stone-200">{u.fullName || u.email}</span>
-                    <span className="text-stone-500">{u.email}</span>
+                    <span className="font-semibold text-ink dark:text-stone-200">{u.fullName || u.email}</span>
+                    <span className="text-ink-muted">{u.email}</span>
                   </button>
                 ))
               )}

@@ -9,8 +9,8 @@ export const TAB_BAR_CLASS = 'flex shrink-0 overflow-x-auto overflow-y-hidden bg
 
 const TAB_BASE_CLASS =
   'flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md border px-3 py-1.5 text-sm font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring/50';
-const TAB_ACTIVE_CLASS = 'border-stone-200 bg-white text-stone-950 shadow-sm';
-const TAB_INACTIVE_CLASS = 'border-transparent text-stone-500 hover:text-stone-800';
+const TAB_ACTIVE_CLASS = 'border-stone-200 bg-white text-ink-strong shadow-sm';
+const TAB_INACTIVE_CLASS = 'border-transparent text-ink-muted hover:text-ink-strong';
 
 /** Class for a single tab button inside a `TAB_LIST_CLASS` track. */
 export function tabClass(active: boolean): string {

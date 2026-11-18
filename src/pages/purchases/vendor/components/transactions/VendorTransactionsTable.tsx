@@ -15,7 +15,7 @@ export function VendorTransactionsTable({ rows }: { rows: VendorTransactionRow[]
 
   return (
     <div className="overflow-x-auto modal-scrollbar">
-      <table className="w-full min-w-[820px] border-collapse text-xs">
+      <table className="w-full min-w-[820px] border-collapse type-cell">
         <thead>
           <tr className="border-b border-stone-100 bg-stone-50/40">
             <th className={HEAD_CLS}>Date</th>
@@ -40,7 +40,7 @@ export function VendorTransactionsTable({ rows }: { rows: VendorTransactionRow[]
                   idx === rows.length - 1 && 'border-b-0',
                 )}
               >
-                <td className="whitespace-nowrap px-4 py-3.5 text-stone-600">{dateOrDash(row.date)}</td>
+                <td className="type-cell whitespace-nowrap px-4 py-3.5">{dateOrDash(row.date)}</td>
                 <td className="whitespace-nowrap px-4 py-3.5"><TypeBadge row={row} /></td>
                 <td className="px-4 py-3.5">
                   <Link
@@ -58,11 +58,11 @@ export function VendorTransactionsTable({ rows }: { rows: VendorTransactionRow[]
                     {row.isOverdue && <OverdueBadge />}
                   </div>
                 </td>
-                <td className="whitespace-nowrap px-4 py-3.5 text-stone-600">{dateOrDash(row.dueDate)}</td>
-                <td className="whitespace-nowrap px-4 py-3.5 text-right font-bold tabular-nums text-stone-900">
+                <td className="type-cell whitespace-nowrap px-4 py-3.5">{dateOrDash(row.dueDate)}</td>
+                <td className="type-cell-strong whitespace-nowrap px-4 py-3.5 text-right tabular-nums">
                   {moneyOrDash(row.amount)}
                 </td>
-                <td className="whitespace-nowrap px-4 py-3.5 text-right tabular-nums text-stone-900">
+                <td className="type-cell whitespace-nowrap px-4 py-3.5 text-right tabular-nums">
                   {row.balance === null ? '—' : (
                     <>
                       <span className="font-bold">{moneyOrDash(row.balance)}</span>

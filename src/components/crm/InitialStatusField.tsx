@@ -30,7 +30,7 @@ export function InitialStatusField({ workflowKey }: Props) {
       {initial ? (
         <Badge color={resolveStatusColor(initial.stateKey, initial.color)}>{initial.statusLabel}</Badge>
       ) : (
-        <span className="text-stone-500">{isLoading ? 'Loading…' : '—'}</span>
+        <span className="text-ink-muted">{isLoading ? 'Loading…' : '—'}</span>
       )}
     </div>
   );

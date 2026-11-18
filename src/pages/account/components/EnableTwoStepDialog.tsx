@@ -97,7 +97,7 @@ export function EnableTwoStepDialog({ sent, notice: openingNotice, onClose, onEn
     >
       <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="mfa-enable-code" className="text-xs font-semibold text-stone-500">
+          <Label htmlFor="mfa-enable-code" className="text-xs font-semibold text-ink-muted">
             Code from your email
           </Label>
           <Controller

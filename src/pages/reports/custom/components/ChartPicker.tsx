@@ -35,7 +35,7 @@ export function ChartPicker({ definition, dispatch }: ChartPickerProps) {
               CHIP,
               definition.chart === c.value
                 ? "border-stone-900 bg-stone-900 text-white"
-                : "border-stone-200 bg-white text-stone-600 hover:bg-stone-50",
+                : "border-stone-200 bg-white text-ink hover:bg-stone-50",
             )}
           >
             {c.label}

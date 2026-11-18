@@ -29,7 +29,7 @@ export function UnitOffcutsList({ parentId }: { parentId: string }) {
 
   return (
     <div className="overflow-x-auto rounded-lg border border-stone-200">
-      <table className="w-full min-w-[420px] text-left text-xs" aria-label="Pieces cut from this unit">
+      <table className="w-full min-w-[420px] text-left type-cell" aria-label="Pieces cut from this unit">
         <thead className="border-b border-stone-200 bg-table-header">
           <tr>
             <th className="px-3 py-2 type-th">Offcut</th>
@@ -51,9 +51,9 @@ export function UnitOffcutsList({ parentId }: { parentId: string }) {
                   {o.serial}
                 </button>
               </td>
-              <td className="px-3 py-2 tabular-nums text-stone-600">{o.lengthMm} × {o.widthMm}</td>
-              <td className="px-3 py-2 text-right tabular-nums text-stone-700 whitespace-nowrap">{formatUnitArea(o.area, o.areaUnitCode)}</td>
-              <td className="px-3 py-2 capitalize text-stone-500">{o.status.replace('_', ' ')}</td>
+              <td className="type-cell px-3 py-2 tabular-nums">{o.lengthMm} × {o.widthMm}</td>
+              <td className="type-cell px-3 py-2 text-right tabular-nums whitespace-nowrap">{formatUnitArea(o.area, o.areaUnitCode)}</td>
+              <td className="type-cell px-3 py-2 capitalize">{o.status.replace('_', ' ')}</td>
             </tr>
           ))}
         </tbody>

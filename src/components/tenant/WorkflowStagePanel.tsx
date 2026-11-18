@@ -44,12 +44,12 @@ export function WorkflowStagePanel({ stage, hereStatusCode, open }: WorkflowStag
         />
       ) : (
         <>
-          <p className="mb-1.5 text-xs font-semibold text-stone-500">{stage.label} records</p>
+          <p className="mb-1.5 text-xs font-semibold text-ink-muted">{stage.label} records</p>
           <ul className="space-y-1">
             {stage.records.map((r) => (
               <li key={r.id} className="flex justify-between gap-2 text-xs">
-                <Link to={`${stage.route}/${r.id}`} className="font-medium text-stone-900 hover:underline">{r.number}</Link>
-                <span className="text-stone-500">{r.status}</span>
+                <Link to={`${stage.route}/${r.id}`} className="font-medium text-ink-strong hover:underline">{r.number}</Link>
+                <span className="text-ink-muted">{r.status}</span>
               </li>
             ))}
           </ul>
@@ -90,7 +90,7 @@ function SubStatusList({ stage, statusCode, title }: SubStatusListProps) {
           const color = progressStatusColor(stage.module, s.code);
           const reached = s.state !== 'upcoming';
           return (
-            <li key={s.code} className={cn('relative flex h-6 items-center gap-2.5', PANEL_TEXT, reached ? 'text-stone-900' : 'text-stone-400')}>
+            <li key={s.code} className={cn('relative flex h-6 items-center gap-2.5', PANEL_TEXT, reached ? 'text-ink-strong' : 'text-ink-muted')}>
               {(i < steps.length - 1 || hiddenCount > 0) && (
                 <span
                   aria-hidden="true"
@@ -115,8 +115,8 @@ function SubStatusList({ stage, statusCode, title }: SubStatusListProps) {
           );
         })}
         {(hiddenCount > 0 || expanded) && (
-          <li className={cn('flex h-6 items-center text-stone-500', PANEL_TEXT)}>
-            <button type="button" onClick={() => setExpanded(!expanded)} className="flex items-center gap-2.5 hover:text-stone-900">
+          <li className={cn('flex h-6 items-center text-ink-muted', PANEL_TEXT)}>
+            <button type="button" onClick={() => setExpanded(!expanded)} className="flex items-center gap-2.5 hover:text-ink-strong">
               <span aria-hidden="true" className="size-4 shrink-0 rounded-full border-2 border-stone-200 bg-white" />
               {expanded ? 'Show fewer' : `+ ${hiddenCount} more steps`}
             </button>

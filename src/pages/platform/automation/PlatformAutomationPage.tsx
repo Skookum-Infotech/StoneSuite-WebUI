@@ -82,7 +82,7 @@ export default function PlatformAutomationPage() {
         ) : (
           <>
             <label className="flex items-center justify-between gap-3 select-none">
-              <span className="text-sm font-semibold text-stone-900 dark:text-stone-100">{SWITCH_LABEL}</span>
+              <span className="text-sm font-semibold text-ink-strong dark:text-stone-100">{SWITCH_LABEL}</span>
               <Switch
                 checked={settings?.enabled ?? false}
                 ref={switchRef}
@@ -114,13 +114,13 @@ export default function PlatformAutomationPage() {
 
             <dl className="mt-5 grid gap-3 border-t border-stone-100 pt-4 text-xs dark:border-stone-800 sm:grid-cols-2">
               <div>
-                <dt className="font-semibold text-stone-500">Status</dt>
+                <dt className="font-semibold text-ink-muted">Status</dt>
                 <dd className="mt-0.5">
                   <Badge size="sm">{settings?.enabled ? 'On' : 'Off'}</Badge>
                 </dd>
               </div>
               <div>
-                <dt className="font-semibold text-stone-500">Scheduler sync</dt>
+                <dt className="font-semibold text-ink-muted">Scheduler sync</dt>
                 <dd className="mt-0.5">
                   <Badge size="sm">
                     {!settings?.kvConfigured ? 'Not configured' : needsResync ? 'Out of sync' : 'In sync'}
@@ -128,12 +128,12 @@ export default function PlatformAutomationPage() {
                 </dd>
               </div>
               <div>
-                <dt className="font-semibold text-stone-500">Last changed</dt>
-                <dd className="mt-0.5 text-stone-700 dark:text-stone-300">{formatTimestamp(settings?.updatedAt)}</dd>
+                <dt className="font-semibold text-ink-muted">Last changed</dt>
+                <dd className="mt-0.5 text-ink dark:text-stone-300">{formatTimestamp(settings?.updatedAt)}</dd>
               </div>
               <div>
-                <dt className="font-semibold text-stone-500">Last changed by</dt>
-                <dd className="mt-0.5 text-stone-700 dark:text-stone-300">{settings?.updatedBy || '—'}</dd>
+                <dt className="font-semibold text-ink-muted">Last changed by</dt>
+                <dd className="mt-0.5 text-ink dark:text-stone-300">{settings?.updatedBy || '—'}</dd>
               </div>
             </dl>
           </>
@@ -156,10 +156,10 @@ export default function PlatformAutomationPage() {
                 <AlertTriangle className="size-4 text-warning-ink" aria-hidden="true" />
               </div>
               <div>
-                <AlertDialog.Title className="text-sm font-bold text-stone-900 dark:text-white">
+                <AlertDialog.Title className="text-sm font-bold text-ink-strong dark:text-white">
                   Turn on the automation scheduler?
                 </AlertDialog.Title>
-                <AlertDialog.Description id="enable-automation-dialog-desc" className="mt-0.5 text-xs text-stone-500">
+                <AlertDialog.Description id="enable-automation-dialog-desc" className="mt-0.5 text-xs text-ink-muted">
                   The scheduler will run every 15 minutes for every organization, waking the servers each time. This
                   increases hosting cost.
                 </AlertDialog.Description>
@@ -168,7 +168,7 @@ export default function PlatformAutomationPage() {
             <div className="mt-5 flex justify-end gap-2">
               <AlertDialog.Cancel
                 disabled={toggle.isPending}
-                className="rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-50 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300"
+                className="rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-ink hover:bg-stone-50 disabled:opacity-50 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300"
               >
                 Cancel
               </AlertDialog.Cancel>

@@ -114,7 +114,7 @@ export default function FeedbackDetailPage() {
       <button
         type="button"
         onClick={() => navigate('/platform/feedback')}
-        className="mb-4 flex items-center gap-1.5 text-xs font-medium text-stone-500 transition-colors hover:text-stone-800 dark:hover:text-stone-200"
+        className="mb-4 flex items-center gap-1.5 text-xs font-medium text-ink-muted transition-colors hover:text-ink-strong dark:hover:text-stone-200"
       >
         <ArrowLeft className="size-3.5" />
         Back to Support Tickets
@@ -133,7 +133,7 @@ export default function FeedbackDetailPage() {
               </span>
             )}
           </div>
-          <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
+          <p className="mt-1 text-sm text-ink-muted dark:text-stone-400">
             {feedbackCategoryLabel(ticket.category)}
             {ticket.area && ` · ${feedbackAreaLabel(ticket.area)}`} · {ticket.tenantName} · reported by {ticket.reporterName} ({ticket.reporterEmail}) · {formatFeedbackTime(ticket.createdAt)}
           </p>

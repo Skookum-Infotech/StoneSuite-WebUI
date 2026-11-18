@@ -60,7 +60,7 @@ export function CommunicationMessageCard({ message, audience, isLast }: Communic
             <time
               dateTime={message.createdAt}
               title={Number.isNaN(sentAt.getTime()) ? undefined : sentAt.toLocaleString()}
-              className="text-xs text-stone-500"
+              className="text-xs text-ink-muted"
             >
               {relativeTime(message.createdAt)}
             </time>
@@ -81,7 +81,7 @@ export function CommunicationMessageCard({ message, audience, isLast }: Communic
           )}
           <p
             className={
-              'whitespace-pre-wrap break-words text-sm leading-relaxed text-stone-900' +
+              'whitespace-pre-wrap break-words text-sm leading-relaxed text-ink-strong' +
               (foldable && !expanded ? ' line-clamp-6' : '')
             }
           >
@@ -92,7 +92,7 @@ export function CommunicationMessageCard({ message, audience, isLast }: Communic
               type="button"
               onClick={() => setExpanded((v) => !v)}
               aria-expanded={expanded}
-              className="mt-2 text-xs font-medium text-stone-600 underline-offset-2 hover:text-stone-900 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+              className="mt-2 text-xs font-medium text-ink underline-offset-2 hover:text-ink-strong hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
             >
               {expanded ? 'Show less' : 'Show more'}
             </button>

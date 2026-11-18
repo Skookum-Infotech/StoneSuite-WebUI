@@ -91,7 +91,7 @@ function getFileType(fileName: string, contentType?: string): FileTypeConfig {
     return { label: 'XLSX', color: 'text-file-sheet-text', bg: 'bg-file-sheet-bg', Icon: FileSpreadsheet };
   if (['png', 'jpg', 'jpeg'].includes(ext) || mime.startsWith('image/'))
     return { label: ext.toUpperCase(), color: 'text-file-image-text', bg: 'bg-file-image-bg', Icon: Image };
-  return { label: ext.toUpperCase() || 'FILE', color: 'text-stone-500', bg: 'bg-stone-100', Icon: File };
+  return { label: ext.toUpperCase() || 'FILE', color: 'text-ink-muted', bg: 'bg-stone-100', Icon: File };
 }
 
 // ── Main panel ───────────────────────────────────────────────────────────────
@@ -183,7 +183,7 @@ export function AuditContent({ recordId, workflowKey }: { recordId?: string; wor
 
   return (
     <div className="overflow-x-auto">
-      <table className="w-full text-xs border-collapse">
+      <table className="w-full type-cell border-collapse">
         <thead>
           <tr className="border-b border-stone-100">
             {['Action', 'Resource', 'Actor', 'IP Address', 'Version', 'Date'].map((h) => (
@@ -212,13 +212,13 @@ function AuditRow({ entry }: { entry: AuditEntry }) {
         onClick={() => hasChanges && setExpanded((v) => !v)}
       >
         <td className="py-2.5 pr-4"><ActionBadge action={entry.action} /></td>
-        <td className="py-2.5 pr-4 text-stone-900 capitalize">{entry.resource}</td>
-        <td className="py-2.5 pr-4 type-cell">{entry.actorName || <span className="text-stone-500 italic">system</span>}</td>
+        <td className="type-cell py-2.5 pr-4 capitalize">{entry.resource}</td>
+        <td className="py-2.5 pr-4 type-cell">{entry.actorName || <span className="text-ink-muted italic">system</span>}</td>
         <td className="py-2.5 pr-4 type-record-id">{entry.ipAddress || '—'}</td>
         <td className="py-2.5 pr-4 type-cell">{entry.appVersion || '—'}</td>
         <td className="py-2.5 whitespace-nowrap type-cell">
           {new Date(entry.at).toLocaleString()}
-          {hasChanges && <span className="ml-1.5 text-stone-500">{expanded ? '▲' : '▼'}</span>}
+          {hasChanges && <span className="ml-1.5 text-ink-muted">{expanded ? '▲' : '▼'}</span>}
         </td>
       </tr>
       {expanded && hasChanges && (
@@ -237,7 +237,7 @@ function ActionBadge({ action }: { action: string }) {
     action === 'create' ? 'bg-accent-lime text-accent-foreground' :
     action === 'delete' ? 'bg-destructive/10 text-danger-ink' :
     action === 'update' ? 'bg-workflow-prospect-bg text-workflow-prospect-text' :
-    'bg-stone-100 text-stone-600';
+    'bg-stone-100 text-ink';
   return (
     <span className={cn('inline-flex items-center rounded px-1.5 py-0.5 capitalize type-pill', color)}>
       {action}
@@ -445,16 +445,16 @@ export const FilesContent = forwardRef<EditableFilesPanelHandle, FilesContentPro
               'inline-flex items-center justify-center w-10 h-10 rounded-full mb-3 transition-colors',
               dragging ? 'bg-stone-200' : 'bg-stone-100 group-hover:bg-stone-200',
             )}>
-              <Upload className={cn('h-4.5 w-4.5 transition-colors', dragging ? 'text-stone-700' : 'text-stone-400 group-hover:text-stone-600')} />
+              <Upload className={cn('h-4.5 w-4.5 transition-colors', dragging ? 'text-ink' : 'text-ink-muted group-hover:text-ink')} />
             </div>
-            <p className="text-xs font-medium text-stone-600 mb-1">
+            <p className="text-xs font-medium text-ink mb-1">
               {dragging ? 'Release to add' : 'Drop files here or click to browse'}
             </p>
             <p className="type-helper">PDF, DOCX, XLSX, PNG, JPG, DXF · Max 25 MB each</p>
             {!recordId && (
               <div className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-warning/10 border border-warning/20 px-3 py-1">
                 <CloudUpload className="h-3 w-3 text-warning" />
-                <span className="text-micro text-stone-600 font-medium">Files will upload automatically when you save</span>
+                <span className="text-micro text-ink font-medium">Files will upload automatically when you save</span>
               </div>
             )}
           </div>
@@ -487,7 +487,7 @@ export const FilesContent = forwardRef<EditableFilesPanelHandle, FilesContentPro
                 </>
               ) : (
                 <>
-                  <Loader2 className="h-3 w-3 text-stone-400 animate-spin" />
+                  <Loader2 className="h-3 w-3 text-ink-faint animate-spin" />
                   <span className="type-overline">Uploading</span>
                 </>
               )}
@@ -564,10 +564,10 @@ function UploadProgressRow({ item, onDismiss }: { item: UploadItem; onDismiss: (
       {/* Info + progress */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between mb-1.5">
-          <p className="text-xs font-medium text-stone-700 truncate pr-2">{item.file.name}</p>
+          <p className="text-xs font-medium text-ink truncate pr-2">{item.file.name}</p>
           <span className={cn(
             'text-micro shrink-0',
-            item.status === 'error' ? 'text-danger-ink' : 'text-stone-500',
+            item.status === 'error' ? 'text-danger-ink' : 'text-ink-muted',
           )}>
             {statusLabel}
           </span>
@@ -593,7 +593,7 @@ function UploadProgressRow({ item, onDismiss }: { item: UploadItem; onDismiss: (
 
       {/* Dismiss on error */}
       {item.status === 'error' && (
-        <button type="button" onClick={onDismiss} className="text-stone-500 hover:text-stone-500 transition-colors">
+        <button type="button" onClick={onDismiss} className="text-ink-muted hover:text-ink-muted transition-colors">
           <span className="sr-only">Dismiss</span>
           <span aria-hidden>×</span>
         </button>
@@ -626,7 +626,7 @@ function AttachmentRow({ att, isDownloading, isDeleting, readOnly, onDownload, o
 
       {/* File info */}
       <div className="flex-1 min-w-0">
-        <p className="text-xs font-medium text-stone-700 truncate">{att.fileName}</p>
+        <p className="text-xs font-medium text-ink truncate">{att.fileName}</p>
         <div className="flex items-center gap-2 mt-0.5">
           <span className={cn('px-1 rounded type-pill', ft.bg, ft.color)}>{ft.label}</span>
           <span className="type-subline">{formatBytes(att.sizeBytes)}</span>
@@ -688,7 +688,7 @@ function AttachmentRow({ att, isDownloading, isDeleting, readOnly, onDownload, o
             <button
               type="button"
               onClick={() => setConfirmDelete(true)}
-              className="flex items-center gap-1 px-2 py-1.5 rounded text-micro text-stone-500 hover:text-danger-ink hover:bg-destructive/5 transition-colors"
+              className="flex items-center gap-1 px-2 py-1.5 rounded text-micro text-ink-muted hover:text-danger-ink hover:bg-destructive/5 transition-colors"
               title="Delete"
             >
               <Trash2 className="h-3.5 w-3.5" />

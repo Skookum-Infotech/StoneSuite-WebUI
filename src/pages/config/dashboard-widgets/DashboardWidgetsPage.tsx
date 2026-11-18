@@ -188,7 +188,7 @@ export default function DashboardWidgetsPage() {
           </div>
           <div>
             <h1 className="type-page-title">Dashboard Widgets</h1>
-            <p className="text-sm text-stone-500">
+            <p className="type-page-subtitle">
               Choose which roles can see each dashboard widget. Super admin roles always see everything.
             </p>
           </div>
@@ -203,7 +203,7 @@ export default function DashboardWidgetsPage() {
               aria-label="Role view"
               className={cn(
                 "flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-semibold transition-colors",
-                viewMode === "role" ? "bg-stone-900 text-white" : "text-stone-500 hover:bg-stone-100",
+                viewMode === "role" ? "bg-stone-900 text-white" : "text-ink-muted hover:bg-stone-100",
               )}
             >
               <LayoutList className="size-3.5" aria-hidden="true" />
@@ -216,7 +216,7 @@ export default function DashboardWidgetsPage() {
               aria-label="Matrix view"
               className={cn(
                 "flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-semibold transition-colors",
-                viewMode === "matrix" ? "bg-stone-900 text-white" : "text-stone-500 hover:bg-stone-100",
+                viewMode === "matrix" ? "bg-stone-900 text-white" : "text-ink-muted hover:bg-stone-100",
               )}
             >
               <Table2 className="size-3.5" aria-hidden="true" />
@@ -226,7 +226,7 @@ export default function DashboardWidgetsPage() {
 
           {dirty.length > 0 && (
             <>
-              <span className="text-xs font-medium text-stone-500">
+              <span className="text-xs font-medium text-ink-muted">
                 {dirty.length} unsaved change{dirty.length !== 1 ? "s" : ""}
               </span>
               <button

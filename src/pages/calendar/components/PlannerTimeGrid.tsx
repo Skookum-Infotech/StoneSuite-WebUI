@@ -28,7 +28,7 @@ const GUTTER_HEADER_LABEL = 'Time';
 const DATE_ONLY_LABEL = 'All day';
 
 const ROW_HEADER_CLS =
-  'sticky left-0 z-10 border-b border-r border-stone-200 bg-white px-2 py-1 text-right text-xs text-stone-500';
+  'sticky left-0 z-10 border-b border-r border-stone-200 bg-white px-2 py-1 text-right text-xs text-ink-muted';
 
 function dayCellCls(column: PlannerColumn, extra: string): string {
   return cn(
@@ -47,7 +47,7 @@ function DayHeading({ column, interactive = false }: { column: PlannerColumn; in
       <span
         className={cn(
           'block type-overline',
-          column.isToday ? 'text-stone-900' : 'text-stone-500',
+          column.isToday ? 'text-ink-strong' : 'text-ink-muted',
         )}
       >
         {column.label}
@@ -55,7 +55,7 @@ function DayHeading({ column, interactive = false }: { column: PlannerColumn; in
       <span
         className={cn(
           'mx-auto mt-1 flex size-10 items-center justify-center rounded-full text-xl transition-colors',
-          column.isToday ? 'bg-brand font-semibold text-stone-900' : 'text-stone-800',
+          column.isToday ? 'bg-brand font-semibold text-ink-strong' : 'text-ink-strong',
           interactive && (column.isToday ? 'group-hover:bg-brand-hover' : 'group-hover:bg-stone-100'),
         )}
       >

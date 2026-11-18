@@ -39,7 +39,7 @@ export function CancelPlanDialog({
             key={opt.value}
             className={cn(
               'flex items-center gap-2.5 rounded-xl border px-3.5 py-2.5 cursor-pointer transition-colors type-field-label',
-              reason === opt.value ? 'border-brand bg-brand/5 text-stone-900 font-semibold' : 'border-stone-200 text-stone-600 hover:bg-stone-50',
+              reason === opt.value ? 'border-brand bg-brand/5 text-ink-strong font-semibold' : 'border-stone-200 text-ink hover:bg-stone-50',
             )}
           >
             <input

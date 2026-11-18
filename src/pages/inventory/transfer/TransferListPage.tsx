@@ -69,7 +69,7 @@ export default function TransferListPage() {
             </div>
             <div>
               <h1 className="type-page-title">Transfers</h1>
-              <p className="text-sm text-stone-500">Ship and receive stock between locations.</p>
+              <p className="type-page-subtitle">Ship and receive stock between locations.</p>
             </div>
           </div>
           {canCreate && (
@@ -95,15 +95,15 @@ export default function TransferListPage() {
         )}
 
         <div className="mt-5 relative w-full sm:w-64">
-          <Search className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-stone-400" />
-          <input type="text" placeholder="Search…" value={term} onChange={(e) => setTerm(e.target.value)} className="h-8 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-3 placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all type-input" />
+          <Search className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-ink-faint" />
+          <input type="text" placeholder="Search…" value={term} onChange={(e) => setTerm(e.target.value)} className="h-8 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-3 placeholder:text-ink-muted focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all type-input" />
         </div>
 
         {isError && <p className="mt-3 type-error">{apiErrorMessage(error, 'Failed to load transfers.')}</p>}
 
         <div className="mt-4 flex-1 overflow-y-auto modal-scrollbar">
           <div className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm">
-            <table className="w-full text-left text-xs">
+            <table className="w-full text-left type-cell">
               <thead className="border-b border-stone-200 bg-table-header">
                 <tr>
                   <th className="px-4 py-3 type-th">Number</th>
@@ -115,17 +115,17 @@ export default function TransferListPage() {
               </thead>
               <tbody className="divide-y divide-stone-100">
                 {loading ? (
-                  <tr><td colSpan={5} className="px-4 py-6 text-center text-stone-500">Loading…</td></tr>
+                  <tr><td colSpan={5} className="type-cell px-4 py-6 text-center">Loading…</td></tr>
                 ) : records.length > 0 ? records.map((t) => (
                   <tr key={t.id} className="relative hover:bg-accent/10 transition-colors">
                     <td className="px-4 py-3.5 type-record-id"><Link to={`/inventory/transfer/${t.id}`} className="after:absolute after:inset-0">{t.number || '—'}</Link></td>
-                    <td className="px-4 py-3.5 text-stone-700">{t.fromWarehouseName || '—'}</td>
-                    <td className="px-4 py-3.5 text-stone-700">{t.toWarehouseName || '—'}</td>
+                    <td className="type-cell px-4 py-3.5">{t.fromWarehouseName || '—'}</td>
+                    <td className="type-cell px-4 py-3.5">{t.toWarehouseName || '—'}</td>
                     <td className="px-4 py-3.5"><Badge color={DOC_STATUS_COLORS[t.statusCode] ?? '#a8a29e'}>{docStatusLabel(t.statusCode)}</Badge></td>
-                    <td className="px-4 py-3.5 text-stone-500 tabular-nums">{fmtDate(t.date)}</td>
+                    <td className="type-cell px-4 py-3.5 tabular-nums">{fmtDate(t.date)}</td>
                   </tr>
                 )) : (
-                  <tr><td colSpan={5} className="py-16 text-center text-stone-500">No transfers yet.</td></tr>
+                  <tr><td colSpan={5} className="type-cell py-16 text-center">No transfers yet.</td></tr>
                 )}
               </tbody>
             </table>

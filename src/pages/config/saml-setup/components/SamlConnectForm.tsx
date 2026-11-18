@@ -201,7 +201,7 @@ export function SamlConnectForm({ provider }: SamlConnectFormProps) {
                 name={field.name}
                 value={field.value ?? ""}
                 onChange={(e) => field.onChange(e.target.value)}
-                className="h-10 w-full rounded-lg border border-stone-200 bg-white px-3 text-sm text-stone-700 focus:outline-none focus:ring-2 focus:ring-brand/50"
+                className="h-10 w-full rounded-lg border border-stone-200 bg-white px-3 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-brand/50"
               >
                 <option value="">No role — assign manually after sign-in</option>
                 {assignableRoles.map((role) => (

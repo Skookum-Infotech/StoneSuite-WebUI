@@ -213,7 +213,7 @@ export function AccountFormDrawer({
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="rounded p-1 text-stone-500 hover:bg-stone-100 hover:text-stone-600 transition-colors"
+            className="rounded p-1 text-ink-muted hover:bg-stone-100 hover:text-ink transition-colors"
           >
             <X className="size-4" />
           </button>

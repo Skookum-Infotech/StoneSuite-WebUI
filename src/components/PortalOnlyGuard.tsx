@@ -17,8 +17,8 @@ export function PortalOnlyGuard({ children }: PortalOnlyGuardProps) {
   if (!isPortal) {
     return (
       <div className="flex flex-col items-center justify-center py-24 text-center">
-        <ShieldOff className="mb-3 size-10 text-stone-400" aria-hidden="true" />
-        <p className="text-sm font-semibold text-stone-600">Customer portal only</p>
+        <ShieldOff className="mb-3 size-10 text-ink-faint" aria-hidden="true" />
+        <p className="text-sm font-semibold text-ink">Customer portal only</p>
         <p className="mt-1 type-helper">This page is only available to customer portal users.</p>
       </div>
     );

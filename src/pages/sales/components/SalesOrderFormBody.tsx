@@ -84,7 +84,7 @@ export function SalesOrderFormBody({
             >
               {tab.label}
               {tab.key === 'drawings' && drawings.length > 0 && (
-                <span className="rounded-full bg-stone-100 px-1.5 py-0.5 text-stone-500 tabular-nums type-pill">
+                <span className="rounded-full bg-stone-100 px-1.5 py-0.5 text-ink-muted tabular-nums type-pill">
                   {drawings.length}
                 </span>
               )}
@@ -124,7 +124,7 @@ export function SalesOrderFormBody({
                   <ModernFieldShell label="Billing Customer" required={!customerLocked}>
                     {customerLocked ? (
                       <div className={cn(readonlyCls, 'cursor-not-allowed select-none')}>
-                        {customer?.name || <span className="text-stone-500">—</span>}
+                        {customer?.name || <span className="text-ink-muted">—</span>}
                       </div>
                     ) : (
                       <CustomerPicker value={customer} onChange={setCustomer} required onCreateNew={onCreateCustomer} />

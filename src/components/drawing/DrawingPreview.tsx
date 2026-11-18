@@ -25,7 +25,7 @@ function AreaPreview({ area }: { area: DrawingArea }) {
   if (area.pieces.length === 0) {
     return (
       <div>
-        <h4 className="text-xs font-semibold text-stone-700">{area.name}</h4>
+        <h4 className="text-xs font-semibold text-ink">{area.name}</h4>
         <p className="type-helper">No pieces in this area yet.</p>
       </div>
     );
@@ -39,7 +39,7 @@ function AreaPreview({ area }: { area: DrawingArea }) {
 
   return (
     <div>
-      <h4 className="text-xs font-semibold text-stone-700">{area.name}</h4>
+      <h4 className="text-xs font-semibold text-ink">{area.name}</h4>
       <svg
         aria-hidden="true"
         viewBox={`${b.minX - PREVIEW_PADDING_MM} ${b.minY - PREVIEW_PADDING_MM} ${b.maxX - b.minX + 2 * PREVIEW_PADDING_MM} ${b.maxY - b.minY + 2 * PREVIEW_PADDING_MM}`}

@@ -32,7 +32,7 @@ export const DangerZoneAction = forwardRef<HTMLButtonElement, DangerZoneActionPr
     return (
       <div className="space-y-2 border-t border-destructive/10 pt-3 first:border-t-0 first:pt-0">
         <div className="space-y-0.5">
-          <p className="text-xs text-stone-600 dark:text-stone-300">{description}</p>
+          <p className="text-xs text-ink dark:text-stone-300">{description}</p>
           <p className="text-micro text-danger-ink/80">This action cannot be undone.</p>
         </div>
         <button

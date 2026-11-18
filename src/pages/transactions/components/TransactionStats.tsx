@@ -14,8 +14,8 @@ function StatCard({
       </div>
       <div className="min-w-0">
         {/* Wraps on a narrow phone (two cards per row), truncates once there is room to spare. */}
-        <p className="text-xs font-semibold leading-tight text-stone-500 sm:truncate">{label}</p>
-        <p className="mt-0.5 truncate text-base font-bold leading-tight text-stone-900 tabular-nums">{value}</p>
+        <p className="text-xs font-semibold leading-tight text-ink-muted sm:truncate">{label}</p>
+        <p className="mt-0.5 truncate text-base font-bold leading-tight text-ink-strong tabular-nums">{value}</p>
         {/* The caption is the first thing to go on a phone: two cards per row leave no room for it. */}
         <p className="mt-0.5 hidden truncate sm:block type-helper">{sub}</p>
       </div>
@@ -37,7 +37,7 @@ export function TransactionStats({ summary }: { summary: TransactionSummary | nu
         value={n(summary?.total)}
         sub="created or updated by you"
         icon={Layers}
-        accent="bg-stone-100 text-stone-600"
+        accent="bg-stone-100 text-ink"
       />
       <StatCard
         label="Created by me"

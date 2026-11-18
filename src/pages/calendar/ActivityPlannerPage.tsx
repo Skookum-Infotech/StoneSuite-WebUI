@@ -162,11 +162,11 @@ export default function ActivityPlannerPage() {
             </div>
             <div className="min-w-0">
               <h1 className="type-page-title">Activity Planner</h1>
-              <p className="flex min-h-5 flex-wrap items-center gap-x-3 text-sm text-stone-500" aria-live="polite">
+              <p className="flex min-h-5 flex-wrap items-center gap-x-3 type-page-subtitle" aria-live="polite">
                 {settled && (
                   <>
                     <span>
-                      <span className="font-semibold text-stone-900">{cards.length}</span>{' '}
+                      <span className="font-semibold text-ink-strong">{cards.length}</span>{' '}
                       {cardNoun(kind, cards.length)} in this view
                     </span>
                     {overdue > 0 && <span className="font-semibold text-danger-ink">{overdue} overdue</span>}

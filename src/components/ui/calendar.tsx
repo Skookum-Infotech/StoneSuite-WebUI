@@ -15,26 +15,26 @@ function Calendar({ className, classNames, ...props }: DayPickerProps) {
         months: "flex flex-col gap-2",
         month: "space-y-2",
         month_caption: "flex items-center justify-center pt-1 pb-1 relative",
-        caption_label: "text-sm font-semibold text-stone-900",
+        caption_label: "text-sm font-semibold text-ink-strong",
         nav: "flex items-center justify-between absolute inset-x-0 top-0.5",
         button_previous: cn(
-          "inline-flex size-7 items-center justify-center rounded-md text-stone-500 transition hover:bg-stone-100 hover:text-stone-900 disabled:opacity-30 disabled:pointer-events-none"
+          "inline-flex size-7 items-center justify-center rounded-md text-ink-muted transition hover:bg-stone-100 hover:text-ink-strong disabled:opacity-30 disabled:pointer-events-none"
         ),
         button_next: cn(
-          "inline-flex size-7 items-center justify-center rounded-md text-stone-500 transition hover:bg-stone-100 hover:text-stone-900 disabled:opacity-30 disabled:pointer-events-none"
+          "inline-flex size-7 items-center justify-center rounded-md text-ink-muted transition hover:bg-stone-100 hover:text-ink-strong disabled:opacity-30 disabled:pointer-events-none"
         ),
         month_grid: "w-full border-collapse",
         weekdays: "flex",
-        weekday: "w-8 text-micro font-medium text-stone-500",
+        weekday: "w-8 text-micro font-medium text-ink-muted",
         week: "flex w-full mt-1",
         day: "size-8 p-0 text-center text-sm",
         day_button: cn(
-          "size-8 rounded-md font-normal text-stone-700 transition hover:bg-stone-100",
+          "size-8 rounded-md font-normal text-ink transition hover:bg-stone-100",
           "disabled:cursor-not-allowed disabled:hover:bg-transparent",
-          "aria-selected:bg-brand aria-selected:font-semibold aria-selected:text-stone-950 aria-selected:hover:bg-brand-hover"
+          "aria-selected:bg-brand aria-selected:font-semibold aria-selected:text-ink-strong aria-selected:hover:bg-brand-hover"
         ),
         today: "font-semibold text-brand-hover",
-        outside: "text-stone-500",
+        outside: "text-ink-muted",
         disabled: "text-stone-300 opacity-50",
         hidden: "invisible",
         ...classNames,

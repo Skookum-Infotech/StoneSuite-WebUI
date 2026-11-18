@@ -186,7 +186,7 @@ export default function ItemReceiptDetailPage() {
               <ModernSection title="Source Purchase Order" index={0}>
                 <div className="flex items-center justify-between gap-3 rounded-lg border border-stone-200 bg-stone-50/60 px-4 py-3">
                   <div className="flex items-center gap-2.5 min-w-0">
-                    <Package className="size-4 shrink-0 text-stone-400" aria-hidden="true" />
+                    <Package className="size-4 shrink-0 text-ink-faint" aria-hidden="true" />
                     <div className="min-w-0">
                       <p className="truncate type-card-title">{ir.purchaseOrder.number || '—'}</p>
                       <p className="truncate type-helper">{ir.vendor.name}</p>
@@ -222,7 +222,7 @@ export default function ItemReceiptDetailPage() {
           {activeTab === 'items' && (
             <>
             <div className="overflow-x-auto modal-scrollbar rounded-lg border border-stone-200 bg-white">
-              <table className="w-full text-left text-xs">
+              <table className="w-full text-left type-cell">
                 <thead className="bg-stone-50 border-b border-stone-200">
                   <tr className="divide-x divide-stone-200">
                     {[
@@ -242,22 +242,22 @@ export default function ItemReceiptDetailPage() {
                 <tbody className="divide-y divide-stone-100">
                   {items.map((line) => (
                     <tr key={line.id} className="hover:bg-stone-50/50 divide-x divide-stone-100">
-                      <td className="px-3 py-2.5 text-stone-500 tabular-nums">{line.lineNumber}</td>
-                      <td className="px-3 py-2.5 font-medium text-stone-800">
-                        {line.itemName || line.description || <span className="text-stone-500">—</span>}
+                      <td className="type-cell px-3 py-2.5 tabular-nums">{line.lineNumber}</td>
+                      <td className="type-cell px-3 py-2.5 font-medium">
+                        {line.itemName || line.description || <span className="text-ink-muted">—</span>}
                       </td>
                       <td className="px-3 py-2.5 type-record-id">{line.sku || '—'}</td>
-                      <td className="px-3 py-2.5 text-stone-500 whitespace-nowrap" title={line.unitCode || undefined}>
-                        {unitLabel(line.unitCode) || <span className="text-stone-500">—</span>}
+                      <td className="type-cell px-3 py-2.5 whitespace-nowrap" title={line.unitCode || undefined}>
+                        {unitLabel(line.unitCode) || <span className="text-ink-muted">—</span>}
                       </td>
-                      <td className="px-3 py-2.5 tabular-nums text-right text-stone-600">{line.qtyOrdered}</td>
-                      <td className="px-3 py-2.5 tabular-nums text-right text-stone-800 font-semibold">{line.qtyReceived}</td>
-                      <td className="px-3 py-2.5 tabular-nums text-right text-stone-500">{line.qtyRejected}</td>
-                      <td className="px-3 py-2.5 text-stone-500 max-w-[200px] truncate">{line.lineNotes || '—'}</td>
+                      <td className="type-cell px-3 py-2.5 tabular-nums text-right">{line.qtyOrdered}</td>
+                      <td className="type-cell-strong px-3 py-2.5 tabular-nums text-right">{line.qtyReceived}</td>
+                      <td className="type-cell px-3 py-2.5 tabular-nums text-right">{line.qtyRejected}</td>
+                      <td className="type-cell px-3 py-2.5 max-w-[200px] truncate">{line.lineNotes || '—'}</td>
                     </tr>
                   ))}
                   {items.length === 0 && (
-                    <tr><td colSpan={8} className="py-8 text-center text-stone-500">No line items.</td></tr>
+                    <tr><td colSpan={8} className="type-cell py-8 text-center">No line items.</td></tr>
                   )}
                 </tbody>
               </table>
@@ -276,23 +276,23 @@ export default function ItemReceiptDetailPage() {
         <SalesDetailSidebar label="Item Receipt Details">
           <WorkflowCard module="itemReceipt" statusCode={ir.statusCode} statusLabel={ir.status} workflow={ir.workflow} links={{ purchaseOrderId: ir.purchaseOrder?.id }} />
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-            <p className="text-xs font-semibold text-stone-500">Quick Actions</p>
+            <p className="type-card-title">Quick Actions</p>
             <div className="space-y-0.5">
               <button
                 type="button"
                 onClick={() => navigate(`/purchases/item_receipt/${id}/edit`, { state: { initialTab: 'files' } })}
-                className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs text-stone-700 w-full transition-colors text-left"
+                className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-button text-ink w-full transition-colors text-left"
               >
-                <Upload className="size-4 text-stone-400 shrink-0" />
+                <Upload className="size-4 text-ink-faint shrink-0" />
                 Upload file
               </button>
               {canEditHere && (
                 <button
                   type="button"
                   onClick={() => navigate(`/purchases/item_receipt/${id}/edit`)}
-                  className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs text-stone-700 w-full transition-colors text-left"
+                  className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-button text-ink w-full transition-colors text-left"
                 >
-                  <Pencil className="size-4 text-stone-400 shrink-0" />
+                  <Pencil className="size-4 text-ink-faint shrink-0" />
                   Edit item receipt
                 </button>
               )}
@@ -300,10 +300,10 @@ export default function ItemReceiptDetailPage() {
                 type="button"
                 onClick={handleExportPdf}
                 disabled={exportingPdf}
-                className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs text-stone-700 w-full transition-colors text-left disabled:opacity-60 disabled:cursor-not-allowed"
+                className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-button text-ink w-full transition-colors text-left disabled:opacity-60 disabled:cursor-not-allowed"
                 aria-label="Export as PDF"
               >
-                {exportingPdf ? <Loader2 className="size-4 text-stone-400 shrink-0 animate-spin" /> : <FileDown className="size-4 text-stone-400 shrink-0" />}
+                {exportingPdf ? <Loader2 className="size-4 text-ink-faint shrink-0 animate-spin" /> : <FileDown className="size-4 text-ink-faint shrink-0" />}
                 {exportingPdf ? 'Exporting…' : 'Export PDF'}
               </button>
             </div>
@@ -314,46 +314,46 @@ export default function ItemReceiptDetailPage() {
 
           {canPostHere && (
             <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-2.5 mb-4">
-              <p className="text-xs font-semibold text-stone-500">Actions</p>
+              <p className="type-card-title">Actions</p>
               <PostReceiptDialog itemReceiptId={id} onPosted={refresh} />
             </div>
           )}
 
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-            <p className="text-xs font-semibold text-stone-500">Status</p>
+            <p className="type-card-title">Status</p>
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
-              <span className="text-stone-500">Status</span>
+              <span className="text-ink-muted">Status</span>
               <Badge color={color}>{ir.status}</Badge>
             </div>
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
-              <span className="text-stone-500">Vendor</span>
+              <span className="text-ink-muted">Vendor</span>
               <button
                 type="button"
                 onClick={() => navigate(`/purchases/vendor/${ir.vendor.id}`)}
-                className="text-stone-700 hover:text-accent-foreground truncate max-w-[140px] transition-colors"
+                className="text-ink hover:text-accent-foreground truncate max-w-[140px] transition-colors"
               >
                 {ir.vendor.name}
               </button>
             </div>
             {ir.postedAt && (
               <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
-                <span className="text-stone-500">Posted</span>
-                <span className="text-stone-700">{fmtDateTime(ir.postedAt)}</span>
+                <span className="text-ink-muted">Posted</span>
+                <span className="text-ink">{fmtDateTime(ir.postedAt)}</span>
               </div>
             )}
             {ir.voidedAt && (
               <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
-                <span className="text-stone-500">Voided</span>
-                <span className="text-stone-700">{fmtDateTime(ir.voidedAt)}</span>
+                <span className="text-ink-muted">Voided</span>
+                <span className="text-ink">{fmtDateTime(ir.voidedAt)}</span>
               </div>
             )}
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
-              <span className="text-stone-500">Created</span>
-              <span className="text-stone-700">{fmtDate(ir.createdAt)}</span>
+              <span className="text-ink-muted">Created</span>
+              <span className="text-ink">{fmtDate(ir.createdAt)}</span>
             </div>
             <div className="flex justify-between items-center py-2 text-xs">
-              <span className="text-stone-500">Updated</span>
-              <span className="text-stone-700">{fmtDate(ir.updatedAt)}</span>
+              <span className="text-ink-muted">Updated</span>
+              <span className="text-ink">{fmtDate(ir.updatedAt)}</span>
             </div>
           </div>
 
@@ -384,7 +384,7 @@ function ReadonlyField({ label, value, full }: { label: string; value?: string; 
   return (
     <div className={cn('space-y-1', full && 'col-span-full')}>
       <label className={fieldLabelCls}>{label}</label>
-      <div className={readonlyCls}>{value || <span className="text-stone-500">—</span>}</div>
+      <div className={readonlyCls}>{value || <span className="text-ink-muted">—</span>}</div>
     </div>
   );
 }

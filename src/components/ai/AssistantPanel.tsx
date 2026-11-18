@@ -20,7 +20,7 @@ const SUGGESTED_HOWTO = ['What can the assistant help with?', 'How do I create a
 const SUGGESTED_DATA = ['How many leads do I have?', 'How do I convert a prospect to a customer?', 'What deals closed this month?'];
 
 const headerButton =
-  'flex min-h-11 min-w-11 items-center justify-center rounded p-1 text-stone-500 transition-colors hover:bg-stone-100 hover:text-stone-600 dark:hover:bg-white/10 dark:hover:text-stone-200 cursor-pointer sm:min-h-0 sm:min-w-0';
+  'flex min-h-11 min-w-11 items-center justify-center rounded p-1 text-ink-muted transition-colors hover:bg-stone-100 hover:text-ink dark:hover:bg-white/10 dark:hover:text-stone-200 cursor-pointer sm:min-h-0 sm:min-w-0';
 
 const FOCUSABLE_SELECTOR = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
 
@@ -245,7 +245,7 @@ export function AssistantPanel({
           ref={confirmDialogRef}
           role="alertdialog"
           aria-label="Confirm stopping the current answer"
-          className="flex items-center justify-between gap-2 border-b border-stone-200 bg-amber-50 px-4 py-2 text-micro text-stone-700 dark:border-white/10 dark:bg-amber-500/10 dark:text-stone-200"
+          className="flex items-center justify-between gap-2 border-b border-stone-200 bg-amber-50 px-4 py-2 text-micro text-ink dark:border-white/10 dark:bg-amber-500/10 dark:text-stone-200"
         >
           <span>This will stop the current answer. Continue?</span>
           <span className="flex shrink-0 gap-1">
@@ -260,7 +260,7 @@ export function AssistantPanel({
               ref={cancelButtonRef}
               type="button"
               onClick={cancelConfirm}
-              className="rounded-lg px-2 py-1 font-semibold text-stone-600 hover:bg-stone-100 cursor-pointer dark:text-stone-300 dark:hover:bg-white/10"
+              className="rounded-lg px-2 py-1 font-semibold text-ink hover:bg-stone-100 cursor-pointer dark:text-stone-300 dark:hover:bg-white/10"
             >
               Cancel
             </button>
@@ -294,7 +294,7 @@ export function AssistantPanel({
               className="h-full space-y-4 overflow-y-auto px-4 py-3"
             >
               {isLoading && (
-                <div className="flex items-center gap-2 text-xs text-stone-500">
+                <div className="flex items-center gap-2 text-xs text-ink-muted">
                   <Loader2 className="size-3.5 animate-spin" aria-hidden="true" /> Loading conversation…
                 </div>
               )}
@@ -323,7 +323,7 @@ export function AssistantPanel({
                         key={q}
                         type="button"
                         onClick={() => askSuggested(q)}
-                        className="rounded-xl border border-stone-200 px-2.5 py-1.5 text-left text-micro font-medium text-stone-600 hover:bg-stone-100 dark:border-white/10 dark:text-stone-300 dark:hover:bg-white/[0.06] cursor-pointer"
+                        className="rounded-xl border border-stone-200 px-2.5 py-1.5 text-left text-micro font-medium text-ink hover:bg-stone-100 dark:border-white/10 dark:text-stone-300 dark:hover:bg-white/[0.06] cursor-pointer"
                       >
                         {q}
                       </button>
@@ -341,7 +341,7 @@ export function AssistantPanel({
                 type="button"
                 onClick={scrollToBottom}
                 aria-label="Jump to latest message"
-                className="absolute bottom-2 left-1/2 flex -translate-x-1/2 items-center gap-1 rounded-full border border-stone-200 bg-white px-2.5 py-1 text-micro font-semibold text-stone-600 shadow-md hover:bg-stone-50 dark:border-white/10 dark:bg-stone-800 dark:text-stone-200 cursor-pointer"
+                className="absolute bottom-2 left-1/2 flex -translate-x-1/2 items-center gap-1 rounded-full border border-stone-200 bg-white px-2.5 py-1 text-micro font-semibold text-ink shadow-md hover:bg-stone-50 dark:border-white/10 dark:bg-stone-800 dark:text-stone-200 cursor-pointer"
               >
                 <ArrowDown className="size-3" aria-hidden="true" />
                 Jump to latest

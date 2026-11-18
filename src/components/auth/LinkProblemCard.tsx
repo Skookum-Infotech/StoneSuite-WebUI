@@ -12,7 +12,7 @@ export function LinkProblemCard({ title, message }: { title: string; message: st
     <div role="alert" className="text-center">
       <img src={LOGO_SRC} alt="Stone Suite logo" className="mx-auto mb-4 h-14 w-auto object-contain" />
       <h1 className="type-page-title">{title}</h1>
-      <p className="mt-2 text-sm text-stone-600">{message}</p>
+      <p className="mt-2 type-page-subtitle">{message}</p>
       <Link
         to="/auth/login"
         aria-label="Go to sign in"

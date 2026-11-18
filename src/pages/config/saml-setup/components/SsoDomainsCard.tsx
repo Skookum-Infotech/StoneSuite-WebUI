@@ -102,8 +102,8 @@ export function SsoDomainsCard({ provider }: SsoDomainsCardProps) {
               key={d.id}
               className="flex items-center justify-between gap-2 rounded-lg border border-stone-200 bg-stone-50/60 px-3 py-1.5"
             >
-              <span className="flex items-center gap-1.5 font-mono text-xs text-stone-700">
-                <Globe className="size-3.5 text-stone-400" />
+              <span className="flex items-center gap-1.5 font-mono text-xs text-ink">
+                <Globe className="size-3.5 text-ink-faint" />
                 {d.domain}
               </span>
               <button
@@ -111,7 +111,7 @@ export function SsoDomainsCard({ provider }: SsoDomainsCardProps) {
                 onClick={() => remove.mutate(d.id)}
                 disabled={remove.isPending}
                 aria-label={`Remove domain ${d.domain}`}
-                className="rounded-lg p-1 text-stone-400 transition hover:bg-red-50 hover:text-danger-ink disabled:cursor-not-allowed disabled:opacity-50"
+                className="rounded-lg p-1 text-ink-muted transition hover:bg-red-50 hover:text-danger-ink disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <Trash2 className="size-3.5" />
               </button>

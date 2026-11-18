@@ -39,7 +39,7 @@ export function VendorStatusControl({ value, onChange, disabled }: {
         className={`${fieldCls} flex items-center gap-2`}
       >
         <span className="flex-1 text-left">{selected?.label ?? value}</span>
-        <ChevronDown className="size-3 shrink-0 text-stone-400" />
+        <ChevronDown className="size-3 shrink-0 text-ink-faint" />
       </button>
 
       {open && !disabled && (
@@ -50,7 +50,7 @@ export function VendorStatusControl({ value, onChange, disabled }: {
               type="button"
               onClick={() => { onChange(s.code); setOpen(false); }}
               className={`flex w-full items-center gap-2 px-3.5 py-2.5 text-sm transition ${
-                s.code === value ? 'bg-brand/10 font-semibold text-stone-900' : 'text-stone-700 hover:bg-stone-50'
+                s.code === value ? 'bg-brand/10 font-semibold text-ink-strong' : 'text-ink hover:bg-stone-50'
               }`}
             >
               {s.label}

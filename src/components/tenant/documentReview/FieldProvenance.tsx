@@ -36,7 +36,7 @@ export function FieldProvenance({ label, provenance, needsReview, onShowInDocume
   const canShow = provenance?.page !== undefined || provenance?.snippet !== undefined;
   return (
     <span className="inline-flex items-center gap-1">
-      <span className={cn('inline-flex items-center gap-1 text-micro font-semibold', needsReview ? 'text-warning dark:text-amber-400' : 'text-stone-500 dark:text-stone-400')}>
+      <span className={cn('inline-flex items-center gap-1 text-micro font-semibold', needsReview ? 'text-warning dark:text-amber-400' : 'text-ink-muted dark:text-stone-400')}>
         <span aria-hidden="true">{marker.glyph}</span>
         {marker.text}
       </span>
@@ -46,18 +46,18 @@ export function FieldProvenance({ label, provenance, needsReview, onShowInDocume
             <button
               type="button"
               aria-label={`Where ${label} came from`}
-              className="inline-flex size-5 items-center justify-center rounded-full text-stone-500 dark:text-stone-400 transition-colors hover:text-stone-700 dark:hover:text-stone-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-stone-500"
+              className="inline-flex size-5 items-center justify-center rounded-full text-ink-muted dark:text-stone-400 transition-colors hover:text-ink dark:hover:text-stone-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-stone-500"
             >
               <Info className="size-3.5" aria-hidden="true" />
             </button>
           </PopoverTrigger>
           <PopoverContent className="w-64 space-y-1.5 text-xs">
-            <p className="font-semibold text-stone-900 dark:text-stone-100">{label}</p>
-            <p className="text-stone-600 dark:text-stone-300">Source: {SOURCE_MARKER[provenance.source].text}</p>
-            <p className="text-stone-600 dark:text-stone-300">Confidence: {CONFIDENCE_WORD[provenance.confidence]}</p>
-            {provenance.page !== undefined && <p className="text-stone-600 dark:text-stone-300">Page {provenance.page}</p>}
+            <p className="font-semibold text-ink-strong dark:text-stone-100">{label}</p>
+            <p className="text-ink dark:text-stone-300">Source: {SOURCE_MARKER[provenance.source].text}</p>
+            <p className="text-ink dark:text-stone-300">Confidence: {CONFIDENCE_WORD[provenance.confidence]}</p>
+            {provenance.page !== undefined && <p className="text-ink dark:text-stone-300">Page {provenance.page}</p>}
             {provenance.snippet && (
-              <blockquote className="rounded-md bg-stone-50 dark:bg-white/[0.03] px-2 py-1 text-stone-700 dark:text-stone-300">{provenance.snippet}</blockquote>
+              <blockquote className="rounded-md bg-stone-50 dark:bg-white/[0.03] px-2 py-1 text-ink dark:text-stone-300">{provenance.snippet}</blockquote>
             )}
             {canShow && (
               <button

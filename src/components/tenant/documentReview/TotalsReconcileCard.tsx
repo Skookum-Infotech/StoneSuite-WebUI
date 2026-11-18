@@ -29,8 +29,8 @@ export function TotalsReconcileCard({ docTotal, formTotal, lines, formAmounts, t
   const taxOff = tax !== undefined && Math.abs(tax.doc - tax.form) >= TAX_EPSILON;
   return (
     <div className="rounded-lg border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 p-3 text-xs">
-      <p className="font-semibold text-stone-900 dark:text-stone-100">Totals check (before tax)</p>
-      <dl className="mt-1 grid grid-cols-2 gap-x-3 text-stone-600 dark:text-stone-300">
+      <p className="font-semibold text-ink-strong dark:text-stone-100">Totals check (before tax)</p>
+      <dl className="mt-1 grid grid-cols-2 gap-x-3 text-ink dark:text-stone-300">
         <dt>Document total</dt>
         <dd className="text-right tabular-nums">{docTotal === null ? 'Not found' : usd(docTotal)}</dd>
         <dt>Form total</dt>
@@ -57,7 +57,7 @@ export function TotalsReconcileCard({ docTotal, formTotal, lines, formAmounts, t
           Off by {usd(rec.diff)}{rec.suspectLine ? ` — check line ${rec.suspectLine}` : ''}
         </p>
       )}
-      {!rec && <p className="mt-2 text-stone-500 dark:text-stone-400">The document total couldn't be read, so it can't be checked.</p>}
+      {!rec && <p className="mt-2 text-ink-muted dark:text-stone-400">The document total couldn't be read, so it can't be checked.</p>}
       {taxOff && (
         <p className="mt-1 flex items-center gap-1 font-semibold text-warning-ink dark:text-amber-400">
           <TriangleAlert className="size-3.5" aria-hidden="true" />

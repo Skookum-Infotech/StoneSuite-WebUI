@@ -37,7 +37,7 @@ export function SuspendTenantDialog({ tenant, onClose }: Props) {
       tone="warning"
       onClose={close}
     >
-      <p className="text-xs text-stone-600">
+      <p className="text-xs text-ink">
         Everyone at <span className="font-semibold">{tenant.displayName}</span> is blocked from signing in to their
         workspace until you restore it. No data is deleted.
       </p>
@@ -61,7 +61,7 @@ export function SuspendTenantDialog({ tenant, onClose }: Props) {
           type="button"
           onClick={() => suspend.mutate()}
           disabled={suspend.isPending}
-          className="rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-semibold text-stone-950 transition-all hover:bg-amber-400 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-semibold text-ink-strong transition-all hover:bg-amber-400 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {suspend.isPending ? 'Suspending…' : 'Suspend'}
         </button>

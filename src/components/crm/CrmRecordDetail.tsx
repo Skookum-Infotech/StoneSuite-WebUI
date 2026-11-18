@@ -97,7 +97,7 @@ export function CrmRecordDetail({ coreFields, showCustomerBalances }: Props) {
         <div key={field.key} className="sm:col-span-2">
           <ModernFieldShell label={field.label}>
             <div className={`${readonlyCls} whitespace-pre-wrap`}>
-              {display || <span className="text-stone-500">—</span>}
+              {display || <span className="text-ink-muted">—</span>}
             </div>
           </ModernFieldShell>
         </div>
@@ -109,7 +109,7 @@ export function CrmRecordDetail({ coreFields, showCustomerBalances }: Props) {
         <div key={field.key} className="col-span-full">
           <ModernFieldShell label={field.label}>
             <div className={`${readonlyCls} whitespace-pre-wrap`}>
-              {display || <span className="text-stone-500">—</span>}
+              {display || <span className="text-ink-muted">—</span>}
             </div>
           </ModernFieldShell>
         </div>
@@ -125,7 +125,7 @@ export function CrmRecordDetail({ coreFields, showCustomerBalances }: Props) {
               {flag && <Flag {...flag} />}
               {display}
             </span>
-          ) : <span className="text-stone-500">—</span>}
+          ) : <span className="text-ink-muted">—</span>}
         </div>
       </ModernFieldShell>
     );

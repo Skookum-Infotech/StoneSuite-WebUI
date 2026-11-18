@@ -38,13 +38,13 @@ export function VendorTypeSwitcher({ value, onChange }: {
             <div
               className={cn(
                 'flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-colors',
-                active ? 'bg-brand text-stone-900' : 'bg-stone-100 text-stone-500',
+                active ? 'bg-brand text-ink-strong' : 'bg-stone-100 text-ink-muted',
               )}
             >
               <Icon className="size-4" />
             </div>
             <div className="min-w-0">
-              <p className={cn('text-sm font-semibold', active ? 'text-stone-900' : 'text-stone-700')}>
+              <p className={cn('text-sm font-semibold', active ? 'text-ink-strong' : 'text-ink')}>
                 {label}
               </p>
               <p className="truncate type-helper">{description}</p>

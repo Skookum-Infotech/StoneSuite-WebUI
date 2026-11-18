@@ -108,7 +108,7 @@ export function ItemReceiptFormBody({
               <ModernSection title="Source Purchase Order" index={0}>
                 <div className="flex items-center justify-between gap-3 rounded-lg border border-stone-200 bg-stone-50/60 px-4 py-3">
                   <div className="flex items-center gap-2.5 min-w-0">
-                    <Package className="size-4 shrink-0 text-stone-400" aria-hidden="true" />
+                    <Package className="size-4 shrink-0 text-ink-faint" aria-hidden="true" />
                     <div className="min-w-0">
                       <p className="truncate type-card-title">{sourcePurchaseOrder.number || '—'}</p>
                       <p className="truncate type-helper">{sourcePurchaseOrder.vendorName}</p>

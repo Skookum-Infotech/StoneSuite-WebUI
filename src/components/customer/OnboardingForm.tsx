@@ -22,7 +22,7 @@ import { cn } from '@/lib/utils';
 
 import { buttonVariants } from '@/components/ui/button';
 const inputCls =
-  'w-full rounded-lg border border-stone-200 bg-stone-50 px-3 py-2 type-input outline-none placeholder:text-stone-500 focus:border-brand focus:bg-white focus:ring-2 focus:ring-brand/20 transition disabled:bg-stone-100 disabled:text-stone-400';
+  'w-full rounded-lg border border-stone-200 bg-stone-50 px-3 py-2 type-input outline-none placeholder:text-ink-muted focus:border-brand focus:bg-white focus:ring-2 focus:ring-brand/20 transition disabled:bg-stone-100 disabled:text-ink-muted';
 
 export function OnboardingForm({
   prefill,

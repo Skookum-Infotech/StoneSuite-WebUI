@@ -66,7 +66,7 @@ export function SalesDetailSidebar({ children, label = 'Details' }: Props) {
               aria-label={`Close ${label.toLowerCase()}`}
               className="flex size-7 items-center justify-center rounded-full hover:bg-stone-100 transition-colors"
             >
-              <X className="size-4 text-stone-500" />
+              <X className="size-4 text-ink-muted" />
             </button>
           </div>
 

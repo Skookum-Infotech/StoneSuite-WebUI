@@ -11,8 +11,8 @@ export function ExpenseSummaryCard({ total }: { total: number }) {
         <p className="type-overline">Summary</p>
       </div>
       <div className="flex items-center justify-between px-4 py-2.5 bg-stone-50">
-        <span className="text-xs font-medium text-stone-700">Total</span>
-        <span className="tabular-nums text-sm font-bold text-stone-900">{fmt(total)}</span>
+        <span className="text-xs font-medium text-ink">Total</span>
+        <span className="tabular-nums text-sm font-bold text-ink-strong">{fmt(total)}</span>
       </div>
     </div>
   );

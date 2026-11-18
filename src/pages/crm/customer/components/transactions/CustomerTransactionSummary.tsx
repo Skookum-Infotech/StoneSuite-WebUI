@@ -66,8 +66,8 @@ export function CustomerTransactionSummary({
         <div className="flex flex-wrap gap-2 sm:gap-3">
           {tiles.map((t) => (
             <div key={t.key} className="min-w-0 flex-1 basis-36 rounded-2xl border border-stone-200 bg-white px-3 py-3 shadow-sm sm:px-4">
-              <p className="text-xs font-semibold leading-tight text-stone-500">{t.label}</p>
-              <p className={cn('mt-1 truncate text-base font-bold tabular-nums text-stone-900', t.tone)}>{t.value}</p>
+              <p className="text-xs font-semibold leading-tight text-ink-muted">{t.label}</p>
+              <p className={cn('mt-1 truncate text-base font-bold tabular-nums text-ink-strong', t.tone)}>{t.value}</p>
               <p className="mt-0.5 truncate type-helper">{t.sub}</p>
             </div>
           ))}

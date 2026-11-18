@@ -46,15 +46,15 @@ export function SalesOrdersSnapshot({
       <div className="grid grid-cols-3 gap-2">
         <div className="rounded-xl bg-stone-50 p-2 sm:p-2.5 lg:p-3">
           <div className="truncate type-overline">Open</div>
-          <div className="mt-1 text-sm font-bold text-stone-950 tabular-nums sm:text-base lg:text-lg">{data.openCount}</div>
+          <div className="mt-1 text-sm font-bold text-ink-strong tabular-nums sm:text-base lg:text-lg">{data.openCount}</div>
         </div>
         <div className="rounded-xl bg-stone-50 p-2 sm:p-2.5 lg:p-3">
           <div className="truncate type-overline">Backlog</div>
-          <div className="mt-1 text-sm font-bold text-stone-950 tabular-nums sm:text-base lg:text-lg">{currency(data.openValue)}</div>
+          <div className="mt-1 text-sm font-bold text-ink-strong tabular-nums sm:text-base lg:text-lg">{currency(data.openValue)}</div>
         </div>
         <div className="rounded-xl bg-stone-50 p-2 sm:p-2.5 lg:p-3">
           <div className="truncate type-overline">Late</div>
-          <div className={cn('mt-1 text-sm font-bold tabular-nums sm:text-base lg:text-lg', data.lateCount > 0 ? 'text-warning' : 'text-stone-950')}>
+          <div className={cn('mt-1 text-sm font-bold tabular-nums sm:text-base lg:text-lg', data.lateCount > 0 ? 'text-warning' : 'text-ink-strong')}>
             {data.lateCount}
           </div>
           {data.lateCount > 0 && <div className="type-subline tabular-nums">{currency(data.lateValue)}</div>}
@@ -73,7 +73,7 @@ export function SalesOrdersSnapshot({
       )}
 
       {data.atRisk.length === 0 ? (
-        <div className="mt-4 flex-1 rounded-xl border border-dashed border-stone-300 p-4 text-center text-sm text-stone-500">
+        <div className="mt-4 flex-1 rounded-xl border border-dashed border-stone-300 p-4 text-center text-sm text-ink-muted">
           No open sales orders to show.
         </div>
       ) : (

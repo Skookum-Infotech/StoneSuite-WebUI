@@ -35,12 +35,12 @@ function PreviewBody({ preview }: { preview: AutomationPreview }) {
   const nothing = (preview.counts[PREVIEW_PLANNED_KEY] ?? 0) === 0 && preview.recipients.length === 0;
   return (
     <>
-      {nothing && <p className="text-sm text-stone-600">{NOTHING_PLANNED}</p>}
+      {nothing && <p className="type-dialog-body">{NOTHING_PLANNED}</p>}
       <dl className="grid grid-cols-[1fr_auto] gap-x-4 gap-y-1 text-xs">
         {countRows(preview.counts).map(([label, n]) => (
           <div key={label} className="contents">
-            <dt className="text-stone-600">{label}</dt>
-            <dd className="text-right font-semibold text-stone-900">{n}</dd>
+            <dt className="text-ink">{label}</dt>
+            <dd className="text-right font-semibold text-ink-strong">{n}</dd>
           </div>
         ))}
       </dl>
@@ -48,7 +48,7 @@ function PreviewBody({ preview }: { preview: AutomationPreview }) {
         <ul aria-label="Recipients" className="mt-4 divide-y divide-stone-100 rounded-lg border border-stone-200">
           {preview.recipients.map((r) => (
             <li key={r.email} className="p-3 text-xs">
-              <p className="font-medium text-stone-900">{r.email}</p>
+              <p className="font-medium text-ink-strong">{r.email}</p>
               <p className="mt-1 flex flex-wrap gap-x-3 gap-y-1">
                 {r.items.map((item) => (
                   <Link
@@ -86,9 +86,9 @@ export function PreviewDrawer({ rule, onClose }: Props) {
           className="fixed inset-y-0 right-0 z-[10000] flex w-full max-w-md flex-col bg-white shadow-2xl dark:bg-stone-900"
         >
           <div className="flex items-start justify-between gap-3 border-b border-stone-200 p-4">
-            <Dialog.Title className="text-sm font-bold text-stone-900">Preview: {rule.name}</Dialog.Title>
+            <Dialog.Title className="text-sm font-bold text-ink-strong">Preview: {rule.name}</Dialog.Title>
             <Dialog.Close asChild>
-              <button type="button" aria-label="Close preview" className="rounded p-1 text-stone-500 hover:bg-stone-100">
+              <button type="button" aria-label="Close preview" className="rounded p-1 text-ink-muted hover:bg-stone-100">
                 <X className="size-4" aria-hidden="true" />
               </button>
             </Dialog.Close>

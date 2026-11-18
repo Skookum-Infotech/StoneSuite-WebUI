@@ -22,7 +22,7 @@ export default function RefundListPage() {
             </div>
             <div>
               <h1 className="type-page-title">Refunds</h1>
-              <p className="text-sm text-stone-500">Money returned to customers.</p>
+              <p className="type-page-subtitle">Money returned to customers.</p>
             </div>
           </div>
           {!isCustomer && (

@@ -113,7 +113,7 @@ export default function RolesPage(): React.JSX.Element {
           <h1 className="type-page-title">
             Roles & Access
           </h1>
-          <p className="text-sm text-stone-500">
+          <p className="type-page-subtitle">
             Control what each role can see and do.
           </p>
         </div>
@@ -164,12 +164,12 @@ export default function RolesPage(): React.JSX.Element {
                 >
                   <div className="flex items-center gap-1.5 min-w-0">
                     {role.isSystem && (
-                      <Lock className="size-3 text-stone-400 shrink-0" />
+                      <Lock className="size-3 text-ink-faint shrink-0" />
                     )}
                     <span
                       className={cn(
                         "text-xs font-semibold truncate",
-                        active ? "text-link" : "text-stone-700",
+                        active ? "text-link" : "text-ink",
                       )}
                     >
                       {role.name}
@@ -208,8 +208,8 @@ export default function RolesPage(): React.JSX.Element {
           {!activeRole && !rolesQ.isLoading && (
             <div className="hidden md:flex h-full items-center justify-center">
               <div className="text-center">
-                <ShieldCheck className="mx-auto mb-2 size-8 text-stone-400" />
-                <p className="text-sm text-stone-500">
+                <ShieldCheck className="mx-auto mb-2 size-8 text-ink-faint" />
+                <p className="text-sm text-ink-muted">
                   Select a role to view its permissions.
                 </p>
               </div>
@@ -304,7 +304,7 @@ function RoleDetail({
           {role.description && (
             <p className="mt-0.5 type-helper">{role.description}</p>
           )}
-          <p className="mt-1 text-label text-stone-500">
+          <p className="mt-1 text-label text-ink-muted">
             {isWildcard
               ? "All permissions granted"
               : role.permissions.length === 0
@@ -380,7 +380,7 @@ function RoleDetail({
                   Delete Role?
                 </h3>
                 <p className="mt-1 leading-relaxed type-helper">
-                  <span className="font-semibold text-stone-700">{role.name}</span> will be
+                  <span className="font-semibold text-ink">{role.name}</span> will be
                   permanently removed. Users with this role will lose all associated permissions.
                   This cannot be undone.
                 </p>
@@ -444,8 +444,8 @@ function RoleDetail({
               className={cn(
                 "relative flex items-center gap-1.5 px-4 py-2.5 text-xs font-semibold transition-colors",
                 active
-                  ? "text-stone-900"
-                  : "text-stone-500 hover:text-stone-600",
+                  ? "text-ink-strong"
+                  : "text-ink-muted hover:text-ink",
               )}
             >
               <Icon className="size-3.5" />
@@ -456,7 +456,7 @@ function RoleDetail({
                     "rounded-full px-1.5 py-0.5 tabular-nums type-pill",
                     active
                       ? "bg-brand/15 text-link"
-                      : "bg-stone-100 text-stone-500",
+                      : "bg-stone-100 text-ink-muted",
                   )}
                 >
                   {tab.count}
@@ -507,27 +507,27 @@ function RoleDetail({
                       className="overflow-hidden rounded-xl border border-stone-200"
                     >
                       <div className="flex items-center gap-2 border-b border-stone-100 bg-stone-50 px-4 py-2.5">
-                        <Icon className="size-3.5 text-stone-400" />
-                        <span className="text-xs font-bold text-stone-600">
+                        <Icon className="size-3.5 text-ink-faint" />
+                        <span className="text-xs font-bold text-ink">
                           {mod.label}
                         </span>
                       </div>
                       <div className="overflow-x-auto modal-scrollbar">
-                        <table className="w-full text-xs">
+                        <table className="w-full type-cell">
                           <thead>
                             <tr className="border-b border-stone-100 bg-white">
-                              <th className="py-2 pl-4 pr-3 text-left font-semibold text-stone-500 w-36">
+                              <th className="type-th py-2 pl-4 pr-3 text-left w-36">
                                 Resource
                               </th>
                               {cols.map((c) => (
                                 <th
                                   key={c}
-                                  className="px-4 py-2 text-center font-semibold text-stone-500 whitespace-nowrap"
+                                  className="type-th px-4 py-2 text-center whitespace-nowrap"
                                 >
                                   {ACTION_LABELS[c] ?? c}
                                 </th>
                               ))}
-                              <th className="px-4 py-2 text-center font-semibold text-stone-500">
+                              <th className="type-th px-4 py-2 text-center">
                                 Scope
                               </th>
                             </tr>
@@ -544,7 +544,7 @@ function RoleDetail({
                                   className="hover:bg-stone-50/60 transition-colors"
                                 >
                                   <td className="py-3 pl-4 pr-3">
-                                    <p className="font-medium text-stone-700">
+                                    <p className="font-medium text-ink">
                                       {row.label}
                                     </p>
                                     <p className="type-helper">
@@ -650,19 +650,19 @@ function RoleUsersList({
 
   return (
     <div className="overflow-hidden rounded-xl border border-stone-200">
-      <table className="w-full text-xs">
+      <table className="w-full type-cell">
         <thead>
           <tr className="border-b border-stone-100 bg-stone-50">
-            <th className="py-2 pl-3 pr-2 sm:py-2.5 sm:pl-4 sm:pr-3 text-left text-micro sm:text-xs font-semibold text-stone-500">
+            <th className="type-th py-2 pl-3 pr-2 sm:py-2.5 sm:pl-4 sm:pr-3 text-left sm:text-xs">
               User
             </th>
-            <th className="px-2 py-2 sm:px-4 sm:py-2.5 text-left text-micro sm:text-xs font-semibold text-stone-500 hidden sm:table-cell">
+            <th className="type-th px-2 py-2 sm:px-4 sm:py-2.5 text-left sm:text-xs hidden sm:table-cell">
               Email
             </th>
-            <th className="px-2 py-2 sm:px-4 sm:py-2.5 text-left text-micro sm:text-xs font-semibold text-stone-500">
+            <th className="type-th px-2 py-2 sm:px-4 sm:py-2.5 text-left sm:text-xs">
               Status
             </th>
-            <th className="px-2 py-2 sm:px-4 sm:py-2.5 text-left text-micro sm:text-xs font-semibold text-stone-500 hidden md:table-cell">
+            <th className="type-th px-2 py-2 sm:px-4 sm:py-2.5 text-left sm:text-xs hidden md:table-cell">
               Joined
             </th>
           </tr>
@@ -683,13 +683,13 @@ function RoleUsersList({
                   >
                     {userInitials(user.fullName || user.email)}
                   </span>
-                  <span className="font-medium text-stone-800 truncate max-w-[90px] sm:max-w-[120px]">
+                  <span className="font-medium text-ink-strong truncate max-w-[90px] sm:max-w-[120px]">
                     {user.fullName || "—"}
                   </span>
                 </div>
               </td>
               <td className="px-2 py-2 sm:px-4 sm:py-3 hidden sm:table-cell">
-                <span className="text-stone-500 truncate">{user.email}</span>
+                <span className="text-ink-muted truncate">{user.email}</span>
               </td>
               <td className="px-2 py-2 sm:px-4 sm:py-3">
                 {user.status === "active" ? (
@@ -705,7 +705,7 @@ function RoleUsersList({
                 )}
               </td>
               <td className="px-2 py-2 sm:px-4 sm:py-3 hidden md:table-cell">
-                <span className="text-stone-500">
+                <span className="text-ink-muted">
                   {new Date(user.createdAt).toLocaleDateString("en-US", {
                     month: "short",
                     day: "numeric",

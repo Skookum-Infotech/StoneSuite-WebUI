@@ -179,10 +179,10 @@ export function StatusDropdown({
           blocked
             ? 'cursor-not-allowed text-stone-300'
             : isCurrent
-              ? 'bg-brand/10 font-semibold text-stone-900'
+              ? 'bg-brand/10 font-semibold text-ink-strong'
               : armed
                 ? 'bg-red-50 font-semibold text-danger-ink'
-                : 'text-stone-700 hover:bg-stone-50'
+                : 'text-ink hover:bg-stone-50'
         }`}
       >
         <span className="flex-1 text-left">{armed ? `Confirm: ${s.statusLabel}` : s.statusLabel}</span>
@@ -190,7 +190,7 @@ export function StatusDropdown({
       </button>
     );
   }) : (
-    <p className="px-3.5 py-2.5 text-sm text-stone-500">{optionsLoading ? 'Loading…' : NO_MOVES_MESSAGE}</p>
+    <p className="px-3.5 py-2.5 text-sm text-ink-muted">{optionsLoading ? 'Loading…' : NO_MOVES_MESSAGE}</p>
   );
 
   const panelOpen = open && !disabled && !isFinal;
@@ -214,12 +214,12 @@ export function StatusDropdown({
         {selected ? (
           <span className={isPill ? undefined : 'flex-1 text-left'}>{selected.statusLabel}</span>
         ) : (
-          <span className={isPill ? undefined : 'flex-1 text-left text-stone-900'}>
+          <span className={isPill ? undefined : 'flex-1 text-left text-ink-strong'}>
             {catalogLoading ? 'Loading…' : 'Select status…'}
           </span>
         )}
         {!isFinal && (
-          <ChevronDown className={isPill ? 'size-3 shrink-0' : 'size-3 shrink-0 text-stone-400'} aria-hidden="true" />
+          <ChevronDown className={isPill ? 'size-3 shrink-0' : 'size-3 shrink-0 text-ink-faint'} aria-hidden="true" />
         )}
       </button>
 

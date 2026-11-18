@@ -46,19 +46,19 @@ export function PurchasesStatus({
       <div className="grid grid-cols-3 gap-2">
         <div className="rounded-xl bg-stone-50 p-2 sm:p-2.5 lg:p-3">
           <div className="truncate type-overline">Pending</div>
-          <div className="mt-1 text-sm font-bold tabular-nums text-stone-950 sm:text-base lg:text-lg">
-            {data.pending ? data.pending.count : <span className="text-stone-500">—</span>}
+          <div className="mt-1 text-sm font-bold tabular-nums text-ink-strong sm:text-base lg:text-lg">
+            {data.pending ? data.pending.count : <span className="text-ink-muted">—</span>}
           </div>
           {data.pending && <div className="truncate type-subline tabular-nums">{currency(data.pending.value)}</div>}
         </div>
         <div className="rounded-xl bg-stone-50 p-2 sm:p-2.5 lg:p-3">
           <div className="truncate type-overline">Incoming</div>
-          <div className="mt-1 text-sm font-bold text-stone-950 tabular-nums sm:text-base lg:text-lg">{data.incoming.count}</div>
+          <div className="mt-1 text-sm font-bold text-ink-strong tabular-nums sm:text-base lg:text-lg">{data.incoming.count}</div>
           <div className="truncate type-subline tabular-nums">{currency(data.incoming.value)}</div>
         </div>
         <div className="rounded-xl bg-stone-50 p-2 sm:p-2.5 lg:p-3">
           <div className="truncate type-overline">Overdue</div>
-          <div className={cn('mt-1 text-sm font-bold tabular-nums sm:text-base lg:text-lg', overdueActive ? 'text-warning' : 'text-stone-950')}>
+          <div className={cn('mt-1 text-sm font-bold tabular-nums sm:text-base lg:text-lg', overdueActive ? 'text-warning' : 'text-ink-strong')}>
             {data.overdue.count}
           </div>
           <div className={cn('truncate text-micro tabular-nums', overdueActive ? 'text-warning-ink' : 'text-ink-muted')}>

@@ -42,7 +42,7 @@ export function LocationCard({
       <div className="px-5 py-4 sm:px-6 sm:py-5">
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-2">
-            <Building2 className="size-4 text-stone-400" />
+            <Building2 className="size-4 text-ink-faint" />
             <h3 className="type-card-title">{location.name}</h3>
             {location.isDefault && (
               <span className="inline-flex items-center gap-1 rounded-full bg-brand/15 px-2 py-0.5 text-link type-overline">
@@ -70,7 +70,7 @@ export function LocationCard({
                 onClick={actions?.onEdit}
                 disabled={isBusy}
                 aria-label={`Edit ${location.name}`}
-                className="rounded-lg p-2 text-stone-500 hover:bg-stone-100 hover:text-stone-700 disabled:opacity-50 transition-colors"
+                className="rounded-lg p-2 text-ink-muted hover:bg-stone-100 hover:text-ink disabled:opacity-50 transition-colors"
               >
                 <Pencil className="size-4" />
               </button>
@@ -82,7 +82,7 @@ export function LocationCard({
                 }}
                 disabled={isBusy}
                 aria-label={`Delete ${location.name}`}
-                className="rounded-lg p-2 text-stone-500 hover:bg-red-50 hover:text-danger-ink disabled:opacity-50 transition-colors"
+                className="rounded-lg p-2 text-ink-muted hover:bg-red-50 hover:text-danger-ink disabled:opacity-50 transition-colors"
               >
                 <Trash2 className="size-4" />
               </button>
@@ -91,7 +91,7 @@ export function LocationCard({
 
           {canConfigure && confirmingDelete && (
             <div className="flex items-center gap-2 shrink-0">
-              <span className="text-xs font-semibold text-stone-600">Delete this location?</span>
+              <span className="text-xs font-semibold text-ink">Delete this location?</span>
               <button
                 type="button"
                 onClick={() => {
@@ -117,13 +117,13 @@ export function LocationCard({
           )}
         </div>
 
-        <div className="mt-2 flex items-start gap-1.5 text-xs text-stone-500">
-          <MapPin className="size-3.5 shrink-0 mt-0.5 text-stone-400" />
+        <div className="mt-2 flex items-start gap-1.5 text-xs text-ink-muted">
+          <MapPin className="size-3.5 shrink-0 mt-0.5 text-ink-faint" />
           <span>{formatAddress(location)}</span>
         </div>
         {location.phone && (
-          <div className="mt-1 flex items-center gap-1.5 text-xs text-stone-500">
-            <Phone className="size-3.5 shrink-0 text-stone-400" />
+          <div className="mt-1 flex items-center gap-1.5 text-xs text-ink-muted">
+            <Phone className="size-3.5 shrink-0 text-ink-faint" />
             <span>{location.phone}</span>
           </div>
         )}

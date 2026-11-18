@@ -61,8 +61,8 @@ export function ItemStockTab({ item }: { item: InventoryItem }) {
 
   if (rows.length === 0) {
     return (
-      <div className="rounded-xl border border-stone-200 bg-white p-6 text-sm text-stone-600">
-        <p className="font-semibold text-stone-800">No stock yet</p>
+      <div className="rounded-xl border border-stone-200 bg-white p-6 text-sm text-ink">
+        <p className="font-semibold text-ink-strong">No stock yet</p>
         <p className="mt-1 type-helper">
           This item hasn&apos;t been received into any location yet. Stock appears here once an item receipt for it is posted.
         </p>
@@ -76,11 +76,11 @@ export function ItemStockTab({ item }: { item: InventoryItem }) {
     <div className="space-y-3">
       <div className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm">
         <div className="overflow-x-auto modal-scrollbar">
-          <table className="w-full text-left text-xs">
+          <table className="w-full text-left type-cell">
             <thead className="border-b border-stone-200 bg-table-header">
               <tr>
                 {HEADERS.map((h, i) => (
-                  <th key={h} className={`px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 ${i > 0 ? 'text-right' : ''}`}>
+                  <th key={h} className={`px-4 py-3 type-th ${i > 0 ? 'text-right' : ''}`}>
                     {h}{i > 0 && i < HEADERS.length - 1 && unit ? ` (${unit})` : ''}
                   </th>
                 ))}
@@ -100,9 +100,9 @@ export function ItemStockTab({ item }: { item: InventoryItem }) {
                         <span className="ml-2 rounded-md bg-amber-50 px-2 py-0.5 text-warning-ink type-pill">Low stock</span>
                       )}
                     </td>
-                    <td className="px-4 py-3.5 text-right tabular-nums text-stone-700">{formatStockQty(r.onHand)}</td>
-                    <td className="px-4 py-3.5 text-right tabular-nums text-stone-500">{formatStockQty(r.allocated)}</td>
-                    <td className="px-4 py-3.5 text-right tabular-nums font-semibold text-stone-800">{formatStockQty(r.available)}</td>
+                    <td className="type-cell px-4 py-3.5 text-right tabular-nums">{formatStockQty(r.onHand)}</td>
+                    <td className="type-cell px-4 py-3.5 text-right tabular-nums">{formatStockQty(r.allocated)}</td>
+                    <td className="type-cell-strong px-4 py-3.5 text-right tabular-nums">{formatStockQty(r.available)}</td>
                     <td className="px-4 py-3.5 text-right">
                       {canEdit ? (
                         <div className="flex items-center justify-end gap-2">
@@ -127,7 +127,7 @@ export function ItemStockTab({ item }: { item: InventoryItem }) {
                           </button>
                         </div>
                       ) : (
-                        <span className="tabular-nums text-stone-700">{formatStockQty(r.reorderPoint)}</span>
+                        <span className="tabular-nums text-ink">{formatStockQty(r.reorderPoint)}</span>
                       )}
                       {error && <p id={errorId} role="alert" className="mt-1 type-error">{error}</p>}
                     </td>

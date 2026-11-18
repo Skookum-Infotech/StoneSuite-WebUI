@@ -145,7 +145,7 @@ export function BulkConfigPanel({ users, onRemove, onClear, onBack }: BulkConfig
         {users.map((u) => (
           <li
             key={u.id}
-            className="inline-flex items-center gap-1.5 rounded-full border border-stone-200 bg-stone-50 py-1 pl-1 pr-2 text-xs font-medium text-stone-700"
+            className="inline-flex items-center gap-1.5 rounded-full border border-stone-200 bg-stone-50 py-1 pl-1 pr-2 text-xs font-medium text-ink"
           >
             <span className={cn("flex size-5 items-center justify-center rounded-full text-micro font-semibold", avatarColor(u.id))}>
               {initials(displayName(u))}
@@ -156,7 +156,7 @@ export function BulkConfigPanel({ users, onRemove, onClear, onBack }: BulkConfig
               onClick={() => onRemove(u.id)}
               disabled={run.isPending}
               aria-label={`Remove ${displayName(u)} from selection`}
-              className="rounded-full p-0.5 text-stone-400 transition hover:bg-stone-200 hover:text-stone-600"
+              className="rounded-full p-0.5 text-ink-muted transition hover:bg-stone-200 hover:text-ink"
             >
               <X className="size-3" />
             </button>
@@ -167,17 +167,17 @@ export function BulkConfigPanel({ users, onRemove, onClear, onBack }: BulkConfig
       {pending && confirming && spec ? (
         <section aria-label="Confirm change" className="space-y-3 rounded-xl border border-stone-200 bg-stone-50 p-4">
           <p className="type-card-title">{confirmText(pending, confirming.targets.length)}</p>
-          <ul className="space-y-1 text-xs text-stone-700">
+          <ul className="space-y-1 text-xs text-ink">
             {confirming.targets.slice(0, PREVIEW_LIMIT).map((u) => (
               <li key={u.id}>{displayName(u)}</li>
             ))}
             {confirming.targets.length > PREVIEW_LIMIT && (
-              <li className="text-stone-500">and {confirming.targets.length - PREVIEW_LIMIT} more</li>
+              <li className="text-ink-muted">and {confirming.targets.length - PREVIEW_LIMIT} more</li>
             )}
           </ul>
           {confirming.skipped.length > 0 && (
             <div className="rounded-lg border border-stone-200 bg-white p-2.5 type-subline">
-              <p className="mb-1 font-semibold text-stone-600">Skipped</p>
+              <p className="mb-1 font-semibold text-ink">Skipped</p>
               <ul className="space-y-0.5">
                 {confirming.skipped.map(({ user, reason }) => (
                   <li key={user.id}>

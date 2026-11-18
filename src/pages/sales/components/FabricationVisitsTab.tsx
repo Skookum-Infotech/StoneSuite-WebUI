@@ -49,13 +49,13 @@ export function FabricationVisitsTab({ jobId }: { jobId: string }) {
       );
     }
     const items = visits.data ?? [];
-    if (items.length === 0) return <p className="text-sm text-stone-500">{EMPTY_COPY}</p>;
+    if (items.length === 0) return <p className="text-sm text-ink-muted">{EMPTY_COPY}</p>;
     return (
       <ul className="divide-y divide-stone-200 rounded-xl border border-stone-200 bg-white">
         {items.map((a) => (
           <li key={a.id} className="flex flex-wrap items-center justify-between gap-2 px-4 py-3">
             <div className="min-w-0">
-              <p className={a.status === 'cancelled' ? 'text-sm font-medium text-stone-500 line-through' : 'text-sm font-medium text-stone-900'}>
+              <p className={a.status === 'cancelled' ? 'text-sm font-medium text-ink-muted line-through' : 'text-sm font-medium text-ink-strong'}>
                 {VISIT_LABELS[a.visitType]} · {whenOf(a)}
               </p>
               <p className="type-helper">

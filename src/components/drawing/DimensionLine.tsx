@@ -77,7 +77,7 @@ export function DimensionLine(
   );
 
   return (
-    <g aria-hidden="true" className="text-stone-500" pointerEvents="none">
+    <g aria-hidden="true" className="text-ink-muted" pointerEvents="none">
       {extension(edgeFrom, from)}
       {extension(edgeTo, to)}
       <line x1={from.x} y1={from.y} x2={to.x} y2={to.y} stroke="currentColor" strokeWidth={px(STROKE_PX)} />

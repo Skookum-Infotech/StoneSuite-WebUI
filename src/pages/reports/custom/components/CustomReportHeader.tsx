@@ -22,7 +22,7 @@ export function CustomReportHeader({ name, onNameChange, readOnly, note, childre
         <Link
           to="/reports/custom"
           aria-label="Back to custom reports"
-          className="inline-flex items-center gap-1 text-label text-stone-500 hover:text-stone-800"
+          className="inline-flex items-center gap-1 text-label text-ink-muted hover:text-ink-strong"
         >
           <ArrowLeft className="size-3.5" aria-hidden="true" />
           Custom Reports
@@ -34,9 +34,9 @@ export function CustomReportHeader({ name, onNameChange, readOnly, note, childre
           maxLength={CUSTOM_REPORT_NAME_MAX}
           disabled={readOnly}
           onChange={(e) => onNameChange(e.target.value)}
-          className="mt-1 h-10 max-w-xl border-transparent bg-transparent px-1 text-xl font-bold tracking-tight text-stone-900 hover:border-stone-200"
+          className="mt-1 h-10 max-w-xl border-transparent bg-transparent px-1 text-xl font-bold tracking-tight text-ink-strong hover:border-stone-200"
         />
-        {note && <p className="px-1 text-sm text-stone-500">{note}</p>}
+        {note && <p className="px-1 text-sm text-ink-muted">{note}</p>}
       </div>
       {children}
     </div>

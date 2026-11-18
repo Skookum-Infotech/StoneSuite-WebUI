@@ -54,7 +54,7 @@ export function DocumentStatusBar({
               isCancel
                 ? 'text-danger-ink hover:bg-destructive/5'
                 : isBackward
-                  ? 'text-stone-600 hover:bg-stone-50'
+                  ? 'text-ink hover:bg-stone-50'
                   : 'text-emerald-600 hover:bg-emerald-600/5',
             )}
           >
@@ -116,7 +116,7 @@ function TransitionConfirmDialog({ fromCode, toCode, onCancel, onConfirm }: {
           </div>
         </div>
 
-        <p className="text-xs text-stone-600 mb-5">
+        <p className="text-xs text-ink mb-5">
           {isCancel
             ? 'This cancels the document. This action cannot be undone.'
             : `This will move the document to ${docStatusLabel(toCode)}.`}

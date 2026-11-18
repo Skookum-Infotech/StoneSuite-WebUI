@@ -80,7 +80,7 @@ export function FabricationStepsTab({ jobId, steps, canEdit }: {
   return (
     <div className="space-y-3">
       <div className="overflow-x-auto modal-scrollbar rounded-lg border border-stone-200 bg-white">
-        <table className="w-full text-left text-xs">
+        <table className="w-full text-left type-cell">
           <thead className="bg-stone-50 border-b border-stone-200">
             <tr>
               {['Step', 'Status', 'Notes', 'Started', 'Completed', canEdit ? '' : undefined].filter(Boolean).map((h) => (
@@ -102,7 +102,7 @@ export function FabricationStepsTab({ jobId, steps, canEdit }: {
               return (
                 <tr key={`${rowKey(step)}-${i}`} className="hover:bg-stone-50/50 align-top">
                   <td className="px-3 py-2.5">
-                    <p className="font-medium text-stone-800">{stepLabel}</p>
+                    <p className="font-medium text-ink-strong">{stepLabel}</p>
                     {dup && <p className="type-helper">piece {seenCounts[step.code]} of {totalByCode[step.code]}</p>}
                   </td>
                   <td className="px-3 py-2.5">
@@ -132,14 +132,14 @@ export function FabricationStepsTab({ jobId, steps, canEdit }: {
                         aria-label={`Notes for ${rowLabel}`}
                       />
                     ) : (
-                      <span className="text-stone-500">{step.notes || '—'}</span>
+                      <span className="text-ink-muted">{step.notes || '—'}</span>
                     )}
                     {rowErrors[rowKey(step)] && <p className="mt-1 type-error">{rowErrors[rowKey(step)]}</p>}
                   </td>
-                  <td className="px-3 py-2.5 text-stone-500 whitespace-nowrap">
+                  <td className="type-cell px-3 py-2.5 whitespace-nowrap">
                     {step.startedAt ? new Date(step.startedAt).toLocaleDateString() : '—'}
                   </td>
-                  <td className="px-3 py-2.5 text-stone-500 whitespace-nowrap">
+                  <td className="type-cell px-3 py-2.5 whitespace-nowrap">
                     {step.completedAt ? new Date(step.completedAt).toLocaleDateString() : '—'}
                   </td>
                   {canEdit && (
@@ -161,7 +161,7 @@ export function FabricationStepsTab({ jobId, steps, canEdit }: {
               );
             })}
             {steps.length === 0 && (
-              <tr><td colSpan={6} className="py-8 text-center text-stone-500">No checklist steps found.</td></tr>
+              <tr><td colSpan={6} className="type-cell py-8 text-center">No checklist steps found.</td></tr>
             )}
           </tbody>
         </table>

@@ -13,7 +13,7 @@ export function OpenOrdersNote({ orders, unit }: { orders: ReadonlyArray<OpenOrd
           {i > 0 && ' · '}
           <Link
             to={`/purchases/purchase_order/${o.id}`}
-            className="font-medium text-stone-700 underline-offset-2 hover:underline"
+            className="font-medium text-ink underline-offset-2 hover:underline"
             aria-label={`Open purchase order ${o.number || 'draft'}`}
           >
             {o.number || 'Draft PO'}

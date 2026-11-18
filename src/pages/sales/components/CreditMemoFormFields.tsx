@@ -29,7 +29,7 @@ export function CreditMemoField({ field, value, set, lookups, dependsOnValue, di
     return (
       <ModernFieldShell label={field.label}>
         <div className={`${readonlyCls} cursor-not-allowed select-none`}>
-          {str || <span className="text-stone-500">—</span>}
+          {str || <span className="text-ink-muted">—</span>}
         </div>
       </ModernFieldShell>
     );

@@ -76,7 +76,7 @@ export function CustomerOrderFormDialog({ orderId, form, isDraft, onClose }: Cus
               type="button"
               onClick={onClose}
               aria-label="Close customer order form"
-              className="rounded-lg p-1.5 text-stone-500 transition-colors hover:bg-stone-100 hover:text-stone-800"
+              className="rounded-lg p-1.5 text-ink-muted transition-colors hover:bg-stone-100 hover:text-ink-strong"
             >
               <X className="size-4" aria-hidden="true" />
             </button>

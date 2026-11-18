@@ -45,8 +45,8 @@ export function FeedbackAssigneePicker({ candidates, selectedId, selectedName, o
 
   return (
     <div className="space-y-2">
-      <div className="flex items-center gap-2 text-xs text-stone-600 dark:text-stone-300">
-        <User className="size-3.5 shrink-0 text-stone-400" aria-hidden="true" />
+      <div className="flex items-center gap-2 text-xs text-ink dark:text-stone-300">
+        <User className="size-3.5 shrink-0 text-ink-faint" aria-hidden="true" />
         {currentName || 'Unassigned'}
         {selectedId && (
           <button
@@ -54,7 +54,7 @@ export function FeedbackAssigneePicker({ candidates, selectedId, selectedName, o
             onClick={onUnassign}
             disabled={disabled}
             aria-label="Unassign ticket"
-            className="ml-auto rounded-full p-0.5 text-stone-400 transition hover:bg-stone-200 hover:text-stone-600 disabled:opacity-50 dark:hover:bg-white/10"
+            className="ml-auto rounded-full p-0.5 text-ink-muted transition hover:bg-stone-200 hover:text-ink disabled:opacity-50 dark:hover:bg-white/10"
           >
             <UserX className="size-3.5" />
           </button>
@@ -73,7 +73,7 @@ export function FeedbackAssigneePicker({ candidates, selectedId, selectedName, o
           disabled={disabled}
           aria-label="Search admins to assign this ticket to"
           placeholder="Assign to…"
-          className="h-8 w-full rounded-lg border border-stone-200 bg-white px-2.5 text-micro text-stone-700 focus:outline-none focus:ring-2 focus:ring-brand/50 disabled:opacity-50 dark:border-white/10 dark:bg-transparent dark:text-stone-200"
+          className="h-8 w-full rounded-lg border border-stone-200 bg-white px-2.5 text-micro text-ink focus:outline-none focus:ring-2 focus:ring-brand/50 disabled:opacity-50 dark:border-white/10 dark:bg-transparent dark:text-stone-200"
         />
         {open && (
           <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-xl border border-stone-200 bg-white shadow-md dark:border-white/10 dark:bg-stone-900">
@@ -91,7 +91,7 @@ export function FeedbackAssigneePicker({ candidates, selectedId, selectedName, o
                     setQuery('');
                     setOpen(false);
                   }}
-                  className="block w-full px-3.5 py-2 text-left text-micro font-medium text-stone-700 transition hover:bg-stone-50 dark:text-stone-200 dark:hover:bg-white/[0.06]"
+                  className="block w-full px-3.5 py-2 text-left text-micro font-medium text-ink transition hover:bg-stone-50 dark:text-stone-200 dark:hover:bg-white/[0.06]"
                 >
                   {c.name}
                 </button>

@@ -42,7 +42,7 @@ export function CompanyInfoTextField({
         {field.required && <span className="ml-0.5 text-red-400">*</span>}
       </label>
       <div className="relative">
-        {Icon && <Icon className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-stone-400" />}
+        {Icon && <Icon className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-ink-faint" />}
         <input
           id={field.id}
           type="text"
@@ -72,7 +72,7 @@ export function CompanyInfoReadonlyField({ field, value }: { field: CompanyInfoF
     )}>
       <label className={fieldLabelCls}>{field.label}</label>
       <div className={readonlyCls}>
-        {value || <span className="text-stone-500">—</span>}
+        {value || <span className="text-ink-muted">—</span>}
       </div>
     </div>
   );

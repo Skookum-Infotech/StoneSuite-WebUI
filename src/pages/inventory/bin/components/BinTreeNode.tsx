@@ -46,8 +46,8 @@ export function BinTreeNode({ bin, depth, collapsed, onToggleGroup, canEdit, onE
         >
           {hasChildren && (expanded ? <ChevronDown className="size-3.5" /> : <ChevronRight className="size-3.5" />)}
         </button>
-        <MapPin className="size-3.5 shrink-0 text-stone-400" aria-hidden="true" />
-        <span className="min-w-0 flex-1 truncate text-sm text-stone-800">
+        <MapPin className="size-3.5 shrink-0 text-ink-faint" aria-hidden="true" />
+        <span className="min-w-0 flex-1 truncate text-sm text-ink-strong">
           <button
             type="button"
             onClick={() => navigate(`/inventory/bin/${bin.id}`)}
@@ -59,22 +59,22 @@ export function BinTreeNode({ bin, depth, collapsed, onToggleGroup, canEdit, onE
           </button>
           <span className="ml-1.5 font-mono type-subline">{bin.code}</span>
         </span>
-        <span className="shrink-0 rounded bg-stone-100 px-1.5 py-0.5 text-stone-500 capitalize type-pill">{bin.type}</span>
+        <span className="shrink-0 rounded bg-stone-100 px-1.5 py-0.5 text-ink-muted capitalize type-pill">{bin.type}</span>
         {bin.unitCount > 0 && (
-          <span className={cn('shrink-0 rounded px-1.5 py-0.5 type-pill', bin.overCapacity ? 'bg-amber-100 text-amber-700' : 'bg-stone-100 text-stone-500')}>
+          <span className={cn('shrink-0 rounded px-1.5 py-0.5 type-pill', bin.overCapacity ? 'bg-amber-100 text-amber-700' : 'bg-stone-100 text-ink-muted')}>
             {bin.unitCount}{bin.overCapacity ? ' · over capacity' : ''}
           </span>
         )}
-        {!bin.isActive && <span className="shrink-0 rounded bg-stone-100 px-1.5 py-0.5 text-stone-500 type-pill">Inactive</span>}
+        {!bin.isActive && <span className="shrink-0 rounded bg-stone-100 px-1.5 py-0.5 text-ink-muted type-pill">Inactive</span>}
         {canEdit && (
           <div className="ml-auto flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-            <button type="button" onClick={() => onAddChild(bin)} aria-label={`Add child bin under ${bin.name}`} title="Add child bin" className="rounded p-1 text-stone-500 hover:bg-stone-100 hover:text-stone-700">
+            <button type="button" onClick={() => onAddChild(bin)} aria-label={`Add child bin under ${bin.name}`} title="Add child bin" className="rounded p-1 text-ink-muted hover:bg-stone-100 hover:text-ink">
               <Plus className="size-3.5" />
             </button>
-            <button type="button" onClick={() => onEdit(bin)} aria-label={`Edit ${bin.name}`} title="Edit bin" className="rounded p-1 text-stone-500 hover:bg-stone-100 hover:text-stone-700">
+            <button type="button" onClick={() => onEdit(bin)} aria-label={`Edit ${bin.name}`} title="Edit bin" className="rounded p-1 text-ink-muted hover:bg-stone-100 hover:text-ink">
               <Pencil className="size-3.5" />
             </button>
-            <button type="button" onClick={() => onDelete(bin)} aria-label={`Delete ${bin.name}`} title="Delete bin" className="rounded p-1 text-stone-500 hover:bg-destructive/10 hover:text-danger-ink">
+            <button type="button" onClick={() => onDelete(bin)} aria-label={`Delete ${bin.name}`} title="Delete bin" className="rounded p-1 text-ink-muted hover:bg-destructive/10 hover:text-danger-ink">
               <Trash2 className="size-3.5" />
             </button>
           </div>

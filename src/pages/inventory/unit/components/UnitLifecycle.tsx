@@ -35,14 +35,14 @@ export function UnitLifecycle({ unit }: { unit: InventoryUnit }) {
                     type="button"
                     onClick={() => navigate(link.to)}
                     aria-label={`Open ${link.label}`}
-                    className="font-semibold text-stone-900 underline decoration-stone-300 underline-offset-2 hover:text-accent-foreground hover:decoration-current transition-colors"
+                    className="font-semibold text-ink-strong underline decoration-stone-300 underline-offset-2 hover:text-accent-foreground hover:decoration-current transition-colors"
                   >
                     {link.label}
                   </button>
                 </>
               )}
             </p>
-            {step.detail && <p className="text-xs text-stone-600">{step.detail}</p>}
+            {step.detail && <p className="text-xs text-ink">{step.detail}</p>}
             {step.at && <p className="type-helper">{fmtDateTime(step.at)}</p>}
           </li>
         );

@@ -71,7 +71,7 @@ export function PasswordStep({ email, onSuccess, onMfaRequired, onActiveSession,
   return (
     <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-5">
       <div className="flex items-center gap-2.5 rounded-xl border border-stone-200 bg-stone-50 px-4 py-3">
-        <Mail className="size-4 shrink-0 text-stone-400" aria-hidden="true" />
+        <Mail className="size-4 shrink-0 text-ink-faint" aria-hidden="true" />
         <span className="min-w-0 flex-1 truncate text-body font-medium text-ink">{email}</span>
         <button
           type="button"
@@ -88,7 +88,7 @@ export function PasswordStep({ email, onSuccess, onMfaRequired, onActiveSession,
           Password
         </Label>
         <div className="relative">
-          <Lock className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-stone-400" />
+          <Lock className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-ink-faint" />
           <Input
             id="password"
             type={showPassword ? 'text' : 'password'}
@@ -105,7 +105,7 @@ export function PasswordStep({ email, onSuccess, onMfaRequired, onActiveSession,
             onClick={() => setShowPassword((v) => !v)}
             aria-label={showPassword ? 'Hide password' : 'Show password'}
             aria-pressed={showPassword}
-            className="absolute right-3.5 top-1/2 -translate-y-1/2 rounded-md p-1 text-stone-500 transition-colors hover:text-stone-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400/30"
+            className="absolute right-3.5 top-1/2 -translate-y-1/2 rounded-md p-1 text-ink-muted transition-colors hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400/30"
           >
             {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
           </button>

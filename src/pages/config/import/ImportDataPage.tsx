@@ -107,7 +107,7 @@ export default function ImportDataPage() {
               value={workflowKey}
               disabled={step !== 'upload'}
               onChange={(e) => setSelectedKey(e.target.value)}
-              className="rounded-xl border border-stone-200 bg-white px-3 py-1.5 text-xs font-semibold text-stone-700 outline-none focus:border-brand disabled:opacity-60 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-200"
+              className="rounded-xl border border-stone-200 bg-white px-3 py-1.5 text-xs font-semibold text-ink outline-none focus:border-brand disabled:opacity-60 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-200"
             >
               {importableKeys.map((key) => (
                 <option key={key} value={key}>

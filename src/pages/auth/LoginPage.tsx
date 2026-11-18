@@ -145,7 +145,7 @@ export default function LoginPage() {
                 ) : redirectProvider === 'cognito' ? (
                   <FaAws className="size-7 text-[#FF9900]" />
                 ) : (
-                  <Lock className="size-7 text-stone-400" />
+                  <Lock className="size-7 text-ink-faint" />
                 )}
               </div>
               <h2 className="type-display">
@@ -183,7 +183,7 @@ export default function LoginPage() {
 
         {step === 'redirecting' ? (
           <div className="flex justify-center py-6">
-            <Loader2 className="size-6 animate-spin text-stone-400" aria-hidden="true" />
+            <Loader2 className="size-6 animate-spin text-ink-faint" aria-hidden="true" />
           </div>
         ) : step === 'takeover' && takeover ? (
           <TakeoverPrompt prompt={takeover} onSuccess={handleLoginSuccess} onCancel={handleTakeoverCancel} />
@@ -208,7 +208,7 @@ export default function LoginPage() {
 
         {/* Footer */}
         <div className="mt-4 hidden items-center justify-center gap-1.5 sm:flex sm:mt-8">
-          <Lock className="size-3 text-stone-400" aria-hidden="true" />
+          <Lock className="size-3 text-ink-faint" aria-hidden="true" />
           <p className="text-center type-helper">Protected by enterprise-grade security</p>
         </div>
       </AuthPanel>

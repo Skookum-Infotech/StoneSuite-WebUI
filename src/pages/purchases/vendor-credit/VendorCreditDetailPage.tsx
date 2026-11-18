@@ -247,23 +247,23 @@ export default function VendorCreditDetailPage() {
         {/* Right sidebar */}
         <SalesDetailSidebar label="Vendor Credit Details">
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-            <p className="text-xs font-semibold text-stone-500">Quick Actions</p>
+            <p className="type-card-title">Quick Actions</p>
             <div className="space-y-0.5">
               <button
                 type="button"
                 onClick={() => navigate(`/purchases/vendor_credit/${id}/edit`, { state: { initialTab: 'files' } })}
-                className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs text-stone-700 w-full transition-colors text-left"
+                className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-button text-ink w-full transition-colors text-left"
               >
-                <Upload className="size-4 text-stone-400 shrink-0" />
+                <Upload className="size-4 text-ink-faint shrink-0" />
                 Upload file
               </button>
               {canEditHere && (
                 <button
                   type="button"
                   onClick={() => navigate(`/purchases/vendor_credit/${id}/edit`)}
-                  className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs text-stone-700 w-full transition-colors text-left"
+                  className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-button text-ink w-full transition-colors text-left"
                 >
-                  <Pencil className="size-4 text-stone-400 shrink-0" />
+                  <Pencil className="size-4 text-ink-faint shrink-0" />
                   Edit vendor credit
                 </button>
               )}
@@ -271,10 +271,10 @@ export default function VendorCreditDetailPage() {
                 type="button"
                 onClick={handleExportPdf}
                 disabled={exportingPdf}
-                className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs text-stone-700 w-full transition-colors text-left disabled:opacity-60 disabled:cursor-not-allowed"
+                className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-button text-ink w-full transition-colors text-left disabled:opacity-60 disabled:cursor-not-allowed"
                 aria-label="Export as PDF"
               >
-                {exportingPdf ? <Loader2 className="size-4 text-stone-400 shrink-0 animate-spin" /> : <FileDown className="size-4 text-stone-400 shrink-0" />}
+                {exportingPdf ? <Loader2 className="size-4 text-ink-faint shrink-0 animate-spin" /> : <FileDown className="size-4 text-ink-faint shrink-0" />}
                 {exportingPdf ? 'Exporting…' : 'Export PDF'}
               </button>
             </div>
@@ -285,7 +285,7 @@ export default function VendorCreditDetailPage() {
 
           {showActions && (
             <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-              <p className="text-xs font-semibold text-stone-500">Actions</p>
+              <p className="type-card-title">Actions</p>
               <VendorCreditStatusControl
                 order={{ statusCode: credit.statusCode, approvalStatus: credit.approvalStatus, gated: credit.gated }}
                 onChange={(toCode) => transition.mutate(toCode)}
@@ -301,28 +301,28 @@ export default function VendorCreditDetailPage() {
           )}
 
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-            <p className="text-xs font-semibold text-stone-500">Status</p>
+            <p className="type-card-title">Status</p>
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
-              <span className="text-stone-500">Status</span>
+              <span className="text-ink-muted">Status</span>
               <Badge color={color}>{credit.status}</Badge>
             </div>
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
-              <span className="text-stone-500">Vendor</span>
+              <span className="text-ink-muted">Vendor</span>
               <button
                 type="button"
                 onClick={() => navigate(`/purchases/vendor/${credit.vendor.id}`)}
-                className="text-stone-700 hover:text-accent-foreground truncate max-w-[140px] transition-colors"
+                className="text-ink hover:text-accent-foreground truncate max-w-[140px] transition-colors"
               >
                 {credit.vendor.name}
               </button>
             </div>
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
-              <span className="text-stone-500">Created</span>
-              <span className="text-stone-700">{fmtDate(credit.createdAt)}</span>
+              <span className="text-ink-muted">Created</span>
+              <span className="text-ink">{fmtDate(credit.createdAt)}</span>
             </div>
             <div className="flex justify-between items-center py-2 text-xs">
-              <span className="text-stone-500">Updated</span>
-              <span className="text-stone-700">{fmtDate(credit.updatedAt)}</span>
+              <span className="text-ink-muted">Updated</span>
+              <span className="text-ink">{fmtDate(credit.updatedAt)}</span>
             </div>
           </div>
 
@@ -348,7 +348,7 @@ function ReadonlyField({ label, value, full }: { label: string; value?: string; 
   return (
     <div className={cn('space-y-1', full && 'col-span-full')}>
       <label className={fieldLabelCls}>{label}</label>
-      <div className={readonlyCls}>{value || <span className="text-stone-500">—</span>}</div>
+      <div className={readonlyCls}>{value || <span className="text-ink-muted">—</span>}</div>
     </div>
   );
 }
@@ -357,7 +357,7 @@ function Total({ label, value, bold }: { label: string; value: number; bold?: bo
   return (
     <div>
       <p className="type-overline">{label}</p>
-      <p className={cn('tabular-nums', bold ? 'text-sm font-bold text-stone-900' : 'text-xs font-semibold text-stone-600')}>
+      <p className={cn('tabular-nums', bold ? 'text-sm font-bold text-ink-strong' : 'text-xs font-semibold text-ink')}>
         {currency(value)}
       </p>
     </div>

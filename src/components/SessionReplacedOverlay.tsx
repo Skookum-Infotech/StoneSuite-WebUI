@@ -86,10 +86,10 @@ export function SessionReplacedOverlay({ info }: SessionReplacedOverlayProps): R
           </h3>
         </div>
 
-        <p id="session-replaced-desc" className="mb-4 text-xs text-stone-600">
+        <p id="session-replaced-desc" className="mb-4 text-xs text-ink">
           Your account was signed in on another computer
           {info.deviceLabel ? ` (${info.deviceLabel})` : ''}. This session will end in{' '}
-          <span className="font-semibold text-stone-900">{formatCountdown(secondsLeft)}</span>.
+          <span className="font-semibold text-ink-strong">{formatCountdown(secondsLeft)}</span>.
           Changes can no longer be saved here.
         </p>
 

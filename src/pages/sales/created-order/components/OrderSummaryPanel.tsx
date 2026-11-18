@@ -80,8 +80,8 @@ function SummaryRow({ label, value }: { label: string; value: string }) {
   if (value === '') return null;
   return (
     <div className="flex justify-between gap-3 text-xs">
-      <dt className="shrink-0 text-stone-500">{label}</dt>
-      <dd className="truncate text-right font-medium text-stone-800">{value}</dd>
+      <dt className="shrink-0 text-ink-muted">{label}</dt>
+      <dd className="truncate text-right font-medium text-ink-strong">{value}</dd>
     </div>
   );
 }
@@ -123,17 +123,17 @@ export function OrderSummaryPanel({ form, status, layout, labels, onCancel }: Or
       </dl>
 
       <div className="border-t border-stone-100 pt-3">
-        <p className="text-xs font-semibold text-stone-900">
-          Areas <span className="font-normal text-stone-500">({form.areas.length})</span>
+        <p className="text-xs font-semibold text-ink-strong">
+          Areas <span className="font-normal text-ink-muted">({form.areas.length})</span>
         </p>
         {form.areas.length === 0 ? (
           <p className="mt-1 type-helper">None added yet.</p>
         ) : (
           <ul className="mt-1.5 space-y-1">
             {form.areas.map((area) => (
-              <li key={area.key} className="flex items-center justify-between gap-2 text-xs text-stone-700">
+              <li key={area.key} className="flex items-center justify-between gap-2 text-xs text-ink">
                 <span className="truncate">{area.name || 'Unnamed area'}</span>
-                <span className="shrink-0 text-stone-500">{area.color.trim() || 'No color'}</span>
+                <span className="shrink-0 text-ink-muted">{area.color.trim() || 'No color'}</span>
               </li>
             ))}
           </ul>

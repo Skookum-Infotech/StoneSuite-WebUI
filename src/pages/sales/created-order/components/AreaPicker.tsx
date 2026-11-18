@@ -35,8 +35,8 @@ export function AreaPicker({ areas, onAdd }: AreaPickerProps) {
                 'inline-flex h-9 items-center gap-1.5 rounded-full border px-3.5 text-xs font-semibold outline-none transition-all',
                 'focus-visible:ring-2 focus-visible:ring-brand/40',
                 added
-                  ? 'border-brand/50 bg-brand/15 text-stone-700'
-                  : 'border-stone-300 bg-white text-stone-700 hover:border-brand hover:bg-brand/10 active:scale-95',
+                  ? 'border-brand/50 bg-brand/15 text-ink'
+                  : 'border-stone-300 bg-white text-ink hover:border-brand hover:bg-brand/10 active:scale-95',
                 limitReached && !added && 'cursor-not-allowed opacity-50 hover:border-stone-300 hover:bg-white',
               )}
             >
@@ -46,7 +46,7 @@ export function AreaPicker({ areas, onAdd }: AreaPickerProps) {
                 <Plus className="size-3.5" aria-hidden="true" />
               )}
               {label}
-              {repeatable && count > 0 && <span className="text-stone-500">×{count}</span>}
+              {repeatable && count > 0 && <span className="text-ink-muted">×{count}</span>}
             </button>
           );
         })}

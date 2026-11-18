@@ -234,7 +234,7 @@ export default function AddRefundPage() {
                 <ModernSection title="Related Documents (optional)" index={3}>
                   <div className="space-y-3">
                     <div className="flex items-start gap-2 rounded-lg border border-stone-200 bg-stone-50 px-3 py-2">
-                      <Info className="mt-0.5 size-3.5 shrink-0 text-stone-400" aria-hidden="true" />
+                      <Info className="mt-0.5 size-3.5 shrink-0 text-ink-faint" aria-hidden="true" />
                       <p className="type-helper">
                         Recorded for reporting only — linking a document here does not draw any
                         money from it. Approve this refund first, then draw from a source on the
@@ -278,7 +278,7 @@ export default function AddRefundPage() {
             )}
 
             {activeTab === 'audit' && (
-              <p className="py-12 text-center text-sm text-stone-500">
+              <p className="py-12 text-center text-sm text-ink-muted">
                 Audit trail will be available after saving the refund.
               </p>
             )}

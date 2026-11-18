@@ -35,12 +35,12 @@ export function PurchaseOrderSummaryCard({
               !muted && 'bg-stone-50 border-t border-stone-200',
             )}
           >
-            <span className={cn('text-xs', muted ? 'text-stone-500' : 'text-stone-700 font-medium')}>
+            <span className={cn('text-xs', muted ? 'text-ink-muted' : 'text-ink font-medium')}>
               {label}
             </span>
             <span className={cn(
               'tabular-nums',
-              muted ? 'text-xs font-semibold text-stone-600' : 'text-sm font-bold text-stone-900',
+              muted ? 'text-xs font-semibold text-ink' : 'text-sm font-bold text-ink-strong',
             )}>
               {value}
             </span>

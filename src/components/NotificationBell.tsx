@@ -115,7 +115,7 @@ export function NotificationBell() {
         aria-label={unreadCount > 0 ? `Notifications (${unreadCount} unread)` : 'Notifications'}
         aria-haspopup="menu"
         aria-expanded={open}
-        className="relative rounded-xl border border-white/10 p-2 text-stone-400 hover:bg-white/[0.06] hover:text-stone-200 transition-colors cursor-pointer"
+        className="relative rounded-xl border border-white/10 p-2 text-ink-muted hover:bg-white/[0.06] hover:text-stone-200 transition-colors cursor-pointer"
       >
         <Bell className="size-4.5" />
         {unreadCount > 0 && (
@@ -144,7 +144,7 @@ export function NotificationBell() {
                 type="button"
                 onClick={(e) => { e.stopPropagation(); markAllRead.mutate(); }}
                 disabled={markAllRead.isPending}
-                className="flex items-center gap-1 rounded-lg px-2 py-1 text-micro font-medium text-stone-400 hover:bg-white/[0.06] hover:text-stone-200 disabled:opacity-50 cursor-pointer"
+                className="flex items-center gap-1 rounded-lg px-2 py-1 text-micro font-medium text-ink-muted hover:bg-white/[0.06] hover:text-stone-200 disabled:opacity-50 cursor-pointer"
               >
                 <CheckCheck className="size-3" />
                 Mark all read
@@ -184,7 +184,7 @@ export function NotificationBell() {
                 <span className={cn('flex-1', n.readAt && 'pl-4')}>
                   <span className="block text-xs font-semibold text-stone-200">{n.title}</span>
                   {n.body && <span className="mt-0.5 block type-subline">{n.body}</span>}
-                  <span className="mt-1 block text-micro text-stone-600">{timeAgo(n.createdAt)}</span>
+                  <span className="mt-1 block text-micro text-ink">{timeAgo(n.createdAt)}</span>
                 </span>
               </button>
             ))}
@@ -192,7 +192,7 @@ export function NotificationBell() {
               <button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); setExpanded(!expanded); }}
-                className="flex w-full items-center justify-center gap-1 rounded-xl px-3 py-2 text-micro font-medium text-stone-400 hover:bg-white/[0.06] hover:text-stone-200 cursor-pointer"
+                className="flex w-full items-center justify-center gap-1 rounded-xl px-3 py-2 text-micro font-medium text-ink-muted hover:bg-white/[0.06] hover:text-stone-200 cursor-pointer"
               >
                 {expanded ? (
                   <>

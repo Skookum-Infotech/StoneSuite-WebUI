@@ -21,7 +21,7 @@ export default function ProspectListPage() {
             </div>
             <div>
               <h1 className="type-page-title">Prospects</h1>
-              <p className="text-sm text-stone-500">Active sales opportunities. Create and track prospects.</p>
+              <p className="type-page-subtitle">Active sales opportunities. Create and track prospects.</p>
             </div>
           </div>
 

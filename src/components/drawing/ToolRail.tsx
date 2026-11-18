@@ -27,7 +27,7 @@ const SECTIONS: SectionDef[] = [
   { id: 'materials', label: 'Materials', Icon: MaterialsIcon, Content: MaterialSummary },
 ];
 
-const RAIL_BUTTON_CLASS = 'flex h-9 w-9 items-center justify-center rounded text-stone-600 hover:bg-stone-100 aria-pressed:bg-brand/10 aria-pressed:text-brand';
+const RAIL_BUTTON_CLASS = 'flex h-9 w-9 items-center justify-center rounded text-ink hover:bg-stone-100 aria-pressed:bg-brand/10 aria-pressed:text-brand';
 
 export function ToolRail() {
   const { tool, setTool } = useDrawingEditor();
@@ -94,7 +94,7 @@ export function ToolRail() {
         >
           <div className="mb-1.5 flex items-center justify-between">
             <h3 className="type-overline">{active.label}</h3>
-            <button type="button" aria-label={`Close ${active.label}`} onClick={() => setOpen(null)} className="text-stone-400 hover:text-stone-600">
+            <button type="button" aria-label={`Close ${active.label}`} onClick={() => setOpen(null)} className="text-ink-muted hover:text-ink">
               ✕
             </button>
           </div>

@@ -77,23 +77,23 @@ export function SlabPickerDialog({ warehouseId, addedIds, onAdd, onClose }: {
               <p className="mt-0.5 type-helper">Slabs in this location that can be moved.</p>
             </div>
           </div>
-          <button type="button" onClick={onClose} aria-label="Close" className="rounded p-1 text-stone-500 hover:bg-stone-100">
+          <button type="button" onClick={onClose} aria-label="Close" className="rounded p-1 text-ink-muted hover:bg-stone-100">
             <X className="size-4" />
           </button>
         </div>
 
         <div className="border-b border-stone-100 px-5 py-3">
           <div className="relative">
-            <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-stone-400" aria-hidden="true" />
+            <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-ink-faint" aria-hidden="true" />
             <input
               type="text"
               value={term}
               onChange={(e) => setTerm(e.target.value)}
               placeholder="Search serial, item or lot…"
               aria-label="Search slabs"
-              className="h-9 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-8 placeholder:text-stone-500 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/30 type-input"
+              className="h-9 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-8 placeholder:text-ink-muted focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/30 type-input"
             />
-            {isFetching && <Loader2 className="absolute right-2.5 top-1/2 size-3.5 -translate-y-1/2 animate-spin text-stone-400" aria-hidden="true" />}
+            {isFetching && <Loader2 className="absolute right-2.5 top-1/2 size-3.5 -translate-y-1/2 animate-spin text-ink-faint" aria-hidden="true" />}
           </div>
         </div>
 
@@ -133,12 +133,12 @@ export function SlabPickerDialog({ warehouseId, addedIds, onAdd, onClose }: {
                         {unit.status === UNIT_STATUS_RESERVED && (
                           <span className="rounded bg-amber-100 px-1.5 py-0.5 text-warning-ink type-pill">Reserved</span>
                         )}
-                        {added && <span className="text-micro font-semibold text-stone-500">Already added</span>}
+                        {added && <span className="text-micro font-semibold text-ink-muted">Already added</span>}
                       </span>
                       <span className="block truncate type-subline">{unit.inventoryItemName ?? '—'}</span>
                     </span>
                     <span className="shrink-0 text-right">
-                      <span className="block text-xs tabular-nums text-stone-700">
+                      <span className="block text-xs tabular-nums text-ink">
                         {unit.area.toFixed(2)} {unit.areaUnitCode ?? ''}
                       </span>
                       <span className="block type-subline">{unit.binPath || 'No bin'}</span>

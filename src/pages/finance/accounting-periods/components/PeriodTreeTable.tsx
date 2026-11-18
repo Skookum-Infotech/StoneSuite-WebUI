@@ -140,16 +140,16 @@ export function PeriodTreeTable({ calendar }: { calendar: AccountingCalendar }) 
           type="button"
           onClick={() => setCollapsed(new Set())}
           aria-label="Expand all fiscal years and quarters"
-          className="inline-flex items-center gap-1.5 text-xs font-medium text-stone-500 hover:text-stone-800"
+          className="inline-flex items-center gap-1.5 text-xs font-medium text-ink-muted hover:text-ink-strong"
         >
           <ChevronsDown className="size-3.5" /> Expand All
         </button>
-        <span className="text-stone-500" aria-hidden="true">|</span>
+        <span className="text-ink-muted" aria-hidden="true">|</span>
         <button
           type="button"
           onClick={() => setCollapsed(new Set(allGroupKeys(tree)))}
           aria-label="Collapse all fiscal years and quarters"
-          className="inline-flex items-center gap-1.5 text-xs font-medium text-stone-500 hover:text-stone-800"
+          className="inline-flex items-center gap-1.5 text-xs font-medium text-ink-muted hover:text-ink-strong"
         >
           <ChevronsUp className="size-3.5" /> Collapse All
         </button>
@@ -205,16 +205,16 @@ export function PeriodTreeTable({ calendar }: { calendar: AccountingCalendar }) 
       {canUpdate && <PeriodBulkActionBar selectedPeriods={selectedPeriods} onClear={() => setSelectedIds(new Set())} />}
 
       <div className="min-h-0 flex-1 overflow-auto rounded-xl border border-stone-200 bg-white shadow-sm modal-scrollbar">
-        <table className="w-full min-w-[760px] text-left text-xs">
+        <table className="w-full min-w-[760px] text-left type-cell">
           <thead className="sticky top-0 z-10 border-b border-stone-200 bg-table-header">
             <tr>
-              {canUpdate && <th className="w-8 px-3 py-3" />}
+              {canUpdate && <th className="type-th w-8 px-3 py-3" />}
               {COLUMN_HEADERS.map((h) => (
                 <th key={h} className="whitespace-nowrap px-4 py-3 type-th">
                   {h}
                 </th>
               ))}
-              <th className="w-10 px-4 py-3" />
+              <th className="type-th w-10 px-4 py-3" />
             </tr>
           </thead>
           <tbody className="divide-y divide-stone-50">

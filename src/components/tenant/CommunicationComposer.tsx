@@ -136,7 +136,7 @@ export function CommunicationComposer({ recordId, audience, thread, onSent }: Co
         <p className="flex items-start gap-1.5 break-words px-4 pt-3 type-helper">
           {mode.internal ? (
             <>
-              <EyeOff className={cn('mt-0.5 size-3.5 shrink-0', amber ? 'text-warning-ink' : 'text-stone-400')} aria-hidden="true" />
+              <EyeOff className={cn('mt-0.5 size-3.5 shrink-0', amber ? 'text-warning-ink' : 'text-ink-muted')} aria-hidden="true" />
               <span>
                 {mode.notesOnly
                   ? 'Internal note — only your team sees this.'
@@ -145,9 +145,9 @@ export function CommunicationComposer({ recordId, audience, thread, onSent }: Co
             </>
           ) : (
             <>
-              <Mail className="mt-0.5 size-3.5 shrink-0 text-stone-400" aria-hidden="true" />
+              <Mail className="mt-0.5 size-3.5 shrink-0 text-ink-faint" aria-hidden="true" />
               <span>
-                Replying to <span className="font-medium text-stone-700">{replyTo}</span>
+                Replying to <span className="font-medium text-ink">{replyTo}</span>
               </span>
             </>
           )}
@@ -162,7 +162,7 @@ export function CommunicationComposer({ recordId, audience, thread, onSent }: Co
           maxLength={REPLY_MAX_CHARS}
           placeholder={mode.internal ? 'Add an internal note…' : copy.replyPlaceholder}
           aria-label={mode.internal ? 'Internal note' : copy.replyLabel}
-          className="block max-h-40 min-h-14 w-full resize-none bg-transparent px-4 py-2 text-sm leading-relaxed text-stone-900 outline-none placeholder:text-stone-500 [field-sizing:content]"
+          className="block max-h-40 min-h-14 w-full resize-none bg-transparent px-4 py-2 text-sm leading-relaxed text-ink-strong outline-none placeholder:text-ink-muted [field-sizing:content]"
         />
 
         {files.length > 0 && (
@@ -171,17 +171,17 @@ export function CommunicationComposer({ recordId, audience, thread, onSent }: Co
               {files.map((file, index) => (
                 <li
                   key={`${file.name}-${file.size}-${index}`}
-                  className="inline-flex max-w-full items-center gap-1.5 rounded-lg border border-stone-200 bg-white/80 py-1 pl-2.5 pr-1 text-xs text-stone-700"
+                  className="inline-flex max-w-full items-center gap-1.5 rounded-lg border border-stone-200 bg-white/80 py-1 pl-2.5 pr-1 text-xs text-ink"
                 >
-                  <Paperclip className="size-3 shrink-0 text-stone-400" aria-hidden="true" />
+                  <Paperclip className="size-3 shrink-0 text-ink-faint" aria-hidden="true" />
                   <span className="max-w-48 truncate">{file.name}</span>
-                  <span className="shrink-0 text-stone-500">{formatFileSize(file.size)}</span>
+                  <span className="shrink-0 text-ink-muted">{formatFileSize(file.size)}</span>
                   <button
                     type="button"
                     onClick={() => removeFile(index)}
                     disabled={send.isPending}
                     aria-label={`Remove ${file.name}`}
-                    className="flex size-5 shrink-0 items-center justify-center rounded-full text-stone-400 hover:bg-stone-100 hover:text-stone-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 disabled:opacity-40"
+                    className="flex size-5 shrink-0 items-center justify-center rounded-full text-ink-muted hover:bg-stone-100 hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 disabled:opacity-40"
                   >
                     <X className="size-3" aria-hidden="true" />
                   </button>
@@ -211,7 +211,7 @@ export function CommunicationComposer({ recordId, audience, thread, onSent }: Co
                   ? `Attach files (up to ${REPLY_MAX_FILES}, ${REPLY_MAX_TOTAL_MB} MB in total)`
                   : NO_STORAGE_NOTICE
               }
-              className="flex size-8 items-center justify-center rounded-full text-stone-500 transition-colors hover:bg-stone-100 hover:text-stone-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-40"
+              className="flex size-8 items-center justify-center rounded-full text-ink-muted transition-colors hover:bg-stone-100 hover:text-ink-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-40"
             >
               <Paperclip className="size-4" aria-hidden="true" />
             </button>
@@ -248,7 +248,7 @@ export function CommunicationComposer({ recordId, audience, thread, onSent }: Co
               title={sendLabel}
               className={cn(
                 'flex size-9 items-center justify-center rounded-full shadow-sm transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-40',
-                amber ? 'bg-amber-500 text-white hover:bg-amber-600' : 'bg-brand text-stone-900 hover:bg-brand-hover',
+                amber ? 'bg-amber-500 text-white hover:bg-amber-600' : 'bg-brand text-ink-strong hover:bg-brand-hover',
               )}
             >
               {send.isPending ? (

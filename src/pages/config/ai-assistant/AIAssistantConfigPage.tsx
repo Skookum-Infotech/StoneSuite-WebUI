@@ -80,7 +80,7 @@ export default function AIAssistantConfigPage() {
             )}
 
             <label className="flex items-center justify-between gap-3 select-none">
-              <span className="text-sm font-semibold text-stone-900 dark:text-stone-100">
+              <span className="text-sm font-semibold text-ink-strong dark:text-stone-100">
                 Enable StoneSuite Assistant for your organization
               </span>
               <Switch

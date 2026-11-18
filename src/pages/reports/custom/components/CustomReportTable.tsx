@@ -15,11 +15,11 @@ export function CustomReportTable({ result }: CustomReportTableProps) {
   const align = (i: number) => (NUMERIC_TYPES.includes(result.columns[i].type) ? "text-right tabular-nums" : "text-left");
   return (
     <div className="overflow-x-auto rounded-xl border border-stone-200 bg-white">
-      <table aria-label="Custom report results" className="w-full text-sm">
-        <thead className="bg-stone-50 text-label text-stone-500">
+      <table aria-label="Custom report results" className="w-full type-cell">
+        <thead className="bg-stone-50 text-label text-ink-muted">
           <tr>
             {result.columns.map((c, i) => (
-              <th key={c.key} scope="col" className={cn("px-3 py-2 font-medium", align(i))}>
+              <th key={c.key} scope="col" className={cn("px-3 py-2 type-th", align(i))}>
                 {c.label}
               </th>
             ))}
@@ -29,7 +29,7 @@ export function CustomReportTable({ result }: CustomReportTableProps) {
           {result.rows.map((row, r) => (
             <tr key={r}>
               {row.map((cell, i) => (
-                <td key={result.columns[i].key} className={cn("px-3 py-2 text-stone-700", align(i))}>
+                <td key={result.columns[i].key} className={cn("px-3 py-2 text-ink", align(i))}>
                   {formatCell(cell, result.columns[i].type)}
                 </td>
               ))}
@@ -37,7 +37,7 @@ export function CustomReportTable({ result }: CustomReportTableProps) {
           ))}
         </tbody>
         {totals && (
-          <tfoot className="border-t border-stone-200 bg-stone-50 font-semibold text-stone-900">
+          <tfoot className="border-t border-stone-200 bg-stone-50 font-semibold text-ink-strong">
             <tr>
               {totals.map((cell, i) => (
                 <td key={result.columns[i].key} className={cn("px-3 py-2", align(i))}>

@@ -305,7 +305,7 @@ export default function EstimateDetailPage() {
 
           {activeTab === 'items' && (
             <div className="overflow-x-auto modal-scrollbar rounded-lg border border-stone-200 bg-white">
-              <table className="w-full text-left text-xs">
+              <table className="w-full text-left type-cell">
                 <thead className="bg-stone-50 border-b border-stone-200">
                   <tr className="divide-x divide-stone-200">
                     {[
@@ -328,25 +328,25 @@ export default function EstimateDetailPage() {
                 <tbody className="divide-y divide-stone-100">
                   <KitLineRows lines={estimate.items} colSpan={14} renderRow={(line, kitCls) => (
                     <tr className={cn('hover:bg-stone-50/50 divide-x divide-stone-100', kitCls)}>
-                      <td className="px-3 py-2.5 text-stone-500 tabular-nums">{line.lineNumber}</td>
-                      <td className="px-3 py-2.5 font-medium text-stone-800">
-                        {line.itemName || line.description || <span className="text-stone-500">—</span>}
+                      <td className="type-cell px-3 py-2.5 tabular-nums">{line.lineNumber}</td>
+                      <td className="type-cell px-3 py-2.5 font-medium">
+                        {line.itemName || line.description || <span className="text-ink-muted">—</span>}
                       </td>
-                      <td className="px-3 py-2.5 text-stone-500 max-w-[200px] truncate">{line.description || '—'}</td>
+                      <td className="type-cell px-3 py-2.5 max-w-[200px] truncate">{line.description || '—'}</td>
                       <td className="px-3 py-2.5 type-record-id">{line.sku || '—'}</td>
                       <LineSizeViewCells size={line} unit={line.dimensionUnit} units={line.unitCode} />
-                      <td className="px-3 py-2.5 text-stone-500 whitespace-nowrap" title={line.unitCode || undefined}>
-                        {unitLabel(line.unitCode) || <span className="text-stone-500">—</span>}
+                      <td className="type-cell px-3 py-2.5 whitespace-nowrap" title={line.unitCode || undefined}>
+                        {unitLabel(line.unitCode) || <span className="text-ink-muted">—</span>}
                       </td>
-                      <td className="px-3 py-2.5 tabular-nums text-right text-stone-600">{line.quantity}</td>
-                      <td className="px-3 py-2.5 tabular-nums text-right text-stone-600">{currency(line.unitPrice)}</td>
-                      <td className="px-3 py-2.5 tabular-nums text-right text-stone-500">{line.discountPercent}%</td>
-                      <td className="px-3 py-2.5 tabular-nums text-right text-stone-500">{line.taxPercent}%</td>
-                      <td className="px-3 py-2.5 tabular-nums text-right text-stone-800 font-semibold">{currency(line.lineTotal)}</td>
+                      <td className="type-cell px-3 py-2.5 tabular-nums text-right">{line.quantity}</td>
+                      <td className="type-cell px-3 py-2.5 tabular-nums text-right">{currency(line.unitPrice)}</td>
+                      <td className="type-cell px-3 py-2.5 tabular-nums text-right">{line.discountPercent}%</td>
+                      <td className="type-cell px-3 py-2.5 tabular-nums text-right">{line.taxPercent}%</td>
+                      <td className="type-cell-strong px-3 py-2.5 tabular-nums text-right">{currency(line.lineTotal)}</td>
                     </tr>
                   )} />
                   {estimate.items.length === 0 && (
-                    <tr><td colSpan={14} className="py-8 text-center text-stone-500">No line items.</td></tr>
+                    <tr><td colSpan={14} className="type-cell py-8 text-center">No line items.</td></tr>
                   )}
                 </tbody>
               </table>
@@ -363,23 +363,23 @@ export default function EstimateDetailPage() {
         {/* Right sidebar */}
         <SalesDetailSidebar label="Estimate Details">
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-            <p className="text-xs font-semibold text-stone-500">Quick Actions</p>
+            <p className="type-card-title">Quick Actions</p>
             <div className="space-y-0.5">
               <button
                 type="button"
                 onClick={() => navigate(`/sales/estimate/${id}/edit`, { state: { initialTab: 'files' } })}
-                className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs text-stone-700 w-full transition-colors text-left"
+                className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-button text-ink w-full transition-colors text-left"
               >
-                <Upload className="size-4 text-stone-400 shrink-0" />
+                <Upload className="size-4 text-ink-faint shrink-0" />
                 Upload file
               </button>
               {canEdit && (
                 <button
                   type="button"
                   onClick={() => navigate(`/sales/estimate/${id}/edit`)}
-                  className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs text-stone-700 w-full transition-colors text-left"
+                  className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-button text-ink w-full transition-colors text-left"
                 >
-                  <Pencil className="size-4 text-stone-400 shrink-0" />
+                  <Pencil className="size-4 text-ink-faint shrink-0" />
                   Edit estimate
                 </button>
               )}
@@ -388,9 +388,9 @@ export default function EstimateDetailPage() {
                   type="button"
                   onClick={handleSendClick}
                   aria-label="Resend estimate email to customer"
-                  className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs text-stone-700 w-full transition-colors text-left"
+                  className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-button text-ink w-full transition-colors text-left"
                 >
-                  <Send className="size-4 text-stone-400 shrink-0" />
+                  <Send className="size-4 text-ink-faint shrink-0" />
                   Resend to Customer
                 </button>
               )}
@@ -401,10 +401,10 @@ export default function EstimateDetailPage() {
                 type="button"
                 onClick={handleExportPdf}
                 disabled={exportingPdf}
-                className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs text-stone-700 w-full transition-colors text-left disabled:opacity-60 disabled:cursor-not-allowed"
+                className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-button text-ink w-full transition-colors text-left disabled:opacity-60 disabled:cursor-not-allowed"
                 aria-label="Export as PDF"
               >
-                {exportingPdf ? <Loader2 className="size-4 text-stone-400 shrink-0 animate-spin" /> : <FileDown className="size-4 text-stone-400 shrink-0" />}
+                {exportingPdf ? <Loader2 className="size-4 text-ink-faint shrink-0 animate-spin" /> : <FileDown className="size-4 text-ink-faint shrink-0" />}
                 {exportingPdf ? 'Exporting…' : 'Export PDF'}
               </button>
             </div>
@@ -414,9 +414,9 @@ export default function EstimateDetailPage() {
           </div>
 
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-            <p className="text-xs font-semibold text-stone-500">Status</p>
+            <p className="type-card-title">Status</p>
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
-              <span className="text-stone-500">Status</span>
+              <span className="text-ink-muted">Status</span>
               <EstimateStatusControl
                 estimate={estimate}
                 onChange={(code) => transition.mutate(code)}
@@ -425,16 +425,16 @@ export default function EstimateDetailPage() {
               />
             </div>
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
-              <span className="text-stone-500">Customer</span>
-              <CustomerLink id={estimate.customer.id} name={estimate.customer.name} className="text-stone-700 truncate max-w-[140px] hover:text-accent-foreground hover:underline" />
+              <span className="text-ink-muted">Customer</span>
+              <CustomerLink id={estimate.customer.id} name={estimate.customer.name} className="text-ink truncate max-w-[140px] hover:text-accent-foreground hover:underline" />
             </div>
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
-              <span className="text-stone-500">Created</span>
-              <span className="text-stone-700">{fmtDate(estimate.createdAt)}</span>
+              <span className="text-ink-muted">Created</span>
+              <span className="text-ink">{fmtDate(estimate.createdAt)}</span>
             </div>
             <div className="flex justify-between items-center py-2 text-xs">
-              <span className="text-stone-500">Updated</span>
-              <span className="text-stone-700">{fmtDate(estimate.updatedAt)}</span>
+              <span className="text-ink-muted">Updated</span>
+              <span className="text-ink">{fmtDate(estimate.updatedAt)}</span>
             </div>
           </div>
 
@@ -478,7 +478,7 @@ function ReadonlyField({ label, value, full }: { label: string; value?: string; 
   return (
     <div className={cn('space-y-1', full && 'col-span-full')}>
       <label className={fieldLabelCls}>{label}</label>
-      <div className={readonlyCls}>{value || <span className="text-stone-500">—</span>}</div>
+      <div className={readonlyCls}>{value || <span className="text-ink-muted">—</span>}</div>
     </div>
   );
 }
@@ -496,9 +496,9 @@ function AddressBlock({ addr }: { addr: { customerName?: string; attention?: str
     return <p className="italic type-helper">No address on file.</p>;
   }
   return (
-    <div className="space-y-1 text-xs text-stone-700">
-      {addr.customerName && <p className="font-semibold text-stone-900">{addr.customerName}</p>}
-      {lines.map((line, i) => <p key={i} className="text-stone-600">{line}</p>)}
+    <div className="space-y-1 text-xs text-ink">
+      {addr.customerName && <p className="font-semibold text-ink-strong">{addr.customerName}</p>}
+      {lines.map((line, i) => <p key={i} className="text-ink">{line}</p>)}
       <AddressGeoLine stateId={addr.stateId} countryId={addr.countryId} />
     </div>
   );

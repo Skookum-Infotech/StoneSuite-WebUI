@@ -83,7 +83,7 @@ export function StockOnHandTable() {
   return (
     <div className="flex flex-col gap-3">
       <div className="relative max-w-sm">
-        <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-stone-400" aria-hidden="true" />
+        <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-ink-faint" aria-hidden="true" />
         <input
           type="search"
           value={term}
@@ -98,12 +98,12 @@ export function StockOnHandTable() {
 
       <div className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm">
         <div className="overflow-x-auto modal-scrollbar">
-          <table className="w-full min-w-[720px] text-left text-xs">
+          <table className="w-full min-w-[720px] text-left type-cell">
             <thead className="border-b border-stone-200 bg-table-header">
               <tr>
-                <th className="w-10 px-3 py-3"><span className="sr-only">Show by location</span></th>
+                <th className="type-th w-10 px-3 py-3"><span className="sr-only">Show by location</span></th>
                 {HEADERS.map((h) => (
-                  <th key={h.label} className={`px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 ${h.right ? 'text-right' : ''}`}>
+                  <th key={h.label} className={`px-4 py-3 type-th ${h.right ? 'text-right' : ''}`}>
                     {h.label}
                   </th>
                 ))}
@@ -130,18 +130,18 @@ export function StockOnHandTable() {
                           onClick={() => toggle(it.id)}
                           aria-expanded={expanded}
                           aria-label={`${expanded ? 'Hide' : 'Show'} stock by location for ${it.name}`}
-                          className="rounded p-0.5 text-stone-500 hover:bg-stone-100 hover:text-stone-700"
+                          className="rounded p-0.5 text-ink-muted hover:bg-stone-100 hover:text-ink"
                         >
                           {expanded ? <ChevronDown className="size-3.5" /> : <ChevronRight className="size-3.5" />}
                         </button>
                       </td>
                       <td className="px-4 py-3.5 whitespace-nowrap type-record-id">{it.sku}</td>
-                      <td className="max-w-[240px] truncate px-4 py-3.5 text-stone-700">{it.name}</td>
-                      <td className="px-4 py-3.5 text-right tabular-nums text-stone-800">
+                      <td className="type-cell max-w-[240px] truncate px-4 py-3.5">{it.name}</td>
+                      <td className="type-cell px-4 py-3.5 text-right tabular-nums">
                         {total ? <>{formatStockQty(total.onHand)}{unit && <span className="ml-1 text-ink-muted">{unit}</span>}</> : totalsLoading ? '…' : '—'}
                       </td>
-                      <td className="px-4 py-3.5 text-right tabular-nums text-stone-500">{total ? formatStockQty(total.allocated) : '—'}</td>
-                      <td className="px-4 py-3.5 text-right tabular-nums font-semibold text-stone-800">{total ? formatStockQty(total.available) : '—'}</td>
+                      <td className="type-cell px-4 py-3.5 text-right tabular-nums">{total ? formatStockQty(total.allocated) : '—'}</td>
+                      <td className="type-cell-strong px-4 py-3.5 text-right tabular-nums">{total ? formatStockQty(total.available) : '—'}</td>
                       <td className="px-4 py-3.5">
                         {total?.belowReorder && (
                           <span className="rounded-md bg-amber-50 px-2 py-0.5 text-warning-ink type-pill">Low stock</span>
@@ -160,7 +160,7 @@ export function StockOnHandTable() {
                 <tr>
                   <td colSpan={COLUMN_COUNT} className="py-16 text-center">
                     <div className="flex flex-col items-center gap-3">
-                      <div className="rounded-2xl bg-stone-100 p-4"><Package className="size-6 text-stone-400" /></div>
+                      <div className="rounded-2xl bg-stone-100 p-4"><Package className="size-6 text-ink-faint" /></div>
                       <p className="type-card-title">{debounced ? 'No items match that search.' : 'No counted items yet.'}</p>
                       <p className="type-helper">
                         {debounced ? 'Try a different name or SKU.' : 'Items you count by quantity — adhesive, sinks, blades — appear here once received.'}

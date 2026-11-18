@@ -19,7 +19,7 @@ export function SamlDerivedFields({ config, onRefresh, isRefreshing }: SamlDeriv
     <div className="space-y-3 rounded-xl border border-stone-200 bg-stone-50/60 p-4">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <p className="text-xs font-semibold text-stone-700">Identity provider details</p>
+          <p className="text-xs font-semibold text-ink">Identity provider details</p>
           <p className="mt-0.5 type-helper">
             {config.metadataFetchedAt
               ? `Last fetched ${new Date(config.metadataFetchedAt).toLocaleString()}`

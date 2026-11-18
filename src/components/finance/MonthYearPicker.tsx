@@ -81,12 +81,12 @@ export function MonthYearPicker({
         aria-expanded={open}
         aria-invalid={invalid || undefined}
         aria-describedby={ariaDescribedBy}
-        className={cn(invalid ? fieldErrorCls : fieldCls, 'flex items-center gap-2 text-left', !selected && 'text-stone-500')}
+        className={cn(invalid ? fieldErrorCls : fieldCls, 'flex items-center gap-2 text-left', !selected && 'text-ink-muted')}
       >
-        <CalendarDays className="size-3.5 shrink-0 text-stone-400" aria-hidden="true" />
+        <CalendarDays className="size-3.5 shrink-0 text-ink-faint" aria-hidden="true" />
         <span className="flex-1 truncate">{displayLabel}</span>
         <ChevronDown
-          className={cn('size-3.5 shrink-0 text-stone-400 transition-transform duration-150', open && 'rotate-180')}
+          className={cn('size-3.5 shrink-0 text-ink-faint transition-transform duration-150', open && 'rotate-180')}
           aria-hidden="true"
         />
       </button>
@@ -98,16 +98,16 @@ export function MonthYearPicker({
               type="button"
               onClick={() => setViewYear((y) => y - 1)}
               aria-label="Previous year"
-              className="rounded-lg p-1.5 text-stone-500 transition-colors hover:bg-stone-100 hover:text-stone-700"
+              className="rounded-lg p-1.5 text-ink-muted transition-colors hover:bg-stone-100 hover:text-ink"
             >
               <ChevronLeft className="size-4" />
             </button>
-            <span className="text-sm font-bold tabular-nums text-stone-900">{viewYear}</span>
+            <span className="text-sm font-bold tabular-nums text-ink-strong">{viewYear}</span>
             <button
               type="button"
               onClick={() => setViewYear((y) => y + 1)}
               aria-label="Next year"
-              className="rounded-lg p-1.5 text-stone-500 transition-colors hover:bg-stone-100 hover:text-stone-700"
+              className="rounded-lg p-1.5 text-ink-muted transition-colors hover:bg-stone-100 hover:text-ink"
             >
               <ChevronRight className="size-4" />
             </button>
@@ -127,7 +127,7 @@ export function MonthYearPicker({
                   aria-label={`${MONTH_FULL[i]} ${viewYear}`}
                   className={cn(
                     'relative rounded-lg py-2 text-xs font-semibold transition-colors',
-                    isSelected ? 'bg-brand text-stone-950 shadow-sm' : 'text-stone-600 hover:bg-stone-100 hover:text-stone-900',
+                    isSelected ? 'bg-brand text-ink-strong shadow-sm' : 'text-ink hover:bg-stone-100 hover:text-ink-strong',
                   )}
                 >
                   {label}

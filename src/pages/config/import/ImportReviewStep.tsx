@@ -45,7 +45,7 @@ function ColumnMappingRow({
 
   return (
     <div className="flex items-center gap-2 rounded-lg border border-stone-200 bg-white px-3 py-2 dark:border-stone-700 dark:bg-stone-900">
-      <span className="min-w-0 flex-1 truncate text-xs font-semibold text-stone-700 dark:text-stone-200" title={column}>
+      <span className="min-w-0 flex-1 truncate text-xs font-semibold text-ink dark:text-stone-200" title={column}>
         {column}
       </span>
       <Select
@@ -54,7 +54,7 @@ function ColumnMappingRow({
           const v = e.target.value;
           onChange(v === 'core' ? `${CORE_PREFIX}` : v);
         }}
-        className="rounded-lg border border-stone-200 bg-white px-2 py-1 text-xs text-stone-700 outline-none focus:border-brand dark:border-stone-700 dark:bg-stone-900 dark:text-stone-200"
+        className="rounded-lg border border-stone-200 bg-white px-2 py-1 text-xs text-ink outline-none focus:border-brand dark:border-stone-700 dark:bg-stone-900 dark:text-stone-200"
       >
         <option value="">Ignore</option>
         <option value="core">Core field…</option>
@@ -199,25 +199,25 @@ export function ImportReviewStep({ jobId, workflowKey, fieldDefs, onCommitted }:
           </div>
         </div>
         <div className="max-h-[28rem] overflow-auto rounded-xl border border-stone-200 dark:border-stone-700">
-          <table className="w-full text-left text-xs">
+          <table className="w-full text-left type-cell">
             <thead className="sticky top-0 bg-stone-50 dark:bg-stone-800">
               <tr>
-                <th className="px-3 py-2 font-semibold text-stone-500">#</th>
-                <th className="px-3 py-2 font-semibold text-stone-500">Mapped core</th>
-                <th className="px-3 py-2 font-semibold text-stone-500">Mapped custom</th>
-                <th className="px-3 py-2 font-semibold text-stone-500">Issues</th>
-                <th className="px-3 py-2 font-semibold text-stone-500">Status</th>
-                <th className="px-3 py-2" />
+                <th className="type-th px-3 py-2">#</th>
+                <th className="type-th px-3 py-2">Mapped core</th>
+                <th className="type-th px-3 py-2">Mapped custom</th>
+                <th className="type-th px-3 py-2">Issues</th>
+                <th className="type-th px-3 py-2">Status</th>
+                <th className="type-th px-3 py-2" />
               </tr>
             </thead>
             <tbody>
               {rows.map((row) => (
                 <tr key={row.id} className="border-t border-stone-100 dark:border-stone-800">
-                  <td className="px-3 py-2 text-stone-500">{row.rowIndex + 1}</td>
-                  <td className="max-w-[16rem] truncate px-3 py-2 text-stone-600 dark:text-stone-300" title={JSON.stringify(row.mapped.core)}>
+                  <td className="type-cell px-3 py-2">{row.rowIndex + 1}</td>
+                  <td className="type-cell max-w-[16rem] truncate px-3 py-2 dark:text-stone-300" title={JSON.stringify(row.mapped.core)}>
                     {Object.keys(row.mapped.core ?? {}).length === 0 ? '—' : JSON.stringify(row.mapped.core)}
                   </td>
-                  <td className="max-w-[16rem] truncate px-3 py-2 text-stone-600 dark:text-stone-300" title={JSON.stringify(row.mapped.custom)}>
+                  <td className="type-cell max-w-[16rem] truncate px-3 py-2 dark:text-stone-300" title={JSON.stringify(row.mapped.custom)}>
                     {Object.keys(row.mapped.custom ?? {}).length === 0 ? '—' : JSON.stringify(row.mapped.custom)}
                   </td>
                   <td className="max-w-[14rem] px-3 py-2">

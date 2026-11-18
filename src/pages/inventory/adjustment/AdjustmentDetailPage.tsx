@@ -84,21 +84,21 @@ export default function AdjustmentDetailPage() {
 
           <ModernSection title={`Lines (${a.lines.length})`} index={1}>
             <div className="overflow-x-auto modal-scrollbar rounded-lg border border-stone-200">
-              <table className="w-full text-left text-xs">
+              <table className="w-full text-left type-cell">
                 <thead className="bg-stone-50 border-b border-stone-200">
                   <tr>
-                    <th className="px-3 py-2 font-semibold text-stone-500">Item</th>
-                    <th className="px-3 py-2 font-semibold text-stone-500">Unit</th>
-                    <th className="px-3 py-2 font-semibold text-stone-500">Reason</th>
-                    <th className="px-3 py-2 font-semibold text-stone-500 text-right">Qty Delta</th>
+                    <th className="type-th px-3 py-2">Item</th>
+                    <th className="type-th px-3 py-2">Unit</th>
+                    <th className="type-th px-3 py-2">Reason</th>
+                    <th className="type-th px-3 py-2 text-right">Qty Delta</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-stone-100">
                   {a.lines.map((line) => (
                     <tr key={line.id}>
-                      <td className="px-3 py-2.5 text-stone-800">{line.inventoryItemName || '—'}</td>
-                      <td className="px-3 py-2.5 text-stone-500">{line.unitSerial || '—'}</td>
-                      <td className="px-3 py-2.5 text-stone-500">{line.reasonName || '—'}</td>
+                      <td className="type-cell px-3 py-2.5">{line.inventoryItemName || '—'}</td>
+                      <td className="type-cell px-3 py-2.5">{line.unitSerial || '—'}</td>
+                      <td className="type-cell px-3 py-2.5">{line.reasonName || '—'}</td>
                       <td className={`px-3 py-2.5 text-right tabular-nums font-semibold ${line.qtyDelta < 0 ? 'text-danger-ink' : 'text-success-ink'}`}>{line.qtyDelta > 0 ? '+' : ''}{line.qtyDelta}</td>
                     </tr>
                   ))}
@@ -111,8 +111,8 @@ export default function AdjustmentDetailPage() {
         <SalesDetailSidebar label="Adjustment Details">
           {canUpdate && isDraft && (
             <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-0.5 mb-4">
-              <button type="button" onClick={() => navigate(`/inventory/adjustment/${id}/edit`)} className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 text-xs text-stone-700 w-full transition-colors text-left">
-                <Pencil className="size-4 text-stone-400 shrink-0" /> Edit adjustment
+              <button type="button" onClick={() => navigate(`/inventory/adjustment/${id}/edit`)} className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 text-xs text-ink w-full transition-colors text-left">
+                <Pencil className="size-4 text-ink-faint shrink-0" /> Edit adjustment
               </button>
             </div>
           )}
@@ -149,7 +149,7 @@ function ReadonlyField({ label, value }: { label: string; value?: string }) {
   return (
     <div className="space-y-1">
       <label className={fieldLabelCls}>{label}</label>
-      <div className={readonlyCls}>{value || <span className="text-stone-500">—</span>}</div>
+      <div className={readonlyCls}>{value || <span className="text-ink-muted">—</span>}</div>
     </div>
   );
 }

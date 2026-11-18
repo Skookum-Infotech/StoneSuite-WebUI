@@ -71,7 +71,7 @@ export function ConversationList({ activeId, onOpen, onDeleted }: ConversationLi
   }
   if (items === null) {
     return (
-      <div className="flex items-center gap-2 px-4 py-3 text-xs text-stone-500">
+      <div className="flex items-center gap-2 px-4 py-3 text-xs text-ink-muted">
         <Loader2 className="size-3.5 animate-spin" aria-hidden="true" /> Loading conversations…
       </div>
     );
@@ -99,9 +99,9 @@ export function ConversationList({ activeId, onOpen, onDeleted }: ConversationLi
                 c.id === activeId && 'bg-brand/10',
               )}
             >
-              <MessageSquare className="size-3.5 shrink-0 text-stone-400" aria-hidden="true" />
+              <MessageSquare className="size-3.5 shrink-0 text-ink-faint" aria-hidden="true" />
               <span className="min-w-0 flex-1">
-                <span className="block truncate text-xs font-semibold text-stone-700 dark:text-stone-200">{title}</span>
+                <span className="block truncate text-xs font-semibold text-ink dark:text-stone-200">{title}</span>
                 <span className="block type-subline">{relativeTime(c.updatedAt)}</span>
               </span>
             </button>
@@ -121,7 +121,7 @@ export function ConversationList({ activeId, onOpen, onDeleted }: ConversationLi
                 type="button"
                 onClick={() => setConfirmingId(c.id)}
                 aria-label={`Delete conversation ${title}`}
-                className="shrink-0 rounded-lg p-1.5 text-stone-500 hover:bg-stone-100 hover:text-danger-ink dark:hover:bg-white/10 cursor-pointer"
+                className="shrink-0 rounded-lg p-1.5 text-ink-muted hover:bg-stone-100 hover:text-danger-ink dark:hover:bg-white/10 cursor-pointer"
               >
                 <Trash2 className="size-3.5" />
               </button>

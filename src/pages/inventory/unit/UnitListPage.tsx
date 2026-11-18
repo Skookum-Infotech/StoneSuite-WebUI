@@ -27,7 +27,7 @@ export default function UnitListPage() {
           </div>
           <div>
             <h1 className="type-page-title">Inventory</h1>
-            <p className="text-sm text-stone-500">
+            <p className="type-page-subtitle">
               Every slab and remnant on hand — move, cut and scrap — and the stock of everything else you count. Slabs are added by receiving a purchase order.
             </p>
           </div>

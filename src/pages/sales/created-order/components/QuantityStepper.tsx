@@ -9,7 +9,7 @@ interface QuantityStepperProps {
 }
 
 const BUTTON_CLS =
-  'flex size-10 shrink-0 items-center justify-center text-stone-600 outline-none transition-colors hover:bg-stone-100 focus-visible:bg-stone-100 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand/40 disabled:cursor-not-allowed disabled:text-stone-300 disabled:hover:bg-transparent';
+  'flex size-10 shrink-0 items-center justify-center text-ink outline-none transition-colors hover:bg-stone-100 focus-visible:bg-stone-100 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand/40 disabled:cursor-not-allowed disabled:text-stone-300 disabled:hover:bg-transparent';
 
 // A whole-number stepper (0–MAX_QTY). Tapping +/- beats typing into a number
 // box on a phone, and it cannot hold a fraction or a negative.
@@ -32,7 +32,7 @@ export function QuantityStepper({ label, value, onChange }: QuantityStepperProps
       <output
         aria-live="polite"
         aria-label={`${label} quantity`}
-        className="flex min-w-10 items-center justify-center border-x border-stone-200 px-2 text-sm font-semibold tabular-nums text-stone-900"
+        className="flex min-w-10 items-center justify-center border-x border-stone-200 px-2 text-sm font-semibold tabular-nums text-ink-strong"
       >
         {value}
       </output>

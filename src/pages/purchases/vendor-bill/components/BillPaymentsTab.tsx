@@ -47,7 +47,7 @@ export function BillPaymentsTab({ vendorBillId, balanceDue, vendor, currencyCode
   });
 
   if (!vendorBillId) {
-    return <p className="py-12 text-center text-sm text-stone-500">Payments will be available after saving the vendor bill.</p>;
+    return <p className="py-12 text-center text-sm text-ink-muted">Payments will be available after saving the vendor bill.</p>;
   }
 
   const payments = ledger?.payments ?? [];
@@ -91,15 +91,15 @@ export function BillPaymentsTab({ vendorBillId, balanceDue, vendor, currencyCode
         <>
           {payments.length === 0 && billPayments.length === 0 ? (
             <div className="flex flex-col items-center gap-2 py-12 text-center">
-              <Wallet className="size-6 text-stone-400" aria-hidden="true" />
-              <p className="text-sm text-stone-500">No vendor payments applied to this bill yet.</p>
+              <Wallet className="size-6 text-ink-faint" aria-hidden="true" />
+              <p className="text-sm text-ink-muted">No vendor payments applied to this bill yet.</p>
               <p className="type-helper">
                 Bills are settled by applying a vendor payment — an approved bill with a balance due can be paid from the Vendor Payments module.
               </p>
             </div>
           ) : (
             <div className="overflow-x-auto rounded-lg border border-stone-200 bg-white">
-              <table className="w-full text-left text-xs">
+              <table className="w-full text-left type-cell">
                 <thead className="bg-stone-50 border-b border-stone-200">
                   <tr>
                     {['Payment #', 'Amount', 'Applied On'].map((h) => (
@@ -110,7 +110,7 @@ export function BillPaymentsTab({ vendorBillId, balanceDue, vendor, currencyCode
                 <tbody className="divide-y divide-stone-100">
                   {payments.map((entry) => (
                     <tr key={`${entry.vendorPaymentId}-${entry.appliedAt}`} className="hover:bg-stone-50/50 transition-colors">
-                      <td className="px-3 py-2.5 font-medium text-stone-800">
+                      <td className="px-3 py-2.5 font-medium text-ink-strong">
                         <button
                           type="button"
                           onClick={() => navigate(`/purchases/vendor_payment/${entry.vendorPaymentId}`)}
@@ -119,15 +119,15 @@ export function BillPaymentsTab({ vendorBillId, balanceDue, vendor, currencyCode
                           {entry.vendorPaymentNumber || '—'}
                         </button>
                       </td>
-                      <td className="px-3 py-2.5 font-semibold text-stone-900 tabular-nums whitespace-nowrap">{currency(entry.amount)}</td>
-                      <td className="px-3 py-2.5 text-stone-500 tabular-nums whitespace-nowrap">{fmtDate(entry.appliedAt)}</td>
+                      <td className="type-cell-strong px-3 py-2.5 tabular-nums whitespace-nowrap">{currency(entry.amount)}</td>
+                      <td className="type-cell px-3 py-2.5 tabular-nums whitespace-nowrap">{fmtDate(entry.appliedAt)}</td>
                     </tr>
                   ))}
                   {billPayments.map((entry) => (
                     <tr key={entry.id} className="hover:bg-stone-50/50 transition-colors">
-                      <td className="px-3 py-2.5 text-stone-600">{entry.memo || entry.method || 'Recorded on bill'}</td>
-                      <td className="px-3 py-2.5 font-semibold text-stone-900 tabular-nums whitespace-nowrap">{currency(entry.amount)}</td>
-                      <td className="px-3 py-2.5 text-stone-500 tabular-nums whitespace-nowrap">{fmtDate(entry.paidAt)}</td>
+                      <td className="type-cell px-3 py-2.5">{entry.memo || entry.method || 'Recorded on bill'}</td>
+                      <td className="type-cell-strong px-3 py-2.5 tabular-nums whitespace-nowrap">{currency(entry.amount)}</td>
+                      <td className="type-cell px-3 py-2.5 tabular-nums whitespace-nowrap">{fmtDate(entry.paidAt)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -138,11 +138,11 @@ export function BillPaymentsTab({ vendorBillId, balanceDue, vendor, currencyCode
           {refunds.length > 0 && (
             <div className="space-y-2">
               <div className="flex items-center gap-1.5">
-                <Undo2 className="size-3.5 text-stone-400" aria-hidden="true" />
+                <Undo2 className="size-3.5 text-ink-faint" aria-hidden="true" />
                 <p className="type-overline">Refunds</p>
               </div>
               <div className="overflow-x-auto rounded-lg border border-stone-200 bg-white">
-                <table className="w-full text-left text-xs">
+                <table className="w-full text-left type-cell">
                   <thead className="bg-stone-50 border-b border-stone-200">
                     <tr>
                       {['Payment #', 'Amount', 'Reason', 'Refunded On'].map((h) => (
@@ -153,7 +153,7 @@ export function BillPaymentsTab({ vendorBillId, balanceDue, vendor, currencyCode
                   <tbody className="divide-y divide-stone-100">
                     {refunds.map((entry) => (
                       <tr key={`${entry.vendorPaymentId}-${entry.refundedAt}`} className="hover:bg-stone-50/50 transition-colors">
-                        <td className="px-3 py-2.5 font-medium text-stone-800">
+                        <td className="px-3 py-2.5 font-medium text-ink-strong">
                           <button
                             type="button"
                             onClick={() => navigate(`/purchases/vendor_payment/${entry.vendorPaymentId}`)}
@@ -162,9 +162,9 @@ export function BillPaymentsTab({ vendorBillId, balanceDue, vendor, currencyCode
                             {entry.vendorPaymentNumber || '—'}
                           </button>
                         </td>
-                        <td className="px-3 py-2.5 font-semibold text-stone-900 tabular-nums whitespace-nowrap">{currency(entry.amount)}</td>
-                        <td className="px-3 py-2.5 text-stone-500 max-w-[220px] truncate">{entry.reason || '—'}</td>
-                        <td className="px-3 py-2.5 text-stone-500 tabular-nums whitespace-nowrap">{fmtDate(entry.refundedAt)}</td>
+                        <td className="type-cell-strong px-3 py-2.5 tabular-nums whitespace-nowrap">{currency(entry.amount)}</td>
+                        <td className="type-cell px-3 py-2.5 max-w-[220px] truncate">{entry.reason || '—'}</td>
+                        <td className="type-cell px-3 py-2.5 tabular-nums whitespace-nowrap">{fmtDate(entry.refundedAt)}</td>
                       </tr>
                     ))}
                   </tbody>

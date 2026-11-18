@@ -20,7 +20,7 @@ export default function JournalEntryListPage() {
             </div>
             <div>
               <h1 className="type-page-title">Journal Entries</h1>
-              <p className="text-sm text-stone-500">Move funds between your Bank and Cash accounts.</p>
+              <p className="type-page-subtitle">Move funds between your Bank and Cash accounts.</p>
             </div>
           </div>
           {canCreate && (

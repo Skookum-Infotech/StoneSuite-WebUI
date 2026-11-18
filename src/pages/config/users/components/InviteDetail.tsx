@@ -78,7 +78,7 @@ export function InviteDetail({ invite }: { invite: UserInvite }) {
   return (
     <div className="flex flex-col h-full p-6">
       <div className="flex items-start gap-4 mb-6">
-        <div className="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-stone-100 text-stone-500">
+        <div className="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-stone-100 text-ink-muted">
           <Mail className="size-6" />
         </div>
         <div className="min-w-0 flex-1">
@@ -100,16 +100,16 @@ export function InviteDetail({ invite }: { invite: UserInvite }) {
       <div className="mb-6 space-y-1.5 text-xs">
         {invite.Status === "pending" && invite.emailStatus && invite.emailStatus !== "unknown" && (
           <div className="flex justify-between gap-3">
-            <span className="text-stone-500">Email</span>
+            <span className="text-ink-muted">Email</span>
             <EmailStatusBadge source={invite} showMessage />
           </div>
         )}
         <div className="flex justify-between">
-          <span className="text-stone-500">Expires</span>
+          <span className="text-ink-muted">Expires</span>
           <span
             className={cn(
               "font-medium",
-              isExpired ? "text-danger-ink" : "text-stone-700",
+              isExpired ? "text-danger-ink" : "text-ink",
             )}
           >
             {fmtDate(invite.ExpiresAt)}
@@ -118,8 +118,8 @@ export function InviteDetail({ invite }: { invite: UserInvite }) {
         </div>
         {invite.AcceptedAt && (
           <div className="flex justify-between">
-            <span className="text-stone-500">Accepted</span>
-            <span className="font-medium text-stone-700">
+            <span className="text-ink-muted">Accepted</span>
+            <span className="font-medium text-ink">
               {fmtDate(invite.AcceptedAt)}
             </span>
           </div>
@@ -147,7 +147,7 @@ export function InviteDetail({ invite }: { invite: UserInvite }) {
             </span>
           </div>
           <div className="flex items-center gap-2 rounded-md border border-amber-200 bg-white p-1.5">
-            <code className="flex-1 truncate px-1.5 text-micro text-stone-700" title={undeliveredLink}>
+            <code className="flex-1 truncate px-1.5 text-micro text-ink" title={undeliveredLink}>
               {undeliveredLink}
             </code>
             <button
@@ -175,17 +175,17 @@ export function InviteDetail({ invite }: { invite: UserInvite }) {
               onClick={() => setConfirmResend(true)}
               disabled={busy}
               className={cn(
-                "flex w-full items-center gap-2 rounded-lg border border-stone-200 px-3 py-2 sm:py-2.5 text-xs sm:text-sm font-medium text-stone-700 transition hover:bg-stone-50",
+                "flex w-full items-center gap-2 rounded-lg border border-stone-200 px-3 py-2 sm:py-2.5 text-xs sm:text-sm font-medium text-ink transition hover:bg-stone-50",
                 busy && "opacity-50 cursor-not-allowed",
               )}
             >
-              <Send className="size-4 text-stone-400" />
+              <Send className="size-4 text-ink-faint" />
               Resend invitation
             </button>
           )}
           {canResend && confirmResend && (
             <div className="rounded-lg border border-stone-200 bg-stone-50 p-3 space-y-2">
-              <p className="text-xs text-stone-700 font-medium">
+              <p className="text-xs text-ink font-medium">
                 Resend invitation to {invite.Email}?
               </p>
               <div className="flex gap-2">

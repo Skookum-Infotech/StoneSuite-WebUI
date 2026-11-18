@@ -103,6 +103,10 @@ export default defineConfig([
             selector: sel.replace('%s', '(^|\\s)(\\S+:)?text-(destructive|red-[567]00|amber-[56]00|brand-dark)(\\/\\d+)?(\\s|$)'),
             message: 'Text color fails contrast or is off-palette. Use text-danger-ink, text-warning-ink, text-success-ink or text-link.',
           },
+          {
+            selector: sel.replace('%s', '(^|\\s)((?!dark:)[a-z-]+:)?text-stone-[4-9]00(\\/\\d+)?(\\s|$)'),
+            message: 'Raw gray text color. Use text-ink-strong (titles, key values), text-ink (body), text-ink-muted (secondary) or text-ink-faint (icons only).',
+          },
         ]),
         ...['Property[value.type="Literal"]', 'Property[value.type="TemplateLiteral"][value.expressions.length=0]'].map((prop) => ({
           selector: `JSXAttribute[name.name="style"] ObjectExpression > ${prop}`,

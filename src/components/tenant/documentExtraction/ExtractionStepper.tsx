@@ -25,8 +25,8 @@ const STATUS_TEXT: Record<StepStatus, string> = {
 
 const STATUS_STYLE: Record<StepStatus, string> = {
   complete: 'bg-accent text-accent-foreground ring-accent-foreground/20',
-  current: 'bg-brand text-stone-950 ring-brand-dark/30',
-  pending: 'bg-stone-100 dark:bg-stone-800 text-stone-500 dark:text-stone-400 ring-stone-200 dark:ring-stone-700',
+  current: 'bg-brand text-ink-strong ring-brand-dark/30',
+  pending: 'bg-stone-100 dark:bg-stone-800 text-ink-muted dark:text-stone-400 ring-stone-200 dark:ring-stone-700',
   error: 'bg-destructive/10 text-danger-ink ring-destructive/30',
 };
 
@@ -76,8 +76,8 @@ export function ExtractionStepper({ stage, failedAt }: ExtractionStepperProps): 
                   className={cn('h-px flex-1', i === STEP_ORDER.length - 1 ? 'bg-transparent' : 'bg-stone-200 dark:bg-stone-700')}
                 />
               </div>
-              <span className="text-xs font-semibold text-stone-900 dark:text-stone-100">{STEP_LABEL[key]}</span>
-              <span className="text-micro text-stone-500 dark:text-stone-400">{STATUS_TEXT[status]}</span>
+              <span className="text-xs font-semibold text-ink-strong dark:text-stone-100">{STEP_LABEL[key]}</span>
+              <span className="text-micro text-ink-muted dark:text-stone-400">{STATUS_TEXT[status]}</span>
             </li>
           );
         })}

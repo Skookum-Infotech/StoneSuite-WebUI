@@ -21,7 +21,7 @@ export function ReceivingProgressCard({ model }: { model: ReceivingCardModel }) 
       <div className="grid gap-2.5 sm:grid-cols-2">
         <div className="rounded-xl bg-stone-50 p-3.5">
           <div className="flex flex-wrap items-center gap-2">
-            <p className="text-xs font-medium text-stone-500">Received</p>
+            <p className="text-xs font-medium text-ink-muted">Received</p>
             {model.overdue && (
               <span className="inline-flex items-center gap-1 rounded-md bg-amber-50 px-2 py-0.5 text-warning-ink type-pill">
                 <AlertTriangle className="size-3" aria-hidden="true" />
@@ -29,7 +29,7 @@ export function ReceivingProgressCard({ model }: { model: ReceivingCardModel }) 
               </span>
             )}
           </div>
-          <p className="mt-2 text-3xl font-semibold tabular-nums text-stone-900">{model.percent}%</p>
+          <p className="mt-2 text-3xl font-semibold tabular-nums text-ink-strong">{model.percent}%</p>
           <div className="mt-1 space-y-0.5">
             {model.caption.map((text) => (
               <p key={text} className="type-helper">{text}</p>
@@ -40,7 +40,7 @@ export function ReceivingProgressCard({ model }: { model: ReceivingCardModel }) 
         <div className="space-y-3 rounded-xl bg-stone-50 p-3.5">
           {model.rows.map((row) => (
             <div key={row.label}>
-              <p className="mb-1.5 text-xs font-medium text-stone-500">{row.label}</p>
+              <p className="mb-1.5 text-xs font-medium text-ink-muted">{row.label}</p>
               <SegmentedProgressBar
                 block
                 percent={row.percent}
@@ -61,7 +61,7 @@ export function ReceivingProgressCard({ model }: { model: ReceivingCardModel }) 
             {model.breakdown.map((row) => (
               <li key={row.id} className="flex items-center justify-between gap-3 px-3.5 py-2">
                 <div className="min-w-0">
-                  <p className="truncate text-xs font-medium text-stone-800">{row.name}</p>
+                  <p className="truncate text-xs font-medium text-ink-strong">{row.name}</p>
                   <p className="tabular-nums type-helper">{row.detail}</p>
                 </div>
                 <SegmentedProgressBar percent={row.percent} ariaLabel={`${row.name} received`} />

@@ -139,7 +139,7 @@ export function CreateFromDocumentDialog({
             type="button"
             onClick={handleClose}
             aria-label="Close"
-            className="rounded-md p-1 text-stone-500 dark:text-stone-400 transition-colors hover:bg-stone-100 dark:hover:bg-white/10 hover:text-stone-700 dark:hover:text-stone-200"
+            className="rounded-md p-1 text-ink-muted dark:text-stone-400 transition-colors hover:bg-stone-100 dark:hover:bg-white/10 hover:text-ink dark:hover:text-stone-200"
           >
             <X className="size-4" aria-hidden="true" />
           </button>
@@ -149,14 +149,14 @@ export function CreateFromDocumentDialog({
 
         <div className="mt-5">
           {(stage === 'validating') && (
-            <p className="text-xs text-stone-600 dark:text-stone-300">Checking your file…</p>
+            <p className="text-xs text-ink dark:text-stone-300">Checking your file…</p>
           )}
 
           {stage === 'uploading' && (
             <div className="space-y-3">
-              <div className="flex items-center justify-between text-xs text-stone-600 dark:text-stone-300">
+              <div className="flex items-center justify-between text-xs text-ink dark:text-stone-300">
                 <span>Uploading…</span>
-                <span className="font-semibold tabular-nums text-stone-900 dark:text-stone-100">{state.progress}%</span>
+                <span className="font-semibold tabular-nums text-ink-strong dark:text-stone-100">{state.progress}%</span>
               </div>
               <progress
                 value={state.progress}
@@ -174,7 +174,7 @@ export function CreateFromDocumentDialog({
 
           {stage === 'interrupted' && (
             <div className="space-y-3">
-              <div className="flex items-start gap-2 text-xs text-stone-700 dark:text-stone-300">
+              <div className="flex items-start gap-2 text-xs text-ink dark:text-stone-300">
                 <WifiOff className="mt-0.5 size-3.5 shrink-0 text-warning dark:text-amber-400" aria-hidden="true" />
                 <p>
                   <span className="font-semibold">Upload interrupted.</span>{' '}
@@ -198,7 +198,7 @@ export function CreateFromDocumentDialog({
 
           {stage === 'reading' && (
             <div className="space-y-3">
-              <div className="flex items-center gap-2 text-xs text-stone-700 dark:text-stone-300">
+              <div className="flex items-center gap-2 text-xs text-ink dark:text-stone-300">
                 <Loader2 className="size-3.5 motion-safe:animate-spin" aria-hidden="true" />
                 <span>Reading your document… <span className="tabular-nums">{state.elapsedSec}s</span></span>
               </div>
@@ -234,12 +234,12 @@ export function CreateFromDocumentDialog({
           )}
 
           {stage === 'ready' && blocking.length === 0 && (
-            <p className="text-xs text-stone-600 dark:text-stone-300">Document ready — opening the review form…</p>
+            <p className="text-xs text-ink dark:text-stone-300">Document ready — opening the review form…</p>
           )}
 
           {stage === 'failed' && state.failure && (
             <div className="space-y-3" role="alert">
-              <div className="flex items-start gap-2 text-xs text-stone-700 dark:text-stone-300">
+              <div className="flex items-start gap-2 text-xs text-ink dark:text-stone-300">
                 <AlertCircle className="mt-0.5 size-3.5 shrink-0 text-danger-ink" aria-hidden="true" />
                 {/* The file name is in the header (and often in the message) — not repeated here. */}
                 <p>
@@ -277,7 +277,7 @@ export function CreateFromDocumentDialog({
 
           {(stage === 'limit' || stage === 'aiDisabled' || stage === 'storageFull') && (
             <div className="space-y-3" role="alert">
-              <div className="flex items-start gap-2 text-xs text-stone-700 dark:text-stone-300">
+              <div className="flex items-start gap-2 text-xs text-ink dark:text-stone-300">
                 <AlertCircle className="mt-0.5 size-3.5 shrink-0 text-warning dark:text-amber-400" aria-hidden="true" />
                 <p>
                   {stage === 'limit' && `You've reached today's limit for creating ${routes.manualNoun}s from documents. It resets tomorrow — you can enter this ${routes.manualNoun} manually now.`}

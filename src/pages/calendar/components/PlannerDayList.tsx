@@ -20,7 +20,7 @@ export function PlannerDayList({ day, cards, quiet }: {
       <h3 className="flex items-baseline gap-2 type-card-title">
         {name}
         {cards.length > 0 && (
-          <span className="text-xs font-normal text-stone-500">{countLabel(cards[0].kind, cards.length)}</span>
+          <span className="text-xs font-normal text-ink-muted">{countLabel(cards[0].kind, cards.length)}</span>
         )}
       </h3>
       {cards.length > 0 ? (

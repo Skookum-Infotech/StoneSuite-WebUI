@@ -7,8 +7,8 @@ export function FeedbackStatsTiles({ stats }: { stats: FeedbackStats | undefined
     { label: 'New', value: stats?.new ?? 0, accent: 'text-sky-600 dark:text-sky-400' },
     { label: 'In Progress', value: stats?.inProgress ?? 0, accent: 'text-warning-ink dark:text-amber-400' },
     { label: 'Done', value: stats?.done ?? 0, accent: 'text-emerald-600 dark:text-emerald-400' },
-    { label: 'Cancelled', value: stats?.cancelled ?? 0, accent: 'text-stone-500 dark:text-stone-400' },
-    { label: 'Total', value: stats?.total ?? 0, accent: 'text-stone-900 dark:text-stone-100' },
+    { label: 'Cancelled', value: stats?.cancelled ?? 0, accent: 'text-ink-muted dark:text-stone-400' },
+    { label: 'Total', value: stats?.total ?? 0, accent: 'text-ink-strong dark:text-stone-100' },
   ];
 
   return (

@@ -19,9 +19,9 @@ export function PasswordRequirements({ password }: PasswordRequirementsProps) {
           {met ? (
             <Check aria-hidden="true" className="size-3.5 shrink-0 text-emerald-600" />
           ) : (
-            <Circle aria-hidden="true" className="size-2 shrink-0 fill-stone-300 text-stone-400" />
+            <Circle aria-hidden="true" className="size-2 shrink-0 fill-stone-300 text-ink-faint" />
           )}
-          <span className={cn('text-xs', met ? 'font-medium text-emerald-700' : 'text-stone-500')}>
+          <span className={cn('text-xs', met ? 'font-medium text-emerald-700' : 'text-ink-muted')}>
             {rule.label}
           </span>
           <span className="sr-only">{met ? ' (met)' : ' (not met)'}</span>

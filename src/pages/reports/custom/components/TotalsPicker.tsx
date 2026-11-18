@@ -67,7 +67,7 @@ export function TotalsPicker({ fields, totals, dispatch }: TotalsPickerProps) {
                 />
               </div>
             ) : (
-              <span className="flex-1 text-xs text-stone-500">of rows</span>
+              <span className="flex-1 text-xs text-ink-muted">of rows</span>
             )}
             <button
               type="button"

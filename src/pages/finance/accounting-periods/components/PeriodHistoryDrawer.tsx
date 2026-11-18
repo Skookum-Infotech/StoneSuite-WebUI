@@ -74,7 +74,7 @@ export function PeriodHistoryDrawer({ period, onClose }: { period: Period; onClo
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="rounded p-1 text-stone-500 transition-colors hover:bg-stone-100 hover:text-stone-600"
+            className="rounded p-1 text-ink-muted transition-colors hover:bg-stone-100 hover:text-ink"
           >
             <X className="size-4" />
           </button>
@@ -92,16 +92,16 @@ export function PeriodHistoryDrawer({ period, onClose }: { period: Period; onClo
               {entries.map((e) => (
                 <li key={e.id} className="rounded-lg border border-stone-100 p-3">
                   <div className="flex items-center justify-between gap-2">
-                    <span className={cn('inline-flex items-center rounded px-1.5 py-0.5 type-pill', ACTION_COLORS[e.action] ?? 'bg-stone-100 text-stone-600')}>
+                    <span className={cn('inline-flex items-center rounded px-1.5 py-0.5 type-pill', ACTION_COLORS[e.action] ?? 'bg-stone-100 text-ink')}>
                       {ACTION_LABELS[e.action] ?? e.action}
                     </span>
                     <span className="whitespace-nowrap type-subline">{new Date(e.at).toLocaleString()}</span>
                   </div>
                   {(e.fromStatus || e.toStatus) && (
-                    <p className="mt-1.5 text-xs text-stone-600">
-                      {e.fromStatus && <span className="text-stone-500">{e.fromStatus}</span>}
-                      {e.fromStatus && e.toStatus && <span className="mx-1.5 text-stone-500">→</span>}
-                      {e.toStatus && <span className="font-medium text-stone-800">{e.toStatus}</span>}
+                    <p className="mt-1.5 text-xs text-ink">
+                      {e.fromStatus && <span className="text-ink-muted">{e.fromStatus}</span>}
+                      {e.fromStatus && e.toStatus && <span className="mx-1.5 text-ink-muted">→</span>}
+                      {e.toStatus && <span className="font-medium text-ink-strong">{e.toStatus}</span>}
                     </p>
                   )}
                   {e.note && <p className="mt-1.5 italic type-helper">&ldquo;{e.note}&rdquo;</p>}

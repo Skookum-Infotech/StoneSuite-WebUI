@@ -235,15 +235,15 @@ export default function RefundDetailPage() {
         <SalesDetailSidebar label="Refund Details">
           <WorkflowCard module="refund" statusCode={refund.statusCode} statusLabel={refund.status} workflow={refund.workflow} links={{ paymentId: refund.paymentId, invoiceId: refund.invoiceId }} />
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-            <p className="text-xs font-semibold text-stone-500">Quick Actions</p>
+            <p className="type-card-title">Quick Actions</p>
             <div className="space-y-0.5">
               {canEdit && (
                 <button
                   type="button"
                   onClick={() => navigate(`/sales/refund/${id}/edit`, { state: { initialTab: 'files' } })}
-                  className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs text-stone-700 w-full transition-colors text-left"
+                  className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-button text-ink w-full transition-colors text-left"
                 >
-                  <Upload className="size-4 text-stone-400 shrink-0" aria-hidden="true" />
+                  <Upload className="size-4 text-ink-faint shrink-0" aria-hidden="true" />
                   Upload file
                 </button>
               )}
@@ -251,9 +251,9 @@ export default function RefundDetailPage() {
                 <button
                   type="button"
                   onClick={() => navigate(`/sales/refund/${id}/edit`)}
-                  className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs text-stone-700 w-full transition-colors text-left"
+                  className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-button text-ink w-full transition-colors text-left"
                 >
-                  <Pencil className="size-4 text-stone-400 shrink-0" aria-hidden="true" />
+                  <Pencil className="size-4 text-ink-faint shrink-0" aria-hidden="true" />
                   Edit refund
                 </button>
               )}
@@ -261,10 +261,10 @@ export default function RefundDetailPage() {
                 type="button"
                 onClick={handleExportPdf}
                 disabled={exportingPdf}
-                className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs text-stone-700 w-full transition-colors text-left disabled:opacity-60 disabled:cursor-not-allowed"
+                className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-button text-ink w-full transition-colors text-left disabled:opacity-60 disabled:cursor-not-allowed"
                 aria-label="Export as PDF"
               >
-                {exportingPdf ? <Loader2 className="size-4 text-stone-400 shrink-0 animate-spin" aria-hidden="true" /> : <FileDown className="size-4 text-stone-400 shrink-0" aria-hidden="true" />}
+                {exportingPdf ? <Loader2 className="size-4 text-ink-faint shrink-0 animate-spin" aria-hidden="true" /> : <FileDown className="size-4 text-ink-faint shrink-0" aria-hidden="true" />}
                 {exportingPdf ? 'Exporting…' : 'Export PDF'}
               </button>
             </div>
@@ -274,9 +274,9 @@ export default function RefundDetailPage() {
           </div>
 
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-            <p className="text-xs font-semibold text-stone-500">Status</p>
+            <p className="type-card-title">Status</p>
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
-              <span className="text-stone-500">Status</span>
+              <span className="text-ink-muted">Status</span>
               <RefundStatusControl
                 refund={refund}
                 onChange={(code) => transition.mutate(code)}
@@ -285,16 +285,16 @@ export default function RefundDetailPage() {
               />
             </div>
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
-              <span className="text-stone-500">Customer</span>
-              <CustomerLink id={refund.customer.id} name={refund.customer.name} className="text-stone-700 truncate max-w-[140px] hover:text-accent-foreground hover:underline" />
+              <span className="text-ink-muted">Customer</span>
+              <CustomerLink id={refund.customer.id} name={refund.customer.name} className="text-ink truncate max-w-[140px] hover:text-accent-foreground hover:underline" />
             </div>
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
-              <span className="text-stone-500">Created</span>
-              <span className="text-stone-700">{fmtDate(refund.createdAt)}</span>
+              <span className="text-ink-muted">Created</span>
+              <span className="text-ink">{fmtDate(refund.createdAt)}</span>
             </div>
             <div className="flex justify-between items-center py-2 text-xs">
-              <span className="text-stone-500">Updated</span>
-              <span className="text-stone-700">{fmtDate(refund.updatedAt)}</span>
+              <span className="text-ink-muted">Updated</span>
+              <span className="text-ink">{fmtDate(refund.updatedAt)}</span>
             </div>
           </div>
 
@@ -320,7 +320,7 @@ function ReadonlyField({ label, value, full }: { label: string; value?: string; 
   return (
     <div className={cn('space-y-1', full && 'col-span-full')}>
       <label className={fieldLabelCls}>{label}</label>
-      <div className={readonlyCls}>{value || <span className="text-stone-500">—</span>}</div>
+      <div className={readonlyCls}>{value || <span className="text-ink-muted">—</span>}</div>
     </div>
   );
 }

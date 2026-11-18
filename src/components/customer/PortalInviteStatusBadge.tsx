@@ -22,7 +22,7 @@ export function PortalInviteStatusBadge({
     );
   if (status === "revoked")
     return (
-      <span className="inline-flex items-center gap-1 rounded-full border border-stone-200 bg-stone-100 px-2 py-0.5 text-stone-500 type-pill">
+      <span className="inline-flex items-center gap-1 rounded-full border border-stone-200 bg-stone-100 px-2 py-0.5 text-ink-muted type-pill">
         <XCircle className="size-3" /> Revoked
       </span>
     );

@@ -9,7 +9,7 @@ import { attachmentService, type Attachment } from '@/services/attachmentService
 import { DxfDrawingBody } from './DxfDrawingBody';
 
 import { buttonVariants } from '@/components/ui/button';
-const ACTION_CLASS = 'inline-flex items-center gap-1 rounded px-2 py-1 text-micro font-medium text-stone-600 hover:bg-stone-100 disabled:opacity-50';
+const ACTION_CLASS = 'inline-flex items-center gap-1 rounded px-2 py-1 text-micro font-medium text-ink hover:bg-stone-100 disabled:opacity-50';
 
 type Props = { orderId: string; attachment: Attachment; label: string; canEdit: boolean };
 

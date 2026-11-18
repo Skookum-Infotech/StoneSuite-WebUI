@@ -191,7 +191,7 @@ export default function AddJournalEntryPage() {
             )}
 
             {activeTab === 'audit' && (
-              <p className="py-12 text-center text-sm text-stone-500">
+              <p className="py-12 text-center text-sm text-ink-muted">
                 Audit trail will be available after saving the journal entry.
               </p>
             )}

@@ -46,7 +46,7 @@ export function CreatedOrderDetails({ order }: CreatedOrderDetailsProps) {
             <p className="type-overline">
               Special instructions
             </p>
-            <p className="mt-0.5 whitespace-pre-wrap break-words text-sm text-stone-800">
+            <p className="mt-0.5 whitespace-pre-wrap break-words text-sm text-ink-strong">
               {order.specialInstructions}
             </p>
           </div>

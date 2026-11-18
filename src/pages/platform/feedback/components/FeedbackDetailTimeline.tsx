@@ -20,12 +20,12 @@ import type { FeedbackComment, FeedbackTicketDetail } from '@/types/feedback';
 function StatusChangeEntry({ comment }: { comment: FeedbackComment }) {
   return (
     <div className="flex items-center gap-2 py-1 dark:text-stone-400 type-subline">
-      <ShieldCheck className="size-3 shrink-0 text-stone-400" />
+      <ShieldCheck className="size-3 shrink-0 text-ink-faint" />
       <span>
         {comment.authorName || 'An admin'} moved this to{' '}
-        <span className="font-semibold text-stone-700 dark:text-stone-200">{feedbackStatusLabel(comment.newStatus ?? '')}</span>
+        <span className="font-semibold text-ink dark:text-stone-200">{feedbackStatusLabel(comment.newStatus ?? '')}</span>
       </span>
-      <span className="text-stone-500 dark:text-stone-600">·</span>
+      <span className="text-ink-muted dark:text-stone-600">·</span>
       <span>{formatFeedbackTime(comment.createdAt)}</span>
     </div>
   );
@@ -42,7 +42,7 @@ function CommentEntry({ comment }: { comment: FeedbackComment }) {
       )}
     >
       <div className="flex items-center justify-between gap-2">
-        <span className="text-micro font-semibold text-stone-700 dark:text-stone-200">
+        <span className="text-micro font-semibold text-ink dark:text-stone-200">
           {comment.authorName || (comment.authorKind === 'platform_admin' ? 'Platform Admin' : 'Reporter')}
         </span>
         <div className="flex items-center gap-1.5">
@@ -54,7 +54,7 @@ function CommentEntry({ comment }: { comment: FeedbackComment }) {
           <span className="type-subline">{formatFeedbackTime(comment.createdAt)}</span>
         </div>
       </div>
-      <p className="mt-1 whitespace-pre-wrap text-xs text-stone-700 dark:text-stone-200">{comment.body}</p>
+      <p className="mt-1 whitespace-pre-wrap text-xs text-ink dark:text-stone-200">{comment.body}</p>
     </div>
   );
 }
@@ -94,12 +94,12 @@ export function FeedbackDetailTimeline({ detail }: { detail: FeedbackTicketDetai
   return (
     <div className="space-y-4">
       <div className="rounded-xl border border-stone-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
-        <p className="whitespace-pre-wrap text-sm text-stone-700 dark:text-stone-200">{ticket.description}</p>
+        <p className="whitespace-pre-wrap text-sm text-ink dark:text-stone-200">{ticket.description}</p>
         {(ticket.area || ticket.pageUrl || ticket.userAgent) && (
           <div className="mt-3 space-y-0.5 border-t border-stone-100 pt-3 dark:border-white/10 type-subline">
-            {ticket.area && <p>Area: <span className="text-stone-500 dark:text-stone-300">{feedbackAreaLabel(ticket.area)}</span></p>}
-            {ticket.pageUrl && <p>Page: <span className="text-stone-500 dark:text-stone-300">{ticket.pageUrl}</span></p>}
-            {ticket.userAgent && <p className="truncate">Browser: <span className="text-stone-500 dark:text-stone-300">{ticket.userAgent}</span></p>}
+            {ticket.area && <p>Area: <span className="text-ink-muted dark:text-stone-300">{feedbackAreaLabel(ticket.area)}</span></p>}
+            {ticket.pageUrl && <p>Page: <span className="text-ink-muted dark:text-stone-300">{ticket.pageUrl}</span></p>}
+            {ticket.userAgent && <p className="truncate">Browser: <span className="text-ink-muted dark:text-stone-300">{ticket.userAgent}</span></p>}
           </div>
         )}
         {attachments.length > 0 && (
@@ -113,7 +113,7 @@ export function FeedbackDetailTimeline({ detail }: { detail: FeedbackTicketDetai
                 >
                   <Paperclip className="size-3.5" />
                   {att.fileName}
-                  <span className="text-stone-500">({formatFeedbackFileSize(att.sizeBytes)})</span>
+                  <span className="text-ink-muted">({formatFeedbackFileSize(att.sizeBytes)})</span>
                   <Download className="size-3.5" />
                 </button>
               </li>
@@ -123,7 +123,7 @@ export function FeedbackDetailTimeline({ detail }: { detail: FeedbackTicketDetai
       </div>
 
       <div className="space-y-2.5">
-        <p className="text-xs font-semibold text-stone-500">Timeline</p>
+        <p className="type-card-title">Timeline</p>
         {comments.length === 0 ? (
           <p className="italic type-helper">No replies yet.</p>
         ) : (

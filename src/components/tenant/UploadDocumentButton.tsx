@@ -64,12 +64,12 @@ export function UploadDocumentButton({
                 type="button"
                 title={disabledReason}
                 aria-label={`Why is Upload ${documentLabel} unavailable?`}
-                className="inline-flex size-6 items-center justify-center rounded-md text-stone-400 transition-colors hover:bg-stone-100 hover:text-stone-600 dark:hover:bg-white/10"
+                className="inline-flex size-6 items-center justify-center rounded-md text-ink-muted transition-colors hover:bg-stone-100 hover:text-ink dark:hover:bg-white/10"
               >
                 <Info className="size-3.5" aria-hidden="true" />
               </button>
             </PopoverTrigger>
-            <PopoverContent align="end" className="w-64 p-3 text-xs text-stone-700 dark:text-stone-300">
+            <PopoverContent align="end" className="w-64 p-3 text-xs text-ink dark:text-stone-300">
               {disabledReason}
             </PopoverContent>
           </Popover>

@@ -13,7 +13,7 @@ import type {
 import { buttonVariants } from '@/components/ui/button';
 const SEARCH_DEBOUNCE_MS = 300;
 const SELECT_CLS =
-  'h-9 w-full rounded-xl border border-stone-200 bg-white px-3 text-xs font-semibold text-stone-600 hover:bg-stone-50 cursor-pointer';
+  'h-9 w-full rounded-xl border border-stone-200 bg-white px-3 text-xs font-semibold text-ink hover:bg-stone-50 cursor-pointer';
 
 /**
  * Type (with counts), status (once a type is chosen), date range, "open items
@@ -53,7 +53,7 @@ export function CustomerTransactionFilters({
     <div className="flex flex-col gap-2 border-b border-stone-100 bg-stone-50/60 px-3 py-3 sm:px-4 sm:py-3.5">
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)]">
         <div className="relative">
-          <Search className="pointer-events-none absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-stone-400" />
+          <Search className="pointer-events-none absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-ink-faint" />
           <input
             type="search"
             aria-label="Search by document number"
@@ -61,7 +61,7 @@ export function CustomerTransactionFilters({
             maxLength={100}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="h-9 w-full rounded-xl border border-stone-200 bg-white pl-8.5 pr-3 placeholder:text-stone-500 focus:border-brand/50 focus:outline-none focus:ring-2 focus:ring-brand/40 type-input"
+            className="h-9 w-full rounded-xl border border-stone-200 bg-white pl-8.5 pr-3 placeholder:text-ink-muted focus:border-brand/50 focus:outline-none focus:ring-2 focus:ring-brand/40 type-input"
           />
         </div>
         <Select

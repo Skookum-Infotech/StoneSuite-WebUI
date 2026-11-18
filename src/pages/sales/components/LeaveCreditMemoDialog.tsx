@@ -37,7 +37,7 @@ export function LeaveCreditMemoDialog({ paymentNumber, amount, onStay, onLeave }
           </h3>
         </div>
 
-        <div id="leave-credit-memo-description" className="space-y-3 text-xs text-stone-600">
+        <div id="leave-credit-memo-description" className="space-y-3 text-xs text-ink">
           <p>
             {paymentLabel} is already saved. The extra {amount} is still unapplied on it, and no credit memo has been created.
           </p>

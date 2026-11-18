@@ -137,7 +137,7 @@ function FilterChip({ label, active, onClick }: { label: string; active: boolean
       aria-pressed={active}
       className={cn(
         'rounded-full px-2.5 py-1 text-micro font-semibold transition-colors',
-        active ? 'bg-stone-900 text-white' : 'bg-stone-100 text-stone-500 hover:bg-stone-200 hover:text-stone-700',
+        active ? 'bg-stone-900 text-white' : 'bg-stone-100 text-ink-muted hover:bg-stone-200 hover:text-ink',
       )}
     >
       {label}
@@ -167,14 +167,14 @@ function ActivityRow({
   return (
     <div className="flex items-start gap-3 py-3">
       <div className="flex items-center justify-center w-7 h-7 rounded shrink-0 bg-stone-100 mt-0.5">
-        <Icon className="h-3.5 w-3.5 text-stone-500" aria-hidden="true" />
+        <Icon className="h-3.5 w-3.5 text-ink-muted" aria-hidden="true" />
       </div>
 
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="px-1 rounded bg-stone-100 text-stone-500 type-pill">{typeLabel}</span>
-          <p className="text-xs font-medium text-stone-700 truncate">
-            {activity.subject || <span className="text-stone-500">—</span>}
+          <span className="px-1 rounded bg-stone-100 text-ink-muted type-pill">{typeLabel}</span>
+          <p className="text-xs font-medium text-ink truncate">
+            {activity.subject || <span className="text-ink-muted">—</span>}
           </p>
         </div>
         {activity.body && (
@@ -184,7 +184,7 @@ function ActivityRow({
           <span>{formatOccurredAt(activity.occurredAt)}</span>
           {activity.author.name && (
             <>
-              <span className="text-stone-500">·</span>
+              <span className="text-ink-muted">·</span>
               <span>{activity.author.name}</span>
             </>
           )}
@@ -218,7 +218,7 @@ function ActivityRow({
                 type="button"
                 onClick={onEdit}
                 aria-label={`Edit ${rowLabel}`}
-                className="p-1.5 rounded text-stone-500 hover:text-stone-700 hover:bg-stone-100 transition-colors"
+                className="p-1.5 rounded text-ink-muted hover:text-ink hover:bg-stone-100 transition-colors"
               >
                 <Pencil className="h-3.5 w-3.5" />
               </button>
@@ -228,7 +228,7 @@ function ActivityRow({
                 type="button"
                 onClick={onDeleteClick}
                 aria-label={`Delete ${rowLabel}`}
-                className="p-1.5 rounded text-stone-500 hover:text-danger-ink hover:bg-destructive/5 transition-colors"
+                className="p-1.5 rounded text-ink-muted hover:text-danger-ink hover:bg-destructive/5 transition-colors"
               >
                 <Trash2 className="h-3.5 w-3.5" />
               </button>

@@ -32,7 +32,7 @@ function TicketRow({ ticket, selected, onSelect }: { ticket: FeedbackTicket; sel
         <span
           className={cn(
             'flex size-9 shrink-0 items-center justify-center rounded-lg transition-colors duration-150',
-            selected ? 'bg-brand/25 text-link' : 'bg-stone-100 text-stone-500 dark:bg-white/10 dark:text-stone-400',
+            selected ? 'bg-brand/25 text-link' : 'bg-stone-100 text-ink-muted dark:bg-white/10 dark:text-stone-400',
           )}
         >
           <category.icon className="size-4" aria-hidden="true" />
@@ -40,13 +40,13 @@ function TicketRow({ ticket, selected, onSelect }: { ticket: FeedbackTicket; sel
         <span className="min-w-0 flex-1">
           <span className="flex items-center justify-between gap-2">
             <span className="flex min-w-0 items-baseline gap-1.5">
-              <span className="text-sm font-semibold text-stone-900 dark:text-stone-100">{ticket.ticketNumber}</span>
-              <span className="truncate text-xs text-stone-500 dark:text-stone-400">{category.label}</span>
+              <span className="text-sm font-semibold text-ink-strong dark:text-stone-100">{ticket.ticketNumber}</span>
+              <span className="truncate text-xs text-ink-muted dark:text-stone-400">{category.label}</span>
             </span>
             <FeedbackStatusPill status={ticket.status} />
           </span>
-          <span className="mt-1 line-clamp-2 text-sm text-stone-600 dark:text-stone-300">{ticket.description}</span>
-          <span className="mt-1.5 flex items-center justify-between gap-2 text-xs text-stone-500 dark:text-stone-400">
+          <span className="mt-1 line-clamp-2 text-sm text-ink dark:text-stone-300">{ticket.description}</span>
+          <span className="mt-1.5 flex items-center justify-between gap-2 text-xs text-ink-muted dark:text-stone-400">
             <span>{formatFeedbackTime(ticket.createdAt)}</span>
             {rated && (
               <span aria-label={`Rated ${ticket.rating} out of 5`} className="inline-flex items-center gap-1 font-medium text-warning-ink dark:text-amber-400">

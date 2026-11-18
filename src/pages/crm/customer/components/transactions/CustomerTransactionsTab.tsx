@@ -27,7 +27,7 @@ const UNAVAILABLE_MESSAGE = 'Transactions are not available for this customer.';
 const NO_ACCESS_MESSAGE = "You don't have access to any transaction types for this customer.";
 
 const GHOST_BTN =
-  'rounded-xl border border-stone-200 bg-white px-3.5 py-2 text-xs font-semibold text-stone-600 hover:bg-stone-50 cursor-pointer';
+  'rounded-xl border border-stone-200 bg-white px-3.5 py-2 text-xs font-semibold text-ink hover:bg-stone-50 cursor-pointer';
 
 function errorText(err: unknown): string {
   if (err instanceof AxiosError && err.response?.status === HTTP_NOT_FOUND) return UNAVAILABLE_MESSAGE;
@@ -82,7 +82,7 @@ export function CustomerTransactionsTab({ customerId }: { customerId: string }) 
   };
 
   if (overview && overview.types.length === 0) {
-    return <p role="status" className="px-1 py-8 text-center text-xs font-semibold text-stone-500">{NO_ACCESS_MESSAGE}</p>;
+    return <p role="status" className="px-1 py-8 text-center text-xs font-semibold text-ink-muted">{NO_ACCESS_MESSAGE}</p>;
   }
 
   const failure = (summary.isError && !overview ? summary.error : null) ?? (list.isError && !list.data ? list.error : null);
@@ -104,16 +104,16 @@ export function CustomerTransactionsTab({ customerId }: { customerId: string }) 
         ) : rows.length === 0 ? (
           <div className="flex flex-col items-center gap-2 px-4 py-12 text-center sm:py-16">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-stone-100">
-              <Search className="size-5 text-stone-400" />
+              <Search className="size-5 text-ink-faint" />
             </div>
             {isFiltered(filters) ? (
               <>
-                <p className="text-xs font-semibold text-stone-500">No matching transactions</p>
+                <p className="text-xs font-semibold text-ink-muted">No matching transactions</p>
                 <p className="type-helper">Try adjusting your search or filters</p>
                 <button type="button" onClick={clear} className={cn(GHOST_BTN, 'mt-2')}>Clear filters</button>
               </>
             ) : (
-              <p className="text-xs font-semibold text-stone-500">No transactions for this customer yet</p>
+              <p className="text-xs font-semibold text-ink-muted">No transactions for this customer yet</p>
             )}
           </div>
         ) : (

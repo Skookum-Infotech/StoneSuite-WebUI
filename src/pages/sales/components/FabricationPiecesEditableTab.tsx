@@ -10,7 +10,7 @@ import type { FabricationJobPiece } from '@/types/fabrication';
 
 import { buttonVariants } from '@/components/ui/button';
 const inlineCls =
-  'w-full rounded border border-stone-200 bg-white px-2 py-1 type-input outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-900/5 placeholder:text-stone-500 transition-all';
+  'w-full rounded border border-stone-200 bg-white px-2 py-1 type-input outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-900/5 placeholder:text-ink-muted transition-all';
 
 const COLS = [
   { label: '#', w: 'w-8' },
@@ -99,7 +99,7 @@ export function FabricationPiecesEditableTab({ jobId, pieces, sourceOrderItems }
   return (
     <div className="rounded-lg border border-stone-200 bg-white overflow-hidden">
       <div className="overflow-x-auto modal-scrollbar">
-        <table className="w-full text-left text-xs">
+        <table className="w-full text-left type-cell">
           <thead className="bg-stone-50 border-b border-stone-200">
             <tr className="divide-x divide-stone-200">
               {COLS.map((c) => (
@@ -115,35 +115,35 @@ export function FabricationPiecesEditableTab({ jobId, pieces, sourceOrderItems }
                 <tr key={piece.id} className="bg-brand/5 divide-x divide-stone-100">
                   <InlineRow pieceNumber={piece.pieceNumber} draft={draft} onChange={updateDraft} sourceOrderItems={sourceOrderItems} />
                   <td className="px-2 py-1.5">
-                    <button type="button" onClick={cancelDraft} className="text-stone-500 hover:text-stone-600 transition-colors" aria-label={`Cancel editing piece ${piece.pieceName || piece.pieceNumber}`}>
+                    <button type="button" onClick={cancelDraft} className="text-ink-muted hover:text-ink transition-colors" aria-label={`Cancel editing piece ${piece.pieceName || piece.pieceNumber}`}>
                       <X className="size-3.5" />
                     </button>
                   </td>
                 </tr>
               ) : (
                 <tr key={piece.id} className="hover:bg-stone-50/70 transition-colors group divide-x divide-stone-100">
-                  <td className="px-2.5 py-2.5 text-stone-500 tabular-nums">{piece.pieceNumber}</td>
-                  <td className="px-2.5 py-2.5 font-medium text-stone-800">{piece.pieceName || <span className="text-stone-500">—</span>}</td>
-                  <td className="px-2.5 py-2.5 text-stone-500">{piece.pieceType || '—'}</td>
-                  <td className="px-2.5 py-2.5 tabular-nums text-right text-stone-600">{piece.lengthMm || '—'}</td>
-                  <td className="px-2.5 py-2.5 tabular-nums text-right text-stone-600">{piece.widthMm || '—'}</td>
-                  <td className="px-2.5 py-2.5 tabular-nums text-right text-stone-600">{piece.thicknessMm || '—'}</td>
-                  <td className="px-2.5 py-2.5 tabular-nums text-right text-stone-500">{piece.sinkCutoutCount || '0'}</td>
-                  <td className="px-2.5 py-2.5 tabular-nums text-right text-stone-500">{piece.cooktopCutoutCount || '0'}</td>
-                  <td className="px-2.5 py-2.5 tabular-nums text-right text-stone-500">{piece.seamCount || '0'}</td>
-                  <td className="px-2.5 py-2.5 text-stone-500 truncate max-w-[160px]">
+                  <td className="type-cell px-2.5 py-2.5 tabular-nums">{piece.pieceNumber}</td>
+                  <td className="type-cell px-2.5 py-2.5 font-medium">{piece.pieceName || <span className="text-ink-muted">—</span>}</td>
+                  <td className="type-cell px-2.5 py-2.5">{piece.pieceType || '—'}</td>
+                  <td className="type-cell px-2.5 py-2.5 tabular-nums text-right">{piece.lengthMm || '—'}</td>
+                  <td className="type-cell px-2.5 py-2.5 tabular-nums text-right">{piece.widthMm || '—'}</td>
+                  <td className="type-cell px-2.5 py-2.5 tabular-nums text-right">{piece.thicknessMm || '—'}</td>
+                  <td className="type-cell px-2.5 py-2.5 tabular-nums text-right">{piece.sinkCutoutCount || '0'}</td>
+                  <td className="type-cell px-2.5 py-2.5 tabular-nums text-right">{piece.cooktopCutoutCount || '0'}</td>
+                  <td className="type-cell px-2.5 py-2.5 tabular-nums text-right">{piece.seamCount || '0'}</td>
+                  <td className="type-cell px-2.5 py-2.5 truncate max-w-[160px]">
                     {sourceOrderItems.find((i) => i.id === piece.salesOrderItemUuid)?.label ?? '—'}
                   </td>
                   <td className="px-2 py-2.5">
                     <div className="flex items-center gap-1.5">
-                      <button type="button" onClick={() => startEdit(piece)} className="text-stone-500 hover:text-stone-700 transition-colors" aria-label={`Edit piece ${piece.pieceName || piece.pieceNumber}`}>
+                      <button type="button" onClick={() => startEdit(piece)} className="text-ink-muted hover:text-ink transition-colors" aria-label={`Edit piece ${piece.pieceName || piece.pieceNumber}`}>
                         <Pencil className="size-3.5" />
                       </button>
                       <button
                         type="button"
                         onClick={() => removeMutation.mutate(piece.id)}
                         disabled={removeMutation.isPending && removeMutation.variables === piece.id}
-                        className="text-stone-500 hover:text-danger-ink transition-colors disabled:opacity-50"
+                        className="text-ink-muted hover:text-danger-ink transition-colors disabled:opacity-50"
                         aria-label={`Remove piece ${piece.pieceName || piece.pieceNumber}`}
                       >
                         {removeMutation.isPending && removeMutation.variables === piece.id
@@ -158,7 +158,7 @@ export function FabricationPiecesEditableTab({ jobId, pieces, sourceOrderItems }
               <tr className="bg-brand/5 divide-x divide-stone-100">
                 <InlineRow pieceNumber={pieces.length + 1} draft={draft} onChange={updateDraft} sourceOrderItems={sourceOrderItems} />
                 <td className="px-2 py-1.5">
-                  <button type="button" onClick={cancelDraft} className="text-stone-500 hover:text-stone-600 transition-colors" aria-label="Cancel new piece">
+                  <button type="button" onClick={cancelDraft} className="text-ink-muted hover:text-ink transition-colors" aria-label="Cancel new piece">
                     <X className="size-3.5" />
                   </button>
                 </td>
@@ -171,7 +171,7 @@ export function FabricationPiecesEditableTab({ jobId, pieces, sourceOrderItems }
       {pieces.length === 0 && !isAdding && (
         <div className="flex flex-col items-center gap-1.5 py-8 text-center">
           <p className="type-helper">No pieces on this job yet.</p>
-          <p className="type-helper">Click <strong className="text-stone-500">+ Add Piece</strong> to add one.</p>
+          <p className="type-helper">Click <strong className="text-ink-muted">+ Add Piece</strong> to add one.</p>
         </div>
       )}
 
@@ -217,7 +217,7 @@ function InlineRow({ pieceNumber, draft, onChange, sourceOrderItems }: {
 }) {
   return (
     <>
-      <td className="px-2.5 py-1.5 text-stone-500 tabular-nums">{pieceNumber}</td>
+      <td className="type-cell px-2.5 py-1.5 tabular-nums">{pieceNumber}</td>
       <td className="px-2 py-1.5"><input autoFocus type="text" value={draft.pieceName} onChange={(e) => onChange('pieceName', e.target.value)} placeholder="Island Top" className={cn(inlineCls, 'min-w-[110px]')} aria-label="Piece Name" /></td>
       <td className="px-2 py-1.5"><input type="text" value={draft.pieceType} onChange={(e) => onChange('pieceType', e.target.value)} placeholder="countertop" className={cn(inlineCls, 'min-w-[90px]')} aria-label="Piece Type" /></td>
       <td className="px-2 py-1.5"><input type="number" min="0" step="0.1" value={draft.lengthMm} onChange={(e) => onChange('lengthMm', e.target.value)} placeholder="0" className={cn(inlineCls, 'w-20 text-right')} aria-label="Length mm" /></td>

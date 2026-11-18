@@ -16,9 +16,9 @@ export interface PlannerSpan {
 // Every control in the toolbar is 14px type and 32px high, to match the date
 // picker's own trigger — 36px on a phone, where a finger is the pointer.
 const NAV_BUTTON_CLS =
-  'inline-flex size-9 items-center sm:size-8 justify-center rounded-lg border border-stone-200 bg-white text-stone-600 shadow-sm transition-colors hover:bg-stone-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50';
+  'inline-flex size-9 items-center sm:size-8 justify-center rounded-lg border border-stone-200 bg-white text-ink shadow-sm transition-colors hover:bg-stone-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50';
 const TODAY_BUTTON_CLS =
-  'h-9 rounded-lg border border-stone-200 bg-white px-3 text-sm sm:h-8 font-medium text-stone-700 shadow-sm transition-colors hover:bg-stone-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 disabled:cursor-default disabled:opacity-50';
+  'h-9 rounded-lg border border-stone-200 bg-white px-3 text-sm sm:h-8 font-medium text-ink shadow-sm transition-colors hover:bg-stone-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 disabled:cursor-default disabled:opacity-50';
 
 /** Previous / next / Today, the window's heading and a jump-to-date picker.
  *  `onStep` takes -1 (back), 1 (forward) or 0 (today).

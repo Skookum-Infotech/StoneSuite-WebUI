@@ -77,7 +77,7 @@ export function ConfirmVendorBillStatusDialog({ target, billNumber, pending, onC
           </div>
         </div>
 
-        <p className="mb-4 text-xs text-stone-600">{copy.body}</p>
+        <p className="mb-4 text-xs text-ink">{copy.body}</p>
 
         <div className="flex justify-end gap-2">
           <button

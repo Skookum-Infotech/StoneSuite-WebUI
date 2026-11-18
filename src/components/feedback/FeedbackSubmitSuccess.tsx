@@ -25,7 +25,7 @@ export function FeedbackSubmitSuccess({
       <h2 className="mt-4 dark:text-stone-100 type-dialog-title">
         Ticket {ticket.ticketNumber} submitted
       </h2>
-      <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
+      <p className="mt-1 text-sm text-ink-muted dark:text-stone-400">
         Thanks for telling us. You&apos;ll get a notification as soon as support replies.
       </p>
 

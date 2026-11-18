@@ -215,7 +215,7 @@ export default function AddVendorPaymentPage() {
         )}
 
         {fromBillId && sourceBillLoading && (
-          <div role="status" className="flex shrink-0 items-center gap-2 border-b border-stone-200 bg-white px-5 py-2 text-xs text-stone-600">
+          <div role="status" className="flex shrink-0 items-center gap-2 border-b border-stone-200 bg-white px-5 py-2 text-xs text-ink">
             <Loader2 className="size-3.5 animate-spin" /> Loading source vendor bill…
           </div>
         )}
@@ -242,14 +242,14 @@ export default function AddVendorPaymentPage() {
                 <div className="space-y-1.5">
                   {applications.map((app) => (
                     <div key={app.vendorBillUuid} className="flex items-center justify-between rounded-lg border border-stone-200 bg-stone-50 px-3 py-2 text-xs">
-                      <span className="font-medium text-stone-700">{appliedBillNumbers[app.vendorBillUuid]}</span>
+                      <span className="font-medium text-ink">{appliedBillNumbers[app.vendorBillUuid]}</span>
                       <div className="flex items-center gap-2">
-                        <span className="tabular-nums text-stone-600">{currency(app.amount)}</span>
+                        <span className="tabular-nums text-ink">{currency(app.amount)}</span>
                         <button
                           type="button"
                           onClick={() => removeApplication(app.vendorBillUuid)}
                           aria-label={`Remove application to ${appliedBillNumbers[app.vendorBillUuid]}`}
-                          className="rounded p-0.5 text-stone-500 hover:bg-stone-200 hover:text-stone-600 transition-colors"
+                          className="rounded p-0.5 text-ink-muted hover:bg-stone-200 hover:text-ink transition-colors"
                         >
                           <X className="size-3.5" />
                         </button>

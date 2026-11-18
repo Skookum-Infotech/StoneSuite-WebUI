@@ -129,7 +129,7 @@ export function KpiStrip({
 
   if (metrics.length === 0) {
     return (
-      <div className="rounded-2xl border border-dashed border-stone-300 p-[18px] text-center text-sm text-stone-500">
+      <div className="rounded-2xl border border-dashed border-stone-300 p-[18px] text-center text-sm text-ink-muted">
         No KPI data available for your role.
       </div>
     );
@@ -157,7 +157,7 @@ function KpiTile({ metric, className }: { metric: KpiMetric; className?: string 
   const body = (
     <>
       <div className="flex items-center gap-1.5">
-        <span className="flex size-5 shrink-0 items-center justify-center rounded-md bg-stone-100 text-stone-500 transition-colors group-hover:bg-accent group-hover:text-accent-foreground">
+        <span className="flex size-5 shrink-0 items-center justify-center rounded-md bg-stone-100 text-ink-muted transition-colors group-hover:bg-accent group-hover:text-accent-foreground">
           <Icon className="size-3" aria-hidden="true" />
         </span>
         <span className="truncate type-overline">{meta.label}</span>

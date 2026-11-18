@@ -155,7 +155,7 @@ export default function WorkflowPlaceholderPage(): React.JSX.Element {
                 Coming Soon
               </span>
             </div>
-            <p className="text-sm text-stone-500">{meta.description}</p>
+            <p className="text-sm text-ink-muted">{meta.description}</p>
           </div>
         </div>
 
@@ -163,13 +163,13 @@ export default function WorkflowPlaceholderPage(): React.JSX.Element {
         <div className="mt-6 flex-1 flex items-center justify-center border-t border-stone-100 pt-6">
           <div className="text-center max-w-sm">
             <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-3xl bg-stone-100">
-              <Icon className="size-9 text-stone-400" />
+              <Icon className="size-9 text-ink-faint" />
             </div>
             <h2 className="type-dialog-title">
               Under Development
             </h2>
-            <p className="mt-1.5 text-sm text-stone-500 leading-relaxed">
-              The <span className="font-medium text-stone-600">{meta.title}</span> module is
+            <p className="mt-1.5 text-sm text-ink-muted leading-relaxed">
+              The <span className="font-medium text-ink">{meta.title}</span> module is
               being built. Full functionality will be available soon.
             </p>
           </div>

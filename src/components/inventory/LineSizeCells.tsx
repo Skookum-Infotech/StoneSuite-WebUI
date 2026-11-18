@@ -18,7 +18,7 @@ const isStated = (v: Stated) => v !== null && v !== undefined && v !== '';
  *  decides which kind of row it will become. */
 const foldsAway = (units: string | undefined) => Boolean(units?.trim()) && !isAreaUnit(units);
 
-const foldedCellCls = 'px-2.5 py-2.5 text-center text-stone-500';
+const foldedCellCls = 'px-2.5 py-2.5 text-center text-ink-muted';
 
 /** The four editable slab-size cells of a line-item row (length, width, thickness,
  *  slabs), or one merged cell when the line's unit is not an area unit. */

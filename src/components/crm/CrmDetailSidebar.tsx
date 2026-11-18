@@ -38,7 +38,7 @@ function fmtDate(iso: string): string {
 const cardCls =
   "rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4";
 const headingCls =
-  "text-xs font-semibold text-stone-500";
+  "text-xs font-semibold text-ink-muted";
 const rowCls =
   "flex justify-between items-center py-2 border-b border-stone-100 last:border-0 text-xs";
 const actionRowCls = quickActionRowCls;
@@ -79,7 +79,7 @@ export function CrmDetailSidebar({
             className={actionRowCls}
             aria-label="Upload file"
           >
-            <Upload className="size-4 text-stone-400 shrink-0" />
+            <Upload className="size-4 text-ink-faint shrink-0" />
             Upload file
           </button>
           {onEdit && (
@@ -89,7 +89,7 @@ export function CrmDetailSidebar({
               className={actionRowCls}
               aria-label="Edit record"
             >
-              <Pencil className="size-4 text-stone-400 shrink-0" />
+              <Pencil className="size-4 text-ink-faint shrink-0" />
               Edit record
             </button>
           )}
@@ -102,9 +102,9 @@ export function CrmDetailSidebar({
               aria-label="Export as PDF"
             >
               {exportingPdf ? (
-                <Loader2 className="size-4 text-stone-400 shrink-0 animate-spin" />
+                <Loader2 className="size-4 text-ink-faint shrink-0 animate-spin" />
               ) : (
-                <FileDown className="size-4 text-stone-400 shrink-0" />
+                <FileDown className="size-4 text-ink-faint shrink-0" />
               )}
               {exportingPdf ? "Exporting…" : "Export PDF"}
             </button>
@@ -125,26 +125,26 @@ export function CrmDetailSidebar({
       <div className={cardCls}>
         <p className={headingCls}>Status</p>
         <div className={rowCls}>
-          <span className="text-xs text-stone-500">Status</span>
+          <span className="text-xs text-ink-muted">Status</span>
           {statusControl ?? (statusInfo ? (
             <Badge color={resolveStatusColor(statusInfo.stateKey, statusInfo.color)}>{statusInfo.statusLabel}</Badge>
           ) : (
-            <span className="text-stone-500">—</span>
+            <span className="text-ink-muted">—</span>
           ))}
         </div>
         <div className={rowCls}>
-          <span className="text-xs text-stone-500">Account owner</span>
-          <span className={owner ? "text-xs text-stone-700" : "text-xs text-stone-500"}>
+          <span className="text-xs text-ink-muted">Account owner</span>
+          <span className={owner ? "text-xs text-ink" : "text-xs text-ink-muted"}>
             {owner?.fullName ?? "—"}
           </span>
         </div>
         <div className={rowCls}>
-          <span className="text-xs text-stone-500">Created</span>
-          <span className="text-xs text-stone-700">{fmtDate(createdAt)}</span>
+          <span className="text-xs text-ink-muted">Created</span>
+          <span className="text-xs text-ink">{fmtDate(createdAt)}</span>
         </div>
         <div className={rowCls}>
-          <span className="text-xs text-stone-500">Updated</span>
-          <span className="text-xs text-stone-700">{fmtDate(updatedAt)}</span>
+          <span className="text-xs text-ink-muted">Updated</span>
+          <span className="text-xs text-ink">{fmtDate(updatedAt)}</span>
         </div>
       </div>
 
@@ -207,7 +207,7 @@ export function CrmDetailSidebar({
               aria-label="Close details"
               className="flex size-7 items-center justify-center rounded-full hover:bg-stone-100 transition-colors"
             >
-              <X className="size-4 text-stone-500" />
+              <X className="size-4 text-ink-muted" />
             </button>
           </div>
 

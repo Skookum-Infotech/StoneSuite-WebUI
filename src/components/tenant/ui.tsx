@@ -43,7 +43,7 @@ export function Badge({
         size === 'sm'
           ? 'gap-1 px-1.5 py-px text-micro font-medium'
           : 'gap-1.5 px-2.5 py-0.5 type-pill',
-        !color && 'border-stone-200 bg-stone-100 text-stone-600 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-300',
+        !color && 'border-stone-200 bg-stone-100 text-ink dark:border-stone-700 dark:bg-stone-800 dark:text-stone-300',
         className,
       )}
     >
@@ -61,7 +61,7 @@ export function Badge({
 
 export function Spinner({ label = 'Loading…' }: { label?: string }) {
   return (
-    <div role="status" className="flex items-center gap-2 py-10 text-sm text-stone-500">
+    <div role="status" className="flex items-center gap-2 py-10 text-sm text-ink-muted">
       <Loader2 className="size-4 animate-spin" aria-hidden="true" />
       {label}
     </div>
@@ -89,7 +89,7 @@ export function ErrorNote({
 
 export function EmptyState({ children }: { children: ReactNode }) {
   return (
-    <div className="rounded-xl border border-dashed border-stone-300 p-8 text-center text-sm text-stone-500 dark:border-stone-700">
+    <div className="rounded-xl border border-dashed border-stone-300 p-8 text-center text-sm text-ink-muted dark:border-stone-700">
       {children}
     </div>
   );

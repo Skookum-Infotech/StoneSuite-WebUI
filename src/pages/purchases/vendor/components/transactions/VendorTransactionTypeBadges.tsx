@@ -4,7 +4,7 @@ import type { VendorTransactionsOverview } from '@/types/vendorTransactions';
 
 const CHIP_BASE =
   'inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
-const CHIP_IDLE = 'border-stone-200 bg-white text-stone-600 hover:bg-stone-50';
+const CHIP_IDLE = 'border-stone-200 bg-white text-ink hover:bg-stone-50';
 const CHIP_ACTIVE = 'border-[#001219] bg-[#001219] text-white';
 
 function Chip({
@@ -25,7 +25,7 @@ function Chip({
     >
       {label}
       {count !== undefined && (
-        <span className={cn('rounded-full px-1.5 text-micro tabular-nums', active ? 'bg-white/20' : 'bg-stone-100 text-stone-500')}>
+        <span className={cn('rounded-full px-1.5 text-micro tabular-nums', active ? 'bg-white/20' : 'bg-stone-100 text-ink-muted')}>
           {count.toLocaleString()}
         </span>
       )}

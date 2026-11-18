@@ -114,7 +114,7 @@ export function InviteModal({
             type="button"
             onClick={onClose}
             aria-label="Close modal"
-            className="rounded-lg p-1.5 text-stone-500 transition hover:bg-stone-100 hover:text-stone-600"
+            className="rounded-lg p-1.5 text-ink-muted transition hover:bg-stone-100 hover:text-ink"
           >
             <X className="size-4" />
           </button>
@@ -130,7 +130,7 @@ export function InviteModal({
               </span>
             </div>
             <div className="flex items-center gap-2 rounded-lg border border-stone-200 bg-stone-50 p-2">
-              <code className="flex-1 truncate px-2 text-xs text-stone-700" title={undeliveredLink}>
+              <code className="flex-1 truncate px-2 text-xs text-ink" title={undeliveredLink}>
                 {undeliveredLink}
               </code>
               <button
@@ -171,7 +171,7 @@ export function InviteModal({
           <div className="space-y-1.5">
             <Label htmlFor="invite-name">
               Full name{" "}
-              <span className="text-stone-500 font-normal">(optional)</span>
+              <span className="text-ink-muted font-normal">(optional)</span>
             </Label>
             <Input
               id="invite-name"
@@ -185,7 +185,7 @@ export function InviteModal({
           <div className="space-y-1.5">
             <Label htmlFor="invite-role">
               Initial role{" "}
-              <span className="text-stone-500 font-normal">(optional)</span>
+              <span className="text-ink-muted font-normal">(optional)</span>
             </Label>
             <Controller
               control={control}
@@ -196,7 +196,7 @@ export function InviteModal({
                   name={field.name}
                   value={field.value ?? ""}
                   onChange={(e) => field.onChange(e.target.value)}
-                  className="h-10 w-full rounded-lg border border-stone-200 bg-white px-3 text-sm text-stone-700 focus:outline-none focus:ring-2 focus:ring-brand/50"
+                  className="h-10 w-full rounded-lg border border-stone-200 bg-white px-3 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-brand/50"
                 >
                   <option value="">No role assigned</option>
                   {(rolesQ.data ?? []).map((r) => (

@@ -24,7 +24,7 @@ export function PlannerViewSwitch({ view, onChange }: {
             onClick={() => onChange(option.key)}
             className={cn(
               'flex-1 rounded-md px-3 text-sm font-medium transition-colors sm:flex-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50',
-              active ? 'bg-brand text-stone-950 shadow-sm' : 'text-stone-600 hover:bg-stone-100',
+              active ? 'bg-brand text-ink-strong shadow-sm' : 'text-ink hover:bg-stone-100',
             )}
           >
             {option.label}

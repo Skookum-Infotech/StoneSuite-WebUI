@@ -22,7 +22,7 @@ function Stat({ label, value, hint, tone }: { label: string; value: string; hint
   return (
     <div className="rounded-xl border border-stone-200 bg-white px-4 py-3 shadow-sm">
       <p className="type-overline">{label}</p>
-      <p className={cn('mt-0.5 text-lg font-bold tabular-nums', tone === 'warn' ? 'text-amber-700' : 'text-stone-900')}>{value}</p>
+      <p className={cn('mt-0.5 text-lg font-bold tabular-nums', tone === 'warn' ? 'text-amber-700' : 'text-ink-strong')}>{value}</p>
       {hint && <p className="type-helper">{hint}</p>}
     </div>
   );
@@ -65,9 +65,9 @@ export default function BinDetailPage() {
         subtitle={`${bin.path} · ${bin.warehouseName ?? ''}`.replace(/ · $/, '')}
         statusBadge={(
           <span className="flex items-center gap-1.5">
-            <span className="rounded bg-stone-100 px-1.5 py-0.5 capitalize text-stone-600 type-pill">{bin.type}</span>
+            <span className="rounded bg-stone-100 px-1.5 py-0.5 capitalize text-ink type-pill">{bin.type}</span>
             {bin.isWip && <span className="rounded bg-violet-100 px-1.5 py-0.5 text-violet-700 type-pill">WIP</span>}
-            {!bin.isActive && <span className="rounded bg-stone-100 px-1.5 py-0.5 text-stone-500 type-pill">Inactive</span>}
+            {!bin.isActive && <span className="rounded bg-stone-100 px-1.5 py-0.5 text-ink-muted type-pill">Inactive</span>}
           </span>
         )}
       />

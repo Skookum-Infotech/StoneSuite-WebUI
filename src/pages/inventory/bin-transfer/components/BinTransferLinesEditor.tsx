@@ -63,7 +63,7 @@ export function BinTransferLinesEditor({ lines, onChange, bins, warehouseId, loc
       {lines.length === 0 ? (
         <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-stone-300 bg-stone-50/60 py-10 text-center">
           <div className="rounded-xl bg-white p-3 shadow-sm ring-1 ring-stone-200">
-            <Layers className="size-5 text-stone-400" aria-hidden="true" />
+            <Layers className="size-5 text-ink-faint" aria-hidden="true" />
           </div>
           <p className="type-card-title">No slabs on this transfer yet</p>
           <p className="max-w-xs type-helper">
@@ -72,15 +72,15 @@ export function BinTransferLinesEditor({ lines, onChange, bins, warehouseId, loc
         </div>
       ) : (
         <div className="overflow-x-auto rounded-xl border border-stone-200 modal-scrollbar">
-          <table className="w-full min-w-[640px] text-left text-xs">
+          <table className="w-full min-w-[640px] text-left type-cell">
             <thead className="border-b border-stone-200 bg-table-header">
               <tr>
                 <th className="px-3 py-2.5 type-th">Slab</th>
                 <th className="px-3 py-2.5 text-right type-th">Area</th>
                 <th className="px-3 py-2.5 type-th">Now in</th>
-                <th className="w-6 px-0 py-2.5" aria-hidden="true" />
+                <th className="type-th w-6 px-0 py-2.5" aria-hidden="true" />
                 <th className="w-64 px-3 py-2.5 type-th">Move to</th>
-                <th className="w-10 px-2 py-2.5"><span className="sr-only">Remove</span></th>
+                <th className="type-th w-10 px-2 py-2.5"><span className="sr-only">Remove</span></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-stone-100">
@@ -90,10 +90,10 @@ export function BinTransferLinesEditor({ lines, onChange, bins, warehouseId, loc
                     <span className="block type-record-id">{l.serial}</span>
                     <span className="block truncate type-subline">{l.itemName || '—'}</span>
                   </td>
-                  <td className="whitespace-nowrap px-3 py-2.5 text-right tabular-nums text-stone-700">
+                  <td className="type-cell whitespace-nowrap px-3 py-2.5 text-right tabular-nums">
                     {l.area.toFixed(2)} {l.areaUnitCode}
                   </td>
-                  <td className="px-3 py-2.5 text-stone-500">{l.currentBinPath || <span className="text-stone-500">No bin</span>}</td>
+                  <td className="type-cell px-3 py-2.5">{l.currentBinPath || <span className="text-ink-muted">No bin</span>}</td>
                   <td className="px-0 py-2.5 text-ink-muted"><ArrowRight className="size-3.5" aria-hidden="true" /></td>
                   <td className="px-3 py-2">
                     <BinPicker
@@ -109,7 +109,7 @@ export function BinTransferLinesEditor({ lines, onChange, bins, warehouseId, loc
                       type="button"
                       onClick={() => removeLine(l.key)}
                       aria-label={`Remove line ${i + 1}, ${l.serial}`}
-                      className="rounded p-1.5 text-stone-500 transition-colors hover:bg-destructive/10 hover:text-danger-ink"
+                      className="rounded p-1.5 text-ink-muted transition-colors hover:bg-destructive/10 hover:text-danger-ink"
                     >
                       <Trash2 className="size-3.5" />
                     </button>

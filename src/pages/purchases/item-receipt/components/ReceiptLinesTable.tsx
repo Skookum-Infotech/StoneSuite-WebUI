@@ -11,7 +11,7 @@ const COLUMN_COUNT = 9;
 const QTY_DISPLAY_DECIMALS = 3;
 
 const inlineCls =
-  'w-full rounded border border-stone-200 bg-white px-2 py-1 type-input outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-900/5 placeholder:text-stone-500 transition-all';
+  'w-full rounded border border-stone-200 bg-white px-2 py-1 type-input outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-900/5 placeholder:text-ink-muted transition-all';
 
 // Every row here is a fixed line inherited from the source purchase order —
 // unlike PurchaseOrderItemsTab, there is no add/remove: a receipt can only
@@ -56,7 +56,7 @@ export function ReceiptLinesTable({ lines, onChange, lineErrors, serials, wareho
   return (
     <div className="rounded-lg border border-stone-200 bg-white overflow-hidden">
       <div className="overflow-x-auto modal-scrollbar">
-        <table className="w-full text-left text-xs">
+        <table className="w-full text-left type-cell">
           <thead className="bg-stone-50 border-b border-stone-200">
             <tr className="divide-x divide-stone-200">
               {[
@@ -88,18 +88,18 @@ export function ReceiptLinesTable({ lines, onChange, lineErrors, serials, wareho
               return (
                 <Fragment key={line.purchaseOrderItemId}>
                 <tr className="hover:bg-stone-50/70 transition-colors divide-x divide-stone-100">
-                  <td className="px-2.5 py-2.5 font-medium text-stone-800">{line.itemName || <span className="text-stone-500">—</span>}</td>
+                  <td className="type-cell px-2.5 py-2.5 font-medium">{line.itemName || <span className="text-ink-muted">—</span>}</td>
                   <td className="px-2.5 py-2.5 type-record-id">{line.sku || '—'}</td>
-                  <td className="px-2.5 py-2.5 text-stone-500 whitespace-nowrap" title={line.unitCode || undefined}>
-                    {unitLabel(line.unitCode) || <span className="text-stone-500">—</span>}
+                  <td className="type-cell px-2.5 py-2.5 whitespace-nowrap" title={line.unitCode || undefined}>
+                    {unitLabel(line.unitCode) || <span className="text-ink-muted">—</span>}
                   </td>
-                  <td className="px-2.5 py-2.5 tabular-nums text-right text-stone-600">{line.qtyOrdered}</td>
-                  <td className="px-2.5 py-2.5 tabular-nums text-right text-stone-500">{line.qtyAlreadyReceived}</td>
-                  <td className="px-2.5 py-2.5 tabular-nums text-right text-stone-500">{outstanding}</td>
+                  <td className="type-cell px-2.5 py-2.5 tabular-nums text-right">{line.qtyOrdered}</td>
+                  <td className="type-cell px-2.5 py-2.5 tabular-nums text-right">{line.qtyAlreadyReceived}</td>
+                  <td className="type-cell px-2.5 py-2.5 tabular-nums text-right">{outstanding}</td>
                   <td className="px-2 py-1.5 align-top">
                     {serialized ? (
                       <p
-                        className={cn('w-20 py-1 text-right tabular-nums text-xs text-stone-700', overOutstanding && 'text-amber-700')}
+                        className={cn('w-20 py-1 text-right tabular-nums text-xs text-ink', overOutstanding && 'text-amber-700')}
                         aria-label={`Quantity receiving for ${line.itemName || 'line'}, from its slabs`}
                         aria-describedby={outstandingId}
                       >
@@ -185,13 +185,13 @@ export function ReceiptLinesTable({ lines, onChange, lineErrors, serials, wareho
               );
             })}
             {lines.length === 0 && (
-              <tr><td colSpan={COLUMN_COUNT} className="py-8 text-center text-stone-500">This order has no open lines.</td></tr>
+              <tr><td colSpan={COLUMN_COUNT} className="type-cell py-8 text-center">This order has no open lines.</td></tr>
             )}
           </tbody>
         </table>
       </div>
       <p className="border-t border-stone-100 bg-stone-50/50 px-4 py-2.5 type-helper">
-        Leave <span className="font-medium text-stone-500">Receiving</span> blank to skip a line. Receiving beyond a
+        Leave <span className="font-medium text-ink-muted">Receiving</span> blank to skip a line. Receiving beyond a
         line&apos;s ordered quantity needs an over-receipt reason when posting. A slab item is received slab by slab:
         tick the slabs that arrived (or add each slab under its line) and the quantity is worked out from their areas.
       </p>

@@ -197,13 +197,13 @@ export function AccountTableView() {
     <div ref={topRef} className="flex flex-col gap-3 scroll-mt-4">
       <div className="flex flex-wrap items-center gap-2">
         <div className="relative w-full sm:w-64">
-          <Search className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-stone-400" />
+          <Search className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-ink-faint" />
           <input
             type="text"
             placeholder="Search code or name…"
             value={term}
             onChange={(e) => setTerm(e.target.value)}
-            className="h-8 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-3 placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150 type-input"
+            className="h-8 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-3 placeholder:text-ink-muted focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150 type-input"
             aria-label="Search accounts by code or name"
           />
         </div>
@@ -214,7 +214,7 @@ export function AccountTableView() {
             'flex items-center gap-1.5 h-8 px-3 rounded-lg border text-xs font-medium transition-colors',
             filtersActive
               ? 'border-brand/40 bg-accent text-accent-foreground'
-              : 'border-stone-200 bg-white text-stone-500 hover:bg-stone-50',
+              : 'border-stone-200 bg-white text-ink-muted hover:bg-stone-50',
           )}
         >
           <Filter className="size-3.5" />
@@ -244,7 +244,7 @@ export function AccountTableView() {
                 'flex items-center gap-1.5 rounded-md px-2.5 py-1 text-micro font-semibold transition-colors',
                 sortBy === field
                   ? 'bg-accent text-accent-foreground ring-1 ring-accent-foreground/20'
-                  : 'bg-white border border-stone-200 text-stone-500 hover:border-stone-300 hover:text-stone-700',
+                  : 'bg-white border border-stone-200 text-ink-muted hover:border-stone-300 hover:text-ink',
               )}
             >
               {label}
@@ -288,10 +288,10 @@ export function AccountTableView() {
 
       <div className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm">
         <div className="overflow-x-auto modal-scrollbar">
-          <table className="w-full min-w-[920px] text-left text-xs">
+          <table className="w-full min-w-[920px] text-left type-cell">
             <thead className="border-b border-stone-200 bg-table-header">
               <tr>
-                {canUpdate && <th className="px-4 py-3 w-8" />}
+                {canUpdate && <th className="type-th px-4 py-3 w-8" />}
                 <th className="px-4 py-3 type-th">Code</th>
                 <th className="px-4 py-3 type-th">Name</th>
                 <th className="px-4 py-3 type-th">Type</th>
@@ -348,8 +348,8 @@ export function AccountTableView() {
                       </button>
                     </td>
                     <td className="px-4 py-3.5 truncate max-w-[220px] type-cell">
-                      <span className={cn(!a.isActive && 'italic text-stone-500')}>{a.name}</span>
-                      {a.isSystem && <span className="ml-1.5 text-micro font-semibold text-stone-500">SYS</span>}
+                      <span className={cn(!a.isActive && 'italic text-ink-muted')}>{a.name}</span>
+                      {a.isSystem && <span className="ml-1.5 text-micro font-semibold text-ink-muted">SYS</span>}
                     </td>
                     <td className="px-4 py-3.5 whitespace-nowrap type-cell">{ACCOUNT_TYPE_LABELS[a.type]}</td>
                     <td className="px-4 py-3.5 truncate max-w-[180px] type-cell">
@@ -358,8 +358,8 @@ export function AccountTableView() {
                     <td className="px-4 py-3.5 type-cell">{a.bsPnl}</td>
                     <td className="px-4 py-3.5">
                       <div className="flex items-center gap-1.5">
-                        {!a.isActive && <span className="text-micro font-semibold text-stone-500">Inactive</span>}
-                        {!a.isVisible && <span className="text-micro font-semibold text-stone-500">Hidden</span>}
+                        {!a.isActive && <span className="text-micro font-semibold text-ink-muted">Inactive</span>}
+                        {!a.isVisible && <span className="text-micro font-semibold text-ink-muted">Hidden</span>}
                         {a.isActive && a.isVisible && <span className="text-micro font-semibold text-success-ink">Active</span>}
                       </div>
                     </td>
@@ -372,7 +372,7 @@ export function AccountTableView() {
                           type="button"
                           onClick={() => setEditingAccount(a)}
                           aria-label={`Edit ${a.code} ${a.name}`}
-                          className="inline-flex items-center justify-center rounded-lg border border-stone-200 bg-white p-2 text-stone-500 transition-colors hover:bg-accent hover:border-accent hover:text-accent-foreground cursor-pointer"
+                          className="inline-flex items-center justify-center rounded-lg border border-stone-200 bg-white p-2 text-ink-muted transition-colors hover:bg-accent hover:border-accent hover:text-accent-foreground cursor-pointer"
                         >
                           <Pencil className="size-4" />
                         </button>
@@ -386,14 +386,14 @@ export function AccountTableView() {
                     {!hasFilters ? (
                       <div className="flex flex-col items-center gap-3">
                         <div className="rounded-2xl bg-stone-100 p-4">
-                          <Landmark className="size-6 text-stone-400" />
+                          <Landmark className="size-6 text-ink-faint" />
                         </div>
                         <p className="type-card-title">No accounts found.</p>
                       </div>
                     ) : (
                       <div className="flex flex-col items-center gap-3">
                         <div className="rounded-2xl bg-stone-100 p-4">
-                          <Search className="size-6 text-stone-400" />
+                          <Search className="size-6 text-ink-faint" />
                         </div>
                         <p className="type-card-title">No accounts match the current search.</p>
                         <p className="type-helper">Try adjusting your search or filters.</p>

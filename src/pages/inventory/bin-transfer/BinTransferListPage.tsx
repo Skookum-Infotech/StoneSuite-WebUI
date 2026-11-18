@@ -21,7 +21,7 @@ export default function BinTransferListPage() {
             </div>
             <div>
               <h1 className="type-page-title">Bin Transfers</h1>
-              <p className="text-sm text-stone-500">Move slabs between bins, with approval and a full trail of who moved what.</p>
+              <p className="type-page-subtitle">Move slabs between bins, with approval and a full trail of who moved what.</p>
             </div>
           </div>
           {canCreate && (

@@ -91,12 +91,12 @@ export function ImportUploadStep({ workflowKey, onStaged }: Props) {
           )}
         >
           {busy ? (
-            <Loader2 className="h-4.5 w-4.5 animate-spin text-stone-500" />
+            <Loader2 className="h-4.5 w-4.5 animate-spin text-ink-muted" />
           ) : (
-            <Upload className="h-4.5 w-4.5 text-stone-400 group-hover:text-stone-600" />
+            <Upload className="h-4.5 w-4.5 text-ink-faint group-hover:text-ink" />
           )}
         </div>
-        <p className="mb-1 text-xs font-medium text-stone-600 dark:text-stone-300">
+        <p className="mb-1 text-xs font-medium text-ink dark:text-stone-300">
           {busy ? `Uploading… ${progress}%` : dragging ? 'Release to upload' : 'Drop a file here or click to browse'}
         </p>
         <p className="flex items-center justify-center gap-1 type-helper">

@@ -79,7 +79,7 @@ export function CancelJournalEntryDialog({ journalEntryId, onCancelled }: {
               </div>
             </div>
 
-            <p className="text-xs text-stone-600 mb-4">
+            <p className="text-xs text-ink mb-4">
               Nothing has posted to the ledger yet, so there is nothing to reverse — it will simply be marked cancelled.
             </p>
 

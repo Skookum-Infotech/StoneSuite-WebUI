@@ -229,7 +229,7 @@ export function ItemFormBody({ data, set }: {
       <ModernSection title="Stone Attributes" index={1}>
         <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
           <ModernFieldShell label="Tracking">
-            <p data-testid="item-tracking" className="flex h-9 items-center text-xs text-stone-700">
+            <p data-testid="item-tracking" className="flex h-9 items-center text-xs text-ink">
               {slabTracked ? 'Slab — tracked one by one (set by the square unit)' : 'Quantity — counted per location'}
             </p>
           </ModernFieldShell>

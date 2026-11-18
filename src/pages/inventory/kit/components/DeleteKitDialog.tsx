@@ -69,7 +69,7 @@ export function DeleteKitDialog({ kitId, label, onDeleted }: {
               </div>
             </div>
 
-            <p className="text-xs text-stone-600 mb-4">
+            <p className="text-xs text-ink mb-4">
               <span className="font-semibold">{label}</span> will be deleted. Its items are not affected, and documents
               already built from it keep their lines and its heading.
             </p>

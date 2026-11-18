@@ -86,7 +86,7 @@ export function VoidReceiptDialog({ itemReceiptId, statusCode, onVoided }: {
               </div>
             </div>
 
-            <p className="text-xs text-stone-600 mb-4">
+            <p className="text-xs text-ink mb-4">
               {isPosted
                 ? 'This reverses the stock this receipt posted and rolls the purchase order’s status back.'
                 : 'This receipt has not been posted, so nothing needs to be reversed — it will simply be marked void.'}
@@ -103,7 +103,7 @@ export function VoidReceiptDialog({ itemReceiptId, statusCode, onVoided }: {
               onChange={(e) => setReason(e.target.value)}
               placeholder="Why is this receipt being voided?"
               aria-label="Void reason"
-              className="w-full resize-none rounded-[10px] border border-stone-300 px-3.5 py-2.5 text-xs text-stone-900 outline-none transition-all focus:border-brand focus:ring-2 focus:ring-brand/30"
+              className="w-full resize-none rounded-[10px] border border-stone-300 px-3.5 py-2.5 text-xs text-ink-strong outline-none transition-all focus:border-brand focus:ring-2 focus:ring-brand/30"
             />
 
             {voidMutation.error && (

@@ -2,7 +2,7 @@ import { cn } from '@/lib/utils';
 import { ageTone, waitingLabel, type AgeTone } from '@/lib/approvalInbox';
 
 const TONE_CLASSES: Record<AgeTone, string> = {
-  neutral: 'border-stone-200 bg-stone-50 text-stone-600',
+  neutral: 'border-stone-200 bg-stone-50 text-ink',
   amber: 'border-amber-300 bg-amber-50 text-amber-800',
   red: 'border-red-300 bg-red-50 text-red-800',
 };

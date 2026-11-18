@@ -12,8 +12,8 @@ export function MultiSelectionPanel() {
 
   return (
     <div className="flex flex-col gap-2 text-xs">
-      <p className="font-semibold text-stone-800">{ids.length} pieces selected</p>
-      <p className="text-stone-500">{labels.join(', ')}</p>
+      <p className="font-semibold text-ink-strong">{ids.length} pieces selected</p>
+      <p className="text-ink-muted">{labels.join(', ')}</p>
       <p className="type-helper">Drag any one to move them together. Click a single piece to edit its details.</p>
       <div className="flex flex-wrap gap-2 pt-1">
         <button

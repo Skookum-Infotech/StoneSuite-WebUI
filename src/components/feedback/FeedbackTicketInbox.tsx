@@ -49,7 +49,7 @@ function EmptyInbox({ onCreateTicket }: { onCreateTicket: () => void }) {
         <Inbox className="size-7" aria-hidden="true" />
       </span>
       <h2 className="mt-4 dark:text-stone-100 type-dialog-title">No Tickets Yet</h2>
-      <p className="mt-1 max-w-sm text-sm text-stone-500 dark:text-stone-400">
+      <p className="mt-1 max-w-sm text-sm text-ink-muted dark:text-stone-400">
         Found a bug or have an idea? File a ticket and follow the conversation with our team right here.
       </p>
       <Button type="button" className="mt-5" onClick={onCreateTicket}>

@@ -27,7 +27,7 @@ export default function FabricationApprovalPage() {
   if (!query.data) return <div className="p-6"><ErrorNote>{apiErrorMessage(query.error, 'This template is not available.')}</ErrorNote></div>;
   const template = query.data;
   return <main className="mx-auto w-full max-w-4xl space-y-5 px-4 py-6 sm:px-6 sm:py-10">
-    <header><p className="type-overline">Your project</p><h1 className="mt-2 type-page-title">Review Your Measured Template</h1><p className="mt-2 text-sm text-stone-600">Check the measured pieces and any changes to your order before approving.</p></header>
+    <header><p className="type-overline">Your project</p><h1 className="mt-2 type-page-title">Review Your Measured Template</h1><p className="mt-2 type-page-subtitle">Check the measured pieces and any changes to your order before approving.</p></header>
     <FabricationTemplateReview revision={template} />
     {template.state === 'approved' || approve.isSuccess ? <div role="status" className="flex items-center gap-2 rounded-xl bg-emerald-50 p-5 text-emerald-800"><CheckCircle2 className="size-5" aria-hidden="true" />Your approval is recorded for this revision.</div> : <section className="space-y-4 rounded-xl border border-stone-200 bg-white p-5">
       <label className="flex items-start gap-3 type-field-label"><input type="checkbox" checked={acknowledged} onChange={(event) => setAcknowledged(event.target.checked)} className="mt-1 size-4" /><span>I have reviewed these measurements and order changes, and approve revision {template.revision}.</span></label>

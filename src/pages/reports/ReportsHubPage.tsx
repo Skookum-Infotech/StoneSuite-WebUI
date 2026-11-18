@@ -12,14 +12,14 @@ function ReportCard({ report }: { report: ReportCardInfo }) {
       <div className="flex items-start justify-between gap-2">
         <h2 className="type-card-title">{report.title}</h2>
         {report.path ? (
-          <ArrowRight className="size-4 shrink-0 text-stone-400" aria-hidden="true" />
+          <ArrowRight className="size-4 shrink-0 text-ink-faint" aria-hidden="true" />
         ) : (
-          <span className="shrink-0 rounded-full bg-stone-100 px-2 py-0.5 text-stone-500 type-pill">
+          <span className="shrink-0 rounded-full bg-stone-100 px-2 py-0.5 text-ink-muted type-pill">
             {COMING_SOON}
           </span>
         )}
       </div>
-      <p className="mt-1 text-sm text-stone-500">{report.description}</p>
+      <p className="mt-1 text-sm text-ink-muted">{report.description}</p>
     </>
   );
 
@@ -52,7 +52,7 @@ export default function ReportsHubPage({ slug }: { slug: string }) {
   const info = findReportModule(slug);
 
   if (!info) {
-    return <p className="p-6 text-sm text-stone-500">{UNKNOWN_MODULE}</p>;
+    return <p className="p-6 text-sm text-ink-muted">{UNKNOWN_MODULE}</p>;
   }
 
   const built = info.reports.filter((r) => r.path);
@@ -66,7 +66,7 @@ export default function ReportsHubPage({ slug }: { slug: string }) {
         </div>
         <div>
           <h1 className="type-page-title">{info.label} Reports</h1>
-          <p className="text-sm text-stone-500">{info.description}</p>
+          <p className="type-page-subtitle">{info.description}</p>
         </div>
       </div>
       <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">

@@ -16,7 +16,7 @@ const RESULTS_STALE_MS = 30 * 1000;
 const PANEL_WIDTH = 288; // w-72
 
 const inputCls =
-  'w-full rounded border border-stone-200 bg-white px-2 py-1 type-input outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-900/5 placeholder:text-stone-500 transition-all';
+  'w-full rounded border border-stone-200 bg-white px-2 py-1 type-input outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-900/5 placeholder:text-ink-muted transition-all';
 
 export interface InventoryItemPickerHandlers {
   onPick: (item: InventoryItem) => void;
@@ -199,7 +199,7 @@ export function InventoryItemPicker({
         aria-label="Item Name"
       />
       {searching && (
-        <Loader2 className="absolute right-1.5 top-1/2 -translate-y-1/2 size-3 animate-spin text-stone-400" aria-hidden="true" />
+        <Loader2 className="absolute right-1.5 top-1/2 -translate-y-1/2 size-3 animate-spin text-ink-faint" aria-hidden="true" />
       )}
       {enabled && position && createPortal(
         <div
@@ -238,9 +238,9 @@ export function InventoryItemPicker({
                 onClick={() => select(item)}
                 className={optionCls(index)}
               >
-                <Package className="mt-0.5 size-3 shrink-0 text-stone-400" aria-hidden="true" />
+                <Package className="mt-0.5 size-3 shrink-0 text-ink-faint" aria-hidden="true" />
                 <span className="min-w-0">
-                  <span className="block truncate text-xs font-medium text-stone-800">{item.name}</span>
+                  <span className="block truncate text-xs font-medium text-ink-strong">{item.name}</span>
                   <span className="block truncate font-mono type-subline">
                     {item.sku} · ${itemPrice(item, priceKind).toFixed(2)}
                   </span>
@@ -265,7 +265,7 @@ export function InventoryItemPicker({
                   <span className="min-w-0">
                     {/* The literal spaces keep the option's spoken name readable:
                         "Kitchen KIT 4 items", not "KitchenKIT4 items". */}
-                    <span className="flex items-center gap-1.5 text-xs font-medium text-stone-800">
+                    <span className="flex items-center gap-1.5 text-xs font-medium text-ink-strong">
                       <span className="truncate">{kit.name}</span>{' '}
                       <span className="shrink-0 rounded bg-violet-700 px-1 py-px text-white type-pill">KIT</span>
                     </span>{' '}
@@ -287,8 +287,8 @@ export function InventoryItemPicker({
                 onClick={addToInventory}
                 className={cn(optionCls(addItemIndex), 'items-center border-t border-stone-100 font-semibold')}
               >
-                <PackagePlus className="size-3.5 shrink-0 text-stone-500" aria-hidden="true" />
-                <span className="min-w-0 truncate text-xs text-stone-800">Add “{debounced}” to Inventory</span>
+                <PackagePlus className="size-3.5 shrink-0 text-ink-muted" aria-hidden="true" />
+                <span className="min-w-0 truncate text-xs text-ink-strong">Add “{debounced}” to Inventory</span>
               </button>
             )}
             {showAddKit && (
@@ -303,7 +303,7 @@ export function InventoryItemPicker({
                 className={cn(optionCls(addKitIndex), 'items-center border-t border-stone-100 font-semibold')}
               >
                 <Boxes className="size-3.5 shrink-0 text-violet-500" aria-hidden="true" />
-                <span className="min-w-0 truncate text-xs text-stone-800">Add “{debounced}” as a Kit</span>
+                <span className="min-w-0 truncate text-xs text-ink-strong">Add “{debounced}” as a Kit</span>
               </button>
             )}
           </div>

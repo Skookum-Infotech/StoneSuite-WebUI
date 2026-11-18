@@ -146,9 +146,9 @@ function ApprovalGateEditor({
 
   return (
     <div>
-      <p className="mb-1.5 flex items-center justify-between gap-2 text-xs font-semibold text-stone-900 dark:text-stone-100">
+      <p className="mb-1.5 flex items-center justify-between gap-2 text-xs font-semibold text-ink-strong dark:text-stone-100">
         <span>
-          Before leaving <span className="font-normal text-stone-500">{gate.statusLabel}</span>
+          Before leaving <span className="font-normal text-ink-muted">{gate.statusLabel}</span>
         </span>
         {canConfigure ? (
           <label className="flex shrink-0 items-center gap-1.5 select-none">
@@ -167,12 +167,12 @@ function ApprovalGateEditor({
                 enabled ? `Disable approval for ${gate.statusLabel}` : `Enable approval for ${gate.statusLabel}`
               }
             />
-            <span className="text-micro font-normal text-stone-500">
+            <span className="text-micro font-normal text-ink-muted">
               {update.isPending ? 'Saving…' : enabled ? 'Enabled' : 'Disabled'}
             </span>
           </label>
         ) : (
-          <span className="shrink-0 text-micro font-normal text-stone-500">
+          <span className="shrink-0 text-micro font-normal text-ink-muted">
             {gate.approverEmployeeIds.length > 0 ? 'Enabled' : 'Disabled'}
           </span>
         )}
@@ -181,7 +181,7 @@ function ApprovalGateEditor({
         gate.approverEmployeeIds.length === 0 ? (
           <p className="type-helper">No approvers configured.</p>
         ) : (
-          <p className="text-micro text-stone-600 dark:text-stone-300">
+          <p className="text-micro text-ink dark:text-stone-300">
             {gate.approverEmployeeIds.map((id) => byId.get(id)?.fullName || 'Unknown employee').join(', ')}
           </p>
         )

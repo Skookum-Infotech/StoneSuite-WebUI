@@ -64,7 +64,7 @@ export function SessionExpiryModal({
         </div>
 
         {/* Body copy */}
-        <p id="session-expiry-desc" className="text-xs text-stone-600 mb-4">
+        <p id="session-expiry-desc" className="text-xs text-ink mb-4">
           You've been idle for a while. Stay logged in to continue, or log out now.
         </p>
 

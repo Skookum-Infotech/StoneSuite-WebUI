@@ -72,7 +72,7 @@ export function PipelineDonut({
             </g>
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span className="text-2xl font-bold leading-none tracking-tight text-stone-950 tabular-nums">
+            <span className="text-2xl font-bold leading-none tracking-tight text-ink-strong tabular-nums">
               {data.closeRate}%
             </span>
             <span className="mt-0.5 type-subline">close rate</span>

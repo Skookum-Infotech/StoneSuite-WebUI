@@ -72,7 +72,7 @@ export default function BinListPage() {
             </div>
             <div>
               <h1 className="type-page-title">Bin Management</h1>
-              <p className="text-sm text-stone-500">Yards, racks, A-frames, aisles, shelves — flat locations, up to 4 levels deep.</p>
+              <p className="type-page-subtitle">Yards, racks, A-frames, aisles, shelves — flat locations, up to 4 levels deep.</p>
             </div>
           </div>
           {canCreate && (
@@ -83,7 +83,7 @@ export default function BinListPage() {
         </div>
 
         <div className="mt-5 flex flex-wrap items-center gap-3">
-          <Select value={warehouseFilter} onChange={(e) => setWarehouseFilter(e.target.value)} aria-label="Filter by location" className="h-9 rounded-lg border border-stone-200 bg-white px-3 text-xs text-stone-700">
+          <Select value={warehouseFilter} onChange={(e) => setWarehouseFilter(e.target.value)} aria-label="Filter by location" className="h-9 rounded-lg border border-stone-200 bg-white px-3 text-xs text-ink">
             <option value="">All Locations</option>
             {warehouses.map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}
           </Select>
@@ -93,16 +93,16 @@ export default function BinListPage() {
               type="button"
               onClick={() => setCollapsed(new Set())}
               aria-label="Expand all bins"
-              className="inline-flex items-center gap-1.5 text-xs font-medium text-stone-500 hover:text-stone-800"
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-ink-muted hover:text-ink-strong"
             >
               <ChevronsDown className="size-3.5" /> Expand All
             </button>
-            <span className="text-stone-500" aria-hidden="true">|</span>
+            <span className="text-ink-muted" aria-hidden="true">|</span>
             <button
               type="button"
               onClick={() => setCollapsed(new Set(collectGroupKeys(tree)))}
               aria-label="Collapse all bins"
-              className="inline-flex items-center gap-1.5 text-xs font-medium text-stone-500 hover:text-stone-800"
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-ink-muted hover:text-ink-strong"
             >
               <ChevronsUp className="size-3.5" /> Collapse All
             </button>
@@ -116,7 +116,7 @@ export default function BinListPage() {
             <ErrorNote>{apiErrorMessage(error, 'Failed to load bins.')}</ErrorNote>
           ) : tree.length === 0 ? (
             <div className="flex flex-col items-center gap-3 py-16">
-              <div className="rounded-2xl bg-stone-100 p-4"><MapPin className="size-6 text-stone-400" /></div>
+              <div className="rounded-2xl bg-stone-100 p-4"><MapPin className="size-6 text-ink-faint" /></div>
               <p className="type-card-title">No bins yet.</p>
               <p className="type-helper">Create your first bin to start organizing the yard.</p>
             </div>

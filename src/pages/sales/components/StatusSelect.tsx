@@ -146,12 +146,12 @@ export function StatusSelect({
         }}
         className={`flex w-full items-center gap-2 px-3.5 py-2.5 text-sm transition ${
           isCurrent
-            ? 'bg-brand/10 font-semibold text-stone-900'
+            ? 'bg-brand/10 font-semibold text-ink-strong'
             : armed
               ? 'bg-red-50 font-semibold text-danger-ink'
               : permitted
-                ? 'text-stone-700 hover:bg-stone-50'
-                : 'text-stone-400 cursor-not-allowed'
+                ? 'text-ink hover:bg-stone-50'
+                : 'text-ink-muted cursor-not-allowed'
         }`}
       >
         <span className="flex-1 text-left">{armed ? `Confirm: ${label}` : label}</span>
@@ -184,7 +184,7 @@ export function StatusSelect({
         style={isPill ? ({ '--pill': color } as CSSProperties) : undefined}
       >
         <span className={isPill ? undefined : 'flex-1 text-left'}>{selected?.label ?? value}</span>
-        {!isTerminal && <ChevronDown className={isPill ? 'size-3 shrink-0' : 'size-3 shrink-0 text-stone-400'} aria-hidden="true" />}
+        {!isTerminal && <ChevronDown className={isPill ? 'size-3 shrink-0' : 'size-3 shrink-0 text-ink-faint'} aria-hidden="true" />}
       </button>
 
       {panelOpen && !isPill && (

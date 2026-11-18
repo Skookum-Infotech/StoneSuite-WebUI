@@ -81,7 +81,7 @@ export function IdentityProviders() {
         />
         <ProviderCard
           to="/config/saml-setup/entra"
-          icon={{ Icon: MicrosoftLogo, bg: "bg-stone-50", color: "text-stone-900" }}
+          icon={{ Icon: MicrosoftLogo, bg: "bg-stone-50", color: "text-ink-strong" }}
           label="Microsoft Entra ID"
           description="Connect a Microsoft Entra ID enterprise application as a SAML identity provider."
           status={statusFor("entra")}
@@ -91,7 +91,7 @@ export function IdentityProviders() {
           <ProviderCard
             key={provider}
             to={`/config/saml-setup/${provider}`}
-            icon={{ Icon: KeyRound, bg: "bg-stone-50", color: "text-stone-900" }}
+            icon={{ Icon: KeyRound, bg: "bg-stone-50", color: "text-ink-strong" }}
             label={provider.charAt(0).toUpperCase() + provider.slice(1)}
             description="Connect this SAML identity provider."
             status={statusFor(provider)}
@@ -103,7 +103,7 @@ export function IdentityProviders() {
             onSubmit={handleAddCustom}
             className="flex aspect-square flex-col items-center justify-center gap-3 rounded-3xl border border-dashed border-stone-300 bg-stone-50/60 p-8 text-center"
           >
-            <KeyRound className="size-8 text-stone-400" aria-hidden="true" />
+            <KeyRound className="size-8 text-ink-faint" aria-hidden="true" />
             <div className="w-full space-y-1.5">
               <label htmlFor="custom-provider-slug" className="sr-only">
                 Custom provider slug
@@ -157,7 +157,7 @@ export function IdentityProviders() {
               <Plus className="size-8" />
             </div>
             <div>
-              <p className="text-base font-bold text-stone-900">Other provider</p>
+              <p className="text-base font-bold text-ink-strong">Other provider</p>
               <p className="mt-1.5 type-helper">
                 Connect any other SAML 2.0 identity provider (Okta, OneLogin, ADFS, ...).
               </p>

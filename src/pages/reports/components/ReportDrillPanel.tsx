@@ -45,26 +45,26 @@ export function ReportDrillPanel({ title, params, selector, onClose }: ReportDri
         <header className="flex items-start justify-between gap-3 border-b border-stone-200 px-4 py-3">
           <div className="min-w-0">
             <h2 className="truncate type-card-title">{title}</h2>
-            <p className="text-label text-stone-500">Records behind this row</p>
+            <p className="text-label text-ink-muted">Records behind this row</p>
           </div>
           <button
             type="button"
             aria-label="Close records panel"
             onClick={onClose}
-            className="rounded-md p-1 text-stone-500 hover:bg-stone-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400"
+            className="rounded-md p-1 text-ink-muted hover:bg-stone-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400"
           >
             <X className="size-4" aria-hidden="true" />
           </button>
         </header>
 
         <div className="flex-1 overflow-y-auto p-4">
-          {q.isLoading && <p className="text-sm text-stone-500">{LOADING_TEXT}</p>}
+          {q.isLoading && <p className="text-sm text-ink-muted">{LOADING_TEXT}</p>}
           {q.isError && (
             <p role="alert" className="text-sm text-danger-ink">
               {apiErrorMessage(q.error, "Could not load the records.")}
             </p>
           )}
-          {q.data && q.data.records.length === 0 && <p className="text-sm text-stone-500">{EMPTY_TEXT}</p>}
+          {q.data && q.data.records.length === 0 && <p className="text-sm text-ink-muted">{EMPTY_TEXT}</p>}
           {q.data && q.data.records.length > 0 && (
             <ul className="divide-y divide-stone-100">
               {q.data.records.map((r) => (
@@ -73,15 +73,15 @@ export function ReportDrillPanel({ title, params, selector, onClose }: ReportDri
                     <Link
                       to={`${q.data.path}/${r.id}`}
                       aria-label={`Open ${r.number || "record"}`}
-                      className="text-sm font-medium text-stone-900 underline-offset-2 hover:underline"
+                      className="text-sm font-medium text-ink-strong underline-offset-2 hover:underline"
                     >
                       {r.number || "(no number)"}
                     </Link>
-                    <p className="truncate text-label text-stone-500">
+                    <p className="truncate text-label text-ink-muted">
                       {r.customer} · {formatReportDate(r.date)} · {r.status}
                     </p>
                   </div>
-                  <span className="shrink-0 text-sm tabular-nums text-stone-700">{formatMoney(r.revenue)}</span>
+                  <span className="shrink-0 text-sm tabular-nums text-ink">{formatMoney(r.revenue)}</span>
                 </li>
               ))}
             </ul>

@@ -11,7 +11,7 @@ export function DetailField({ label, children }: DetailFieldProps) {
   return (
     <div className="min-w-0">
       <dt className="type-overline">{label}</dt>
-      <dd className="mt-0.5 break-words text-sm text-stone-900">{children}</dd>
+      <dd className="mt-0.5 break-words text-sm text-ink-strong">{children}</dd>
     </div>
   );
 }

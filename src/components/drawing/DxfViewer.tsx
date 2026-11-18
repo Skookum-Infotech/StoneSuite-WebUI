@@ -9,7 +9,7 @@ import type { DxfScene } from '@/lib/drawing/dxfSceneTypes';
 const ZOOM_STEP = 1.25;
 const KEYBOARD_PAN_PX = 40;
 const DASH_PATTERN = '6 4';
-const CONTROL_CLASS = 'flex size-7 items-center justify-center rounded text-stone-600 hover:bg-stone-100 hover:text-stone-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50';
+const CONTROL_CLASS = 'flex size-7 items-center justify-center rounded text-ink hover:bg-stone-100 hover:text-ink-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50';
 
 function center(vb: ViewBox) {
   return { x: vb.x + vb.w / 2, y: vb.y + vb.h / 2 };

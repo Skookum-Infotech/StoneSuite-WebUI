@@ -108,7 +108,7 @@ export function CreditMemoFormBody({
                 <ModernFieldShell label="Customer" required={!customerLocked}>
                   {customerLocked ? (
                     <div className={cn(readonlyCls, 'cursor-not-allowed select-none')}>
-                      {customer?.name || <span className="text-stone-500">—</span>}
+                      {customer?.name || <span className="text-ink-muted">—</span>}
                     </div>
                   ) : (
                     <CustomerPicker value={customer} onChange={setCustomer} required onCreateNew={onCreateCustomer} />
@@ -121,7 +121,7 @@ export function CreditMemoFormBody({
                   <ModernFieldShell label="Invoice">
                     {invoiceLocked ? (
                       <div className={cn(readonlyCls, 'cursor-not-allowed select-none')}>
-                        {invoice?.number || <span className="text-stone-500">—</span>}
+                        {invoice?.number || <span className="text-ink-muted">—</span>}
                       </div>
                     ) : (
                       <InvoicePicker customer={customer} value={invoice} onChange={setInvoice} currencyCode={currencyCode} />
@@ -130,7 +130,7 @@ export function CreditMemoFormBody({
                   <ModernFieldShell label="Sales Order">
                     {salesOrderLocked ? (
                       <div className={cn(readonlyCls, 'cursor-not-allowed select-none')}>
-                        {salesOrder?.number || <span className="text-stone-500">—</span>}
+                        {salesOrder?.number || <span className="text-ink-muted">—</span>}
                       </div>
                     ) : (
                       <SalesOrderPicker customer={customer} value={salesOrder} onChange={setSalesOrder} />

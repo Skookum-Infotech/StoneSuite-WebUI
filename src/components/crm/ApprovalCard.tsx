@@ -32,10 +32,10 @@ export function ApprovalCard({
 
   return (
     <div className={cardCls}>
-      <p className="text-xs font-semibold text-stone-500">Approval</p>
+      <p className="type-card-title">Approval</p>
 
       <div className={rowCls}>
-        <span className="text-stone-500">Status</span>
+        <span className="text-ink-muted">Status</span>
         {status === 'approved' ? (
           <Badge color="#22c55e">Approved</Badge>
         ) : status === 'rejected' ? (
@@ -48,29 +48,29 @@ export function ApprovalCard({
       </div>
 
       <div className="py-1 text-xs space-y-1.5">
-        <p className="text-stone-500">Approver(s)</p>
+        <p className="text-ink-muted">Approver(s)</p>
         {approvers.length > 0 ? (
           <ul className="space-y-1">
             {approvers.map((a) => (
               <li key={a.id} className="flex items-center justify-between gap-2">
-                <span className="font-medium text-stone-700">{a.name}</span>
+                <span className="font-medium text-ink">{a.name}</span>
                 {a.approved && <span className="text-micro font-semibold text-success-ink">Signed off</span>}
               </li>
             ))}
           </ul>
         ) : (
-          <p className="font-medium text-stone-700">—</p>
+          <p className="font-medium text-ink">—</p>
         )}
       </div>
 
       {status === 'rejected' && (
         <div className="py-1 text-xs space-y-1 border-t border-stone-100 pt-2">
-          <p className="text-stone-500">Rejected by</p>
-          <p className="font-medium text-stone-700">{rejectedByName || 'Unknown'}</p>
+          <p className="text-ink-muted">Rejected by</p>
+          <p className="font-medium text-ink">{rejectedByName || 'Unknown'}</p>
           {rejectionReason && (
             <>
-              <p className="text-stone-500 pt-1">Reason</p>
-              <p className="font-medium text-stone-700">{rejectionReason}</p>
+              <p className="text-ink-muted pt-1">Reason</p>
+              <p className="font-medium text-ink">{rejectionReason}</p>
             </>
           )}
         </div>

@@ -138,7 +138,7 @@ export function FeedbackSubmitForm({
       <section className={cn(FEEDBACK_CARD_CLS, 'space-y-5 p-5 sm:p-6')}>
         <div>
           <h2 className="dark:text-stone-100 type-dialog-title">What Would You Like to Tell Us?</h2>
-          <p className="mt-0.5 text-sm text-stone-500 dark:text-stone-400">
+          <p className="mt-0.5 text-sm text-ink-muted dark:text-stone-400">
             Report a bug, request a feature, or share how we can do better.
           </p>
         </div>
@@ -195,12 +195,12 @@ export function FeedbackSubmitForm({
             {descriptionError ? (
               <p id="feedback-description-error" className="type-error">{descriptionError}</p>
             ) : <span />}
-            <span className="text-xs text-stone-500">{description.length}/{MAX_DESCRIPTION_LENGTH}</span>
+            <span className="text-xs text-ink-muted">{description.length}/{MAX_DESCRIPTION_LENGTH}</span>
           </div>
         </div>
 
         <div>
-          <p className={fieldLabelCls}>Screenshot / File <span className="font-normal text-stone-500">(optional)</span></p>
+          <p className={fieldLabelCls}>Screenshot / File <span className="font-normal text-ink-muted">(optional)</span></p>
           <div className="mt-1.5">
             <FeedbackAttachmentPicker files={stagedFiles} onFilesChange={setStagedFiles} disabled={submitMutation.isPending} />
           </div>

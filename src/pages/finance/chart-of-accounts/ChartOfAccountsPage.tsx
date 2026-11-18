@@ -22,7 +22,7 @@ export default function ChartOfAccountsPage() {
             </div>
             <div>
               <h1 className="type-page-title">Chart of Accounts</h1>
-              <p className="text-sm text-stone-500">The tenant&apos;s fixed category tree and postable accounts.</p>
+              <p className="type-page-subtitle">The tenant&apos;s fixed category tree and postable accounts.</p>
             </div>
           </div>
 
@@ -33,7 +33,7 @@ export default function ChartOfAccountsPage() {
               aria-pressed={view === 'tree'}
               className={cn(
                 'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-semibold transition-colors',
-                view === 'tree' ? 'bg-accent text-accent-foreground' : 'text-stone-500 hover:bg-stone-50',
+                view === 'tree' ? 'bg-accent text-accent-foreground' : 'text-ink-muted hover:bg-stone-50',
               )}
             >
               <ListTree className="size-3.5" />
@@ -45,7 +45,7 @@ export default function ChartOfAccountsPage() {
               aria-pressed={view === 'table'}
               className={cn(
                 'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-semibold transition-colors',
-                view === 'table' ? 'bg-accent text-accent-foreground' : 'text-stone-500 hover:bg-stone-50',
+                view === 'table' ? 'bg-accent text-accent-foreground' : 'text-ink-muted hover:bg-stone-50',
               )}
             >
               <Table2 className="size-3.5" />

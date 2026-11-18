@@ -22,17 +22,17 @@ export function FeedbackAdminTable({ tickets, isLoading }: { tickets: FeedbackTi
 
   return (
     <div className="overflow-x-auto rounded-xl border border-stone-200 dark:border-white/10">
-      <table className="w-full min-w-[860px] text-left text-xs">
+      <table className="w-full min-w-[860px] text-left type-cell">
         <thead className="border-b border-stone-200 bg-stone-50 dark:border-white/10 dark:bg-white/[0.03] dark:text-stone-400 type-th">
           <tr>
-            <th className="px-3.5 py-2.5">Ticket</th>
-            <th className="px-3.5 py-2.5">Tenant</th>
-            <th className="px-3.5 py-2.5">Reporter</th>
-            <th className="px-3.5 py-2.5">Category</th>
-            <th className="px-3.5 py-2.5">Description</th>
-            <th className="px-3.5 py-2.5">Priority</th>
-            <th className="px-3.5 py-2.5">Status</th>
-            <th className="px-3.5 py-2.5">Submitted</th>
+            <th className="type-th px-3.5 py-2.5">Ticket</th>
+            <th className="type-th px-3.5 py-2.5">Tenant</th>
+            <th className="type-th px-3.5 py-2.5">Reporter</th>
+            <th className="type-th px-3.5 py-2.5">Category</th>
+            <th className="type-th px-3.5 py-2.5">Description</th>
+            <th className="type-th px-3.5 py-2.5">Priority</th>
+            <th className="type-th px-3.5 py-2.5">Status</th>
+            <th className="type-th px-3.5 py-2.5">Submitted</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-stone-100 dark:divide-white/5">
@@ -43,15 +43,15 @@ export function FeedbackAdminTable({ tickets, isLoading }: { tickets: FeedbackTi
                 <td className="px-3.5 py-2.5">
                   <Link
                     to={`/platform/feedback/${ticket.id}`}
-                    className="font-semibold text-stone-700 hover:text-link transition-colors dark:text-stone-200"
+                    className="font-semibold text-ink hover:text-link transition-colors dark:text-stone-200"
                   >
                     {ticket.ticketNumber}
                   </Link>
                 </td>
-                <td className="px-3.5 py-2.5 text-stone-600 dark:text-stone-300">{ticket.tenantName || '—'}</td>
-                <td className="px-3.5 py-2.5 text-stone-600 dark:text-stone-300">{ticket.reporterName || ticket.reporterEmail}</td>
+                <td className="type-cell px-3.5 py-2.5 dark:text-stone-300">{ticket.tenantName || '—'}</td>
+                <td className="type-cell px-3.5 py-2.5 dark:text-stone-300">{ticket.reporterName || ticket.reporterEmail}</td>
                 <td className="px-3.5 py-2.5">
-                  <span className="inline-flex items-center gap-1.5 text-stone-600 dark:text-stone-300">
+                  <span className="inline-flex items-center gap-1.5 text-ink dark:text-stone-300">
                     <category.icon className="size-3.5 shrink-0 text-ink-muted" aria-hidden="true" />
                     {category.label}
                   </span>
@@ -59,7 +59,7 @@ export function FeedbackAdminTable({ tickets, isLoading }: { tickets: FeedbackTi
                     <span className="mt-0.5 block type-subline">{feedbackAreaLabel(ticket.area)}</span>
                   )}
                 </td>
-                <td className="max-w-72 truncate px-3.5 py-2.5 text-stone-600 dark:text-stone-300" title={ticket.description}>
+                <td className="type-cell max-w-72 truncate px-3.5 py-2.5 dark:text-stone-300" title={ticket.description}>
                   {ticket.description}
                   {typeof ticket.rating === 'number' && ticket.rating > 0 && (
                     <span className="ml-1.5 inline-flex items-center gap-0.5 text-warning-ink">
@@ -77,7 +77,7 @@ export function FeedbackAdminTable({ tickets, isLoading }: { tickets: FeedbackTi
                     {feedbackStatusLabel(ticket.status)}
                   </span>
                 </td>
-                <td className="whitespace-nowrap px-3.5 py-2.5 text-stone-500">{formatFeedbackTime(ticket.createdAt)}</td>
+                <td className="type-cell whitespace-nowrap px-3.5 py-2.5">{formatFeedbackTime(ticket.createdAt)}</td>
               </tr>
             );
           })}

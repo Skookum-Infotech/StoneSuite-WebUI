@@ -85,7 +85,7 @@ export default function SetPasswordPage() {
       <div className="text-center">
         <CheckCircle2 className="mx-auto mb-3 size-10 text-green-500" />
         <h1 className="type-display">You're All Set</h1>
-        <p className="mt-1 text-sm text-stone-500">Your password has been set. You can now sign in.</p>
+        <p className="mt-1 type-page-subtitle">Your password has been set. You can now sign in.</p>
         <Link to="/auth/login" className={cn(buttonVariants(), 'mt-5 inline-block')}>
           Go to sign in
         </Link>

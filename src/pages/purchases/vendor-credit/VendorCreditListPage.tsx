@@ -20,7 +20,7 @@ export default function VendorCreditListPage() {
             </div>
             <div>
               <h1 className="type-page-title">Vendor Credits</h1>
-              <p className="text-sm text-stone-500">Track credits owed back by vendors and apply them to bills.</p>
+              <p className="type-page-subtitle">Track credits owed back by vendors and apply them to bills.</p>
             </div>
           </div>
           {canCreate && (

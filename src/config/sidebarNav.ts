@@ -778,7 +778,7 @@ export const sidebarNav: SidebarNavConfig = {
               label: "Audit Log",
               path: "/config/audit",
               icon: ScrollText,
-              iconColor: "text-stone-500 dark:text-stone-400",
+              iconColor: "text-ink-muted dark:text-stone-400",
               permission: { resource: "audit", action: "read" },
             },
             {

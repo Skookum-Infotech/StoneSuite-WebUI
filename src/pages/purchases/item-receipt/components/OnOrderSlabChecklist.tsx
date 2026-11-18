@@ -58,7 +58,7 @@ export function OnOrderSlabChecklist({ line, onChange, warehouseId, problems }: 
     <div className="rounded-lg border border-stone-200 bg-stone-50/50 p-3">
       <div className="mb-2 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="text-xs font-semibold text-stone-700">On-order slabs for {itemLabel}</p>
+          <p className="text-xs font-semibold text-ink">On-order slabs for {itemLabel}</p>
           <p className="mt-0.5 type-helper" data-testid="arrival-progress">
             {arrivalProgressText(arrived, drafts.length)}
             {' — tick the slabs that arrived. Slabs you leave unticked stay on order.'}
@@ -76,10 +76,10 @@ export function OnOrderSlabChecklist({ line, onChange, warehouseId, problems }: 
       </div>
 
       <div className="overflow-x-auto modal-scrollbar">
-        <table className="w-full text-left text-xs">
+        <table className="w-full text-left type-cell">
           <thead>
             <tr className="type-th">
-              <th className="w-8 px-1.5 py-1.5">
+              <th className="type-th w-8 px-1.5 py-1.5">
                 <input
                   ref={showPartial}
                   type="checkbox"
@@ -89,12 +89,12 @@ export function OnOrderSlabChecklist({ line, onChange, warehouseId, problems }: 
                   className="size-3.5 accent-emerald-600"
                 />
               </th>
-              <th className="min-w-[150px] px-1.5 py-1.5">Serial</th>
-              <th className="w-24 px-1.5 py-1.5 text-right">Length ({lengthUnit})</th>
-              <th className="w-24 px-1.5 py-1.5 text-right">Width ({lengthUnit})</th>
-              <th className="w-28 px-1.5 py-1.5 text-right">Thickness ({lengthUnit})</th>
-              <th className="w-24 px-1.5 py-1.5 text-right">Area ({line.unitCode})</th>
-              <th className="min-w-[180px] px-1.5 py-1.5">Bin</th>
+              <th className="type-th min-w-[150px] px-1.5 py-1.5">Serial</th>
+              <th className="type-th w-24 px-1.5 py-1.5 text-right">Length ({lengthUnit})</th>
+              <th className="type-th w-24 px-1.5 py-1.5 text-right">Width ({lengthUnit})</th>
+              <th className="type-th w-28 px-1.5 py-1.5 text-right">Thickness ({lengthUnit})</th>
+              <th className="type-th w-24 px-1.5 py-1.5 text-right">Area ({line.unitCode})</th>
+              <th className="type-th min-w-[180px] px-1.5 py-1.5">Bin</th>
             </tr>
           </thead>
           <tbody>
@@ -114,13 +114,13 @@ export function OnOrderSlabChecklist({ line, onChange, warehouseId, problems }: 
                     />
                   </td>
                   <td className="px-1.5 py-1.5 align-middle type-record-id">{slab.serial}</td>
-                  <td className="px-1.5 py-1.5 align-middle text-right tabular-nums text-stone-600">
+                  <td className="type-cell px-1.5 py-1.5 align-middle text-right tabular-nums">
                     {mmToDimension(slab.lengthMm, lengthUnit)}
                   </td>
-                  <td className="px-1.5 py-1.5 align-middle text-right tabular-nums text-stone-600">
+                  <td className="type-cell px-1.5 py-1.5 align-middle text-right tabular-nums">
                     {mmToDimension(slab.widthMm, lengthUnit)}
                   </td>
-                  <td className="px-1.5 py-1.5 align-middle text-right tabular-nums text-stone-600">
+                  <td className="px-1.5 py-1.5 align-middle text-right tabular-nums text-ink">
                     {thicknessKnown ? (
                       mmToDimension(slab.orderedThicknessMm, lengthUnit)
                     ) : (
@@ -133,7 +133,7 @@ export function OnOrderSlabChecklist({ line, onChange, warehouseId, problems }: 
                       />
                     )}
                   </td>
-                  <td className="px-1.5 py-1.5 align-middle text-right tabular-nums text-stone-600">
+                  <td className="type-cell px-1.5 py-1.5 align-middle text-right tabular-nums">
                     {area > 0 ? area.toFixed(AREA_DISPLAY_DECIMALS) : '—'}
                   </td>
                   <td className="px-1.5 py-1.5 align-middle">

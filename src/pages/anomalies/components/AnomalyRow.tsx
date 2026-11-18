@@ -32,17 +32,17 @@ export function AnomalyRow({ anomaly, busy, onReview }: Props) {
         >
           {ANOMALY_SEVERITY_LABELS[anomaly.severity]}
         </span>
-        <span className="text-micro font-medium text-stone-500">{anomalyRuleLabel(anomaly.ruleKey)}</span>
+        <span className="text-micro font-medium text-ink-muted">{anomalyRuleLabel(anomaly.ruleKey)}</span>
         <span className="type-subline">
           · Detected {new Date(anomaly.detectedAt).toLocaleString()}
         </span>
-        <span className="ml-auto rounded-md bg-stone-100 px-2 py-0.5 text-stone-600 type-pill">
+        <span className="ml-auto rounded-md bg-stone-100 px-2 py-0.5 text-ink type-pill">
           {ANOMALY_STATUS_LABELS[anomaly.status]}
         </span>
       </div>
 
       <h2 className="mt-2 type-card-title">{anomaly.title}</h2>
-      {anomaly.detail && <p className="mt-1 text-xs text-stone-600">{anomaly.detail}</p>}
+      {anomaly.detail && <p className="mt-1 text-xs text-ink">{anomaly.detail}</p>}
 
       <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-end">
         <div className="flex-1">

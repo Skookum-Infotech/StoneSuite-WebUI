@@ -59,11 +59,11 @@ export function AccountingSnapshot({
           aria-label={`View accounting periods, current period ${data.period.name}, ${data.period.status}`}
           className="flex w-full items-center justify-between rounded-xl bg-stone-50 p-3 text-left hover:bg-stone-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
-          <span className="text-xs font-semibold text-stone-950">{data.period.name}</span>
+          <span className="text-xs font-semibold text-ink-strong">{data.period.name}</span>
           <span
             className={cn(
               'rounded-full px-2 py-0.5 type-pill',
-              data.period.status === 'open' ? 'bg-emerald-100 text-emerald-700' : 'bg-stone-200 text-stone-600',
+              data.period.status === 'open' ? 'bg-emerald-100 text-emerald-700' : 'bg-stone-200 text-ink',
             )}
           >
             {data.period.status === 'open' ? 'Open' : 'Closed'}
@@ -74,7 +74,7 @@ export function AccountingSnapshot({
           type="button"
           onClick={() => navigate('/finance/accounting-periods')}
           aria-label="Set up your accounting calendar"
-          className="w-full rounded-xl bg-stone-50 p-3 text-left text-xs text-stone-500 hover:bg-stone-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="w-full rounded-xl bg-stone-50 p-3 text-left text-xs text-ink-muted hover:bg-stone-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           No accounting calendar configured — set one up.
         </button>
@@ -92,15 +92,15 @@ export function AccountingSnapshot({
                     type="button"
                     onClick={() => navigate(`/finance/journal-entries/${e.id}`)}
                     aria-label={`View journal entry ${e.entryNumber}, ${e.description}`}
-                    className="truncate rounded text-left text-xs font-semibold text-stone-950 hover:text-accent-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    className="truncate rounded text-left text-xs font-semibold text-ink-strong hover:text-accent-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   >
                     {e.description}
                   </button>
                   <div className="font-mono type-subline">{e.entryNumber}</div>
                 </div>
                 <div className="shrink-0 text-right">
-                  <div className="text-xs font-bold text-stone-950 tabular-nums">{currency(e.amount)}</div>
-                  <time dateTime={datePart(e.date)} title={formatDateValue(datePart(e.date), undefined, ENTRY_DATE_FORMAT)} className="text-micro text-stone-500">
+                  <div className="text-xs font-bold text-ink-strong tabular-nums">{currency(e.amount)}</div>
+                  <time dateTime={datePart(e.date)} title={formatDateValue(datePart(e.date), undefined, ENTRY_DATE_FORMAT)} className="text-micro text-ink-muted">
                     {relativeDay(datePart(e.date))}
                   </time>
                 </div>

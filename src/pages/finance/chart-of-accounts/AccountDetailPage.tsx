@@ -230,15 +230,15 @@ export default function AccountDetailPage() {
 
         <div className="lg:w-72 lg:shrink-0 lg:sticky lg:top-[4.5rem] lg:h-fit lg:self-start">
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-            <p className="text-xs font-semibold text-stone-500">Quick Actions</p>
+            <p className="type-card-title">Quick Actions</p>
             <div className="space-y-0.5">
               {canUpdate && (
                 <button
                   type="button"
                   onClick={() => setEditing(true)}
-                  className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs text-stone-700 w-full transition-colors text-left"
+                  className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-button text-ink w-full transition-colors text-left"
                 >
-                  <Pencil className="size-4 text-stone-400 shrink-0" />
+                  <Pencil className="size-4 text-ink-faint shrink-0" />
                   Edit account
                 </button>
               )}
@@ -246,9 +246,9 @@ export default function AccountDetailPage() {
                 <button
                   type="button"
                   onClick={() => setAddingChild(true)}
-                  className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs text-stone-700 w-full transition-colors text-left"
+                  className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-button text-ink w-full transition-colors text-left"
                 >
-                  <Plus className="size-4 text-stone-400 shrink-0" />
+                  <Plus className="size-4 text-ink-faint shrink-0" />
                   Add sub-account
                 </button>
               )}
@@ -257,9 +257,9 @@ export default function AccountDetailPage() {
                 onClick={handleExportPdf}
                 disabled={exportingPdf}
                 aria-label="Export as PDF"
-                className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs text-stone-700 w-full transition-colors text-left disabled:opacity-60 disabled:cursor-not-allowed"
+                className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-button text-ink w-full transition-colors text-left disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                {exportingPdf ? <Loader2 className="size-4 text-stone-400 shrink-0 animate-spin" /> : <FileDown className="size-4 text-stone-400 shrink-0" />}
+                {exportingPdf ? <Loader2 className="size-4 text-ink-faint shrink-0 animate-spin" /> : <FileDown className="size-4 text-ink-faint shrink-0" />}
                 {exportingPdf ? 'Exporting…' : 'Export PDF'}
               </button>
             </div>
@@ -267,22 +267,22 @@ export default function AccountDetailPage() {
           </div>
 
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-            <p className="text-xs font-semibold text-stone-500">Status</p>
+            <p className="type-card-title">Status</p>
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
-              <span className="text-stone-500">Status</span>
+              <span className="text-ink-muted">Status</span>
               <Badge color={statusColor}>{statusLabel}</Badge>
             </div>
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
-              <span className="text-stone-500">Postable</span>
-              <span className="text-stone-700">{account.isPostable ? 'Yes' : 'No (header)'}</span>
+              <span className="text-ink-muted">Postable</span>
+              <span className="text-ink">{account.isPostable ? 'Yes' : 'No (header)'}</span>
             </div>
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
-              <span className="text-stone-500">Created</span>
-              <span className="text-stone-700">{fmtDate(account.createdAt)}</span>
+              <span className="text-ink-muted">Created</span>
+              <span className="text-ink">{fmtDate(account.createdAt)}</span>
             </div>
             <div className="flex justify-between items-center py-2 text-xs">
-              <span className="text-stone-500">Updated</span>
-              <span className="text-stone-700">{fmtDate(account.updatedAt)}</span>
+              <span className="text-ink-muted">Updated</span>
+              <span className="text-ink">{fmtDate(account.updatedAt)}</span>
             </div>
             {canUpdate && actions.length > 0 && (
               <div className="flex gap-2 pt-1">
@@ -341,8 +341,8 @@ export default function AccountDetailPage() {
 function OverviewRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex justify-between items-start gap-4 text-xs">
-      <span className="text-stone-500 shrink-0">{label}</span>
-      <span className="text-stone-800 text-right break-words">{value}</span>
+      <span className="text-ink-muted shrink-0">{label}</span>
+      <span className="text-ink-strong text-right break-words">{value}</span>
     </div>
   );
 }

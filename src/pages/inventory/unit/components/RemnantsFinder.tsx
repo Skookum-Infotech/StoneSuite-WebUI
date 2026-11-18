@@ -40,7 +40,7 @@ export function RemnantsFinder() {
       {item && (
         <div className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm">
           <div className="overflow-x-auto modal-scrollbar">
-            <table className="w-full min-w-[600px] text-left text-xs">
+            <table className="w-full min-w-[600px] text-left type-cell">
               <thead className="border-b border-stone-200 bg-table-header">
                 <tr>
                   <th className="px-4 py-3 type-th">Serial</th>
@@ -51,22 +51,22 @@ export function RemnantsFinder() {
               </thead>
               <tbody className="divide-y divide-stone-100">
                 {isLoading ? (
-                  <tr><td colSpan={4} className="px-4 py-6 text-center text-stone-500">Loading…</td></tr>
+                  <tr><td colSpan={4} className="type-cell px-4 py-6 text-center">Loading…</td></tr>
                 ) : remnants.length > 0 ? (
                   remnants.map((r) => (
                     <tr key={r.id} className="hover:bg-accent/10 transition-colors">
                       <td className="px-4 py-3">
                         <button type="button" onClick={() => navigate(`/inventory/unit/${r.id}`)} className="hover:text-accent-foreground type-record-id">{r.serial}</button>
                       </td>
-                      <td className="px-4 py-3 tabular-nums text-right text-stone-700">{r.area.toFixed(2)}</td>
-                      <td className="px-4 py-3 text-stone-500">{r.grade || '—'}</td>
-                      <td className="px-4 py-3 text-stone-500">{r.binPath || r.warehouseName || '—'}</td>
+                      <td className="type-cell px-4 py-3 tabular-nums text-right">{r.area.toFixed(2)}</td>
+                      <td className="type-cell px-4 py-3">{r.grade || '—'}</td>
+                      <td className="type-cell px-4 py-3">{r.binPath || r.warehouseName || '—'}</td>
                     </tr>
                   ))
                 ) : (
                   <tr><td colSpan={4} className="py-12 text-center">
                     <div className="flex flex-col items-center gap-2">
-                      <Layers className="size-6 text-stone-400" />
+                      <Layers className="size-6 text-ink-faint" />
                       <p className="type-helper">No usable remnants for this item.</p>
                     </div>
                   </td></tr>

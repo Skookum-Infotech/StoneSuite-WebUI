@@ -20,7 +20,7 @@ export function ReportQueryState({ isLoading, error }: ReportQueryStateProps) {
   }
   if (isLoading) {
     return (
-      <p role="status" className="py-10 text-center text-sm text-stone-500">
+      <p role="status" className="py-10 text-center text-sm text-ink-muted">
         {LOADING_TEXT}
       </p>
     );

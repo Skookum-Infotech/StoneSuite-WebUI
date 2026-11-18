@@ -67,11 +67,11 @@ export function FilterDropdown({ label, value, onChange, allLabel, options }: Pr
             'flex h-8 w-full items-center justify-between gap-1.5 rounded-lg border border-stone-200 bg-white px-3 text-xs transition-colors',
             'focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand',
             'disabled:cursor-not-allowed disabled:opacity-50',
-            value ? 'text-stone-900' : 'text-stone-500',
+            value ? 'text-ink-strong' : 'text-ink-muted',
           )}
         >
           <span className="truncate">{selectedLabel}</span>
-          <ChevronDown className="size-3 shrink-0 text-stone-400" />
+          <ChevronDown className="size-3 shrink-0 text-ink-faint" />
         </button>
 
         {open && !disabled && (
@@ -123,7 +123,7 @@ function DropdownOption({
       onClick={onSelect}
       className={cn(
         'flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs transition-colors',
-        selected ? 'bg-brand/10 font-semibold text-stone-900' : 'text-stone-600 hover:bg-stone-50',
+        selected ? 'bg-brand/10 font-semibold text-ink-strong' : 'text-ink hover:bg-stone-50',
       )}
     >
       <Check className={cn('size-3 shrink-0', selected ? 'opacity-100' : 'opacity-0')} />

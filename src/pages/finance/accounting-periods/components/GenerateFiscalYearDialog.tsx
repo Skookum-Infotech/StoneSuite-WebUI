@@ -98,14 +98,14 @@ export function GenerateFiscalYearDialog({ onClose, fiscalYears, calendar }: {
             generate.isSuccess ? 'border-emerald-200 bg-emerald-50' : 'border-accent-foreground/15 bg-accent/50',
           )}
         >
-          <p className={cn('text-base font-bold tabular-nums', generate.isSuccess ? 'text-emerald-800' : 'text-stone-900')}>
+          <p className={cn('text-base font-bold tabular-nums', generate.isSuccess ? 'text-emerald-800' : 'text-ink-strong')}>
             {generate.isSuccess
               ? rangeLabel(generated) ?? 'Done'
               : firstPreview
                 ? rangeLabel(previews)
                 : 'Next fiscal year'}
           </p>
-          <p className={cn('mt-1 text-sm font-medium', generate.isSuccess ? 'text-success-ink' : 'text-stone-600')}>
+          <p className={cn('mt-1 text-sm font-medium', generate.isSuccess ? 'text-success-ink' : 'text-ink')}>
             {generate.isSuccess
               ? `${years(generated.length)} generated · ${generated.length * 12} periods, all open.`
               : firstPreview
@@ -143,8 +143,8 @@ export function GenerateFiscalYearDialog({ onClose, fiscalYears, calendar }: {
                     className={cn(
                       'rounded-lg py-2 text-sm font-bold tabular-nums transition-colors disabled:cursor-not-allowed disabled:opacity-50',
                       yearCount === n
-                        ? 'bg-brand text-stone-950 shadow-sm'
-                        : 'bg-stone-50 text-stone-600 hover:bg-stone-100 hover:text-stone-900',
+                        ? 'bg-brand text-ink-strong shadow-sm'
+                        : 'bg-stone-50 text-ink hover:bg-stone-100 hover:text-ink-strong',
                     )}
                   >
                     {n}

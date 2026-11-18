@@ -45,7 +45,7 @@ function CustomSamlSetupPageContent({ provider }: { provider: SAMLProvider }) {
         <div className="flex items-center justify-between gap-3.5">
           <div className="flex items-center gap-3.5">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-stone-50 border border-stone-200">
-              <KeyRound className="size-5 text-stone-900" />
+              <KeyRound className="size-5 text-ink-strong" />
             </div>
             <div>
               <h1 className="type-page-title">
@@ -59,7 +59,7 @@ function CustomSamlSetupPageContent({ provider }: { provider: SAMLProvider }) {
           <Link
             to="/config/saml-setup"
             aria-label="Back to identity providers"
-            className="flex shrink-0 items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-stone-500 transition-colors hover:bg-stone-100 hover:text-stone-700"
+            className="flex shrink-0 items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-ink-muted transition-colors hover:bg-stone-100 hover:text-ink"
           >
             <ChevronLeft className="size-3.5" />
             Identity providers
@@ -81,7 +81,7 @@ function CustomSamlSetupPageContent({ provider }: { provider: SAMLProvider }) {
                     title={`Create a new SAML 2.0 application in ${label}, for StoneSuite`}
                   >
                     <p className="flex items-start gap-2 type-helper">
-                      <Info className="mt-0.5 size-3.5 shrink-0 text-stone-400" />
+                      <Info className="mt-0.5 size-3.5 shrink-0 text-ink-faint" />
                       StoneSuite does not support identity provider-initiated
                       flows — if {label} offers a &quot;test&quot; or
                       &quot;preview&quot; sign-in button, it will not work.

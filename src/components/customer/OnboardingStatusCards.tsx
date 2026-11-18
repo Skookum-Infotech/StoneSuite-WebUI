@@ -30,7 +30,7 @@ export function OnboardingStatusCards({ counts, active, onSelect }: OnboardingSt
               <span className={`size-2 rounded-full ${f.dotClass}`} aria-hidden="true" />
               {f.label}
             </span>
-            <span className="mt-1 block text-2xl font-bold text-stone-900">{counts[f.key]}</span>
+            <span className="mt-1 block text-2xl font-bold text-ink-strong">{counts[f.key]}</span>
           </button>
         );
       })}

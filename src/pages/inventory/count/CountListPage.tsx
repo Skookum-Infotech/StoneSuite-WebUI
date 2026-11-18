@@ -64,7 +64,7 @@ export default function CountListPage() {
             </div>
             <div>
               <h1 className="type-page-title">Inventory Counts</h1>
-              <p className="text-sm text-stone-500">Cycle counts and physical stock-takes.</p>
+              <p className="type-page-subtitle">Cycle counts and physical stock-takes.</p>
             </div>
           </div>
           {canCreate && (
@@ -75,15 +75,15 @@ export default function CountListPage() {
         </div>
 
         <div className="mt-5 relative w-full sm:w-64">
-          <Search className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-stone-400" />
-          <input type="text" placeholder="Search…" value={term} onChange={(e) => setTerm(e.target.value)} className="h-8 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-3 placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all type-input" />
+          <Search className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-ink-faint" />
+          <input type="text" placeholder="Search…" value={term} onChange={(e) => setTerm(e.target.value)} className="h-8 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-3 placeholder:text-ink-muted focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all type-input" />
         </div>
 
         {isError && <p className="mt-3 type-error">{apiErrorMessage(error, 'Failed to load counts.')}</p>}
 
         <div className="mt-4 flex-1 overflow-y-auto modal-scrollbar">
           <div className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm">
-            <table className="w-full text-left text-xs">
+            <table className="w-full text-left type-cell">
               <thead className="border-b border-stone-200 bg-table-header">
                 <tr>
                   <th className="px-4 py-3 type-th">Number</th>
@@ -95,17 +95,17 @@ export default function CountListPage() {
               </thead>
               <tbody className="divide-y divide-stone-100">
                 {loading ? (
-                  <tr><td colSpan={5} className="px-4 py-6 text-center text-stone-500">Loading…</td></tr>
+                  <tr><td colSpan={5} className="type-cell px-4 py-6 text-center">Loading…</td></tr>
                 ) : records.length > 0 ? records.map((c) => (
                   <tr key={c.id} className="relative hover:bg-accent/10 transition-colors">
                     <td className="px-4 py-3.5 type-record-id"><Link to={`/inventory/count/${c.id}`} className="after:absolute after:inset-0">{c.number || '—'}</Link></td>
-                    <td className="px-4 py-3.5 text-stone-700">{c.warehouseName || '—'}</td>
+                    <td className="type-cell px-4 py-3.5">{c.warehouseName || '—'}</td>
                     <td className="px-4 py-3.5"><Badge color={DOC_STATUS_COLORS[c.statusCode] ?? '#a8a29e'}>{docStatusLabel(c.statusCode)}</Badge></td>
-                    <td className="px-4 py-3.5 text-stone-500 tabular-nums">{fmtDate(c.date)}</td>
-                    <td className="px-4 py-3.5 text-right tabular-nums text-stone-700">{c.countedCount}/{c.lineCount}</td>
+                    <td className="type-cell px-4 py-3.5 tabular-nums">{fmtDate(c.date)}</td>
+                    <td className="type-cell px-4 py-3.5 text-right tabular-nums">{c.countedCount}/{c.lineCount}</td>
                   </tr>
                 )) : (
-                  <tr><td colSpan={5} className="py-16 text-center text-stone-500">No counts yet.</td></tr>
+                  <tr><td colSpan={5} className="type-cell py-16 text-center">No counts yet.</td></tr>
                 )}
               </tbody>
             </table>

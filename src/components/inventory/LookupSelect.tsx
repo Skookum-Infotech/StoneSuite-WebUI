@@ -57,12 +57,12 @@ export function LookupSelect({
     return (
       <div className="space-y-1.5 rounded-lg border border-stone-200 bg-stone-50/60 p-2.5">
         <div className="flex items-center justify-between">
-          <span className="text-micro font-semibold text-stone-500">New {label}</span>
+          <span className="text-micro font-semibold text-ink-muted">New {label}</span>
           <button
             type="button"
             onClick={() => setAdding(false)}
             aria-label={`Cancel adding ${label}`}
-            className="rounded p-0.5 text-stone-500 hover:bg-stone-100 hover:text-stone-600 transition-colors"
+            className="rounded p-0.5 text-ink-muted hover:bg-stone-100 hover:text-ink transition-colors"
           >
             <X className="size-3.5" />
           </button>
@@ -119,7 +119,7 @@ export function LookupSelect({
           onClick={() => setAdding(true)}
           aria-label={`Add ${label}`}
           title={`Add ${label}`}
-          className="shrink-0 inline-flex items-center justify-center rounded-lg border border-stone-200 bg-white p-2 text-stone-500 hover:bg-accent hover:border-accent hover:text-accent-foreground transition-colors"
+          className="shrink-0 inline-flex items-center justify-center rounded-lg border border-stone-200 bg-white p-2 text-ink-muted hover:bg-accent hover:border-accent hover:text-accent-foreground transition-colors"
         >
           <Plus className="size-3.5" />
         </button>

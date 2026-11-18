@@ -23,7 +23,7 @@ function Callout({
 }) {
   return (
     <p className="flex items-start gap-2 type-helper">
-      <Icon className="mt-0.5 size-3.5 shrink-0 text-stone-400" />
+      <Icon className="mt-0.5 size-3.5 shrink-0 text-ink-faint" />
       {children}
     </p>
   );
@@ -55,7 +55,7 @@ export default function CognitoSamlSetupPage(): React.JSX.Element {
           <Link
             to="/config/saml-setup"
             aria-label="Back to identity providers"
-            className="flex shrink-0 items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-stone-500 transition-colors hover:bg-stone-100 hover:text-stone-700"
+            className="flex shrink-0 items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-ink-muted transition-colors hover:bg-stone-100 hover:text-ink"
           >
             <ChevronLeft className="size-3.5" />
             Identity providers

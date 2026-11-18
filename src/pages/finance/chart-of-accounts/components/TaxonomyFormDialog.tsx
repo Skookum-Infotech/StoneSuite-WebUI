@@ -134,7 +134,7 @@ export function TaxonomyFormDialog({ intent, onClose }: {
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="rounded p-1 text-stone-500 transition-colors hover:bg-stone-100 hover:text-stone-600"
+            className="rounded p-1 text-ink-muted transition-colors hover:bg-stone-100 hover:text-ink"
           >
             <X className="size-4" />
           </button>

@@ -16,7 +16,7 @@ interface Props {
 }
 
 const inputClass =
-  'h-8 w-full rounded-lg border border-stone-200 bg-white px-3 type-input placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150';
+  'h-8 w-full rounded-lg border border-stone-200 bg-white px-3 type-input placeholder:text-ink-muted focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150';
 
 // All filters are server-side (resource/action/actor/from/to on GET
 // /api/tenant/audit) — there is no client-side narrowing here. Resource,

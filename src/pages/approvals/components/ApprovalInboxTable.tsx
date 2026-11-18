@@ -6,13 +6,13 @@ import { AgeBadge } from './AgeBadge';
 
 // One semantic table. Below `md` each row is restyled into a stacked card (the
 // cell's data-label supplies its caption), so a phone gets no horizontal scroll.
-const CELL = 'block px-4 py-1 before:mr-2 before:text-micro before:font-semibold before:uppercase before:text-stone-400 before:content-[attr(data-label)] md:table-cell md:px-4 md:py-3 md:before:content-none';
-const HEAD = 'px-4 py-2 text-left type-overline';
+const CELL = 'block px-4 py-1 before:mr-2 before:text-micro before:font-semibold before:uppercase before:text-ink-muted before:content-[attr(data-label)] md:table-cell md:px-4 md:py-3 md:before:content-none';
+const HEAD = 'px-4 py-2 text-left type-th';
 
 export function ApprovalInboxTable({ items, caption }: { items: ApprovalInboxItem[]; caption: string }) {
   const now = new Date();
   return (
-    <table className="block w-full text-sm md:table">
+    <table className="block w-full type-cell md:table">
       <caption className="sr-only">{caption}</caption>
       <thead className="hidden md:table-header-group">
         <tr className="border-b border-stone-200">
@@ -31,7 +31,7 @@ export function ApprovalInboxTable({ items, caption }: { items: ApprovalInboxIte
               className="mb-3 block rounded-xl border border-stone-200 bg-white py-2 md:mb-0 md:table-row md:rounded-none md:border-0 md:border-b md:py-0"
             >
               <td className={CELL} data-label="Record">
-                <Link to={href} className="font-semibold text-stone-900 underline-offset-2 hover:underline">
+                <Link to={href} className="font-semibold text-ink-strong underline-offset-2 hover:underline">
                   {item.label} {item.number}
                 </Link>
               </td>
@@ -50,7 +50,7 @@ export function ApprovalInboxTable({ items, caption }: { items: ApprovalInboxIte
                     Review
                   </Link>
                 ) : (
-                  <span className="text-xs text-stone-500">View only</span>
+                  <span className="text-xs text-ink-muted">View only</span>
                 )}
               </td>
             </tr>

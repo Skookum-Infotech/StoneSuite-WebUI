@@ -18,7 +18,7 @@ export function SetupStep({ number, isLast = false, title, children }: SetupStep
       )}
       <span
         aria-hidden="true"
-        className="flex size-8 shrink-0 items-center justify-center rounded-full border border-stone-200 bg-white text-xs font-bold text-stone-500"
+        className="flex size-8 shrink-0 items-center justify-center rounded-full border border-stone-200 bg-white text-xs font-bold text-ink-muted"
       >
         {number}
       </span>

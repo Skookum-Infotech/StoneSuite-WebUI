@@ -9,7 +9,7 @@ import type { Citation } from '@/types/ai';
 
 import { buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-const noteClass = 'text-micro italic text-stone-500 dark:text-stone-500';
+const noteClass = 'text-micro italic text-ink-muted dark:text-stone-500';
 /** After this many seconds still waiting on the first token, swap "Thinking…"
  *  for a cold-start explanation — Ollama can take up to ~60s to load. */
 const WARMUP_THRESHOLD_SECONDS = 8;
@@ -129,7 +129,7 @@ export const AssistantTurn = memo(function AssistantTurn({
 
   return (
     <div className="space-y-2">
-      <p className="ml-auto max-w-[85%] whitespace-pre-wrap break-words rounded-2xl bg-brand/10 px-3 py-2 text-xs font-semibold text-stone-700 dark:text-stone-200">
+      <p className="ml-auto max-w-[85%] whitespace-pre-wrap break-words rounded-2xl bg-brand/10 px-3 py-2 text-xs font-semibold text-ink dark:text-stone-200">
         {turn.question}
       </p>
 
@@ -144,7 +144,7 @@ export const AssistantTurn = memo(function AssistantTurn({
 
       {pending && (
         <>
-          <div className="flex items-center gap-2 rounded-2xl bg-stone-100 px-3 py-2 text-xs text-stone-500 dark:bg-white/[0.06] dark:text-stone-400">
+          <div className="flex items-center gap-2 rounded-2xl bg-stone-100 px-3 py-2 text-xs text-ink-muted dark:bg-white/[0.06] dark:text-stone-400">
             <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
             <span>
               {turn.waiting
@@ -169,7 +169,7 @@ export const AssistantTurn = memo(function AssistantTurn({
           )}
           <div
             aria-busy={turn.streaming}
-            className="rounded-2xl bg-stone-100 px-3 py-2 text-xs text-stone-700 dark:bg-white/[0.06] dark:text-stone-200"
+            className="rounded-2xl bg-stone-100 px-3 py-2 text-xs text-ink dark:bg-white/[0.06] dark:text-stone-200"
           >
             <AssistantMarkdown text={turn.answer} canOpenCitation={canOpenCitation} onOpenCitation={onOpenCitation} />
             {turn.streaming && (

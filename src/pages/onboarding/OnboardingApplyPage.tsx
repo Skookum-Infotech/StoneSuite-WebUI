@@ -67,7 +67,7 @@ export default function OnboardingApplyPage() {
           <CheckCircle2 className="size-7 text-green-600" />
         </div>
         <h1 className="type-display">Application Submitted!</h1>
-        <p className="mt-2 text-sm text-stone-500 leading-relaxed">
+        <p className="mt-2 type-page-subtitle">
           Thanks! Your onboarding details were sent for review. You'll receive an email to set your
           password once your workspace is approved.
         </p>
@@ -107,7 +107,7 @@ export default function OnboardingApplyPage() {
               Welcome to<br />
               <span className="text-teal-300">{invite?.tenantName ?? 'your workspace'}</span>
             </h1>
-            <p className="mt-3 text-sm text-white/50 leading-relaxed">
+            <p className="mt-3 text-white/50 type-page-subtitle">
               Complete the form to set up your company profile. Your application will be
               reviewed before your workspace is activated.
             </p>
@@ -151,10 +151,10 @@ export default function OnboardingApplyPage() {
         <div className="px-8 py-10 h-full">
           {/* Page heading (visible on mobile too) */}
           <div className="mb-8">
-            <h2 className="text-xl font-bold text-stone-900">
+            <h2 className="text-xl font-bold text-ink-strong">
               {invite?.tenantName ? `Welcome to ${invite.tenantName}` : 'Company Onboarding'}
             </h2>
-            <p className="mt-1 text-sm text-stone-500">
+            <p className="mt-1 text-sm text-ink-muted">
               Fill in your company details below. All fields marked <span className="text-danger-ink">*</span> are required.
             </p>
           </div>

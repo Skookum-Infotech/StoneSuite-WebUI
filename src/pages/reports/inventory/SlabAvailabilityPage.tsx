@@ -83,7 +83,7 @@ export default function SlabAvailabilityPage() {
             getRowKey={(r) => r.itemId}
             onRowClick={(r) => navigate(`/inventory/item/${r.itemId}`)}
           />
-          <p className="text-label text-stone-500">{NOTE}</p>
+          <p className="text-label text-ink-muted">{NOTE}</p>
         </>
       )}
     </ReportPageShell>

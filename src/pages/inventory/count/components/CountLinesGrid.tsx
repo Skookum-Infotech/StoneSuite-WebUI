@@ -54,15 +54,15 @@ export function CountLinesGrid({ count, editable }: { count: Count; editable: bo
   return (
     <div className="space-y-3">
       <div className="overflow-x-auto modal-scrollbar rounded-lg border border-stone-200">
-        <table className="w-full text-left text-xs">
+        <table className="w-full text-left type-cell">
           <thead className="bg-stone-50 border-b border-stone-200">
             <tr>
-              <th className="px-3 py-2 font-semibold text-stone-500">Item / Unit</th>
-              <th className="px-3 py-2 font-semibold text-stone-500">Location</th>
-              <th className="px-3 py-2 font-semibold text-stone-500 text-right">System Qty</th>
-              <th className="px-3 py-2 font-semibold text-stone-500 text-right">Counted</th>
-              <th className="px-3 py-2 font-semibold text-stone-500 text-right">Variance</th>
-              <th className="px-3 py-2 font-semibold text-stone-500">Reason</th>
+              <th className="type-th px-3 py-2">Item / Unit</th>
+              <th className="type-th px-3 py-2">Location</th>
+              <th className="type-th px-3 py-2 text-right">System Qty</th>
+              <th className="type-th px-3 py-2 text-right">Counted</th>
+              <th className="type-th px-3 py-2 text-right">Variance</th>
+              <th className="type-th px-3 py-2">Reason</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-stone-100">
@@ -77,7 +77,7 @@ export function CountLinesGrid({ count, editable }: { count: Count; editable: bo
               />
             ))}
             {count.lines.length === 0 && (
-              <tr><td colSpan={6} className="py-8 text-center text-stone-500">No lines yet — freeze to snapshot the scope.</td></tr>
+              <tr><td colSpan={6} className="type-cell py-8 text-center">No lines yet — freeze to snapshot the scope.</td></tr>
             )}
           </tbody>
         </table>
@@ -116,20 +116,20 @@ function CountLineRow({ line, editable, dirty, onChange, reasons }: {
   return (
     <tr className={cn(hasVariance && 'bg-amber-50/40')}>
       <td className="px-3 py-2.5">
-        <span className="block font-medium text-stone-800">{line.inventoryItemName || '—'}</span>
+        <span className="block font-medium text-ink-strong">{line.inventoryItemName || '—'}</span>
         {line.unitSerial && <span className="block font-mono type-subline">{line.unitSerial}</span>}
       </td>
-      <td className="px-3 py-2.5 text-stone-500">{line.binPath || '—'}</td>
-      <td className="px-3 py-2.5 text-right tabular-nums text-stone-700">{line.systemQty}</td>
+      <td className="type-cell px-3 py-2.5">{line.binPath || '—'}</td>
+      <td className="type-cell px-3 py-2.5 text-right tabular-nums">{line.systemQty}</td>
       <td className="px-3 py-2.5 text-right">
         {serialized ? (
           editable ? (
             <div className="flex justify-end gap-1">
-              <button type="button" onClick={() => onChange({ found: true })} className={cn('rounded-md px-2 py-1 text-micro font-semibold', (dirty?.found ?? undefined) === true ? 'bg-emerald-100 text-emerald-700' : 'bg-stone-100 text-stone-500')}>Found</button>
-              <button type="button" onClick={() => onChange({ found: false })} className={cn('rounded-md px-2 py-1 text-micro font-semibold', (dirty?.found ?? undefined) === false ? 'bg-destructive/10 text-danger-ink' : 'bg-stone-100 text-stone-500')}>Missing</button>
+              <button type="button" onClick={() => onChange({ found: true })} className={cn('rounded-md px-2 py-1 text-micro font-semibold', (dirty?.found ?? undefined) === true ? 'bg-emerald-100 text-emerald-700' : 'bg-stone-100 text-ink-muted')}>Found</button>
+              <button type="button" onClick={() => onChange({ found: false })} className={cn('rounded-md px-2 py-1 text-micro font-semibold', (dirty?.found ?? undefined) === false ? 'bg-destructive/10 text-danger-ink' : 'bg-stone-100 text-ink-muted')}>Missing</button>
             </div>
           ) : (
-            <span className="text-stone-500">{foundDisplay(line.countedQty)}</span>
+            <span className="text-ink-muted">{foundDisplay(line.countedQty)}</span>
           )
         ) : editable ? (
           <input
@@ -141,14 +141,14 @@ function CountLineRow({ line, editable, dirty, onChange, reasons }: {
             className="w-24 h-8 rounded-md border border-stone-300 px-2 text-right type-input"
           />
         ) : (
-          <span className="tabular-nums text-stone-700">
+          <span className="tabular-nums text-ink">
             {line.countedQty === null || line.countedQty === undefined
-              ? <span className="italic text-stone-500">{countedQtyDisplay(line.countedQty)}</span>
+              ? <span className="italic text-ink-muted">{countedQtyDisplay(line.countedQty)}</span>
               : line.countedQty}
           </span>
         )}
       </td>
-      <td className={cn('px-3 py-2.5 text-right tabular-nums font-semibold', hasVariance ? 'text-amber-700' : 'text-stone-500')}>
+      <td className={cn('px-3 py-2.5 text-right tabular-nums font-semibold', hasVariance ? 'text-amber-700' : 'text-ink-muted')}>
         {line.variance === null || line.variance === undefined ? '—' : (line.variance > 0 ? '+' : '') + line.variance}
       </td>
       <td className="px-3 py-2.5">
@@ -159,12 +159,12 @@ function CountLineRow({ line, editable, dirty, onChange, reasons }: {
           editable ? (
             <ReasonSelect reasons={reasons} value={reasonValue} onChange={(v) => onChange({ reasonId: v })} required label="Reason" />
           ) : line.reasonName ? (
-            <span className="text-stone-500">{line.reasonName}</span>
+            <span className="text-ink-muted">{line.reasonName}</span>
           ) : (
             <span className="font-semibold text-warning-ink">Missing — recount needed</span>
           )
         ) : (
-          <span className="text-stone-500">—</span>
+          <span className="text-ink-muted">—</span>
         )}
       </td>
     </tr>

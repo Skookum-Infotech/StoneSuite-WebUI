@@ -27,7 +27,7 @@ export default function ItemReceiptListPage() {
             </div>
             <div>
               <h1 className="type-page-title">Item Receipts</h1>
-              <p className="text-sm text-stone-500">Record goods arriving against your purchase orders.</p>
+              <p className="type-page-subtitle">Record goods arriving against your purchase orders.</p>
             </div>
           </div>
           {canCreate && (

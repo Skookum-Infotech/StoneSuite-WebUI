@@ -240,7 +240,7 @@ export default function CustomerDetailPage() {
                         <label className={fieldLabelCls}>{key}</label>
                         <div className={readonlyCls}>
                           {String(value ?? "") || (
-                            <span className="text-stone-500">—</span>
+                            <span className="text-ink-muted">—</span>
                           )}
                         </div>
                       </div>

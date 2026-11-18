@@ -36,8 +36,8 @@ function MonthCell({ day, cards, onSelectDay }: {
             'inline-flex h-6 min-w-6 items-center justify-center rounded-full px-1.5 text-xs font-medium',
             'outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring',
             day.isToday
-              ? 'bg-brand font-semibold text-stone-900 hover:bg-brand-hover'
-              : cn('hover:bg-stone-200', day.inMonth ? 'text-stone-900' : 'text-stone-500'),
+              ? 'bg-brand font-semibold text-ink-strong hover:bg-brand-hover'
+              : cn('hover:bg-stone-200', day.inMonth ? 'text-ink-strong' : 'text-ink-muted'),
           )}
         >
           {number}

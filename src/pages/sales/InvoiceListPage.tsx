@@ -22,7 +22,7 @@ export default function InvoiceListPage() {
             </div>
             <div>
               <h1 className="type-page-title">Invoices</h1>
-              <p className="text-sm text-stone-500">Billed amounts owed by customers.</p>
+              <p className="type-page-subtitle">Billed amounts owed by customers.</p>
             </div>
           </div>
           {!isCustomer && (

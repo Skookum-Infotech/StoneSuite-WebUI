@@ -43,7 +43,7 @@ export function CompanyInfoSelectField({
         {field.required && <span className="ml-0.5 text-red-400">*</span>}
       </label>
       <div className="relative">
-        {Icon && <Icon className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-stone-400 z-10" />}
+        {Icon && <Icon className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-ink-faint z-10" />}
         <Select
           id={field.id}
           aria-label={field.label}

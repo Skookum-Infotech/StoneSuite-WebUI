@@ -35,7 +35,7 @@ function ReadonlyField({ label, value, full, link, multiline, flag }: {
               {flag && <Flag {...flag} />}
               {value}
             </span>
-          ) : <span className="text-stone-500">—</span>}
+          ) : <span className="text-ink-muted">—</span>}
         </div>
       )}
     </div>
@@ -44,12 +44,12 @@ function ReadonlyField({ label, value, full, link, multiline, flag }: {
 
 function ChipList({ items, emptyLabel }: { items: string[]; emptyLabel: ReactNode }) {
   if (items.length === 0) return typeof emptyLabel === 'string'
-    ? <div className={cn(readonlyCls, 'text-stone-500')}>{emptyLabel}</div>
+    ? <div className={cn(readonlyCls, 'text-ink-muted')}>{emptyLabel}</div>
     : <>{emptyLabel}</>;
   return (
     <div className="flex flex-wrap gap-1.5">
       {items.map((item) => (
-        <span key={item} className="inline-flex items-center rounded-md bg-stone-100 px-2.5 py-1 text-stone-600 type-pill">
+        <span key={item} className="inline-flex items-center rounded-md bg-stone-100 px-2.5 py-1 text-ink type-pill">
           {item}
         </span>
       ))}

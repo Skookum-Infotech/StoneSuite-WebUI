@@ -28,8 +28,8 @@ export function TransferLinesEditor({ lines, onChange, fromWarehouseId }: {
         return (
           <div key={line.key} className="rounded-lg border border-stone-200 p-3 space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-micro font-semibold text-stone-500">Line {i + 1}</span>
-              <button type="button" onClick={() => remove(line.key)} aria-label={`Remove line ${i + 1}`} className="text-stone-400 hover:text-danger-ink"><Trash2 className="size-3.5" /></button>
+              <span className="text-micro font-semibold text-ink-muted">Line {i + 1}</span>
+              <button type="button" onClick={() => remove(line.key)} aria-label={`Remove line ${i + 1}`} className="text-ink-muted hover:text-danger-ink"><Trash2 className="size-3.5" /></button>
             </div>
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
               <div className="sm:col-span-2">

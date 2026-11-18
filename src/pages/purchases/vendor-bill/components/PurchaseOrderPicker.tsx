@@ -89,13 +89,13 @@ export function PurchaseOrderPicker({
   if (value) {
     return (
       <div className="flex items-center gap-2 rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm">
-        <Package className="size-3.5 shrink-0 text-stone-400" aria-hidden="true" />
-        <span className="flex-1 truncate font-medium text-stone-800">{value.number}</span>
+        <Package className="size-3.5 shrink-0 text-ink-faint" aria-hidden="true" />
+        <span className="flex-1 truncate font-medium text-ink-strong">{value.number}</span>
         <button
           type="button"
           onClick={() => onChange(null)}
           aria-label="Remove purchase order link"
-          className="shrink-0 rounded p-0.5 text-stone-500 hover:bg-stone-100 hover:text-stone-600 transition-colors"
+          className="shrink-0 rounded p-0.5 text-ink-muted hover:bg-stone-100 hover:text-ink transition-colors"
         >
           <X className="size-3.5" />
         </button>
@@ -106,7 +106,7 @@ export function PurchaseOrderPicker({
   return (
     <div ref={containerRef} className="relative">
       <div className="relative">
-        <Search className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-stone-400" />
+        <Search className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-ink-faint" />
         <input
           type="text"
           disabled={disabled || !vendor}
@@ -118,7 +118,7 @@ export function PurchaseOrderPicker({
           aria-label="Search purchase order"
         />
         {isFetching && (
-          <Loader2 className="absolute right-2.5 top-1/2 -translate-y-1/2 size-3.5 animate-spin text-stone-400" />
+          <Loader2 className="absolute right-2.5 top-1/2 -translate-y-1/2 size-3.5 animate-spin text-ink-faint" />
         )}
       </div>
 
@@ -141,13 +141,13 @@ export function PurchaseOrderPicker({
               type="button"
               onClick={() => select(order)}
               aria-label={`Link purchase order ${order.number}`}
-              className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-xs text-stone-700 hover:bg-accent/10 transition-colors"
+              className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-xs text-ink hover:bg-accent/10 transition-colors"
             >
               <span className="flex items-center gap-2 truncate">
-                <Package className="size-3.5 shrink-0 text-stone-400" aria-hidden="true" />
+                <Package className="size-3.5 shrink-0 text-ink-faint" aria-hidden="true" />
                 <span className="truncate">{order.number}</span>
               </span>
-              <span className="shrink-0 text-stone-500">{order.status}</span>
+              <span className="shrink-0 text-ink-muted">{order.status}</span>
             </button>
           ))}
         </div>

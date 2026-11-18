@@ -112,7 +112,7 @@ export default function FeedbackListPage() {
           </div>
           <div>
             <h1 className="dark:text-stone-100 type-page-title">Support Tickets</h1>
-            <p className="text-sm text-stone-500 dark:text-stone-400">
+            <p className="dark:text-stone-400 type-page-subtitle">
               Feedback, bugs, and feature requests reported across every tenant.
             </p>
           </div>

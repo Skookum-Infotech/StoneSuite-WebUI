@@ -9,7 +9,7 @@ const TICKET_TIPS = [
   'Add a screenshot if you can — it saves a round trip.',
 ];
 
-const TITLE_CLS = 'text-sm font-semibold text-stone-900 dark:text-stone-100';
+const TITLE_CLS = 'text-sm font-semibold text-ink-strong dark:text-stone-100';
 
 // The right-hand column of the New Ticket form: the optional rating, a few
 // pointers toward a ticket support can act on, and — so nothing is attached
@@ -40,7 +40,7 @@ export function FeedbackSubmitAside({
           <Lightbulb className="size-4 text-warning-ink" aria-hidden="true" />
           Tips for a helpful ticket
         </h3>
-        <ul className="mt-3 space-y-2 text-sm text-stone-600 dark:text-stone-300">
+        <ul className="mt-3 space-y-2 text-sm text-ink dark:text-stone-300">
           {TICKET_TIPS.map((tip) => (
             <li key={tip} className="flex gap-2">
               <span className="mt-2 size-1 shrink-0 rounded-full bg-stone-300 dark:bg-stone-600" aria-hidden="true" />
@@ -56,7 +56,7 @@ export function FeedbackSubmitAside({
           <p className="mt-1 dark:text-stone-400 type-helper">
             The page you were on before opening Support, so we can find the problem faster.
           </p>
-          <code className="mt-3 block truncate rounded-lg bg-stone-100 px-2.5 py-1.5 font-mono text-field text-stone-600 dark:bg-white/10 dark:text-stone-300">
+          <code className="mt-3 block truncate rounded-lg bg-stone-100 px-2.5 py-1.5 font-mono text-field text-ink dark:bg-white/10 dark:text-stone-300">
             {pagePath}
           </code>
         </section>

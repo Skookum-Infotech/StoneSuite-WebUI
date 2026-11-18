@@ -22,7 +22,7 @@ export default function LeadPage() {
               <h1 className="type-page-title">
                 Leads
               </h1>
-              <p className="text-sm text-stone-500">
+              <p className="type-page-subtitle">
                 Track and manage your sales leads pipeline.
               </p>
             </div>

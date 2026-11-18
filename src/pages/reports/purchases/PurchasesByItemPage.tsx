@@ -66,7 +66,7 @@ export default function PurchasesByItemPage() {
           <ReportKpiGrid items={kpis} />
           <ReportTopBarChart data={chartData} label="Top items by spend" names={{ primary: "Spend" }} />
           <ReportDataTable copy={{ caption: "Purchases by item" }} columns={COLUMNS} rows={q.data.rows} getRowKey={(r) => r.itemId} />
-          <p className="text-label text-stone-500">{NOTE}</p>
+          <p className="text-label text-ink-muted">{NOTE}</p>
         </>
       )}
     </ReportPageShell>

@@ -24,7 +24,7 @@ const TONE_STYLES: Record<BinEventTone, string> = {
   in: 'bg-emerald-100 text-emerald-700',
   out: 'bg-sky-100 text-sky-700',
   loss: 'bg-red-100 text-danger-ink',
-  neutral: 'bg-stone-100 text-stone-600',
+  neutral: 'bg-stone-100 text-ink',
 };
 
 function toneIcon(e: BinHistoryEntry): LucideIcon {
@@ -73,7 +73,7 @@ export function BinHistoryTab({ binId }: { binId: string }) {
               'h-8 rounded-full border px-3 text-xs font-medium transition-colors',
               direction === f.value
                 ? 'border-stone-900 bg-stone-900 text-white'
-                : 'border-stone-200 bg-white text-stone-600 hover:bg-stone-50',
+                : 'border-stone-200 bg-white text-ink hover:bg-stone-50',
             )}
           >
             {f.label}
@@ -85,7 +85,7 @@ export function BinHistoryTab({ binId }: { binId: string }) {
       {q.isError && <ErrorNote>{apiErrorMessage(q.error, 'Failed to load this bin’s history.')}</ErrorNote>}
 
       {!q.isLoading && !q.isError && entries.length === 0 && (
-        <p className="rounded-xl border border-stone-200 bg-white py-12 text-center text-sm text-stone-500">
+        <p className="rounded-xl border border-stone-200 bg-white py-12 text-center text-sm text-ink-muted">
           {direction ? 'Nothing matches that filter yet.' : 'No slab has been moved into or out of this bin yet.'}
         </p>
       )}
@@ -101,7 +101,7 @@ export function BinHistoryTab({ binId }: { binId: string }) {
                   <Icon className="size-3.5" aria-hidden="true" />
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className="text-xs text-stone-800">
+                  <p className="text-xs text-ink-strong">
                     <span className="font-semibold">{binEventLabel(e)}</span>
                     {' · '}
                     <button
@@ -111,7 +111,7 @@ export function BinHistoryTab({ binId }: { binId: string }) {
                     >
                       {e.unitSerial}
                     </button>
-                    {counterpart && <span className="text-stone-500"> {counterpart}</span>}
+                    {counterpart && <span className="text-ink-muted"> {counterpart}</span>}
                   </p>
                   <p className="type-helper">
                     {e.inventoryItemName && <>{e.inventoryItemName} · </>}

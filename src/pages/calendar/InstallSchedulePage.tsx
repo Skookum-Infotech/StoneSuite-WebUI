@@ -131,10 +131,10 @@ export default function InstallSchedulePage() {
             </div>
             <div className="min-w-0">
               <h1 className="type-page-title">Install Schedule</h1>
-              <p className="flex min-h-5 flex-wrap items-center gap-x-3 text-sm text-stone-500" aria-live="polite">
+              <p className="flex min-h-5 flex-wrap items-center gap-x-3 type-page-subtitle" aria-live="polite">
                 {settled && (
                   <span>
-                    <span className="font-semibold text-stone-900">{appointments.length}</span>{' '}
+                    <span className="font-semibold text-ink-strong">{appointments.length}</span>{' '}
                     {cardNoun('appointment', appointments.length)} in this view
                   </span>
                 )}

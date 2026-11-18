@@ -106,8 +106,8 @@ export default function BundleDetailPage() {
         <div className="flex-1 space-y-3 min-w-0">
           {bundle.status === 'broken' && (
             <div className="flex items-start gap-3 rounded-lg border border-stone-200 bg-stone-100 px-4 py-3">
-              <Lock className="mt-0.5 size-4 shrink-0 text-stone-400" />
-              <p className="text-xs text-stone-600">This bundle is broken and read-only. Re-banding these slabs means creating a new bundle.</p>
+              <Lock className="mt-0.5 size-4 shrink-0 text-ink-faint" />
+              <p className="text-xs text-ink">This bundle is broken and read-only. Re-banding these slabs means creating a new bundle.</p>
             </div>
           )}
 
@@ -127,11 +127,11 @@ export default function BundleDetailPage() {
               {members.length === 0 && <p className="type-helper">No members yet.</p>}
               {members.map((u) => (
                 <div key={u.id} className="flex items-center justify-between rounded-lg border border-stone-200 px-3 py-2">
-                  <button type="button" onClick={() => navigate(`/inventory/unit/${u.id}`)} className="text-xs font-medium text-stone-800 hover:text-accent-foreground">
-                    {u.serial} <span className="text-stone-500">· {u.area.toFixed(2)} sq</span>
+                  <button type="button" onClick={() => navigate(`/inventory/unit/${u.id}`)} className="text-xs font-medium text-ink-strong hover:text-accent-foreground">
+                    {u.serial} <span className="text-ink-muted">· {u.area.toFixed(2)} sq</span>
                   </button>
                   {isOpen && canUpdate && (
-                    <button type="button" onClick={() => removeMember(u.id)} aria-label={`Remove ${u.serial} from bundle`} className="rounded p-1 text-stone-500 hover:bg-destructive/10 hover:text-danger-ink">
+                    <button type="button" onClick={() => removeMember(u.id)} aria-label={`Remove ${u.serial} from bundle`} className="rounded p-1 text-ink-muted hover:bg-destructive/10 hover:text-danger-ink">
                       <X className="size-3.5" />
                     </button>
                   )}
@@ -148,19 +148,19 @@ export default function BundleDetailPage() {
         <SalesDetailSidebar label="Bundle Actions">
           {canUpdate && (
             <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-2 mb-4">
-              <p className="text-xs font-semibold text-stone-500 mb-1">Lifecycle</p>
+              <p className="text-xs font-semibold text-ink-muted mb-1">Lifecycle</p>
               {isOpen && (
                 <button type="button" disabled={sealing || members.length === 0} onClick={() => seal()} className={cn(buttonVariants({ variant: 'ghost' }), 'flex w-full gap-2.5')}>
-                  <Lock className="size-4 text-stone-400" /> {sealing ? 'Sealing…' : 'Seal'}
+                  <Lock className="size-4 text-ink-faint" /> {sealing ? 'Sealing…' : 'Seal'}
                 </button>
               )}
               {isSealed && (
                 <>
                   <button type="button" disabled={breaking} onClick={() => breakBundle()} className={cn(buttonVariants({ variant: 'ghost' }), 'flex w-full gap-2.5')}>
-                    <Unlock className="size-4 text-stone-400" /> {breaking ? 'Breaking…' : 'Break'}
+                    <Unlock className="size-4 text-ink-faint" /> {breaking ? 'Breaking…' : 'Break'}
                   </button>
                   <button type="button" onClick={() => setShowMoveBin((v) => !v)} className={cn(buttonVariants({ variant: 'ghost' }), 'flex w-full gap-2.5')}>
-                    <ArrowLeftRight className="size-4 text-stone-400" /> Move (whole pallet)
+                    <ArrowLeftRight className="size-4 text-ink-faint" /> Move (whole pallet)
                   </button>
                   {showMoveBin && (
                     <div className="space-y-2 rounded-lg border border-stone-200 p-2.5">
@@ -187,7 +187,7 @@ function ReadonlyField({ label, value }: { label: string; value?: string }) {
   return (
     <div className="space-y-1">
       <label className={fieldLabelCls}>{label}</label>
-      <div className={readonlyCls}>{value || <span className="text-stone-500">—</span>}</div>
+      <div className={readonlyCls}>{value || <span className="text-ink-muted">—</span>}</div>
     </div>
   );
 }

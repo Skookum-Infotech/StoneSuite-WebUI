@@ -63,7 +63,7 @@ export function DynamicFieldInput({
             onChange={(e) => onChange(field.key, e.target.checked)}
             className="h-4 w-4 rounded border border-stone-300 accent-brand cursor-pointer bg-white [color-scheme:light]"
           />
-          <span className={`${checkboxLabelCls} group-hover:text-stone-900 transition-colors`}>
+          <span className={`${checkboxLabelCls} group-hover:text-ink-strong transition-colors`}>
             {labelText}
             {field.required && <span className="ml-0.5 text-red-400">*</span>}
           </span>

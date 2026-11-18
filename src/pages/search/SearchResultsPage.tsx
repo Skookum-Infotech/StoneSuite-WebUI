@@ -70,7 +70,7 @@ export default function SearchResultsPage() {
 
       <form onSubmit={submitSearch} className="mb-6">
         <div className="relative">
-          <SearchIcon className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-stone-400" />
+          <SearchIcon className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-ink-faint" />
           <input
             type="text"
             value={term}
@@ -108,7 +108,7 @@ export default function SearchResultsPage() {
                         'flex w-full items-center justify-between gap-2 whitespace-nowrap rounded-md px-3 py-1.5 text-left text-sm transition-colors',
                         t === activeType
                           ? 'bg-brand/10 font-semibold text-brand'
-                          : 'text-stone-600 hover:bg-stone-100 dark:text-stone-300 dark:hover:bg-stone-800',
+                          : 'text-ink hover:bg-stone-100 dark:text-stone-300 dark:hover:bg-stone-800',
                       )}
                     >
                       <span>{entityLabel(t)}</span>
@@ -135,11 +135,11 @@ export default function SearchResultsPage() {
                           className="flex w-full items-baseline justify-between gap-4 px-4 py-3 text-left transition-colors hover:bg-stone-50 dark:hover:bg-stone-900"
                         >
                           <span className="min-w-0 flex-1">
-                            <span className="block truncate text-sm font-medium text-stone-900 dark:text-stone-100">
+                            <span className="block truncate text-sm font-medium text-ink-strong dark:text-stone-100">
                               {hit.displayName || '(untitled)'}
                             </span>
                             {(hit.number || hit.subtitle) && (
-                              <span className="block truncate text-xs text-stone-500">
+                              <span className="block truncate text-xs text-ink-muted">
                                 {[hit.number, hit.subtitle].filter(Boolean).join(' · ')}
                               </span>
                             )}
@@ -147,7 +147,7 @@ export default function SearchResultsPage() {
                           <time
                             dateTime={hit.updatedAt}
                             title={new Date(hit.updatedAt).toLocaleString()}
-                            className="shrink-0 font-mono text-micro text-stone-500"
+                            className="shrink-0 font-mono text-micro text-ink-muted"
                           >
                             {relativeTime(hit.updatedAt)}
                           </time>

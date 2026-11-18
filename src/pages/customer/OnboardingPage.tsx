@@ -49,7 +49,7 @@ export default function OnboardingPage() {
             </div>
             <div>
               <h1 className="type-page-title">Customer Onboarding</h1>
-              <p className="text-sm text-stone-500">
+              <p className="type-page-subtitle">
                 Invite customers to self-onboard, or onboard them directly. Review applications before activation.
               </p>
             </div>
@@ -58,7 +58,7 @@ export default function OnboardingPage() {
           <div className="flex items-center gap-2">
             <button
               onClick={() => setShowInvite(true)}
-              className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-brand/30 bg-brand/10 px-3 py-2 text-xs font-semibold text-stone-800 shadow-sm transition hover:bg-brand/20"
+              className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-brand/30 bg-brand/10 px-3 py-2 text-xs font-semibold text-ink-strong shadow-sm transition hover:bg-brand/20"
             >
               <Send className="size-3.5" />
               Invite
@@ -86,7 +86,7 @@ export default function OnboardingPage() {
           {/* Pending approvals */}
           {showApprovals && pending.length > 0 && (
             <section className="mb-6">
-              <h2 className="mb-2 text-xs font-bold uppercase tracking-wide text-stone-500">
+              <h2 className="mb-2 text-xs font-bold uppercase tracking-wide text-ink-muted">
                 Pending approvals ({pending.length})
               </h2>
               <div className="space-y-2">
@@ -106,7 +106,7 @@ export default function OnboardingPage() {
           )}
           {visibleTenants.length > 0 && (
             <>
-              <h2 className="mb-2 text-xs font-bold uppercase tracking-wide text-stone-500">Customers</h2>
+              <h2 className="mb-2 text-xs font-bold uppercase tracking-wide text-ink-muted">Customers</h2>
               <div className="space-y-2">
                 {visibleTenants.map((t) => (
                   <TenantRow key={t.id} tenant={t} />
@@ -146,8 +146,8 @@ function ApprovalCard({ tenant }: { tenant: Tenant }) {
     <div className="rounded-xl border border-violet-200 bg-violet-50/40 p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <p className="text-sm font-bold text-stone-800">{str('company_name') || tenant.displayName}</p>
-          <p className="text-label text-stone-500">{str('super_admin_email')}</p>
+          <p className="text-sm font-bold text-ink-strong">{str('company_name') || tenant.displayName}</p>
+          <p className="text-label text-ink-muted">{str('super_admin_email')}</p>
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -172,8 +172,8 @@ function ApprovalCard({ tenant }: { tenant: Tenant }) {
       <div className="mt-3 grid grid-cols-1 gap-x-6 gap-y-1 sm:grid-cols-2">
         {entries.map(([k, v]) => (
           <div key={k} className="flex gap-2 text-label">
-            <span className="shrink-0 font-semibold capitalize text-stone-500">{k.replace(/_/g, ' ')}:</span>
-            <span className="truncate text-stone-700">{String(v)}</span>
+            <span className="shrink-0 font-semibold capitalize text-ink-muted">{k.replace(/_/g, ' ')}:</span>
+            <span className="truncate text-ink">{String(v)}</span>
           </div>
         ))}
       </div>

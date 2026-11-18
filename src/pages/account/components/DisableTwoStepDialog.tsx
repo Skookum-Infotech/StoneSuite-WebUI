@@ -54,7 +54,7 @@ export function DisableTwoStepDialog({ onClose, onDisabled }: DisableTwoStepDial
     >
       <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="mfa-disable-password" className="text-xs font-semibold text-stone-500">
+          <Label htmlFor="mfa-disable-password" className="text-xs font-semibold text-ink-muted">
             Current password
           </Label>
           <PasswordInput

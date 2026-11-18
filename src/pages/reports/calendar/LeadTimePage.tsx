@@ -71,7 +71,7 @@ export default function LeadTimePage() {
           <ReportKpiGrid items={kpis} />
           <ReportCountBarChart data={chartData} label="Average days from order to install, by month" primaryName="Avg days" />
           <ReportDataTable copy={{ caption: "Order-to-install lead time", empty: EMPTY_TEXT }} columns={COLUMNS} rows={q.data.rows} getRowKey={(r) => r.period} />
-          <p className="text-label text-stone-500">{NOTE}</p>
+          <p className="text-label text-ink-muted">{NOTE}</p>
         </>
       )}
     </ReportPageShell>

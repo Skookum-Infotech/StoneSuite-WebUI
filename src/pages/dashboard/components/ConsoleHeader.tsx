@@ -101,7 +101,7 @@ export function ConsoleHeader({
               onClick={() => onRangeChange(opt.value)}
               className={cn(
                 'rounded-md px-2.5 py-1.5 text-button font-semibold transition-colors sm:px-[13px]',
-                range === opt.value ? 'bg-card text-stone-950 shadow-sm' : 'text-stone-500 hover:text-stone-700',
+                range === opt.value ? 'bg-card text-ink-strong shadow-sm' : 'text-ink-muted hover:text-ink',
               )}
             >
               {opt.label}

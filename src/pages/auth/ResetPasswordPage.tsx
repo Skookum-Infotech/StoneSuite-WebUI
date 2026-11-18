@@ -122,7 +122,7 @@ export default function ResetPasswordPage() {
   } else if (tokenQuery.isPending) {
     content = (
       <div className="flex flex-col items-center gap-4 py-6 text-center">
-        <Loader2 className="size-8 animate-spin text-stone-400" />
+        <Loader2 className="size-8 animate-spin text-ink-faint" />
         <p className="text-body font-medium text-ink-muted">Verifying your reset link…</p>
       </div>
     )
@@ -177,7 +177,7 @@ export default function ResetPasswordPage() {
           <div className="space-y-1.5">
             <Label htmlFor="newPassword">New Password</Label>
             <div className="relative">
-              <Lock className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-stone-400" />
+              <Lock className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-ink-faint" />
               <Input
                 id="newPassword"
                 type={showPassword ? 'text' : 'password'}
@@ -208,7 +208,7 @@ export default function ResetPasswordPage() {
           <div className="space-y-1.5">
             <Label htmlFor="confirm">Confirm Password</Label>
             <div className="relative">
-              <Lock className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-stone-400" />
+              <Lock className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-ink-faint" />
               <Input
                 id="confirm"
                 type={showConfirm ? 'text' : 'password'}

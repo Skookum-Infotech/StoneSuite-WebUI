@@ -30,7 +30,7 @@ const MODULE_META: Record<string, { bg: string; text: string }> = {
   vendor_credit: { bg: 'bg-pink-100', text: 'text-pink-700' },
   expense: { bg: 'bg-fuchsia-100', text: 'text-fuchsia-700' },
 };
-const FALLBACK_META = { bg: 'bg-stone-100', text: 'text-stone-700' };
+const FALLBACK_META = { bg: 'bg-stone-100', text: 'text-ink' };
 
 function currency(n: number | null): string {
   if (n === null) return '—';
@@ -67,7 +67,7 @@ export function RecentRecordsTable({
 
   if (records.length === 0) {
     return (
-      <div className="rounded-xl border border-dashed border-stone-300 p-[18px] text-center text-sm text-stone-500">
+      <div className="rounded-xl border border-dashed border-stone-300 p-[18px] text-center text-sm text-ink-muted">
         No recent activity to show.
       </div>
     );

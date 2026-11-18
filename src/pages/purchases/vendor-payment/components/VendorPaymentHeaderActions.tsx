@@ -12,14 +12,14 @@ const BASE_BTN =
 // One look per target status, so a button previews the move it performs.
 const TONES: Record<string, { icon: LucideIcon; className: string }> = {
   PAPV: { icon: Send, className: 'border-amber-200 bg-white text-amber-700 hover:bg-amber-50' },
-  DRFT: { icon: RotateCcw, className: 'border-stone-300 bg-white text-stone-700 hover:bg-stone-50' },
+  DRFT: { icon: RotateCcw, className: 'border-stone-300 bg-white text-ink hover:bg-stone-50' },
   SCHD: { icon: CalendarClock, className: 'border-violet-200 bg-white text-violet-700 hover:bg-violet-50' },
   // Completing the payment is the one move that settles real money, so it
   // carries the filled button the old Mark Sent used to.
   PAID: { icon: CheckCheck, className: 'border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700' },
   SENT: { icon: CheckCheck, className: 'border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700' },
 };
-const NEUTRAL_TONE = { icon: CheckCheck, className: 'border-stone-300 bg-white text-stone-700 hover:bg-stone-50' };
+const NEUTRAL_TONE = { icon: CheckCheck, className: 'border-stone-300 bg-white text-ink hover:bg-stone-50' };
 
 // The Vendor Payment Detail page's header buttons: one per legal move from the
 // payment's current status (Submit for Approval, Recall to Draft, Schedule

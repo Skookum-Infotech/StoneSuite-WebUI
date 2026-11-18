@@ -10,7 +10,7 @@ function ReadonlyField({ label, value, full }: { label: string; value?: string; 
   return (
     <div className={cn('space-y-1', full && 'col-span-full')}>
       <label className={fieldLabelCls}>{label}</label>
-      <div className={readonlyCls}>{value || <span className="text-stone-500">—</span>}</div>
+      <div className={readonlyCls}>{value || <span className="text-ink-muted">—</span>}</div>
     </div>
   );
 }
@@ -47,7 +47,7 @@ export function FabricationJobOverviewTab({ job }: { job: FabricationJob }) {
       </ModernSection>
       {job.notes && (
         <ModernSection title="Notes" index={3}>
-          <p className="text-xs text-stone-600 whitespace-pre-wrap">{job.notes}</p>
+          <p className="text-xs text-ink whitespace-pre-wrap">{job.notes}</p>
         </ModernSection>
       )}
     </>

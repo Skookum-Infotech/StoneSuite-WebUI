@@ -17,7 +17,7 @@ export default function EstimateListPage() {
             </div>
             <div>
               <h1 className="type-page-title">Estimates</h1>
-              <p className="text-sm text-stone-500">Create and manage price estimates for customers.</p>
+              <p className="type-page-subtitle">Create and manage price estimates for customers.</p>
             </div>
           </div>
           <button

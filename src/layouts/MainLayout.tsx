@@ -237,7 +237,7 @@ export default function MainLayout(): React.JSX.Element {
           <button
             onClick={() => setIsMobileSidebarOpen(true)}
             aria-label="Open menu"
-            className="ml-3 rounded-xl border border-white/10 p-2 text-stone-400 hover:bg-white/[0.06] hover:text-white lg:hidden cursor-pointer transition-colors"
+            className="ml-3 rounded-xl border border-white/10 p-2 text-ink-faint hover:bg-white/[0.06] hover:text-white lg:hidden cursor-pointer transition-colors"
           >
             <Menu className="size-5" />
           </button>
@@ -294,7 +294,7 @@ export default function MainLayout(): React.JSX.Element {
                 'rounded-xl border p-2 transition-colors sm:hidden cursor-pointer',
                 isMobileSearchOpen
                   ? 'border-brand bg-brand/10 text-link'
-                  : 'border-white/10 text-stone-400 hover:bg-white/[0.06] hover:text-stone-200',
+                  : 'border-white/10 text-ink-faint hover:bg-white/[0.06] hover:text-stone-200',
               )}
             >
               {isMobileSearchOpen ? <X className="size-4" /> : <Search className="size-4" />}
@@ -312,7 +312,7 @@ export default function MainLayout(): React.JSX.Element {
                 }}
                 className="flex items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.06] p-1.5 pr-3 text-left hover:bg-white/10 transition-all cursor-pointer select-none"
               >
-                <div className="flex size-7 items-center justify-center rounded-xl bg-brand text-label font-bold text-stone-950 shadow-sm">
+                <div className="flex size-7 items-center justify-center rounded-xl bg-brand text-label font-bold text-ink-strong shadow-sm">
                   {user?.fullName
                     ? user.fullName.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2)
                     : 'SS'}
@@ -335,9 +335,9 @@ export default function MainLayout(): React.JSX.Element {
                   <div className="py-1">
                     <button
                       onClick={() => { setOpenMenu(null); navigate('/account/settings'); }}
-                      className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-semibold text-stone-400 hover:bg-white/[0.06] hover:text-stone-200 transition-colors text-left cursor-pointer"
+                      className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-semibold text-ink-faint hover:bg-white/[0.06] hover:text-stone-200 transition-colors text-left cursor-pointer"
                     >
-                      <Settings className="size-4 text-stone-400" />
+                      <Settings className="size-4 text-ink-faint" />
                       <span>Account Settings</span>
                     </button>
                   </div>
@@ -345,9 +345,9 @@ export default function MainLayout(): React.JSX.Element {
                   <div className="py-1">
                     <button
                       onClick={() => { setOpenMenu(null); navigate('/transactions'); }}
-                      className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-semibold text-stone-400 hover:bg-white/[0.06] hover:text-stone-200 transition-colors text-left cursor-pointer"
+                      className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-semibold text-ink-faint hover:bg-white/[0.06] hover:text-stone-200 transition-colors text-left cursor-pointer"
                     >
-                      <CreditCard className="size-4 text-stone-400" />
+                      <CreditCard className="size-4 text-ink-faint" />
                       <span>My Transactions</span>
                     </button>
                   </div>
@@ -369,12 +369,12 @@ export default function MainLayout(): React.JSX.Element {
                                 onClick={(e) => { e.stopPropagation(); if (!isActive) switchWorkspaceMutation.mutate(w.tenantId); }}
                                 disabled={switchWorkspaceMutation.isPending || isActive}
                                 aria-pressed={isActive}
-                                className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-semibold text-stone-400 hover:bg-white/[0.06] hover:text-stone-200 transition-colors text-left cursor-pointer disabled:cursor-not-allowed disabled:hover:bg-transparent"
+                                className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-semibold text-ink-faint hover:bg-white/[0.06] hover:text-stone-200 transition-colors text-left cursor-pointer disabled:cursor-not-allowed disabled:hover:bg-transparent"
                               >
                                 {isSwitching ? (
-                                  <Loader2 className="size-4 text-stone-400 flex-shrink-0 animate-spin" />
+                                  <Loader2 className="size-4 text-ink-faint flex-shrink-0 animate-spin" />
                                 ) : (
-                                  <Building2 className="size-4 text-stone-400 flex-shrink-0" />
+                                  <Building2 className="size-4 text-ink-faint flex-shrink-0" />
                                 )}
                                 <span className="flex-1 truncate">{w.name}</span>
                                 {isActive && <Check className="size-4 text-brand flex-shrink-0" />}
@@ -410,12 +410,12 @@ export default function MainLayout(): React.JSX.Element {
                                 onClick={(e) => { e.stopPropagation(); switchRoleMutation.mutate(role.id); }}
                                 disabled={switchRoleMutation.isPending || isActive}
                                 aria-pressed={isActive}
-                                className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-semibold text-stone-400 hover:bg-white/[0.06] hover:text-stone-200 transition-colors text-left cursor-pointer disabled:cursor-not-allowed disabled:hover:bg-transparent"
+                                className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-semibold text-ink-faint hover:bg-white/[0.06] hover:text-stone-200 transition-colors text-left cursor-pointer disabled:cursor-not-allowed disabled:hover:bg-transparent"
                               >
                                 {isSwitching ? (
-                                  <Loader2 className="size-4 text-stone-400 flex-shrink-0 animate-spin" />
+                                  <Loader2 className="size-4 text-ink-faint flex-shrink-0 animate-spin" />
                                 ) : (
-                                  <Shield className="size-4 text-stone-400 flex-shrink-0" />
+                                  <Shield className="size-4 text-ink-faint flex-shrink-0" />
                                 )}
                                 <span className="flex-1">{role.name}</span>
                                 {isActive && <Check className="size-4 text-brand flex-shrink-0" />}

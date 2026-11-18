@@ -20,7 +20,7 @@ export function EnabledToggle<T extends FieldValues>({
   return (
     <div className="flex items-start justify-between gap-3 rounded-lg border border-stone-200 px-3 py-2.5">
       <div>
-        <p className="text-xs font-semibold text-stone-700">Enabled</p>
+        <p className="text-xs font-semibold text-ink">Enabled</p>
         <p className="mt-0.5 type-helper">{hint}</p>
       </div>
       <label className="cursor-pointer shrink-0" aria-label="Toggle SSO provider enabled">

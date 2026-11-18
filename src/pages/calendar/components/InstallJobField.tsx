@@ -35,8 +35,8 @@ export function InstallJobField({ chosen, onPick, onClear }: Props) {
   if (chosen) {
     return (
       <div className="flex items-center justify-between gap-2 rounded-[10px] border border-stone-300 bg-stone-50 px-3 py-2 text-xs">
-        <span className="min-w-0 truncate font-medium text-stone-800">{chosen}</span>
-        <button type="button" onClick={onClear} className="shrink-0 font-medium text-stone-600 hover:underline">
+        <span className="min-w-0 truncate font-medium text-ink-strong">{chosen}</span>
+        <button type="button" onClick={onClear} className="shrink-0 font-medium text-ink hover:underline">
           Change job
         </button>
       </div>
@@ -63,7 +63,7 @@ export function InstallJobField({ chosen, onPick, onClear }: Props) {
               <button
                 type="button"
                 onClick={() => onPick(job)}
-                className="w-full px-3 py-1.5 text-left text-xs text-stone-800 hover:bg-stone-50"
+                className="w-full px-3 py-1.5 text-left text-xs text-ink-strong hover:bg-stone-50"
               >
                 <span className="font-semibold">{job.jobNumber}</span> · {job.customer.name}
               </button>

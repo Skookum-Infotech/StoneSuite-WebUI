@@ -34,7 +34,7 @@ export function FabricationMaterialCard({ material, onAllocate, onRestock }: {
     >
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0">
-          <h4 className="truncate text-sm font-semibold text-stone-900">{material.name}</h4>
+          <h4 className="truncate text-sm font-semibold text-ink-strong">{material.name}</h4>
           <p className="font-mono type-helper">{material.sku}</p>
         </div>
         <span className={cn('inline-flex items-center gap-1 rounded-md px-2 py-1 type-pill', style.chip)}>
@@ -48,22 +48,22 @@ export function FabricationMaterialCard({ material, onAllocate, onRestock }: {
       <dl className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <div>
           <dt className="type-overline">Ordered</dt>
-          <dd className="text-sm font-bold tabular-nums text-stone-900">{qty(material.ordered)}</dd>
+          <dd className="text-sm font-bold tabular-nums text-ink-strong">{qty(material.ordered)}</dd>
           <dd className="type-subline">On the sales order</dd>
         </div>
         <div>
           <dt className="type-overline">Needed</dt>
-          <dd className="text-sm font-bold tabular-nums text-stone-900">{qty(material.needed)}</dd>
+          <dd className="text-sm font-bold tabular-nums text-ink-strong">{qty(material.needed)}</dd>
           <dd className="type-subline">{basisLabel(material)}</dd>
         </div>
         <div>
           <dt className="type-overline">Allocated</dt>
-          <dd className="text-sm font-bold tabular-nums text-stone-900">{qty(material.allocated)}</dd>
+          <dd className="text-sm font-bold tabular-nums text-ink-strong">{qty(material.allocated)}</dd>
           {material.consumed > 0 && <dd className="type-subline">{qty(material.consumed)} already cut</dd>}
         </div>
         <div>
           <dt className="type-overline">In stock</dt>
-          <dd className="text-sm font-bold tabular-nums text-stone-900">{qty(material.inStock)}</dd>
+          <dd className="text-sm font-bold tabular-nums text-ink-strong">{qty(material.inStock)}</dd>
           <dd className="type-subline">Unallocated</dd>
         </div>
       </dl>

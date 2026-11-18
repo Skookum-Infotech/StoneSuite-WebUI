@@ -37,12 +37,12 @@ export function CreditMemoSummaryCard({ subtotal, taxTotal, adjustment, total, a
               !muted && 'bg-stone-50 border-t border-stone-200',
             )}
           >
-            <span className={cn('text-xs', muted ? 'text-stone-500' : 'text-stone-700 font-medium')}>
+            <span className={cn('text-xs', muted ? 'text-ink-muted' : 'text-ink font-medium')}>
               {label}
             </span>
             <span className={cn(
               'tabular-nums',
-              muted ? 'text-xs font-semibold text-stone-600' : 'text-sm font-bold text-stone-900',
+              muted ? 'text-xs font-semibold text-ink' : 'text-sm font-bold text-ink-strong',
             )}>
               {value}
             </span>
@@ -50,13 +50,13 @@ export function CreditMemoSummaryCard({ subtotal, taxTotal, adjustment, total, a
         ))}
         {appliedTotal > 0 && (
           <div className="flex items-center justify-between px-4 py-2.5">
-            <span className="text-xs text-stone-500">Applied Total</span>
+            <span className="text-xs text-ink-muted">Applied Total</span>
             <span className="tabular-nums text-xs font-semibold text-success-ink">{fmt(appliedTotal)}</span>
           </div>
         )}
         <div className="flex items-center justify-between px-4 py-2.5 bg-stone-50 border-t border-stone-200">
-          <span className="text-xs text-stone-700 font-medium">Unapplied Amount</span>
-          <span className="tabular-nums text-sm font-bold text-stone-900">{fmt(unappliedAmount)}</span>
+          <span className="text-xs text-ink font-medium">Unapplied Amount</span>
+          <span className="tabular-nums text-sm font-bold text-ink-strong">{fmt(unappliedAmount)}</span>
         </div>
       </div>
     </div>

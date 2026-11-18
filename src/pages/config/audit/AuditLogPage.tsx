@@ -90,7 +90,7 @@ export default function AuditLogPage() {
         </div>
         <div>
           <h1 className="type-page-title">Audit Log</h1>
-          <p className="text-sm text-stone-500">
+          <p className="type-page-subtitle">
             Who did what across the workspace, newest first.
           </p>
         </div>

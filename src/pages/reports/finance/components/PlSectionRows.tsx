@@ -23,7 +23,7 @@ export function PlSectionRows({ section, onAccountClick, children }: PlSectionRo
         <PlSubcategoryRows key={sub.name} sub={sub} onAccountClick={onAccountClick} />
       ))}
       <tr>
-        <th scope="row" className="px-3 py-2 text-left font-semibold text-stone-900">Total {section.name}</th>
+        <th scope="row" className="type-th px-3 py-2 text-left">Total {section.name}</th>
         <PlAmountCell value={section.total} strong />
       </tr>
       {children}

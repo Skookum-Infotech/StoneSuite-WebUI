@@ -40,7 +40,7 @@ export default function ConfigWorkflowsPage() {
           <h1 className="dark:text-white type-page-title">
             Configure Forms
           </h1>
-          <p className="text-sm text-stone-500">
+          <p className="type-page-subtitle">
             Add custom fields to your forms. Each form has built-in base fields plus up to 15 custom fields you define.
           </p>
         </div>
@@ -72,7 +72,7 @@ function SearchField({ value, onChange }: { value: string; onChange: (v: string)
   return (
     <div className="relative w-full sm:ml-auto sm:w-64">
       <Search
-        className="pointer-events-none absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-stone-400"
+        className="pointer-events-none absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-ink-faint"
         aria-hidden="true"
       />
       <input
@@ -81,14 +81,14 @@ function SearchField({ value, onChange }: { value: string; onChange: (v: string)
         onChange={(e) => onChange(e.target.value)}
         placeholder="Search forms…"
         aria-label="Search forms by name"
-        className="w-full rounded-lg border border-stone-200 bg-white py-2 pl-8 pr-8 placeholder:text-stone-500 focus:border-brand-dark/40 focus:outline-none focus:ring-2 focus:ring-brand/40 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-100 type-input"
+        className="w-full rounded-lg border border-stone-200 bg-white py-2 pl-8 pr-8 placeholder:text-ink-muted focus:border-brand-dark/40 focus:outline-none focus:ring-2 focus:ring-brand/40 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-100 type-input"
       />
       {value && (
         <button
           type="button"
           onClick={() => onChange('')}
           aria-label="Clear search"
-          className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1 text-stone-500 transition-colors hover:bg-stone-100 hover:text-stone-600 focus:outline-none focus:ring-2 focus:ring-brand/40 dark:hover:bg-stone-800"
+          className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1 text-ink-muted transition-colors hover:bg-stone-100 hover:text-ink focus:outline-none focus:ring-2 focus:ring-brand/40 dark:hover:bg-stone-800"
         >
           <X className="size-3" />
         </button>
@@ -123,7 +123,7 @@ function ModuleSection({
           <div className="flex items-center gap-2">
             <h2
               id={`module-${group.id}`}
-              className="text-xs font-bold uppercase tracking-wider text-stone-600 dark:text-stone-300"
+              className="text-xs font-bold uppercase tracking-wider text-ink dark:text-stone-300"
             >
               {group.label}
             </h2>
@@ -136,7 +136,7 @@ function ModuleSection({
               {workflows.length}
             </span>
             {disabledCount > 0 && (
-              <span className="flex items-center gap-1 text-micro font-semibold text-stone-500">
+              <span className="flex items-center gap-1 text-micro font-semibold text-ink-muted">
                 <span
                   className="size-1.5 rounded-full border border-stone-400 dark:border-stone-500"
                   aria-hidden="true"
@@ -195,7 +195,7 @@ function WorkflowCard({ wf }: { wf: WorkflowType }) {
         <p
           className={cn(
             'min-w-0 flex-1 truncate text-sm font-semibold',
-            enabled ? 'text-stone-800 dark:text-white' : 'text-stone-500 dark:text-stone-400',
+            enabled ? 'text-ink-strong dark:text-white' : 'text-ink-muted dark:text-stone-400',
           )}
         >
           {wf.name}
@@ -208,7 +208,7 @@ function WorkflowCard({ wf }: { wf: WorkflowType }) {
           whatever length the description runs to — including none at all. */}
       <div className="flex-1">
         {wf.description && (
-          <p className={cn('mt-1 line-clamp-2 text-xs', enabled ? 'text-stone-500' : 'text-stone-500/70')}>
+          <p className={cn('mt-1 line-clamp-2 text-xs', enabled ? 'text-ink-muted' : 'text-ink-muted/70')}>
             {wf.description}
           </p>
         )}
@@ -220,7 +220,7 @@ function WorkflowCard({ wf }: { wf: WorkflowType }) {
           enabled ? 'border-stone-100 dark:border-stone-800' : 'border-stone-200/70 dark:border-stone-800/70',
         )}
       >
-        <span className="flex shrink-0 items-center gap-1 text-xs font-semibold text-stone-500 transition-colors group-hover:text-link dark:group-hover:text-brand">
+        <span className="flex shrink-0 items-center gap-1 text-xs font-semibold text-ink-muted transition-colors group-hover:text-link dark:group-hover:text-brand">
           Configure
           <ArrowRight className="size-3 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
         </span>

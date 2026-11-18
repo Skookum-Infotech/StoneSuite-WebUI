@@ -36,7 +36,7 @@ export default function CustomReportsPage() {
         </div>
         <div>
           <h1 className="type-page-title">Custom Reports</h1>
-          <p className="text-sm text-stone-500">Build and save your own reports.</p>
+          <p className="type-page-subtitle">Build and save your own reports.</p>
         </div>
       </div>
       <CustomReportPromptBox onInterpreted={openInterpreted} />
@@ -46,7 +46,7 @@ export default function CustomReportsPage() {
         </p>
       )}
       {list.isLoading && (
-        <p role="status" className="py-6 text-center text-sm text-stone-500">
+        <p role="status" className="py-6 text-center text-sm text-ink-muted">
           Loading reports…
         </p>
       )}

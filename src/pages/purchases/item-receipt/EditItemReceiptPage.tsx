@@ -149,7 +149,7 @@ export default function EditItemReceiptPage() {
           subtitle={ir.vendor.name}
         />
         <div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 text-center">
-          <Lock className="size-8 text-stone-400" aria-hidden="true" />
+          <Lock className="size-8 text-ink-faint" aria-hidden="true" />
           <p className="type-card-title">
             This item receipt is {irStatusLabel(ir.statusCode)} and can no longer be edited.
           </p>

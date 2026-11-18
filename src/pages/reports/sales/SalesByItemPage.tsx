@@ -70,7 +70,7 @@ export default function SalesByItemPage() {
             getRowKey={(r) => r.itemId}
             onRowClick={(r) => setDrill({ title: r.name, selector: { itemId: r.itemId } })}
           />
-          <p className="text-label text-stone-500">{FREE_TEXT_NOTE}</p>
+          <p className="text-label text-ink-muted">{FREE_TEXT_NOTE}</p>
         </>
       )}
       {drill && (

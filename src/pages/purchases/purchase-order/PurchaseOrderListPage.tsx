@@ -46,7 +46,7 @@ export default function PurchaseOrderListPage() {
             </div>
             <div>
               <h1 className="type-page-title">Purchase Orders</h1>
-              <p className="text-sm text-stone-500">Create and manage purchase orders sent to vendors.</p>
+              <p className="type-page-subtitle">Create and manage purchase orders sent to vendors.</p>
             </div>
           </div>
           {canCreate && (

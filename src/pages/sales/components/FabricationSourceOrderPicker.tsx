@@ -87,16 +87,16 @@ export function FabricationSourceOrderPicker({ value, onChange, disabled }: {
   if (value) {
     return (
       <div className="flex items-center gap-2 rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm">
-        <ShoppingCart className="size-3.5 shrink-0 text-stone-400" aria-hidden="true" />
-        <span className="flex-1 truncate font-medium text-stone-800">
+        <ShoppingCart className="size-3.5 shrink-0 text-ink-faint" aria-hidden="true" />
+        <span className="flex-1 truncate font-medium text-ink-strong">
           {value.number}
-          {value.customerName && <span className="ml-1.5 font-normal text-stone-500">· {value.customerName}</span>}
+          {value.customerName && <span className="ml-1.5 font-normal text-ink-muted">· {value.customerName}</span>}
         </span>
         <button
           type="button"
           onClick={() => onChange(null)}
           aria-label="Change sales order"
-          className="shrink-0 rounded p-0.5 text-stone-500 hover:bg-stone-100 hover:text-stone-600 transition-colors"
+          className="shrink-0 rounded p-0.5 text-ink-muted hover:bg-stone-100 hover:text-ink transition-colors"
         >
           <X className="size-3.5" />
         </button>
@@ -107,7 +107,7 @@ export function FabricationSourceOrderPicker({ value, onChange, disabled }: {
   return (
     <div ref={containerRef} className="relative">
       <div className="relative">
-        <Search className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-stone-400" />
+        <Search className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-ink-faint" />
         <input
           type="text"
           role="combobox"
@@ -124,7 +124,7 @@ export function FabricationSourceOrderPicker({ value, onChange, disabled }: {
           aria-label="Search sales order"
         />
         {isFetching && (
-          <Loader2 className="absolute right-2.5 top-1/2 -translate-y-1/2 size-3.5 animate-spin text-stone-400" />
+          <Loader2 className="absolute right-2.5 top-1/2 -translate-y-1/2 size-3.5 animate-spin text-ink-faint" />
         )}
       </div>
 
@@ -147,11 +147,11 @@ export function FabricationSourceOrderPicker({ value, onChange, disabled }: {
               role="option"
               aria-selected={false}
               onClick={() => select(so)}
-              className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-stone-700 hover:bg-accent/10 transition-colors"
+              className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-ink hover:bg-accent/10 transition-colors"
             >
-              <ShoppingCart className="size-3.5 shrink-0 text-stone-400" aria-hidden="true" />
+              <ShoppingCart className="size-3.5 shrink-0 text-ink-faint" aria-hidden="true" />
               <span className="truncate">{so.number}</span>
-              {so.customerName && <span className="truncate text-stone-500">· {so.customerName}</span>}
+              {so.customerName && <span className="truncate text-ink-muted">· {so.customerName}</span>}
             </button>
           ))}
         </div>

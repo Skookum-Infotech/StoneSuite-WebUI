@@ -98,7 +98,7 @@ export default function AnomaliesPage() {
           <h1 className="type-page-title">
             Anomalies
           </h1>
-          <p className="text-sm text-stone-500">
+          <p className="type-page-subtitle">
             Things that look wrong, sent to the people who can act on them.
             Review each one, then confirm, dismiss or note it.
           </p>
@@ -124,7 +124,7 @@ export default function AnomaliesPage() {
                   "inline-flex h-7 items-center gap-1.5 rounded-full border px-3 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400",
                   filter === f.value
                     ? "border-stone-900 bg-stone-900 text-white"
-                    : "border-stone-200 bg-white text-stone-600 hover:bg-stone-50",
+                    : "border-stone-200 bg-white text-ink hover:bg-stone-50",
                 )}
               >
                 <span
@@ -159,7 +159,7 @@ export default function AnomaliesPage() {
                   "inline-flex h-7 items-center gap-1.5 rounded-full border px-3 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400",
                   severity === s.value
                     ? "border-stone-900 bg-stone-900 text-white"
-                    : "border-stone-200 bg-white text-stone-600 hover:bg-stone-50",
+                    : "border-stone-200 bg-white text-ink hover:bg-stone-50",
                 )}
               >
                 <span
@@ -184,7 +184,7 @@ export default function AnomaliesPage() {
         {listQ.isLoading && <p className="type-helper">Loading…</p>}
 
         {!listQ.isLoading && !listQ.isError && items.length === 0 && (
-          <p className="rounded-xl border border-dashed border-stone-200 px-4 py-10 text-center text-sm text-stone-500">
+          <p className="rounded-xl border border-dashed border-stone-200 px-4 py-10 text-center text-sm text-ink-muted">
             {filter === "open"
               ? "Nothing needs your attention."
               : "No anomalies here."}

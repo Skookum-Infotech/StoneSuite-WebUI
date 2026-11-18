@@ -33,8 +33,8 @@ export function AdjustmentLinesEditor({ lines, onChange, warehouseId }: {
         return (
           <div key={line.key} className="rounded-lg border border-stone-200 p-3 space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-micro font-semibold text-stone-500">Line {i + 1}</span>
-              <button type="button" onClick={() => remove(line.key)} aria-label={`Remove line ${i + 1}`} className="text-stone-400 hover:text-danger-ink"><Trash2 className="size-3.5" /></button>
+              <span className="text-micro font-semibold text-ink-muted">Line {i + 1}</span>
+              <button type="button" onClick={() => remove(line.key)} aria-label={`Remove line ${i + 1}`} className="text-ink-muted hover:text-danger-ink"><Trash2 className="size-3.5" /></button>
             </div>
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
               <div className="sm:col-span-2">
@@ -44,10 +44,10 @@ export function AdjustmentLinesEditor({ lines, onChange, warehouseId }: {
                 <>
                   <UnitPicker itemId={line.item!.id} warehouseId={warehouseId} value={line.unit} onChange={(unit) => update(line.key, { unit })} />
                   <div className="flex items-center gap-2">
-                    <button type="button" onClick={() => update(line.key, { sign: -1 })} className={cn('flex-1 rounded-lg border px-3 py-2 text-xs font-semibold', line.sign === -1 ? 'border-destructive bg-destructive/10 text-danger-ink' : 'border-stone-200 text-stone-500')}>
+                    <button type="button" onClick={() => update(line.key, { sign: -1 })} className={cn('flex-1 rounded-lg border px-3 py-2 text-xs font-semibold', line.sign === -1 ? 'border-destructive bg-destructive/10 text-danger-ink' : 'border-stone-200 text-ink-muted')}>
                       − Write Off
                     </button>
-                    <button type="button" onClick={() => update(line.key, { sign: 1 })} className={cn('flex-1 rounded-lg border px-3 py-2 text-xs font-semibold', line.sign === 1 ? 'border-emerald-400 bg-emerald-50 text-emerald-700' : 'border-stone-200 text-stone-500')}>
+                    <button type="button" onClick={() => update(line.key, { sign: 1 })} className={cn('flex-1 rounded-lg border px-3 py-2 text-xs font-semibold', line.sign === 1 ? 'border-emerald-400 bg-emerald-50 text-emerald-700' : 'border-stone-200 text-ink-muted')}>
                       + Bring Back
                     </button>
                   </div>

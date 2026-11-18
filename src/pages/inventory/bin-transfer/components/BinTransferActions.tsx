@@ -85,7 +85,7 @@ function ConfirmDialog({ action, slabCount, pending, error, onConfirm, onClose }
           </div>
           <h3 id={titleId} className="type-card-title">{copy.title}</h3>
         </div>
-        <p className="mb-4 text-xs text-stone-600">{copy.body}</p>
+        <p className="mb-4 text-xs text-ink">{copy.body}</p>
 
         {destructive && (
           <div className="mb-4 space-y-1.5">
@@ -181,7 +181,7 @@ export function BinTransferActions({ transfer, can }: {
           className={cn(
             'flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-xs transition-colors disabled:opacity-50',
             action.kind === 'primary' && 'font-semibold text-emerald-700 hover:bg-emerald-600/5',
-            action.kind === 'secondary' && 'text-stone-600 hover:bg-stone-50',
+            action.kind === 'secondary' && 'text-ink hover:bg-stone-50',
             action.kind === 'danger' && 'text-danger-ink hover:bg-destructive/5',
           )}
         >

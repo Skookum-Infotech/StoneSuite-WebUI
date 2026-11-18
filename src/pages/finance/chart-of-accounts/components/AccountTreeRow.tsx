@@ -115,14 +115,14 @@ export function AccountTreeRow({
           className="flex flex-1 min-w-0 items-center gap-2 text-left"
         >
           <span className="w-16 shrink-0 font-mono type-subline">{account.code}</span>
-          <span className={cn('truncate text-xs', account.isActive ? 'text-stone-800' : 'italic text-stone-500')}>
+          <span className={cn('truncate text-xs', account.isActive ? 'text-ink-strong' : 'italic text-ink-muted')}>
             {account.name}
           </span>
         </button>
 
         <span className="hidden shrink-0 sm:inline type-subline">{ACCOUNT_TYPE_LABELS[account.type]}</span>
         {account.isSystem && (
-          <span className="hidden shrink-0 rounded bg-stone-100 px-1 py-0.5 text-stone-500 md:inline type-pill" title="Seeded system account">
+          <span className="hidden shrink-0 rounded bg-stone-100 px-1 py-0.5 text-ink-muted md:inline type-pill" title="Seeded system account">
             SYS
           </span>
         )}
@@ -131,8 +131,8 @@ export function AccountTreeRow({
             HEADER
           </span>
         )}
-        {!account.isActive && <span className="shrink-0 rounded bg-stone-100 px-1 py-0.5 text-stone-500 type-pill">Inactive</span>}
-        {!account.isVisible && <span className="shrink-0 rounded bg-stone-100 px-1 py-0.5 text-stone-500 type-pill">Hidden</span>}
+        {!account.isActive && <span className="shrink-0 rounded bg-stone-100 px-1 py-0.5 text-ink-muted type-pill">Inactive</span>}
+        {!account.isVisible && <span className="shrink-0 rounded bg-stone-100 px-1 py-0.5 text-ink-muted type-pill">Hidden</span>}
 
         <div className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100">
           {perms.canUpdate && visibilityActions.map((action) => {
@@ -145,7 +145,7 @@ export function AccountTreeRow({
                 disabled={toggle.isPending}
                 aria-label={`${VISIBILITY_ACTION_LABELS[action]} ${account.code} ${account.name}`}
                 title={VISIBILITY_ACTION_LABELS[action]}
-                className="rounded p-1 text-ink-muted transition-colors hover:bg-stone-100 hover:text-stone-700 disabled:opacity-50"
+                className="rounded p-1 text-ink-muted transition-colors hover:bg-stone-100 hover:text-ink disabled:opacity-50"
               >
                 {pendingAction === action ? <Loader2 className="size-3.5 animate-spin" /> : <Icon className="size-3.5" />}
               </button>
@@ -157,7 +157,7 @@ export function AccountTreeRow({
               onClick={() => actions.onAddSubAccount(account)}
               aria-label={`Add sub-account under ${account.code} ${account.name}`}
               title="Add sub-account"
-              className="rounded p-1 text-stone-500 transition-colors hover:bg-stone-100 hover:text-stone-700"
+              className="rounded p-1 text-ink-muted transition-colors hover:bg-stone-100 hover:text-ink"
             >
               <Plus className="size-3.5" />
             </button>
@@ -168,7 +168,7 @@ export function AccountTreeRow({
               onClick={() => actions.onEdit(account)}
               aria-label={`Edit ${account.code} ${account.name}`}
               title="Edit"
-              className="rounded p-1 text-stone-500 transition-colors hover:bg-stone-100 hover:text-stone-700"
+              className="rounded p-1 text-ink-muted transition-colors hover:bg-stone-100 hover:text-ink"
             >
               <Pencil className="size-3.5" />
             </button>

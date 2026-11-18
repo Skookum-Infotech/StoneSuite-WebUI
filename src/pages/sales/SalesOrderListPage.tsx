@@ -51,7 +51,7 @@ export default function SalesOrderListPage() {
             </div>
             <div>
               <h1 className="type-page-title">Sales Orders</h1>
-              <p className="text-sm text-stone-500">Confirmed customer orders ready for fulfillment.</p>
+              <p className="type-page-subtitle">Confirmed customer orders ready for fulfillment.</p>
             </div>
           </div>
           {!isCustomer && (

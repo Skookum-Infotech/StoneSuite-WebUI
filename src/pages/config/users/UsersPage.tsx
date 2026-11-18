@@ -118,7 +118,7 @@ export default function UsersPage() {
             <h1 className="type-page-title">
               Users
             </h1>
-            <p className="text-sm text-stone-500">
+            <p className="type-page-subtitle">
               Manage workspace members and invitations.
             </p>
           </div>
@@ -245,12 +245,12 @@ export default function UsersPage() {
                       )}
                     >
                       <div className="flex items-center gap-2 min-w-0">
-                        <Mail className="size-4 shrink-0 text-stone-400" />
+                        <Mail className="size-4 shrink-0 text-ink-faint" />
                         <div className="min-w-0 flex-1">
                           <p
                             className={cn(
                               "text-xs font-semibold truncate",
-                              active ? "text-link" : "text-stone-700",
+                              active ? "text-link" : "text-ink",
                             )}
                           >
                             {inv.Email}
@@ -312,8 +312,8 @@ export default function UsersPage() {
               {!activeUser && !usersQ.isLoading && (
                 <div className="hidden md:flex h-full items-center justify-center">
                   <div className="text-center">
-                    <UsersRound className="mx-auto mb-2 size-8 text-stone-400" />
-                    <p className="text-sm text-stone-500">
+                    <UsersRound className="mx-auto mb-2 size-8 text-ink-faint" />
+                    <p className="text-sm text-ink-muted">
                       Select a member to view their profile.
                     </p>
                   </div>
@@ -330,8 +330,8 @@ export default function UsersPage() {
               {!activeInvite && !invitesQ.isLoading && (
                 <div className="hidden md:flex h-full items-center justify-center">
                   <div className="text-center">
-                    <Mail className="mx-auto mb-2 size-8 text-stone-400" />
-                    <p className="text-sm text-stone-500">
+                    <Mail className="mx-auto mb-2 size-8 text-ink-faint" />
+                    <p className="text-sm text-ink-muted">
                       Select an invitation to view details.
                     </p>
                   </div>

@@ -65,7 +65,7 @@ export function TenantSettingsTab({ tenant }: { tenant: Tenant }) {
           tone="warning"
           onClose={close}
         >
-          <p className="text-xs text-stone-600">
+          <p className="text-xs text-ink">
             {pending
               ? 'Each user will be limited to one browser at a time. Users signed in on several browsers now keep only the one they used most recently; the others get a 30-second warning and are signed out.'
               : 'Users will be able to stay signed in on several browsers at once, so one login could be shared.'}
@@ -86,7 +86,7 @@ export function TenantSettingsTab({ tenant }: { tenant: Tenant }) {
               onClick={() => save.mutate(pending)}
               disabled={save.isPending}
               aria-label={pending ? 'Turn on single session' : 'Turn off single session'}
-              className="rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-semibold text-stone-950 transition-all hover:bg-amber-400 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-semibold text-ink-strong transition-all hover:bg-amber-400 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {save.isPending ? 'Saving…' : pending ? 'Turn on' : 'Turn off'}
             </button>

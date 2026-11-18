@@ -154,7 +154,7 @@ export default function AcceptInvitePage() {
         <div className="text-center">
           <AlertTriangle className="mx-auto mb-3 size-8 text-red-400" />
           <h1 className="type-display">Invalid Link</h1>
-          <p className="mt-1 text-sm text-stone-500">
+          <p className="mt-1 type-page-subtitle">
             This invitation link is missing or malformed.
           </p>
         </div>
@@ -179,7 +179,7 @@ export default function AcceptInvitePage() {
           <div className="text-center">
             <CheckCircle2 className="mx-auto mb-3 size-8 text-emerald-500" />
             <h1 className="type-display">Already Accepted</h1>
-            <p className="mt-1 text-sm text-stone-500">
+            <p className="mt-1 type-page-subtitle">
               {message ?? 'This invitation has already been accepted. Please sign in.'}
             </p>
             <Link
@@ -199,7 +199,7 @@ export default function AcceptInvitePage() {
           <div className="text-center">
             <Clock className="mx-auto mb-3 size-8 text-amber-400" />
             <h1 className="type-display">Invitation Expired</h1>
-            <p className="mt-1 text-sm text-stone-500">
+            <p className="mt-1 type-page-subtitle">
               {message ?? 'This invitation has expired. Ask whoever invited you to send a new one.'}
             </p>
           </div>
@@ -213,7 +213,7 @@ export default function AcceptInvitePage() {
           <div className="text-center">
             <AlertTriangle className="mx-auto mb-3 size-8 text-red-400" />
             <h1 className="type-display">Invitation Revoked</h1>
-            <p className="mt-1 text-sm text-stone-500">
+            <p className="mt-1 type-page-subtitle">
               {message ?? 'This invitation has been revoked. Contact whoever invited you.'}
             </p>
           </div>
@@ -235,7 +235,7 @@ export default function AcceptInvitePage() {
         <div className="text-center">
           <CheckCircle2 className="mx-auto mb-3 size-10 text-emerald-500" />
           <h1 className="type-display">You're All Set!</h1>
-          <p className="mt-1 text-sm text-stone-500">
+          <p className="mt-1 type-page-subtitle">
             Account activated for <span className="font-semibold">{acceptedEmail}</span>.
             You can now sign in.
           </p>

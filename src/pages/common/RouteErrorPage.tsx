@@ -39,13 +39,13 @@ export default function RouteErrorPage({
         <h1 className="type-page-title">
           {isNotFound ? "We couldn't find that page" : 'Something went wrong on this page'}
         </h1>
-        <p className="mt-2 text-sm text-stone-600">
+        <p className="mt-2 type-page-subtitle">
           {isNotFound
             ? 'The link may be old or mistyped.'
             : 'Try reloading. If it keeps happening, send support the reference below.'}
         </p>
         {!isNotFound && (
-          <p className="mt-2 break-all font-mono text-xs text-stone-600">Ref: {reference}</p>
+          <p className="mt-2 break-all font-mono text-xs text-ink">Ref: {reference}</p>
         )}
         <div className="mt-6 flex justify-center gap-3">
           {!isNotFound && (

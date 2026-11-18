@@ -53,15 +53,15 @@ export function PortalUserRosterTable({ entries }: { entries: PortalUserRosterEn
     <div className="space-y-3">
       {actionError && <ErrorNote>{actionError}</ErrorNote>}
       <div className="overflow-x-auto rounded-xl border border-stone-200 bg-white">
-        <table className="w-full text-sm">
+        <table className="w-full type-cell">
           <thead>
             <tr className="border-b border-stone-100 bg-stone-50 text-left type-th">
-              <th className="px-4 py-2.5">Login</th>
-              <th className="px-4 py-2.5">Customer</th>
-              <th className="px-4 py-2.5">Status</th>
-              <th className="px-4 py-2.5">Granted</th>
-              <th className="px-4 py-2.5">Granted by</th>
-              <th className="px-4 py-2.5" />
+              <th className="type-th px-4 py-2.5">Login</th>
+              <th className="type-th px-4 py-2.5">Customer</th>
+              <th className="type-th px-4 py-2.5">Status</th>
+              <th className="type-th px-4 py-2.5">Granted</th>
+              <th className="type-th px-4 py-2.5">Granted by</th>
+              <th className="type-th px-4 py-2.5" />
             </tr>
           </thead>
           <tbody>
@@ -70,13 +70,13 @@ export function PortalUserRosterTable({ entries }: { entries: PortalUserRosterEn
               return (
                 <tr key={u.id} className="border-b border-stone-50 last:border-0 hover:bg-stone-50/60">
                   <td className="px-4 py-2.5">
-                    <p className="font-medium text-stone-800">{u.fullName || u.email}</p>
+                    <p className="font-medium text-ink-strong">{u.fullName || u.email}</p>
                     {u.fullName && <p className="type-helper">{u.email}</p>}
                   </td>
-                  <td className="px-4 py-2.5 text-stone-600">{u.customerName}</td>
+                  <td className="type-cell-strong px-4 py-2.5">{u.customerName}</td>
                   <td className="px-4 py-2.5"><PortalUserStatusBadge status={u.status} /></td>
-                  <td className="px-4 py-2.5 text-stone-500">{fmtDate(u.createdAt)}</td>
-                  <td className="px-4 py-2.5 text-stone-500">{u.grantedByName || "—"}</td>
+                  <td className="type-cell px-4 py-2.5">{fmtDate(u.createdAt)}</td>
+                  <td className="type-cell px-4 py-2.5">{u.grantedByName || "—"}</td>
                   <td className="px-4 py-2.5">
                     <div className="flex items-center justify-end gap-2">
                       {canUpdate && u.status === "active" && (

@@ -24,15 +24,15 @@ export function VendorPaymentRefundsTab({ refunds }: { refunds: VendorPaymentRef
   if (refunds.length === 0) {
     return (
       <div className="flex flex-col items-center gap-2 py-12 text-center">
-        <Undo2 className="size-6 text-stone-400" aria-hidden="true" />
-        <p className="text-sm text-stone-500">No refunds recorded against this payment.</p>
+        <Undo2 className="size-6 text-ink-faint" aria-hidden="true" />
+        <p className="text-sm text-ink-muted">No refunds recorded against this payment.</p>
       </div>
     );
   }
 
   return (
     <div className="overflow-x-auto modal-scrollbar rounded-lg border border-stone-200 bg-white">
-      <table className="w-full text-left text-xs">
+      <table className="w-full text-left type-cell">
         <thead className="bg-stone-50 border-b border-stone-200">
           <tr className="divide-x divide-stone-200">
             {['Bill #', 'Amount', 'Reason', 'Reference #', 'Memo', 'Refunded On'].map((h) => (
@@ -45,7 +45,7 @@ export function VendorPaymentRefundsTab({ refunds }: { refunds: VendorPaymentRef
         <tbody className="divide-y divide-stone-100">
           {refunds.map((refund) => (
             <tr key={refund.id} className="hover:bg-stone-50/50 divide-x divide-stone-100">
-              <td className="px-3 py-2.5 font-medium text-stone-800">
+              <td className="type-cell px-3 py-2.5 font-medium">
                 <button
                   type="button"
                   onClick={() => navigate(`/purchases/vendor_bill/${refund.vendorBillId}`)}
@@ -54,11 +54,11 @@ export function VendorPaymentRefundsTab({ refunds }: { refunds: VendorPaymentRef
                   {refund.vendorBillNumber || '—'}
                 </button>
               </td>
-              <td className="px-3 py-2.5 tabular-nums text-stone-700">{currency(refund.amount)}</td>
-              <td className="px-3 py-2.5 text-stone-500 max-w-[200px] truncate">{refund.reason || '—'}</td>
+              <td className="type-cell px-3 py-2.5 tabular-nums">{currency(refund.amount)}</td>
+              <td className="type-cell px-3 py-2.5 max-w-[200px] truncate">{refund.reason || '—'}</td>
               <td className="px-3 py-2.5 type-record-id">{refund.referenceNumber || '—'}</td>
-              <td className="px-3 py-2.5 text-stone-500 max-w-[200px] truncate">{refund.memo || '—'}</td>
-              <td className="px-3 py-2.5 tabular-nums text-stone-500 whitespace-nowrap">{fmtDate(refund.refundedAt)}</td>
+              <td className="type-cell px-3 py-2.5 max-w-[200px] truncate">{refund.memo || '—'}</td>
+              <td className="type-cell px-3 py-2.5 tabular-nums whitespace-nowrap">{fmtDate(refund.refundedAt)}</td>
             </tr>
           ))}
         </tbody>

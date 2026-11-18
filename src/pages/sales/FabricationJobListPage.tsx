@@ -20,7 +20,7 @@ export default function FabricationJobListPage() {
             </div>
             <div>
               <h1 className="type-page-title">Installation / Fabrication</h1>
-              <p className="text-sm text-stone-500">Production jobs tracking a stone order to install.</p>
+              <p className="type-page-subtitle">Production jobs tracking a stone order to install.</p>
             </div>
           </div>
           {canCreate && (

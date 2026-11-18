@@ -22,10 +22,10 @@ export function AuditTable({ entries, names, isLoading }: Props) {
   return (
     <div className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm">
       <div className="overflow-x-auto modal-scrollbar">
-        <table className="w-full min-w-[720px] text-left text-xs">
+        <table className="w-full min-w-[720px] text-left type-cell">
           <thead className="border-b border-stone-200 bg-table-header">
             <tr>
-              <th className="w-8 px-4 py-3" />
+              <th className="type-th w-8 px-4 py-3" />
               <th className="px-4 py-3 type-th">Time</th>
               <th className="px-4 py-3 type-th">Resource</th>
               <th className="px-4 py-3 type-th">Action</th>
@@ -51,7 +51,7 @@ export function AuditTable({ entries, names, isLoading }: Props) {
                 <td colSpan={COLUMN_COUNT} className="py-16 text-center">
                   <div className="flex flex-col items-center gap-3">
                     <div className="rounded-2xl bg-stone-100 p-4">
-                      <Inbox className="size-6 text-stone-400" />
+                      <Inbox className="size-6 text-ink-faint" />
                     </div>
                     <p className="type-card-title">No audit entries match.</p>
                     <p className="type-helper">Try adjusting the filters above.</p>
@@ -83,7 +83,7 @@ function AuditRow({
   return (
     <Fragment>
       <tr className="hover:bg-stone-50/60 transition-colors duration-150">
-        <td className="px-4 py-3 text-stone-500">
+        <td className="px-4 py-3 text-ink-muted">
           <button
             type="button"
             aria-label={
@@ -98,17 +98,17 @@ function AuditRow({
             {expanded ? <ChevronDown className="size-3.5" /> : <ChevronRight className="size-3.5" />}
           </button>
         </td>
-        <td className="px-4 py-3 text-stone-500 tabular-nums whitespace-nowrap">
+        <td className="type-cell px-4 py-3 tabular-nums whitespace-nowrap">
           {formatAuditTime(entry.createdAt)}
         </td>
-        <td className="px-4 py-3 text-stone-700 font-medium whitespace-nowrap">
+        <td className="type-cell px-4 py-3 whitespace-nowrap font-medium">
           {resourceLabel(entry.resource)}
         </td>
-        <td className="px-4 py-3 text-stone-500 whitespace-nowrap">{actionLabel(entry.action)}</td>
+        <td className="type-cell px-4 py-3 whitespace-nowrap">{actionLabel(entry.action)}</td>
         <td
           className={cn(
             'px-4 py-3 whitespace-nowrap',
-            rawActor ? 'font-mono type-subline' : 'text-stone-700',
+            rawActor ? 'font-mono type-subline' : 'text-ink',
           )}
         >
           {actorLabel(entry, names)}

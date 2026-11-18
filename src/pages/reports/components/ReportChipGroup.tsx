@@ -11,7 +11,7 @@ interface ReportChipGroupProps<T extends string | number> {
 const CHIP_BASE =
   "inline-flex h-7 items-center rounded-full border px-3 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400";
 const CHIP_ON = "border-stone-900 bg-stone-900 text-white";
-const CHIP_OFF = "border-stone-200 bg-white text-stone-600 hover:bg-stone-50";
+const CHIP_OFF = "border-stone-200 bg-white text-ink hover:bg-stone-50";
 
 /** A single-choice row of pill buttons (date presets, basis, bucket, idle days). */
 export function ReportChipGroup<T extends string | number>({ label, value, options, onChange }: ReportChipGroupProps<T>) {

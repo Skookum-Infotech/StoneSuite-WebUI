@@ -25,7 +25,7 @@ function PartyChoices({ review, noun, searchSelector }: PartyChoicesProps): Reac
   const { candidates, extractedText } = party;
   return (
     <div className="space-y-1">
-      {extractedText && <p className="text-stone-500 dark:text-stone-400">The document says {'“'}{extractedText}{'”'}.</p>}
+      {extractedText && <p className="text-ink-muted dark:text-stone-400">The document says {'“'}{extractedText}{'”'}.</p>}
       <div className="flex flex-wrap gap-1.5">
         {candidates.filter((c) => c.active).map((c) => (
           <button
@@ -72,11 +72,11 @@ export function ReviewFieldsPanel({ review, fields }: ReviewFieldsPanelProps): R
         return (
           <ReviewFieldFrame key={key} reviewKey={key} needsReview={needs} onFieldFocus={() => review.focusField(prov?.page, prov?.row)}>
             <div className="flex items-center justify-between gap-2">
-              <span className="font-semibold text-stone-900 dark:text-stone-100">{label}</span>
+              <span className="font-semibold text-ink-strong dark:text-stone-100">{label}</span>
               <FieldProvenance label={label} provenance={prov} needsReview={needs} onShowInDocument={review.showInDocument} />
             </div>
-            {prov?.value && <p className="text-stone-600 dark:text-stone-300">Document: {prov.value}</p>}
-            {current && current !== prov?.value && <p className="text-stone-800 dark:text-stone-200">Form: {current}</p>}
+            {prov?.value && <p className="text-ink dark:text-stone-300">Document: {prov.value}</p>}
+            {current && current !== prov?.value && <p className="text-ink-strong dark:text-stone-200">Form: {current}</p>}
             {key === fields.partyKey && <PartyChoices review={review} noun={noun} searchSelector={fields.partySearchSelector} />}
             {key === fields.partyKey && (
               <ProposedEntityChips

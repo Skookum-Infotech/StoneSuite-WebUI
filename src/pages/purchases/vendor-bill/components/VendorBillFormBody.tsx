@@ -110,7 +110,7 @@ export function VendorBillFormBody({
                       <ModernFieldShell label="Vendor" required={!vendorLocked}>
                         {vendorLocked ? (
                           <div className={cn(readonlyCls, 'cursor-not-allowed select-none')}>
-                            {vendor?.name || <span className="text-stone-500">—</span>}
+                            {vendor?.name || <span className="text-ink-muted">—</span>}
                           </div>
                         ) : (
                           <VendorPicker value={vendor} onChange={setVendor} required onCreateNew={onCreateVendor} />

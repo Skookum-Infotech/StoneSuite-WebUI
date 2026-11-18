@@ -125,7 +125,7 @@ export default function CountDetailPage() {
           {canTransition && isDraft && (
             <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 mb-4">
               <button type="button" disabled={freezing} onClick={() => freeze()} className={cn(buttonVariants({ variant: 'ghost' }), 'flex w-full gap-2.5')}>
-                <Snowflake className="size-4 text-stone-400" /> {freezing ? 'Freezing…' : 'Freeze & Start Counting'}
+                <Snowflake className="size-4 text-ink-faint" /> {freezing ? 'Freezing…' : 'Freeze & Start Counting'}
               </button>
             </div>
           )}
@@ -157,7 +157,7 @@ function ProgressStat({ label, value, highlight, warn, decimal }: { label: strin
   return (
     <div className="rounded-lg border border-stone-200 bg-white p-3">
       <p className="type-overline">{label}</p>
-      <p className={`mt-1 text-lg font-bold tabular-nums ${warn ? 'text-warning-ink' : highlight ? 'text-success-ink' : 'text-stone-900'}`}>
+      <p className={`mt-1 text-lg font-bold tabular-nums ${warn ? 'text-warning-ink' : highlight ? 'text-success-ink' : 'text-ink-strong'}`}>
         {decimal ? value.toFixed(2) : value}
       </p>
     </div>
@@ -168,7 +168,7 @@ function ReadonlyField({ label, value }: { label: string; value?: string }) {
   return (
     <div className="space-y-1">
       <label className={fieldLabelCls}>{label}</label>
-      <div className={readonlyCls}>{value || <span className="text-stone-500">—</span>}</div>
+      <div className={readonlyCls}>{value || <span className="text-ink-muted">—</span>}</div>
     </div>
   );
 }

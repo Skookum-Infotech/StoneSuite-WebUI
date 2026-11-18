@@ -54,10 +54,10 @@ export function TwoStepAdminToggle({ user }: { user: WorkspaceUser }) {
       </h3>
       <div className="flex items-center gap-3 rounded-lg border border-stone-200 px-3 py-2.5">
         <div className="min-w-0 flex-1">
-          <p className="text-xs sm:text-sm font-medium text-stone-700">Email code at sign-in</p>
+          <p className="text-xs sm:text-sm font-medium text-ink">Email code at sign-in</p>
           <p className="type-helper">{description}</p>
         </div>
-        {change.isPending && <Loader2 className="size-4 animate-spin text-stone-400" aria-hidden="true" />}
+        {change.isPending && <Loader2 className="size-4 animate-spin text-ink-faint" aria-hidden="true" />}
         <Switch
           checked={user.mfaEnabled === true}
           disabled={change.isPending || isSelf || unavailable || !reported}

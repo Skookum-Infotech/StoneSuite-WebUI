@@ -76,9 +76,9 @@ export function UnitPicker({
   if (value) {
     return (
       <div className={cn('flex items-center gap-2 rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm', className)}>
-        <Layers className="size-3.5 shrink-0 text-stone-400" aria-hidden="true" />
+        <Layers className="size-3.5 shrink-0 text-ink-faint" aria-hidden="true" />
         <span className="min-w-0 flex-1">
-          <span className="block truncate font-medium text-stone-800">{value.serial}</span>
+          <span className="block truncate font-medium text-ink-strong">{value.serial}</span>
           <span className="block truncate type-subline">
             {value.area.toFixed(2)} sq · {value.binPath || 'Unbinned'}
           </span>
@@ -87,7 +87,7 @@ export function UnitPicker({
           type="button"
           onClick={() => onChange(null)}
           aria-label="Change unit"
-          className="shrink-0 rounded p-0.5 text-stone-500 hover:bg-stone-100 hover:text-stone-600 transition-colors"
+          className="shrink-0 rounded p-0.5 text-ink-muted hover:bg-stone-100 hover:text-ink transition-colors"
         >
           <X className="size-3.5" />
         </button>
@@ -98,7 +98,7 @@ export function UnitPicker({
   return (
     <div ref={containerRef} className={cn('relative', className)}>
       <div className="relative">
-        <Search className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-stone-400" />
+        <Search className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-ink-faint" />
         <input
           type="text"
           required={required}
@@ -110,7 +110,7 @@ export function UnitPicker({
           aria-label="Search inventory unit"
         />
         {isFetching && (
-          <Loader2 className="absolute right-2.5 top-1/2 -translate-y-1/2 size-3.5 animate-spin text-stone-400" />
+          <Loader2 className="absolute right-2.5 top-1/2 -translate-y-1/2 size-3.5 animate-spin text-ink-faint" />
         )}
       </div>
 
@@ -126,9 +126,9 @@ export function UnitPicker({
               onClick={() => select(unit)}
               className="flex w-full items-start gap-2 px-3 py-2 text-left hover:bg-accent/10 transition-colors"
             >
-              <Layers className="mt-0.5 size-3.5 shrink-0 text-stone-400" aria-hidden="true" />
+              <Layers className="mt-0.5 size-3.5 shrink-0 text-ink-faint" aria-hidden="true" />
               <span className="min-w-0">
-                <span className="block truncate text-xs font-medium text-stone-800">{unit.serial}</span>
+                <span className="block truncate text-xs font-medium text-ink-strong">{unit.serial}</span>
                 <span className="block truncate type-subline">
                   {unit.area.toFixed(2)} sq · {unit.binPath || 'Unbinned'}
                 </span>

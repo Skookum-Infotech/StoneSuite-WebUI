@@ -474,7 +474,7 @@ export default function AddPaymentPage() {
         )}
 
         {fromInvoiceId && sourceInvoiceLoading ? (
-          <div role="status" className="flex flex-1 items-center justify-center gap-2 bg-stone-50 text-sm text-stone-600">
+          <div role="status" className="flex flex-1 items-center justify-center gap-2 bg-stone-50 text-sm text-ink">
             <Loader2 className="size-4 animate-spin" />
             Loading source invoice…
           </div>
@@ -545,14 +545,14 @@ export default function AddPaymentPage() {
                       <div className="space-y-1.5">
                         {applications.map((app) => (
                           <div key={app.invoiceUuid} className="flex items-center justify-between rounded-lg border border-stone-200 bg-stone-50 px-3 py-2 text-xs">
-                            <span className="font-medium text-stone-700">{appliedInvoiceNumbers[app.invoiceUuid]}</span>
+                            <span className="font-medium text-ink">{appliedInvoiceNumbers[app.invoiceUuid]}</span>
                             <div className="flex items-center gap-2">
-                              <span className="tabular-nums text-stone-600">{currency(app.amount, paymentCurrencyCode)}</span>
+                              <span className="tabular-nums text-ink">{currency(app.amount, paymentCurrencyCode)}</span>
                               <button
                                 type="button"
                                 onClick={() => removeApplication(app.invoiceUuid)}
                                 aria-label={`Remove application to ${appliedInvoiceNumbers[app.invoiceUuid]}`}
-                                className="rounded p-0.5 text-stone-500 hover:bg-stone-200 hover:text-stone-600 transition-colors"
+                                className="rounded p-0.5 text-ink-muted hover:bg-stone-200 hover:text-ink transition-colors"
                               >
                                 <X className="size-3.5" />
                               </button>
@@ -605,7 +605,7 @@ export default function AddPaymentPage() {
             )}
 
             {activeTab === 'audit' && (
-              <p className="py-12 text-center text-sm text-stone-500">
+              <p className="py-12 text-center text-sm text-ink-muted">
                 Audit trail will be available after saving the payment.
               </p>
             )}

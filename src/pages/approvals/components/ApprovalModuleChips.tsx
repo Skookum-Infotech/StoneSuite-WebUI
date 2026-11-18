@@ -4,7 +4,7 @@ import type { ApprovalInboxModule } from '@/types/approvalInbox';
 const CHIP_BASE =
   'inline-flex h-7 items-center gap-1.5 rounded-full border px-3 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400';
 const CHIP_ON = 'border-stone-900 bg-stone-900 text-white';
-const CHIP_OFF = 'border-stone-200 bg-white text-stone-600 hover:bg-stone-50';
+const CHIP_OFF = 'border-stone-200 bg-white text-ink hover:bg-stone-50';
 
 /** Module filter: "All 7", "Invoice 3", ... An empty `selected` means All. */
 export function ApprovalModuleChips({ modules, total, selected, onSelect }: {

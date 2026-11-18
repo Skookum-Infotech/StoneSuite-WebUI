@@ -40,7 +40,7 @@ export default function ItemListPage() {
             </div>
             <div>
               <h1 className="type-page-title">Inventory Items</h1>
-              <p className="text-sm text-stone-500">Manage the stone catalogue tenants sell from.</p>
+              <p className="type-page-subtitle">Manage the stone catalogue tenants sell from.</p>
             </div>
           </div>
           {canCreate && (

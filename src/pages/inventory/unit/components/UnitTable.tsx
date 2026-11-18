@@ -136,13 +136,13 @@ export function UnitTable() {
     <div ref={topRef} className="flex flex-col gap-3 scroll-mt-4">
       <div className="flex flex-wrap items-center gap-2">
         <div className="relative w-full sm:w-64">
-          <Search className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-stone-400" />
-          <input type="text" placeholder="Search serial, barcode, lot, SKU…" value={term} onChange={(e) => setTerm(e.target.value)} className="h-8 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-3 placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all type-input" />
+          <Search className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-ink-faint" />
+          <input type="text" placeholder="Search serial, barcode, lot, SKU…" value={term} onChange={(e) => setTerm(e.target.value)} className="h-8 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-3 placeholder:text-ink-muted focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all type-input" />
         </div>
-        <Select value={status} onChange={(e) => { setStatus(e.target.value); setCursor(''); setPrevCursors([]); }} aria-label="Filter by status" className="h-8 rounded-lg border border-stone-200 bg-white px-2.5 text-xs text-stone-600">
+        <Select value={status} onChange={(e) => { setStatus(e.target.value); setCursor(''); setPrevCursors([]); }} aria-label="Filter by status" className="h-8 rounded-lg border border-stone-200 bg-white px-2.5 text-xs text-ink">
           {STATUS_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
         </Select>
-        <Select value={kind} onChange={(e) => { setKind(e.target.value); setCursor(''); setPrevCursors([]); }} aria-label="Filter by kind" className="h-8 rounded-lg border border-stone-200 bg-white px-2.5 text-xs text-stone-600">
+        <Select value={kind} onChange={(e) => { setKind(e.target.value); setCursor(''); setPrevCursors([]); }} aria-label="Filter by kind" className="h-8 rounded-lg border border-stone-200 bg-white px-2.5 text-xs text-ink">
           <option value="">Any kind</option>
           <option value="slab">Slab</option>
           <option value="remnant">Remnant</option>
@@ -184,7 +184,7 @@ export function UnitTable() {
 
       <div className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm">
         <div className="overflow-x-auto modal-scrollbar">
-          <table className="w-full min-w-[1180px] text-left text-xs">
+          <table className="w-full min-w-[1180px] text-left type-cell">
             <thead className="border-b border-stone-200 bg-table-header">
               <tr>
                 <th className="px-4 py-3 type-th">Serial</th>
@@ -226,7 +226,7 @@ export function UnitTable() {
                         <StatusPill color={STATUS_COLORS[u.status] ?? '#a8a29e'}>{u.status.replace('_', ' ')}</StatusPill>
                       </td>
                       <td className="px-4 py-3.5">
-                        {isAllocated(u) ? <UnitAllocationChips unit={u} /> : <span className="text-stone-500" aria-label="Not allocated">—</span>}
+                        {isAllocated(u) ? <UnitAllocationChips unit={u} /> : <span className="text-ink-muted" aria-label="Not allocated">—</span>}
                       </td>
                       <td className="px-4 py-3.5 tabular-nums text-right whitespace-nowrap type-cell">{formatUnitArea(u.area, u.areaUnitCode)}</td>
                       <td className="px-4 py-3.5"><UnitConsumptionCell unit={u} /></td>
@@ -243,10 +243,10 @@ export function UnitTable() {
                                 <UserCheck className="size-3.5" /> Reserve
                               </button>
                             )}
-                            <button type="button" disabled={Boolean(disabledReason) || u.kind !== 'slab' && u.kind !== 'remnant'} onClick={() => setCutTarget(u)} aria-label={`Cut ${u.serial}`} title={disabledReason ? `Cut — ${disabledReason}` : u.kind !== 'slab' && u.kind !== 'remnant' ? 'Cut — only available for slabs and remnants' : 'Cut'} className="inline-flex items-center justify-center rounded-lg border border-stone-200 bg-white p-2 text-stone-500 hover:bg-accent hover:border-accent hover:text-accent-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
+                            <button type="button" disabled={Boolean(disabledReason) || u.kind !== 'slab' && u.kind !== 'remnant'} onClick={() => setCutTarget(u)} aria-label={`Cut ${u.serial}`} title={disabledReason ? `Cut — ${disabledReason}` : u.kind !== 'slab' && u.kind !== 'remnant' ? 'Cut — only available for slabs and remnants' : 'Cut'} className="inline-flex items-center justify-center rounded-lg border border-stone-200 bg-white p-2 text-ink-muted hover:bg-accent hover:border-accent hover:text-accent-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
                               <Scissors className="size-3.5" />
                             </button>
-                            <button type="button" disabled={Boolean(scrapDisabledReason)} onClick={() => setScrapTarget(u)} aria-label={`Scrap ${u.serial}`} title={scrapDisabledReason ? `Scrap — ${scrapDisabledReason}` : 'Scrap'} className="inline-flex items-center justify-center rounded-lg border border-stone-200 bg-white p-2 text-stone-500 hover:bg-destructive/10 hover:border-destructive/30 hover:text-danger-ink disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
+                            <button type="button" disabled={Boolean(scrapDisabledReason)} onClick={() => setScrapTarget(u)} aria-label={`Scrap ${u.serial}`} title={scrapDisabledReason ? `Scrap — ${scrapDisabledReason}` : 'Scrap'} className="inline-flex items-center justify-center rounded-lg border border-stone-200 bg-white p-2 text-ink-muted hover:bg-destructive/10 hover:border-destructive/30 hover:text-danger-ink disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
                               <AlertTriangle className="size-3.5" />
                             </button>
                           </div>
@@ -259,7 +259,7 @@ export function UnitTable() {
                 <tr>
                   <td colSpan={8 + (canUpdate ? 1 : 0)} className="py-16 text-center">
                     <div className="flex flex-col items-center gap-3">
-                      <div className="rounded-2xl bg-stone-100 p-4"><Layers className="size-6 text-stone-400" /></div>
+                      <div className="rounded-2xl bg-stone-100 p-4"><Layers className="size-6 text-ink-faint" /></div>
                       <p className="type-card-title">{hasFilters ? 'No units match the current search.' : 'No slabs in stock yet — receive a purchase order to add some.'}</p>
                     </div>
                   </td>

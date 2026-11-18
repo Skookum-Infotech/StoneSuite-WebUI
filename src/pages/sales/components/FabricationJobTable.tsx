@@ -174,13 +174,13 @@ export function FabricationJobTable() {
     <div ref={topRef} className="flex flex-col gap-3 scroll-mt-4">
       <div className="flex flex-wrap items-center gap-2">
         <div className="relative w-full sm:w-64">
-          <Search className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-stone-400" />
+          <Search className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-ink-faint" />
           <input
             type="text"
             placeholder="Search job #, site contact, notes…"
             value={term}
             onChange={(e) => setTerm(e.target.value)}
-            className="h-8 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-3 placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150 type-input"
+            className="h-8 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-3 placeholder:text-ink-muted focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150 type-input"
           />
         </div>
 
@@ -196,7 +196,7 @@ export function FabricationJobTable() {
                 'flex items-center gap-1.5 rounded-md px-2.5 py-1 text-micro font-semibold transition-colors',
                 sortBy === field
                   ? 'bg-accent text-accent-foreground ring-1 ring-accent-foreground/20'
-                  : 'bg-white border border-stone-200 text-stone-500 hover:border-stone-300 hover:text-stone-700',
+                  : 'bg-white border border-stone-200 text-ink-muted hover:border-stone-300 hover:text-ink',
               )}
             >
               {label}
@@ -238,7 +238,7 @@ export function FabricationJobTable() {
 
       <div className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm">
         <div className="overflow-x-auto modal-scrollbar">
-          <table className="w-full sm:min-w-[640px] text-left text-xs">
+          <table className="w-full sm:min-w-[640px] text-left type-cell">
             <thead className="border-b border-stone-200 bg-table-header">
               <tr>
                 <th className="px-4 max-sm:px-2 py-3 type-th">Job #</th>
@@ -301,7 +301,7 @@ export function FabricationJobTable() {
                     {!hasFilters ? (
                       <div className="flex flex-col items-center gap-3">
                         <div className="rounded-2xl bg-stone-100 p-4">
-                          <Inbox className="size-6 text-stone-400" />
+                          <Inbox className="size-6 text-ink-faint" />
                         </div>
                         <p className="type-card-title">No fabrication jobs yet.</p>
                         <p className="type-helper">Create one from a sales order to get started.</p>
@@ -309,7 +309,7 @@ export function FabricationJobTable() {
                     ) : (
                       <div className="flex flex-col items-center gap-3">
                         <div className="rounded-2xl bg-stone-100 p-4">
-                          <Search className="size-6 text-stone-400" />
+                          <Search className="size-6 text-ink-faint" />
                         </div>
                         <p className="type-card-title">No fabrication jobs match the current search.</p>
                         <p className="type-helper">Try adjusting your search terms.</p>

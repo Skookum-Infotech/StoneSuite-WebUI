@@ -20,7 +20,7 @@ export default function VendorPaymentListPage() {
             </div>
             <div>
               <h1 className="type-page-title">Vendor Payments</h1>
-              <p className="text-sm text-stone-500">Pay vendor bills and track what's still unapplied.</p>
+              <p className="type-page-subtitle">Pay vendor bills and track what's still unapplied.</p>
             </div>
           </div>
           {canCreate && (

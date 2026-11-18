@@ -140,7 +140,7 @@ export const FEEDBACK_STATUS_COLORS: Record<FeedbackStatus, string> = {
   new: 'bg-sky-100 text-sky-700 dark:bg-sky-500/15 dark:text-sky-400',
   in_progress: 'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400',
   done: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400',
-  cancelled: 'bg-stone-200 text-stone-600 dark:bg-white/10 dark:text-stone-400',
+  cancelled: 'bg-stone-200 text-ink dark:bg-white/10 dark:text-stone-400',
 };
 
 export function feedbackStatusLabel(status: string): string {
@@ -155,7 +155,7 @@ export const FEEDBACK_PRIORITY_LABELS: Record<FeedbackPriority, string> = {
 };
 
 export const FEEDBACK_PRIORITY_COLORS: Record<FeedbackPriority, string> = {
-  low: 'bg-stone-100 text-stone-600 dark:bg-white/10 dark:text-stone-400',
+  low: 'bg-stone-100 text-ink dark:bg-white/10 dark:text-stone-400',
   normal: 'bg-sky-100 text-sky-700 dark:bg-sky-500/15 dark:text-sky-400',
   high: 'bg-orange-100 text-orange-700 dark:bg-orange-500/15 dark:text-orange-400',
   urgent: 'bg-red-100 text-danger-ink dark:bg-red-500/15 dark:text-red-400',

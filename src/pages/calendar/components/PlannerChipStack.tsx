@@ -8,7 +8,7 @@ import { PlannerChip } from './PlannerChip';
 const STACK_CLS = 'flex flex-col gap-0.5';
 const WRAP_CLS = 'grid grid-cols-[repeat(auto-fill,minmax(14rem,1fr))] gap-0.5';
 const MORE_CLS =
-  'w-full rounded-md px-1.5 py-0.5 text-left text-xs font-semibold text-stone-600 outline-none transition-colors hover:bg-stone-100 focus-visible:ring-2 focus-visible:ring-ring aria-expanded:bg-stone-100';
+  'w-full rounded-md px-1.5 py-0.5 text-left text-xs font-semibold text-ink outline-none transition-colors hover:bg-stone-100 focus-visible:ring-2 focus-visible:ring-ring aria-expanded:bg-stone-100';
 
 /** One cell's chips. Past `max` the tail folds behind "N more" — which takes the
  *  last of the `max` slots, so a single hidden chip is never folded — and that
@@ -44,7 +44,7 @@ export function PlannerChipStack({ cards, columnLabel, max, wide = false }: {
           <PopoverContent align="start" aria-label={`${columnLabel}, ${all}`} className="w-80 max-w-[calc(100vw-2rem)] p-2">
             <p className="px-1.5 pb-2 type-card-title">
               {columnLabel}
-              <span className="font-normal text-stone-500"> · {all}</span>
+              <span className="font-normal text-ink-muted"> · {all}</span>
             </p>
             {/* Each chip opens its own detail card, so the list is a way in, not a dead end. */}
             <div className="flex max-h-80 flex-col gap-0.5 overflow-y-auto modal-scrollbar">

@@ -78,14 +78,14 @@ export const AssistantInput = forwardRef(function AssistantInput(
           aria-describedby={bytes >= COUNTER_THRESHOLD_BYTES ? 'assistant-question-length' : undefined}
           // text-base (16px) on small screens keeps iOS Safari from
           // auto-zooming the page on focus; sm+ reverts to the compact size.
-          className="flex-1 resize-none rounded-xl border border-stone-200 bg-white px-3 py-2 text-base outline-none focus:border-brand aria-[invalid=true]:border-destructive dark:border-white/10 dark:bg-white/[0.04] dark:text-stone-200 sm:text-xs text-stone-700"
+          className="flex-1 resize-none rounded-xl border border-stone-200 bg-white px-3 py-2 text-base outline-none focus:border-brand aria-[invalid=true]:border-destructive dark:border-white/10 dark:bg-white/[0.04] dark:text-stone-200 sm:text-xs text-ink"
         />
         {busy ? (
           <button
             type="button"
             onClick={onStop}
             aria-label="Stop generating"
-            className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-stone-200 text-stone-700 transition-colors hover:bg-stone-300 cursor-pointer dark:bg-white/10 dark:text-stone-200 dark:hover:bg-white/20 sm:size-9"
+            className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-stone-200 text-ink transition-colors hover:bg-stone-300 cursor-pointer dark:bg-white/10 dark:text-stone-200 dark:hover:bg-white/20 sm:size-9"
           >
             <Square className="size-3.5 fill-current" />
           </button>
@@ -94,7 +94,7 @@ export const AssistantInput = forwardRef(function AssistantInput(
             type="submit"
             disabled={!canSend}
             aria-label="Send question"
-            className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-brand text-stone-950 disabled:opacity-40 hover:bg-brand-dark transition-colors cursor-pointer disabled:cursor-not-allowed sm:size-9"
+            className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-brand text-ink-strong disabled:opacity-40 hover:bg-brand-dark transition-colors cursor-pointer disabled:cursor-not-allowed sm:size-9"
           >
             <Send className="size-4" />
           </button>
@@ -103,7 +103,7 @@ export const AssistantInput = forwardRef(function AssistantInput(
       {bytes >= COUNTER_THRESHOLD_BYTES && (
         <p
           id="assistant-question-length"
-          className={cn('mt-1 text-right text-micro', tooLong ? 'text-danger-ink' : 'text-stone-500')}
+          className={cn('mt-1 text-right text-micro', tooLong ? 'text-danger-ink' : 'text-ink-muted')}
         >
           {tooLong ? 'Too long — please shorten your question. ' : ''}
           {bytes} / {MAX_QUESTION_BYTES}

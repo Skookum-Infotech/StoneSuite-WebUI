@@ -48,26 +48,26 @@ export function AccountLinesPanel({ title, accountId, params, onClose }: Account
         <header className="flex items-start justify-between gap-3 border-b border-stone-200 px-4 py-3">
           <div className="min-w-0">
             <h2 className="truncate type-card-title">{title}</h2>
-            <p className="text-label text-stone-500">Journal lines behind this figure</p>
+            <p className="text-label text-ink-muted">Journal lines behind this figure</p>
           </div>
           <button
             type="button"
             aria-label="Close journal lines panel"
             onClick={onClose}
-            className="rounded-md p-1 text-stone-500 hover:bg-stone-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400"
+            className="rounded-md p-1 text-ink-muted hover:bg-stone-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400"
           >
             <X className="size-4" aria-hidden="true" />
           </button>
         </header>
 
         <div className="flex-1 overflow-y-auto p-4">
-          {q.isLoading && <p className="text-sm text-stone-500">{LOADING_TEXT}</p>}
+          {q.isLoading && <p className="text-sm text-ink-muted">{LOADING_TEXT}</p>}
           {q.isError && (
             <p role="alert" className="text-sm text-danger-ink">
               {apiErrorMessage(q.error, "Could not load the journal lines.")}
             </p>
           )}
-          {q.data && q.data.length === 0 && <p className="text-sm text-stone-500">{EMPTY_TEXT}</p>}
+          {q.data && q.data.length === 0 && <p className="text-sm text-ink-muted">{EMPTY_TEXT}</p>}
           {q.data && q.data.length > 0 && (
             <ul className="divide-y divide-stone-100">
               {q.data.map((l, i) => (
@@ -76,16 +76,16 @@ export function AccountLinesPanel({ title, accountId, params, onClose }: Account
                     <Link
                       to={`${JOURNAL_PATH}/${l.entryId}`}
                       aria-label={`Open journal entry ${l.number || "(no number)"}`}
-                      className="text-sm font-medium text-stone-900 underline-offset-2 hover:underline"
+                      className="text-sm font-medium text-ink-strong underline-offset-2 hover:underline"
                     >
                       {l.number || "(no number)"}
                     </Link>
-                    <p className="truncate text-label text-stone-500">
+                    <p className="truncate text-label text-ink-muted">
                       {formatReportDate(l.date)} · {l.sourceType}
                       {l.memo ? ` · ${l.memo}` : ""}
                     </p>
                   </div>
-                  <div className="shrink-0 text-right text-sm tabular-nums text-stone-700">
+                  <div className="shrink-0 text-right text-sm tabular-nums text-ink">
                     {l.debit > 0 ? <span>{formatMoney(l.debit)} Dr</span> : null}
                     {l.credit > 0 ? <span>{formatMoney(l.credit)} Cr</span> : null}
                     {l.debit <= 0 && l.credit <= 0 ? NO_AMOUNT : null}

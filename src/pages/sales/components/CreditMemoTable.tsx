@@ -166,13 +166,13 @@ export function CreditMemoTable() {
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-2">
         <div className="relative w-full sm:w-64">
-          <Search className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-stone-400" />
+          <Search className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-ink-faint" />
           <input
             type="text"
             placeholder="Search credit memo #, customer, reason…"
             value={term}
             onChange={(e) => setTerm(e.target.value)}
-            className="h-8 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-3 placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150 type-input"
+            className="h-8 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-3 placeholder:text-ink-muted focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150 type-input"
           />
         </div>
 
@@ -188,7 +188,7 @@ export function CreditMemoTable() {
                 'flex items-center gap-1.5 rounded-md px-2.5 py-1 text-micro font-semibold transition-colors',
                 sortBy === field
                   ? 'bg-accent text-accent-foreground ring-1 ring-accent-foreground/20'
-                  : 'bg-white border border-stone-200 text-stone-500 hover:border-stone-300 hover:text-stone-700',
+                  : 'bg-white border border-stone-200 text-ink-muted hover:border-stone-300 hover:text-ink',
               )}
             >
               {label}
@@ -231,7 +231,7 @@ export function CreditMemoTable() {
       {/* Table */}
       <div className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm">
         <div className="overflow-x-auto modal-scrollbar">
-          <table className="w-full sm:min-w-[820px] text-left text-xs">
+          <table className="w-full sm:min-w-[820px] text-left type-cell">
             <thead className="border-b border-stone-200 bg-table-header">
               <tr>
                 <th className="px-4 max-sm:px-2 py-3 type-th">Credit Memo #</th>
@@ -287,7 +287,7 @@ export function CreditMemoTable() {
                         <StatusPill color={color}>{cm.status}</StatusPill>
                       </td>
                       <td className="px-4 max-sm:px-2 py-3.5 truncate max-w-[160px] max-sm:hidden type-cell">
-                        {cm.reason || <span className="text-stone-500">—</span>}
+                        {cm.reason || <span className="text-ink-muted">—</span>}
                       </td>
                       <td className="px-4 max-sm:px-2 py-3.5 tabular-nums text-right whitespace-nowrap type-cell-strong">
                         {currency(cm.grandTotal)}
@@ -304,7 +304,7 @@ export function CreditMemoTable() {
                             type="button"
                             onClick={() => navigate(`/sales/credit_memo/${cm.id}/edit`)}
                             aria-label={`Edit credit memo ${cm.creditMemoNumber}`}
-                            className="inline-flex items-center justify-center rounded-lg border border-stone-200 bg-white p-2 text-stone-500 transition-colors hover:bg-accent hover:border-accent hover:text-accent-foreground cursor-pointer"
+                            className="inline-flex items-center justify-center rounded-lg border border-stone-200 bg-white p-2 text-ink-muted transition-colors hover:bg-accent hover:border-accent hover:text-accent-foreground cursor-pointer"
                           >
                             <Pencil className="size-4" />
                           </button>
@@ -319,7 +319,7 @@ export function CreditMemoTable() {
                     {!hasFilters ? (
                       <div className="flex flex-col items-center gap-3">
                         <div className="rounded-2xl bg-stone-100 p-4">
-                          <Inbox className="size-6 text-stone-400" />
+                          <Inbox className="size-6 text-ink-faint" />
                         </div>
                         <p className="type-card-title">No credit memos added yet.</p>
                         <p className="type-helper">Create your first credit memo to get started.</p>
@@ -327,7 +327,7 @@ export function CreditMemoTable() {
                     ) : (
                       <div className="flex flex-col items-center gap-3">
                         <div className="rounded-2xl bg-stone-100 p-4">
-                          <Search className="size-6 text-stone-400" />
+                          <Search className="size-6 text-ink-faint" />
                         </div>
                         <p className="type-card-title">No credit memos match the current search.</p>
                         <p className="type-helper">Try adjusting your search terms.</p>

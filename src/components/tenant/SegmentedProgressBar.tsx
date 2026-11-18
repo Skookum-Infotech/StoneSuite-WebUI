@@ -42,7 +42,7 @@ export function SegmentedProgressBar({
           />
         ))}
       </div>
-      <span className="shrink-0 text-xs font-medium tabular-nums text-stone-500">{valueLabel ?? `${percent}%`}</span>
+      <span className="shrink-0 text-xs font-medium tabular-nums text-ink-muted">{valueLabel ?? `${percent}%`}</span>
     </div>
   );
 }

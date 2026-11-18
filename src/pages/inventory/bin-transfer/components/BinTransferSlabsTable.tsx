@@ -34,13 +34,13 @@ export function BinTransferSlabsTable({ lines, pending }: {
 
   return (
     <div className="overflow-x-auto rounded-xl border border-stone-200 bg-white modal-scrollbar">
-      <table className="w-full min-w-[620px] text-left text-xs">
+      <table className="w-full min-w-[620px] text-left type-cell">
         <thead className="border-b border-stone-200 bg-table-header">
           <tr>
             <th className="px-4 py-2.5 type-th">Slab</th>
             <th className="px-4 py-2.5 text-right type-th">Area</th>
             <th className="px-4 py-2.5 type-th">From</th>
-            <th className="w-6 px-0 py-2.5" aria-hidden="true" />
+            <th className="type-th w-6 px-0 py-2.5" aria-hidden="true" />
             <th className="px-4 py-2.5 type-th">To</th>
           </tr>
         </thead>
@@ -64,15 +64,15 @@ export function BinTransferSlabsTable({ lines, pending }: {
                     </span>
                   )}
                 </td>
-                <td className="whitespace-nowrap px-4 py-3 text-right tabular-nums text-stone-700">
+                <td className="type-cell whitespace-nowrap px-4 py-3 text-right tabular-nums">
                   {l.area.toFixed(2)} {l.areaUnitCode}
                 </td>
-                <td className="px-4 py-3 text-stone-500">
-                  {l.fromBinPath || <span className="text-stone-500">No bin</span>}
+                <td className="type-cell px-4 py-3">
+                  {l.fromBinPath || <span className="text-ink-muted">No bin</span>}
                 </td>
                 <td className="px-0 py-3 text-ink-muted"><ArrowRight className="size-3.5" aria-hidden="true" /></td>
                 <td className="px-4 py-3">
-                  <span className={cn('font-medium', l.movedAt ? 'text-success-ink' : 'text-stone-800')}>{l.toBinPath}</span>
+                  <span className={cn('font-medium', l.movedAt ? 'text-success-ink' : 'text-ink-strong')}>{l.toBinPath}</span>
                   {l.toBinName && <span className="block type-subline">{l.toBinName}</span>}
                   {l.movedAt && (
                     <span className="mt-1 flex items-center gap-1 text-micro font-semibold text-success-ink">

@@ -64,7 +64,7 @@ export default function ConversionFunnelPage() {
           <ReportKpiGrid items={kpis} />
           <ReportCountBarChart data={chartData} label="Leads by stage" primaryName="Leads" />
           <ReportDataTable copy={{ caption: "Conversion funnel" }} columns={COLUMNS} rows={q.data.stages} getRowKey={(s) => s.key} />
-          <p className="text-label text-stone-500">
+          <p className="text-label text-ink-muted">
             {describeCrmWindow(params)}. A lead counts as qualified if it is Qualified now or has already been converted.
             Each step is measured on the same leads, so later stages can still grow as those leads progress.
           </p>

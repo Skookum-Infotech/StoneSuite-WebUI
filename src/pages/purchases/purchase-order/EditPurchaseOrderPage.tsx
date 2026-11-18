@@ -139,7 +139,7 @@ export default function EditPurchaseOrderPage() {
           subtitle={po.vendor.name}
         />
         <div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 text-center">
-          <Lock className="size-8 text-stone-400" aria-hidden="true" />
+          <Lock className="size-8 text-ink-faint" aria-hidden="true" />
           <p className="type-card-title">
             This purchase order is {po.status} and can no longer be edited.
           </p>

@@ -52,7 +52,7 @@ export function MemberRow({ user, active, checked, onOpen, onToggle }: MemberRow
             <p
               className={cn(
                 "text-xs font-semibold truncate",
-                active ? "text-link" : "text-stone-700",
+                active ? "text-link" : "text-ink",
                 user.status === "disabled" && "opacity-50",
               )}
             >

@@ -94,7 +94,7 @@ export function ApplyExistingPaymentDialog({ vendorBillId, vendor, balanceDue, c
         ) : error ? (
           <p role="alert" className="py-4 type-error">{apiErrorMessage(error, 'Failed to load payments.')}</p>
         ) : payments.length === 0 ? (
-          <p className="py-4 text-sm text-stone-500">{vendor.name} has no payments with an unapplied balance.</p>
+          <p className="py-4 type-dialog-body">{vendor.name} has no payments with an unapplied balance.</p>
         ) : (
           <div className="space-y-3">
             <div>

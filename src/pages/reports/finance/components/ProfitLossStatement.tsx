@@ -29,12 +29,12 @@ export function ProfitLossStatement({ report, onAccountClick }: ProfitLossStatem
   const grossAfter = grossProfitAfter(report);
   return (
     <div className="overflow-x-auto rounded-xl border border-stone-200 bg-white">
-      <table className="w-full text-sm">
+      <table className="w-full type-cell">
         <caption className="sr-only">Profit and loss statement</caption>
-        <thead className="bg-stone-50 text-label text-stone-500">
+        <thead className="bg-stone-50 text-label text-ink-muted">
           <tr>
-            <th scope="col" className="px-3 py-2 text-left font-medium">Account</th>
-            <th scope="col" className="px-3 py-2 text-right font-medium">Amount</th>
+            <th scope="col" className="type-th px-3 py-2 text-left">Account</th>
+            <th scope="col" className="type-th px-3 py-2 text-right">Amount</th>
           </tr>
         </thead>
         <tbody>
@@ -42,15 +42,15 @@ export function ProfitLossStatement({ report, onAccountClick }: ProfitLossStatem
             <PlSectionRows key={section.code} section={section} onAccountClick={onAccountClick}>
               {section.code === grossAfter && (
                 <tr className="border-t border-stone-200 bg-stone-50">
-                  <th scope="row" className="px-3 py-2 text-left font-semibold text-stone-900">{GROSS_PROFIT_LABEL}</th>
+                  <th scope="row" className="type-th px-3 py-2 text-left">{GROSS_PROFIT_LABEL}</th>
                   <PlAmountCell value={report.grossProfit} strong />
                 </tr>
               )}
             </PlSectionRows>
           ))}
           <tr className="border-t-2 border-stone-300 bg-stone-100">
-            <th scope="row" className="px-3 py-2.5 text-left text-base font-bold text-stone-900">{NET_PROFIT_LABEL}</th>
-            <td className={cn("px-3 py-2.5 text-right text-base font-bold tabular-nums", report.netProfit < 0 ? 'text-danger-ink' : "text-stone-900")}>
+            <th scope="row" className="type-th px-3 py-2.5 text-left">{NET_PROFIT_LABEL}</th>
+            <td className={cn("px-3 py-2.5 text-right text-base font-bold tabular-nums", report.netProfit < 0 ? 'text-danger-ink' : "text-ink-strong")}>
               {formatMoney(report.netProfit)}
             </td>
           </tr>

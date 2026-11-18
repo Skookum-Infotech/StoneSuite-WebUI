@@ -81,7 +81,7 @@ export function ReverseJournalEntryDialog({ journalEntryId, onReversed }: {
               </div>
             </div>
 
-            <p className="text-xs text-stone-600 mb-5">
+            <p className="text-xs text-ink mb-5">
               This posts a reversing ledger entry that restores both accounts&apos; balances to their pre-post values.
             </p>
 

@@ -88,17 +88,17 @@ export function MoveStageButton({ workflowKey, recordId, currentStateId, gated =
           type="button"
           disabled={move.isPending}
           aria-label="Move to a different stage"
-          className="inline-flex items-center gap-1.5 rounded-lg border border-brand/50 bg-brand/10 px-3 py-1.5 text-xs font-semibold text-stone-900 shadow-sm transition-colors hover:bg-brand/20 disabled:cursor-not-allowed disabled:opacity-50"
+          className="inline-flex items-center gap-1.5 rounded-lg border border-brand/50 bg-brand/10 px-3 py-1.5 text-xs font-semibold text-ink-strong shadow-sm transition-colors hover:bg-brand/20 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {move.isPending ? <Loader2 className="size-3.5 animate-spin" /> : <MoveRight className="size-3.5" />}
           Move Stage
-          <ChevronDown className="size-3 text-stone-500" aria-hidden="true" />
+          <ChevronDown className="size-3 text-ink-muted" aria-hidden="true" />
         </button>
       </PopoverTrigger>
       <PopoverContent align="end" className="w-56 p-1">
         <div role="listbox" aria-label="Move to stage">
           {options.length === 0 ? (
-            <p className="px-3 py-2.5 text-sm text-stone-500">
+            <p className="px-3 py-2.5 text-sm text-ink-muted">
               {transitionsQuery.isLoading ? 'Loading…' : 'No further status changes.'}
             </p>
           ) : (
@@ -121,7 +121,7 @@ export function MoveStageButton({ workflowKey, recordId, currentStateId, gated =
                       ? 'cursor-not-allowed text-stone-300'
                       : armed
                         ? 'bg-red-50 font-semibold text-danger-ink'
-                        : 'text-stone-700 hover:bg-stone-100',
+                        : 'text-ink hover:bg-stone-100',
                   )}
                 >
                   <span

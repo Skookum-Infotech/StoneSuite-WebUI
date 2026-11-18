@@ -36,7 +36,7 @@ function RecordChip({ citation, n, highlighted, chipRef }: { citation: Citation;
         // focus target for that, without joining the page's own Tab order.
         tabIndex={-1}
         title={citation.snippet}
-        className={cn(chipBase, 'border-stone-200 bg-stone-100 text-stone-500 dark:border-white/10 dark:bg-white/[0.06] dark:text-stone-400', highlighted && 'ring-2 ring-brand')}
+        className={cn(chipBase, 'border-stone-200 bg-stone-100 text-ink-muted dark:border-white/10 dark:bg-white/[0.06] dark:text-stone-400', highlighted && 'ring-2 ring-brand')}
       >
         <FileText className="size-3 shrink-0" aria-hidden="true" />
         <span className="shrink-0 tabular-nums">[{n}]</span>
@@ -75,14 +75,14 @@ function HelpChip({ citation, n, highlighted, chipRef }: { citation: Citation; n
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
         aria-label={`Help reference: ${citation.source_id ?? citation.snippet}`}
-        className={cn(chipBase, 'cursor-pointer border-stone-200 bg-stone-100 text-stone-600 hover:bg-stone-200 dark:border-white/10 dark:bg-white/[0.06] dark:text-stone-300 dark:hover:bg-white/10', highlighted && 'ring-2 ring-brand')}
+        className={cn(chipBase, 'cursor-pointer border-stone-200 bg-stone-100 text-ink hover:bg-stone-200 dark:border-white/10 dark:bg-white/[0.06] dark:text-stone-300 dark:hover:bg-white/10', highlighted && 'ring-2 ring-brand')}
       >
         <BookOpen className="size-3 shrink-0" aria-hidden="true" />
         <span className="shrink-0 tabular-nums">[{n}]</span>
         <span className="truncate">{citation.source_id ?? citation.snippet}</span>
       </button>
       {open && (
-        <span className="rounded-lg bg-stone-50 px-2.5 py-1.5 text-micro text-stone-600 dark:bg-white/[0.04] dark:text-stone-300">
+        <span className="rounded-lg bg-stone-50 px-2.5 py-1.5 text-micro text-ink dark:bg-white/[0.04] dark:text-stone-300">
           {citation.snippet}
         </span>
       )}

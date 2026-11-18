@@ -37,7 +37,7 @@ export function DocumentDefaultsSection({
       <div className="space-y-6">
         {DOCUMENT_TYPES.map(({ kind, label }) => (
           <div key={kind} className="space-y-3">
-            <h4 className="text-xs font-semibold text-stone-700">{label}</h4>
+            <h4 className="text-xs font-semibold text-ink">{label}</h4>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-4 gap-y-4">
               {WORDING_FIELDS.map(({ key, label: fieldLabel, placeholder }) => {
                 const id = `cp-default-${kind}-${key}`;
@@ -59,7 +59,7 @@ export function DocumentDefaultsSection({
                       />
                     ) : (
                       <div className={cn(readonlyCls, 'h-auto min-h-10 whitespace-pre-wrap')}>
-                        {values.documentDefaults?.[kind]?.[key] || <span className="text-stone-500">—</span>}
+                        {values.documentDefaults?.[kind]?.[key] || <span className="text-ink-muted">—</span>}
                       </div>
                     )}
                     {error && <p id={errorId} className="mt-1 type-error">{error}</p>}

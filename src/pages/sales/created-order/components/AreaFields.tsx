@@ -61,7 +61,7 @@ export function AreaFields({ area, errors, onChange }: AreaFieldsProps) {
               />
               <span
                 aria-hidden="true"
-                className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-xs text-stone-500"
+                className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-xs text-ink-muted"
               >
                 in
               </span>
@@ -101,7 +101,7 @@ export function AreaFields({ area, errors, onChange }: AreaFieldsProps) {
                 checked={area.halfWall}
                 onCheckedChange={(checked) => onChange('halfWall', checked)}
               />
-              <span className="text-xs text-stone-600">{area.halfWall ? 'Yes' : 'No'}</span>
+              <span className="text-xs text-ink">{area.halfWall ? 'Yes' : 'No'}</span>
             </div>
           )}
         </Field>

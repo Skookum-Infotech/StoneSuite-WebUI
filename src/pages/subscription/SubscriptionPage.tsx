@@ -211,10 +211,10 @@ export default function SubscriptionPage() {
                 'group flex shrink-0 items-center gap-2 rounded-xl px-4 py-2 text-left transition-all duration-150 cursor-pointer',
                 activeTab === id
                   ? 'bg-[#001219] text-white shadow-sm'
-                  : 'text-stone-600 hover:bg-stone-100 hover:text-stone-900',
+                  : 'text-ink hover:bg-stone-100 hover:text-ink-strong',
               )}
             >
-              <Icon className={cn('size-3.5 shrink-0', activeTab === id ? 'text-brand' : 'text-stone-400 group-hover:text-stone-600')} />
+              <Icon className={cn('size-3.5 shrink-0', activeTab === id ? 'text-brand' : 'text-ink-muted group-hover:text-ink')} />
               <span className="text-xs font-semibold whitespace-nowrap">{label}</span>
             </button>
           ))}

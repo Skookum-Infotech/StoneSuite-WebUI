@@ -89,7 +89,7 @@ export default function SsoCallbackPage() {
           </>
         ) : (
           <>
-            <Loader2 className="mx-auto mb-3 size-6 animate-spin text-stone-400" aria-hidden="true" />
+            <Loader2 className="mx-auto mb-3 size-6 animate-spin text-ink-faint" aria-hidden="true" />
             <h1 className="type-page-title">Signing You In…</h1>
             <p className="mt-1.5 type-helper">Just a moment.</p>
           </>

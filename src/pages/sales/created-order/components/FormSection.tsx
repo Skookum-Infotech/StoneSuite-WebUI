@@ -19,7 +19,7 @@ export function FormSection({ step, title, description, children }: FormSectionP
       <header className="flex items-start gap-3 border-b border-stone-100 px-5 py-4 sm:px-6">
         <span
           aria-hidden="true"
-          className="flex size-7 shrink-0 items-center justify-center rounded-full bg-brand text-xs font-bold text-stone-950"
+          className="flex size-7 shrink-0 items-center justify-center rounded-full bg-brand text-xs font-bold text-ink-strong"
         >
           {step}
         </span>

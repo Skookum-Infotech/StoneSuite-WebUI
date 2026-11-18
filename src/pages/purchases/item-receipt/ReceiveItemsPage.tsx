@@ -130,7 +130,7 @@ export default function ReceiveItemsPage() {
   if (!purchaseOrderId) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 text-center">
-        <Inbox className="size-8 text-stone-400" aria-hidden="true" />
+        <Inbox className="size-8 text-ink-faint" aria-hidden="true" />
         <p className="type-card-title">Choose a purchase order to receive against.</p>
         <button
           type="button"

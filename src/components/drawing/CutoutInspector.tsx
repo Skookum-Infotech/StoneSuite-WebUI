@@ -28,7 +28,7 @@ export function CutoutInspector({ piece, cutout }: { piece: Piece; cutout: Cutou
   return (
     <div className="flex flex-col gap-2 text-xs">
       <div className="flex items-center justify-between">
-        <h3 className="font-semibold text-stone-800">{name}</h3>
+        <h3 className="font-semibold text-ink-strong">{name}</h3>
         <button
           type="button"
           aria-label={`Back to ${piece.label}`}

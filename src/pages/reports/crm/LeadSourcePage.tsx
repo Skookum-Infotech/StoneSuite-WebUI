@@ -68,7 +68,7 @@ export default function LeadSourcePage() {
           <ReportKpiGrid items={kpis} />
           <ReportCountBarChart data={chartData} label="Leads and customers by source" primaryName="Leads" secondaryName="Customers" />
           <ReportDataTable copy={{ caption: "Lead source performance" }} columns={COLUMNS} rows={q.data.rows} getRowKey={(r) => r.source} />
-          <p className="text-label text-stone-500">{REVENUE_NOTE}</p>
+          <p className="text-label text-ink-muted">{REVENUE_NOTE}</p>
         </>
       )}
     </ReportPageShell>

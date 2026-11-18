@@ -39,7 +39,7 @@ export function SalesOrderInventoryTab({ orderId }: { orderId?: string }) {
 
   return (
     <div className="overflow-x-auto modal-scrollbar rounded-lg border border-stone-200">
-      <table className="w-full text-left text-xs">
+      <table className="w-full text-left type-cell">
         <thead className="bg-stone-50 border-b border-stone-200">
           <tr>
             {HEADERS.map((h) => (
@@ -53,17 +53,17 @@ export function SalesOrderInventoryTab({ orderId }: { orderId?: string }) {
               <td className="px-3 py-2.5 type-record-id">{row.sku}</td>
               {row.tracked === false ? (
                 <>
-                  <td className="px-3 py-2.5 tabular-nums text-right text-stone-700">{row.salesOrderQuantity.toLocaleString()}</td>
-                  <td colSpan={4} className="px-3 py-2.5 text-stone-500">Stock is not tracked for this item.</td>
+                  <td className="type-cell px-3 py-2.5 tabular-nums text-right">{row.salesOrderQuantity.toLocaleString()}</td>
+                  <td colSpan={4} className="type-cell px-3 py-2.5">Stock is not tracked for this item.</td>
                 </>
               ) : (
                 <>
-                  <td className="px-3 py-2.5 tabular-nums text-right text-stone-700">{row.onHand.toLocaleString()}</td>
-                  <td className="px-3 py-2.5 tabular-nums text-right text-stone-700">{row.salesOrderQuantity.toLocaleString()}</td>
+                  <td className="type-cell px-3 py-2.5 tabular-nums text-right">{row.onHand.toLocaleString()}</td>
+                  <td className="type-cell px-3 py-2.5 tabular-nums text-right">{row.salesOrderQuantity.toLocaleString()}</td>
                   <td className="px-3 py-2.5 tabular-nums text-right text-warning-ink font-medium">
                     {(row.reservedForOrder ?? 0).toLocaleString()}
                   </td>
-                  <td className="px-3 py-2.5 tabular-nums text-right text-stone-700">{row.allocated.toLocaleString()}</td>
+                  <td className="type-cell px-3 py-2.5 tabular-nums text-right">{row.allocated.toLocaleString()}</td>
                   <td className="px-3 py-2.5 tabular-nums text-right">
                     <span className={cn('font-medium', row.available < 0 ? 'text-danger-ink' : 'text-success-ink')}>
                       {row.available.toLocaleString()}

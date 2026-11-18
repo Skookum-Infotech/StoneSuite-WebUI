@@ -25,10 +25,10 @@ export function TenantSettingRow({ label, description, checked, onChange, state 
       <div className="min-w-0">
         <p id={labelId} className="type-card-title">{label}</p>
         <p id={descId} className="mt-0.5 type-helper">{description}</p>
-        {state?.note && <p className="mt-1 text-xs font-medium text-stone-600">{state.note}</p>}
+        {state?.note && <p className="mt-1 text-xs font-medium text-ink">{state.note}</p>}
       </div>
       <div className="flex shrink-0 items-center gap-2 pt-0.5">
-        {saving && <Loader2 className="size-3.5 animate-spin text-stone-400" aria-hidden="true" />}
+        {saving && <Loader2 className="size-3.5 animate-spin text-ink-faint" aria-hidden="true" />}
         <Switch
           checked={checked}
           onCheckedChange={onChange}

@@ -100,7 +100,7 @@ export function BinTransferTable({ emptyAction }: { emptyAction?: () => void }) 
                 'h-8 rounded-full border px-3 text-xs font-medium transition-colors',
                 statusCode === c.code
                   ? 'border-stone-900 bg-stone-900 text-white'
-                  : 'border-stone-200 bg-white text-stone-600 hover:bg-stone-50',
+                  : 'border-stone-200 bg-white text-ink hover:bg-stone-50',
               )}
             >
               {c.label}
@@ -109,14 +109,14 @@ export function BinTransferTable({ emptyAction }: { emptyAction?: () => void }) 
         </div>
 
         <div className="relative w-full sm:ml-2 sm:w-64">
-          <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-stone-400" aria-hidden="true" />
+          <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-ink-faint" aria-hidden="true" />
           <input
             type="text"
             value={term}
             onChange={(e) => setTerm(e.target.value)}
             placeholder="Search number, slab serial, location…"
             aria-label="Search bin transfers"
-            className="h-8 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-3 placeholder:text-stone-500 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/30 type-input"
+            className="h-8 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-3 placeholder:text-ink-muted focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/30 type-input"
           />
         </div>
 
@@ -144,7 +144,7 @@ export function BinTransferTable({ emptyAction }: { emptyAction?: () => void }) 
 
       <div className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm">
         <div className="overflow-x-auto modal-scrollbar">
-          <table className="w-full min-w-[820px] text-left text-xs">
+          <table className="w-full min-w-[820px] text-left type-cell">
             <thead className="border-b border-stone-200 bg-table-header">
               <tr>
                 {['Number', 'Location', 'Slabs', 'Destination', 'Status', 'Requested by', 'Date'].map((h) => (
@@ -177,22 +177,22 @@ export function BinTransferTable({ emptyAction }: { emptyAction?: () => void }) 
                         {t.number || '—'}
                       </button>
                     </td>
-                    <td className="px-4 py-3.5 text-stone-700">{t.warehouseName || '—'}</td>
-                    <td className="whitespace-nowrap px-4 py-3.5 text-stone-700 tabular-nums">
+                    <td className="type-cell px-4 py-3.5">{t.warehouseName || '—'}</td>
+                    <td className="type-cell whitespace-nowrap px-4 py-3.5 tabular-nums">
                       {slabsLabel(t)}
-                      <span className="ml-1 text-stone-500">· {t.totalArea.toFixed(2)}</span>
+                      <span className="ml-1 text-ink-muted">· {t.totalArea.toFixed(2)}</span>
                     </td>
-                    <td className="max-w-[220px] truncate px-4 py-3.5 text-stone-600">{t.toBinSummary || '—'}</td>
+                    <td className="type-cell max-w-[220px] truncate px-4 py-3.5">{t.toBinSummary || '—'}</td>
                     <td className="px-4 py-3.5"><Badge color={BT_STATUS_COLORS[t.statusCode] ?? '#a8a29e'}>{t.statusName}</Badge></td>
-                    <td className="max-w-[160px] truncate px-4 py-3.5 text-stone-600">{t.ownerName || '—'}</td>
-                    <td className="whitespace-nowrap px-4 py-3.5 text-stone-500 tabular-nums">{fmtDate(t.date)}</td>
+                    <td className="type-cell max-w-[160px] truncate px-4 py-3.5">{t.ownerName || '—'}</td>
+                    <td className="type-cell whitespace-nowrap px-4 py-3.5 tabular-nums">{fmtDate(t.date)}</td>
                   </tr>
                 ))
               ) : (
                 <tr>
                   <td colSpan={COLUMN_COUNT} className="py-16 text-center">
                     <div className="flex flex-col items-center gap-3">
-                      <div className="rounded-2xl bg-stone-100 p-4"><ArrowLeftRight className="size-6 text-stone-400" aria-hidden="true" /></div>
+                      <div className="rounded-2xl bg-stone-100 p-4"><ArrowLeftRight className="size-6 text-ink-faint" aria-hidden="true" /></div>
                       <p className="type-card-title">
                         {filtered ? 'No bin transfers match the current filters.' : 'No bin transfers yet.'}
                       </p>

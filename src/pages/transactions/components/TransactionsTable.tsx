@@ -5,7 +5,7 @@ import { formatAmount, rowHeadline, rowHref, rowSubline } from '@/lib/myTransact
 import type { TransactionRow } from '@/types/myTransactions';
 import { RoleBadge, StatusBadge, TypeBadge } from './TransactionBadges';
 
-const HEAD_CLS = 'whitespace-nowrap px-4 py-3 text-left font-semibold text-stone-500';
+const HEAD_CLS = 'whitespace-nowrap px-4 py-3 text-left type-th';
 
 /**
  * The wide-screen layout (lg and up): one row per record; each opens its
@@ -16,7 +16,7 @@ export function TransactionsTable({ rows }: { rows: TransactionRow[] }) {
 
   return (
     <div className="overflow-x-auto modal-scrollbar">
-      <table className="w-full min-w-[820px] border-collapse text-xs">
+      <table className="w-full min-w-[820px] border-collapse type-cell">
         <thead>
           <tr className="border-b border-stone-100 bg-stone-50/40">
             <th className={HEAD_CLS}>Record</th>
@@ -46,22 +46,22 @@ export function TransactionsTable({ rows }: { rows: TransactionRow[] }) {
                     to={href}
                     onClick={(e) => e.stopPropagation()}
                     aria-label={`View ${row.typeLabel} ${rowHeadline(row)}`}
-                    className="rounded hover:text-stone-950 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring type-record-id"
+                    className="rounded hover:text-ink-strong hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring type-record-id"
                   >
                     {rowHeadline(row)}
                   </Link>
-                  {subline && <p className="mt-0.5 max-w-[240px] truncate text-stone-500">{subline}</p>}
+                  {subline && <p className="mt-0.5 max-w-[240px] truncate text-ink-muted">{subline}</p>}
                 </td>
                 <td className="whitespace-nowrap px-4 py-3.5"><TypeBadge row={row} /></td>
                 <td className="max-w-[220px] px-4 py-3.5">
-                  <span className="block truncate font-semibold text-stone-800">{row.account || '—'}</span>
+                  <span className="block truncate font-semibold text-ink-strong">{row.account || '—'}</span>
                 </td>
                 <td className="px-4 py-3.5"><StatusBadge row={row} /></td>
-                <td className="whitespace-nowrap px-4 py-3.5 text-right font-bold tabular-nums text-stone-900">
+                <td className="type-cell-strong whitespace-nowrap px-4 py-3.5 text-right tabular-nums">
                   {formatAmount(row.amount)}
                 </td>
                 <td className="px-4 py-3.5"><RoleBadge role={row.role} /></td>
-                <td className="whitespace-nowrap px-4 py-3.5 text-right text-stone-500">
+                <td className="type-cell whitespace-nowrap px-4 py-3.5 text-right">
                   <time dateTime={row.updatedAt} title={new Date(row.updatedAt).toLocaleString()}>
                     {relativeTime(row.updatedAt)}
                   </time>

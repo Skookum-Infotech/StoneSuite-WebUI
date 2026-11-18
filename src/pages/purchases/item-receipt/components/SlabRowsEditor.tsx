@@ -144,14 +144,14 @@ export function SlabRowsEditor({ line, onChange, serials, warehouseId, problems 
     <div className="rounded-lg border border-stone-200 bg-stone-50/50 p-3">
       <div className="mb-2 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="text-xs font-semibold text-stone-700">
+          <p className="text-xs font-semibold text-ink">
             Slabs for {itemLabel}
-            <span className="ml-2 font-normal text-stone-500">
+            <span className="ml-2 font-normal text-ink-muted">
               {count === 0 ? 'None added — this line is skipped.' : `${count} slab${count === 1 ? '' : 's'}`}
             </span>
           </p>
           {progress && (
-            <p className={cn('mt-0.5 text-micro', overExpected ? 'text-amber-700' : 'text-stone-500')} data-testid="slab-progress">
+            <p className={cn('mt-0.5 text-micro', overExpected ? 'text-amber-700' : 'text-ink-muted')} data-testid="slab-progress">
               {progress}
             </p>
           )}

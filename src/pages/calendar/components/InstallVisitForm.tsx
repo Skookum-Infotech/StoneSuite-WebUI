@@ -121,9 +121,9 @@ export function InstallVisitForm({ appointment, jobId, defaultDate, actions }: P
         )}
         <fieldset disabled={!canWrite || !live || pending} className="flex min-w-0 flex-col gap-4 border-0 p-0">
           <div>
-            <span className="mb-1 block text-xs font-medium text-stone-600">Job</span>
+            <span className="mb-1 block text-xs font-medium text-ink">Job</span>
             {editing || jobId ? (
-              <p className="rounded-[10px] border border-stone-300 bg-stone-50 px-3 py-2 text-xs font-medium text-stone-800">{chosenLabel}</p>
+              <p className="rounded-[10px] border border-stone-300 bg-stone-50 px-3 py-2 text-xs font-medium text-ink-strong">{chosenLabel}</p>
             ) : (
               <InstallJobField
                 chosen={form.jobId ? chosenLabel : ''}
@@ -148,7 +148,7 @@ export function InstallVisitForm({ appointment, jobId, defaultDate, actions }: P
         {stale && (
           <div className="flex flex-wrap items-center gap-2">
             <ErrorNote>{STALE_MESSAGE}</ErrorNote>
-            <button type="button" onClick={onReload} className={`${btn} border border-stone-300 text-stone-700 hover:bg-stone-50`}>
+            <button type="button" onClick={onReload} className={`${btn} border border-stone-300 text-ink hover:bg-stone-50`}>
               Reload
             </button>
           </div>
@@ -163,7 +163,7 @@ export function InstallVisitForm({ appointment, jobId, defaultDate, actions }: P
               <button type="button" onClick={onCancelVisit} disabled={pending} className={`${btn} border border-destructive/40 text-danger-ink hover:bg-destructive/5`}>
                 Cancel visit
               </button>
-              <button type="button" onClick={markComplete} disabled={pending} className={`${btn} border border-stone-300 text-stone-700 hover:bg-stone-50`}>
+              <button type="button" onClick={markComplete} disabled={pending} className={`${btn} border border-stone-300 text-ink hover:bg-stone-50`}>
                 Mark complete
               </button>
             </>

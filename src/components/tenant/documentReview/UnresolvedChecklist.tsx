@@ -22,27 +22,27 @@ function checklistTitle(pending: ReviewItem[]): string {
 export function UnresolvedChecklist({ pending, onJump }: UnresolvedChecklistProps): React.JSX.Element {
   return (
     <section aria-label="Items to review" className="rounded-lg border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 p-3 text-xs">
-      <p className="font-semibold text-stone-900 dark:text-stone-100">
+      <p className="font-semibold text-ink-strong dark:text-stone-100">
         {checklistTitle(pending)}
       </p>
       {pending.length > 0 && (
         <ul className="mt-2 space-y-1.5">
           {pending.map((item) => (
             <li key={item.key} className="flex items-start gap-2">
-              <span className={cn('mt-0.5 shrink-0 rounded-full px-1.5 py-0.5 type-pill', item.required ? 'bg-warning/10 dark:bg-amber-500/10 text-warning dark:text-amber-400' : 'bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300')}>
+              <span className={cn('mt-0.5 shrink-0 rounded-full px-1.5 py-0.5 type-pill', item.required ? 'bg-warning/10 dark:bg-amber-500/10 text-warning dark:text-amber-400' : 'bg-stone-100 dark:bg-stone-800 text-ink dark:text-stone-300')}>
                 {item.required ? 'Required' : 'Check'}
               </span>
               <button
                 type="button"
                 onClick={() => onJump(item.key)}
-                className="text-left text-stone-700 dark:text-stone-300 underline-offset-2 hover:underline"
+                className="text-left text-ink dark:text-stone-300 underline-offset-2 hover:underline"
               >
                 <span className="font-medium">{item.label}</span> {'—'} {item.reason}
               </button>
               {item.link && (
                 <Link
                   to={item.link.to}
-                  className="shrink-0 font-medium text-stone-900 dark:text-stone-100 underline underline-offset-2 hover:no-underline"
+                  className="shrink-0 font-medium text-ink-strong dark:text-stone-100 underline underline-offset-2 hover:no-underline"
                 >
                   {item.link.label}
                 </Link>

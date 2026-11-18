@@ -20,8 +20,8 @@ export function FabricationCustomerEvidence({ jobId, revision }: { jobId: string
     onSuccess: () => { toast.success('Customer approval evidence recorded.'); void client.invalidateQueries({ queryKey: ['fabrication-templates', jobId] }); void client.invalidateQueries({ queryKey: ['fabrication-job', jobId] }); },
   });
   const field = 'mt-1 min-h-11 w-full rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm';
-  return <details className="rounded-xl border border-stone-200 bg-white p-5"><summary className="cursor-pointer text-sm font-semibold text-stone-800">Record approval received outside the app</summary><form className="mt-4 space-y-4" onSubmit={(event) => { event.preventDefault(); action.run({ approver, channel, evidence, approvedAt: new Date(date).toISOString() }); }}>
-    <p className="text-sm text-stone-500">Record who approved revision {revision.revision} and where the approval is saved. Your identity is recorded separately.</p>
+  return <details className="rounded-xl border border-stone-200 bg-white p-5"><summary className="cursor-pointer text-sm font-semibold text-ink-strong">Record approval received outside the app</summary><form className="mt-4 space-y-4" onSubmit={(event) => { event.preventDefault(); action.run({ approver, channel, evidence, approvedAt: new Date(date).toISOString() }); }}>
+    <p className="text-sm text-ink-muted">Record who approved revision {revision.revision} and where the approval is saved. Your identity is recorded separately.</p>
     <div className="grid gap-3 sm:grid-cols-2">
       <label className="type-field-label">Customer approver<input required value={approver} onChange={(event) => setApprover(event.target.value)} className={field} /></label>
       <label className="type-field-label">Approval received<input required type="datetime-local" value={date} onChange={(event) => setDate(event.target.value)} className={field} /></label>

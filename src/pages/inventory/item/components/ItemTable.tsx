@@ -149,13 +149,13 @@ export function ItemTable() {
     <div ref={topRef} className="flex flex-col gap-3 scroll-mt-4">
       <div className="flex flex-wrap items-center gap-2">
         <div className="relative w-full sm:w-64">
-          <Search className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-stone-400" />
+          <Search className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-ink-faint" />
           <input
             type="text"
             placeholder="Search SKU or name…"
             value={term}
             onChange={(e) => setTerm(e.target.value)}
-            className="h-8 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-3 placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150 type-input"
+            className="h-8 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-3 placeholder:text-ink-muted focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150 type-input"
           />
         </div>
 
@@ -163,7 +163,7 @@ export function ItemTable() {
           onClick={() => setFiltersOpen(true)}
           className={cn(
             'flex items-center gap-1.5 h-8 px-3 rounded-lg border text-xs font-medium transition-colors',
-            filtersActive ? 'border-brand/40 bg-accent text-accent-foreground' : 'border-stone-200 bg-white text-stone-500 hover:bg-stone-50',
+            filtersActive ? 'border-brand/40 bg-accent text-accent-foreground' : 'border-stone-200 bg-white text-ink-muted hover:bg-stone-50',
           )}
         >
           <Filter className="size-3.5" />
@@ -180,7 +180,7 @@ export function ItemTable() {
               onClick={() => handleSort(field)}
               className={cn(
                 'flex items-center gap-1.5 rounded-md px-2.5 py-1 text-micro font-semibold transition-colors',
-                sortBy === field ? 'bg-accent text-accent-foreground ring-1 ring-accent-foreground/20' : 'bg-white border border-stone-200 text-stone-500 hover:border-stone-300 hover:text-stone-700',
+                sortBy === field ? 'bg-accent text-accent-foreground ring-1 ring-accent-foreground/20' : 'bg-white border border-stone-200 text-ink-muted hover:border-stone-300 hover:text-ink',
               )}
             >
               {label}
@@ -215,7 +215,7 @@ export function ItemTable() {
 
       <div className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm">
         <div className="overflow-x-auto modal-scrollbar">
-          <table className="w-full min-w-[820px] text-left text-xs">
+          <table className="w-full min-w-[820px] text-left type-cell">
             <thead className="border-b border-stone-200 bg-table-header">
               <tr>
                 <th className="px-4 py-3 type-th">SKU</th>
@@ -251,7 +251,7 @@ export function ItemTable() {
                     <td className="px-4 py-3.5 tabular-nums text-right type-cell">${itemPrice(it, 'purchasing').toFixed(2)}</td>
                     <td className="px-4 py-3.5 tabular-nums text-right type-cell">${itemPrice(it, 'selling').toFixed(2)}</td>
                     <td className="px-4 py-3.5">
-                      <span className={cn('inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 whitespace-nowrap type-pill', it.isActive ? 'bg-emerald-50 text-emerald-700' : 'bg-stone-100 text-stone-500')}>
+                      <span className={cn('inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 whitespace-nowrap type-pill', it.isActive ? 'bg-emerald-50 text-emerald-700' : 'bg-stone-100 text-ink-muted')}>
                         <span className={cn('size-1.5 shrink-0 rounded-full', it.isActive ? 'bg-emerald-500' : 'bg-stone-400')} aria-hidden="true" />
                         {it.isActive ? 'Active' : 'Inactive'}
                       </span>
@@ -262,7 +262,7 @@ export function ItemTable() {
                           type="button"
                           onClick={() => navigate(`/inventory/item/${it.id}/edit`)}
                           aria-label={`Edit item ${it.name}`}
-                          className="inline-flex items-center justify-center rounded-lg border border-stone-200 bg-white p-2 text-stone-500 transition-colors hover:bg-accent hover:border-accent hover:text-accent-foreground cursor-pointer"
+                          className="inline-flex items-center justify-center rounded-lg border border-stone-200 bg-white p-2 text-ink-muted transition-colors hover:bg-accent hover:border-accent hover:text-accent-foreground cursor-pointer"
                         >
                           <Pencil className="size-4" />
                         </button>
@@ -275,7 +275,7 @@ export function ItemTable() {
                   <td colSpan={5 + (canEdit ? 1 : 0)} className="py-16 text-center">
                     <div className="flex flex-col items-center gap-3">
                       <div className="rounded-2xl bg-stone-100 p-4">
-                        {hasFilters ? <Search className="size-6 text-stone-400" /> : <Package className="size-6 text-stone-400" />}
+                        {hasFilters ? <Search className="size-6 text-ink-faint" /> : <Package className="size-6 text-ink-faint" />}
                       </div>
                       <p className="type-card-title">
                         {hasFilters ? 'No items match the current search.' : 'No inventory items added yet.'}

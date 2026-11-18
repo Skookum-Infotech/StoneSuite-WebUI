@@ -12,7 +12,7 @@ import { unitLabel } from '@/lib/unitLabels';
 
 import { buttonVariants } from '@/components/ui/button';
 const inputCls =
-  'rounded border border-stone-200 bg-white px-2 py-1 type-input outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-900/5 placeholder:text-stone-500 transition-all';
+  'rounded border border-stone-200 bg-white px-2 py-1 type-input outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-900/5 placeholder:text-ink-muted transition-all';
 
 const AREA_DISPLAY_DECIMALS = 3;
 
@@ -88,8 +88,8 @@ export function PackingListPanel({ itemId, unitCode, dimensionUnit, onAdd, onClo
 
   return (
     <div className="mb-3 rounded-lg border border-stone-200 bg-white p-3" role="group" aria-label="Paste from packing list">
-      <p className="flex items-center gap-1.5 text-xs font-semibold text-stone-700">
-        <ClipboardPaste className="size-3.5 text-stone-400" aria-hidden="true" />
+      <p className="flex items-center gap-1.5 text-xs font-semibold text-ink">
+        <ClipboardPaste className="size-3.5 text-ink-faint" aria-hidden="true" />
         Paste from packing list
       </p>
       <p className="mt-1 type-helper">
@@ -132,11 +132,11 @@ export function PackingListPanel({ itemId, unitCode, dimensionUnit, onAdd, onClo
 
       {parsed.slabs.length > 0 && (
         <div className="mt-3 rounded border border-stone-100 bg-stone-50/60 px-3 py-2" aria-live="polite">
-          <p className="text-xs font-medium text-stone-700">
+          <p className="text-xs font-medium text-ink">
             {parsed.slabs.length} slab{parsed.slabs.length === 1 ? '' : 's'} read
             {unitName && totalArea > 0 ? ` · ${totalArea.toFixed(AREA_DISPLAY_DECIMALS)} ${unitName} in total` : ''}
           </p>
-          <ul className="mt-1 space-y-0.5 text-micro tabular-nums text-stone-500">
+          <ul className="mt-1 space-y-0.5 text-micro tabular-nums text-ink-muted">
             {drafts.slice(0, PREVIEW_ROWS).map((d) => (
               <li key={d.key}>
                 {mmToDimension(parseFloat(d.lengthMm), lengthUnit)} × {mmToDimension(parseFloat(d.widthMm), lengthUnit)} × {mmToDimension(parseFloat(d.thicknessMm), lengthUnit)} {lengthUnit}{d.lot ? ` · ${d.lot}` : ''}

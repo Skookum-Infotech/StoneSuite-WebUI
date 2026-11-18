@@ -28,8 +28,8 @@ export function ConfirmToggleDialog({ rule, pending, onConfirm, onCancel, onPrev
       <AlertDialog.Portal>
         <AlertDialog.Overlay className="fixed inset-0 z-[9999] bg-black/50 backdrop-blur-[2px]" />
         <AlertDialog.Content className="fixed left-1/2 top-1/2 z-[10000] w-[calc(100%-2rem)] max-w-sm -translate-x-1/2 -translate-y-1/2 rounded-xl bg-white p-6 shadow-2xl dark:bg-stone-900">
-          <AlertDialog.Title className="text-sm font-bold text-stone-900 dark:text-white">{title}</AlertDialog.Title>
-          <AlertDialog.Description className="mt-2 text-xs text-stone-600 dark:text-stone-300">
+          <AlertDialog.Title className="text-sm font-bold text-ink-strong dark:text-white">{title}</AlertDialog.Title>
+          <AlertDialog.Description className="mt-2 text-xs text-ink dark:text-stone-300">
             {body}
           </AlertDialog.Description>
           {enabling && rule.previewSupported && onPreview && (

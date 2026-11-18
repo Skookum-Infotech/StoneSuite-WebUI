@@ -46,7 +46,7 @@ export function FabricationAllocatedSlabs({ jobId, canRelease, workflowVersion, 
   return (
     <div>
       <div className="overflow-x-auto modal-scrollbar rounded-lg border border-stone-200 bg-white">
-        <table className="w-full text-left text-xs" aria-label="Slabs allocated to this job">
+        <table className="w-full text-left type-cell" aria-label="Slabs allocated to this job">
           <thead className="border-b border-stone-200 bg-stone-50">
             <tr>
               {['Serial', 'Form', 'Area', 'Allocation', 'Grade', 'Finish', ''].map((h, i) => (
@@ -60,11 +60,11 @@ export function FabricationAllocatedSlabs({ jobId, canRelease, workflowVersion, 
             {slabs.map((slab) => (
               <tr key={slab.id} className="hover:bg-stone-50/50">
                 <td className="px-3 py-2.5 type-record-id">{slab.serial}</td>
-                <td className="px-3 py-2.5 capitalize text-stone-500">{slab.form}</td>
-                <td className="px-3 py-2.5 tabular-nums text-stone-600">{slab.area}</td>
+                <td className="type-cell px-3 py-2.5 capitalize">{slab.form}</td>
+                <td className="type-cell px-3 py-2.5 tabular-nums">{slab.area}</td>
                 <td className="px-3 py-2.5"><AllocationBadge status={slab.status} /></td>
-                <td className="px-3 py-2.5 text-stone-500">{slab.grade || '—'}</td>
-                <td className="px-3 py-2.5 text-stone-500">{slab.finish || '—'}</td>
+                <td className="type-cell px-3 py-2.5">{slab.grade || '—'}</td>
+                <td className="type-cell px-3 py-2.5">{slab.finish || '—'}</td>
                 <td className="px-3 py-2.5 text-right">
                   {canRelease && (workflowVersion !== 2 || version !== undefined) && slab.status === 'reserved' && (
                     <button
@@ -81,7 +81,7 @@ export function FabricationAllocatedSlabs({ jobId, canRelease, workflowVersion, 
               </tr>
             ))}
             {slabs.length === 0 && (
-              <tr><td colSpan={7} className="py-8 text-center text-stone-500">No slabs allocated to this job yet.</td></tr>
+              <tr><td colSpan={7} className="type-cell py-8 text-center">No slabs allocated to this job yet.</td></tr>
             )}
           </tbody>
         </table>
@@ -98,6 +98,6 @@ function AllocationBadge({ status }: { status: string }) {
   const color =
     status === 'consumed' ? 'bg-amber-100 text-amber-700' :
     status === 'reserved' ? 'bg-sky-100 text-sky-700' :
-    'bg-stone-100 text-stone-600';
+    'bg-stone-100 text-ink';
   return <span className={cn('inline-flex items-center rounded px-1.5 py-0.5 capitalize type-pill', color)}>{status}</span>;
 }

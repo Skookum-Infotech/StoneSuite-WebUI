@@ -54,7 +54,7 @@ export default function SupportPage() {
           </div>
           <div>
             <h1 className="dark:text-white type-page-title">Support</h1>
-            <p className="text-sm text-stone-500">
+            <p className="type-page-subtitle">
               Report a bug, request a feature, or follow up on a ticket you have filed.
             </p>
           </div>
@@ -80,10 +80,10 @@ export default function SupportPage() {
                 'group flex shrink-0 items-center gap-2 rounded-xl px-4 py-2 transition-all duration-150 cursor-pointer',
                 activeTab === tab.key
                   ? 'bg-[#001219] text-white shadow-sm'
-                  : 'text-stone-600 hover:bg-stone-100 hover:text-stone-900 dark:text-stone-400 dark:hover:bg-white/10 dark:hover:text-stone-100',
+                  : 'text-ink hover:bg-stone-100 hover:text-ink-strong dark:text-stone-400 dark:hover:bg-white/10 dark:hover:text-stone-100',
               )}
             >
-              <tab.icon className={cn('size-3.5 shrink-0', activeTab === tab.key ? 'text-brand' : 'text-stone-400 group-hover:text-stone-600 dark:group-hover:text-stone-300')} aria-hidden="true" />
+              <tab.icon className={cn('size-3.5 shrink-0', activeTab === tab.key ? 'text-brand' : 'text-ink-muted group-hover:text-ink dark:group-hover:text-stone-300')} aria-hidden="true" />
               <span className="text-xs font-semibold whitespace-nowrap">{tab.label}</span>
             </button>
           ))}

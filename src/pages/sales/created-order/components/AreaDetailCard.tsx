@@ -20,7 +20,7 @@ export function AreaDetailCard({ area }: AreaDetailCardProps) {
       <header className="flex flex-wrap items-center gap-2">
         <h3 className="type-card-title">{area.name}</h3>
         {kindLabel !== area.name && (
-          <span className="rounded-full border border-stone-200 bg-stone-100 px-2 py-0.5 text-stone-600 type-pill">
+          <span className="rounded-full border border-stone-200 bg-stone-100 px-2 py-0.5 text-ink type-pill">
             {kindLabel}
           </span>
         )}
@@ -35,7 +35,7 @@ export function AreaDetailCard({ area }: AreaDetailCardProps) {
       {area.notes.trim() && (
         <div className="mt-4 border-t border-stone-100 pt-3">
           <p className="type-overline">Notes</p>
-          <p className="mt-0.5 whitespace-pre-wrap break-words text-sm text-stone-800">{area.notes}</p>
+          <p className="mt-0.5 whitespace-pre-wrap break-words text-sm text-ink-strong">{area.notes}</p>
         </div>
       )}
     </article>

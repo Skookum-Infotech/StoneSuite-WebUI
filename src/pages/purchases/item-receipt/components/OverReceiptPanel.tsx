@@ -33,7 +33,7 @@ export function OverReceiptPanel({ lines, canApprove, isPending, reason, actions
           </div>
         </div>
         <OverReceiptLinesList lines={lines} />
-        <p className="mt-4 text-xs text-stone-600">
+        <p className="mt-4 text-xs text-ink">
           Ask someone with the Item Receipt Approve permission to post this receipt, or reduce the received
           quantities to stay within the ordered amount.
         </p>
@@ -73,7 +73,7 @@ export function OverReceiptPanel({ lines, canApprove, isPending, reason, actions
         onChange={(e) => reason.onChange(e.target.value)}
         placeholder="Why is this shipment larger than ordered?"
         aria-label="Over-receipt reason"
-        className="mt-1.5 w-full resize-none rounded-[10px] border border-stone-300 px-3.5 py-2.5 text-xs text-stone-900 outline-none transition-all focus:border-brand focus:ring-2 focus:ring-brand/30"
+        className="mt-1.5 w-full resize-none rounded-[10px] border border-stone-300 px-3.5 py-2.5 text-xs text-ink-strong outline-none transition-all focus:border-brand focus:ring-2 focus:ring-brand/30"
       />
       <div className="mt-4 flex justify-end gap-2">
         <button

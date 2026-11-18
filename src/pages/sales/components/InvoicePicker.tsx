@@ -92,16 +92,16 @@ export function InvoicePicker({
   if (value) {
     return (
       <div className="flex items-center gap-2 rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm">
-        <Receipt className="size-3.5 shrink-0 text-stone-400" aria-hidden="true" />
-        <span className="flex-1 truncate font-medium text-stone-800">{value.number}</span>
-        <span className="shrink-0 text-xs text-stone-500 tabular-nums">
+        <Receipt className="size-3.5 shrink-0 text-ink-faint" aria-hidden="true" />
+        <span className="flex-1 truncate font-medium text-ink-strong">{value.number}</span>
+        <span className="shrink-0 text-xs text-ink-muted tabular-nums">
           {value.balanceDue.toLocaleString(undefined, { style: 'currency', currency: currencyCode })} due
         </span>
         <button
           type="button"
           onClick={() => onChange(null)}
           aria-label="Change invoice"
-          className="shrink-0 rounded p-0.5 text-stone-500 hover:bg-stone-100 hover:text-stone-600 transition-colors"
+          className="shrink-0 rounded p-0.5 text-ink-muted hover:bg-stone-100 hover:text-ink transition-colors"
         >
           <X className="size-3.5" />
         </button>
@@ -112,7 +112,7 @@ export function InvoicePicker({
   return (
     <div ref={containerRef} className="relative">
       <div className="relative">
-        <Search className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-stone-400" />
+        <Search className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-ink-faint" />
         <input
           type="text"
           disabled={disabled || !customer}
@@ -124,7 +124,7 @@ export function InvoicePicker({
           aria-label="Search invoice"
         />
         {isFetching && (
-          <Loader2 className="absolute right-2.5 top-1/2 -translate-y-1/2 size-3.5 animate-spin text-stone-400" />
+          <Loader2 className="absolute right-2.5 top-1/2 -translate-y-1/2 size-3.5 animate-spin text-ink-faint" />
         )}
       </div>
 
@@ -140,13 +140,13 @@ export function InvoicePicker({
               key={inv.id}
               type="button"
               onClick={() => select(inv)}
-              className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-xs text-stone-700 hover:bg-accent/10 transition-colors"
+              className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-xs text-ink hover:bg-accent/10 transition-colors"
             >
               <span className="flex items-center gap-2 truncate">
-                <Receipt className="size-3.5 shrink-0 text-stone-400" aria-hidden="true" />
+                <Receipt className="size-3.5 shrink-0 text-ink-faint" aria-hidden="true" />
                 <span className="truncate">{inv.number}</span>
               </span>
-              <span className="shrink-0 tabular-nums text-stone-500">
+              <span className="shrink-0 tabular-nums text-ink-muted">
                 {inv.balanceDue.toLocaleString(undefined, { style: 'currency', currency: currencyCode })}
               </span>
             </button>

@@ -17,7 +17,7 @@ export default function QuoteListPage() {
             </div>
             <div>
               <h1 className="type-page-title">Quotes</h1>
-              <p className="text-sm text-stone-500">Create and manage price quotes for customers.</p>
+              <p className="type-page-subtitle">Create and manage price quotes for customers.</p>
             </div>
           </div>
           <button

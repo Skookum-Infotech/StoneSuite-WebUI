@@ -17,7 +17,7 @@ interface ReportPageShellProps {
 }
 
 const EXPORT_BUTTON =
-  "inline-flex h-8 items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-3 text-xs font-medium text-stone-700 transition-colors hover:bg-stone-50 disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400";
+  "inline-flex h-8 items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-3 text-xs font-medium text-ink transition-colors hover:bg-stone-50 disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400";
 
 /** Common frame for every report page: title, back link, Export PDF / Download
  *  CSV, then the page's filters, KPIs, chart and table as children. */
@@ -43,13 +43,13 @@ export function ReportPageShell({ title, description, backTo, exportTable, child
           <Link
             to={backTo}
             aria-label="Back to reports"
-            className="inline-flex items-center gap-1 text-label text-stone-500 hover:text-stone-800"
+            className="inline-flex items-center gap-1 text-label text-ink-muted hover:text-ink-strong"
           >
             <ArrowLeft className="size-3.5" aria-hidden="true" />
             Reports
           </Link>
           <h1 className="mt-1 type-page-title">{title}</h1>
-          <p className="text-sm text-stone-500">{description}</p>
+          <p className="type-page-subtitle">{description}</p>
         </div>
         <div className="flex gap-2">
           <button

@@ -11,7 +11,7 @@ interface Props {
 }
 
 const SELECT_CLASS =
-  'rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs text-stone-700 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-200';
+  'rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs text-ink dark:border-stone-700 dark:bg-stone-900 dark:text-stone-200';
 
 /** Status + rule selects; the page keeps them in sync with the URL query. */
 export function DeliveryFilters({ status, ruleKey, rules, onStatus, onRuleKey }: Props) {

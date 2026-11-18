@@ -59,7 +59,7 @@ export function VoidCreditMemoDialog({ creditMemoId, label, onVoided }: {
               </div>
             </div>
 
-            <p className="text-xs text-stone-600 mb-4">
+            <p className="text-xs text-ink mb-4">
               <span className="font-semibold">{label}</span> will be voided and can no longer be edited or applied.
             </p>
 

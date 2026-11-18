@@ -5,7 +5,7 @@ import { normalizeUnit } from '@/lib/lineDimensions';
 
 import { buttonVariants } from '@/components/ui/button';
 const inputCls =
-  'rounded border border-stone-200 bg-white px-2 py-1 type-input outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-900/5 placeholder:text-stone-500 transition-all';
+  'rounded border border-stone-200 bg-white px-2 py-1 type-input outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-900/5 placeholder:text-ink-muted transition-all';
 
 export interface ApplyToAllFields {
   lot?: string;
@@ -46,7 +46,7 @@ export function ApplyToAllPanel({ slabCount, dimensionUnit, onApply, onClose }: 
 
   return (
     <div className="mb-3 rounded-lg border border-stone-200 bg-white p-3" role="group" aria-label="Set lot and block for all slabs">
-      <p className="text-xs font-semibold text-stone-700">Set lot / block / thickness for all slabs</p>
+      <p className="text-xs font-semibold text-ink">Set lot / block / thickness for all slabs</p>
       <p className="mt-1 type-helper">
         Fills the lot, block ID and thickness on all {slabCount} slab{slabCount === 1 ? '' : 's'} on this line. Leave one blank to keep what is already there.
       </p>

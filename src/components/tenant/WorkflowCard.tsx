@@ -49,7 +49,7 @@ export function WorkflowCard({ module, statusCode, statusLabel, workflow = NO_WO
   return (
     <div ref={cardRef} className="mb-4 rounded-xl border border-stone-200 bg-white p-4 shadow-sm">
       <div className="mb-2.5 flex items-center justify-between">
-        <p className="text-xs font-semibold text-stone-500">Progress Bar</p>
+        <p className="type-card-title">Progress Bar</p>
         <span className="type-subline">Stage {view.hereIndex + 1} of {view.stages.length}</span>
       </div>
       <ol aria-label="Progress Bar">

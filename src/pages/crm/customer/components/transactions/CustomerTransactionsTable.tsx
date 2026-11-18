@@ -6,7 +6,7 @@ import type { CustomerTransactionRow } from '@/types/customerTransactions';
 import { StatusBadge, TypeBadge } from '@/pages/transactions/components/TransactionBadges';
 import { OverdueBadge } from './OverdueBadge';
 
-const HEAD_CLS = 'whitespace-nowrap px-4 py-3 text-left font-semibold text-stone-500';
+const HEAD_CLS = 'whitespace-nowrap px-4 py-3 text-left type-th';
 
 /** The wide-screen layout (lg and up): one row per transaction; each opens its record. */
 export function CustomerTransactionsTable({ rows }: { rows: CustomerTransactionRow[] }) {
@@ -14,7 +14,7 @@ export function CustomerTransactionsTable({ rows }: { rows: CustomerTransactionR
 
   return (
     <div className="overflow-x-auto modal-scrollbar">
-      <table className="w-full min-w-[820px] border-collapse text-xs">
+      <table className="w-full min-w-[820px] border-collapse type-cell">
         <thead>
           <tr className="border-b border-stone-100 bg-stone-50/40">
             <th className={HEAD_CLS}>Date</th>
@@ -39,14 +39,14 @@ export function CustomerTransactionsTable({ rows }: { rows: CustomerTransactionR
                   idx === rows.length - 1 && 'border-b-0',
                 )}
               >
-                <td className="whitespace-nowrap px-4 py-3.5 text-stone-600">{dateOrDash(row.date)}</td>
+                <td className="type-cell whitespace-nowrap px-4 py-3.5">{dateOrDash(row.date)}</td>
                 <td className="whitespace-nowrap px-4 py-3.5"><TypeBadge row={row} /></td>
                 <td className="px-4 py-3.5">
                   <Link
                     to={href}
                     onClick={(e) => e.stopPropagation()}
                     aria-label={`View ${row.typeLabel} ${row.number || row.id}`}
-                    className="rounded hover:text-stone-950 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring type-record-id"
+                    className="rounded hover:text-ink-strong hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring type-record-id"
                   >
                     {row.number || '—'}
                   </Link>
@@ -57,11 +57,11 @@ export function CustomerTransactionsTable({ rows }: { rows: CustomerTransactionR
                     {row.isOverdue && <OverdueBadge />}
                   </div>
                 </td>
-                <td className="whitespace-nowrap px-4 py-3.5 text-stone-600">{dateOrDash(row.dueDate)}</td>
-                <td className="whitespace-nowrap px-4 py-3.5 text-right font-bold tabular-nums text-stone-900">
+                <td className="type-cell whitespace-nowrap px-4 py-3.5">{dateOrDash(row.dueDate)}</td>
+                <td className="type-cell-strong whitespace-nowrap px-4 py-3.5 text-right tabular-nums">
                   {moneyOrDash(row.amount)}
                 </td>
-                <td className="whitespace-nowrap px-4 py-3.5 text-right tabular-nums text-stone-900">
+                <td className="type-cell whitespace-nowrap px-4 py-3.5 text-right tabular-nums">
                   {row.balance === null ? '—' : (
                     <>
                       <span className="font-bold">{moneyOrDash(row.balance)}</span>

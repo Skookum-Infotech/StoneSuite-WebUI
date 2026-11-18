@@ -41,7 +41,7 @@ export function BinContentsTab({ binId }: { binId: string }) {
   if (units.length === 0) {
     return (
       <div className="flex flex-col items-center gap-2 rounded-xl border border-stone-200 bg-white py-12">
-        <div className="rounded-2xl bg-stone-100 p-3"><Layers className="size-5 text-stone-400" aria-hidden="true" /></div>
+        <div className="rounded-2xl bg-stone-100 p-3"><Layers className="size-5 text-ink-faint" aria-hidden="true" /></div>
         <p className="type-card-title">This bin is empty.</p>
         <p className="type-helper">Slabs appear here once they are moved in.</p>
       </div>
@@ -51,7 +51,7 @@ export function BinContentsTab({ binId }: { binId: string }) {
   return (
     <div className="space-y-3">
       <div className="overflow-x-auto rounded-xl border border-stone-200 bg-white modal-scrollbar">
-        <table className="w-full min-w-[520px] text-left text-xs">
+        <table className="w-full min-w-[520px] text-left type-cell">
           <thead className="border-b border-stone-200 bg-table-header">
             <tr>
               <th className="px-4 py-2.5 type-th">Slab</th>
@@ -72,8 +72,8 @@ export function BinContentsTab({ binId }: { binId: string }) {
                     {u.serial}
                   </button>
                 </td>
-                <td className="max-w-[240px] truncate px-4 py-3 text-stone-700">{u.inventoryItemName ?? '—'}</td>
-                <td className="whitespace-nowrap px-4 py-3 text-right tabular-nums text-stone-700">
+                <td className="type-cell max-w-[240px] truncate px-4 py-3">{u.inventoryItemName ?? '—'}</td>
+                <td className="type-cell whitespace-nowrap px-4 py-3 text-right tabular-nums">
                   {u.area.toFixed(2)} {u.areaUnitCode ?? ''}
                 </td>
                 <td className="px-4 py-3">

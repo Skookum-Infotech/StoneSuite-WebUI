@@ -6,7 +6,7 @@ import type { Bin } from '@/types/inventory';
 
 import { buttonVariants } from '@/components/ui/button';
 const inputCls =
-  'rounded border border-stone-200 bg-white px-2 py-1 type-input outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-900/5 placeholder:text-stone-500 transition-all';
+  'rounded border border-stone-200 bg-white px-2 py-1 type-input outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-900/5 placeholder:text-ink-muted transition-all';
 
 function positionOf(raw: string): number | undefined {
   const n = Number(raw);
@@ -46,7 +46,7 @@ export function BulkBinPanel({ slabs, bins, onApply, onClose }: {
 
   return (
     <div className="mb-3 rounded-lg border border-stone-200 bg-white p-3" role="group" aria-label="Assign a bin to slabs">
-      <p className="text-xs font-semibold text-stone-700">Assign a bin</p>
+      <p className="text-xs font-semibold text-ink">Assign a bin</p>
       <p className="mt-1 type-helper">
         Puts slabs into one bin in a single step. Slab numbers are the row numbers, counted from 1 down this line.
       </p>

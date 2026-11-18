@@ -80,7 +80,7 @@ export function AssignUsersModal({
             type="button"
             onClick={onClose}
             aria-label="Close modal"
-            className="rounded-lg p-1.5 text-stone-500 transition hover:bg-stone-100 hover:text-stone-600"
+            className="rounded-lg p-1.5 text-ink-muted transition hover:bg-stone-100 hover:text-ink"
           >
             <X className="size-4" />
           </button>
@@ -102,7 +102,7 @@ export function AssignUsersModal({
                     className="flex items-center justify-between gap-2 rounded-lg border border-stone-200 bg-stone-50 px-3 py-2"
                   >
                     <div className="min-w-0">
-                      <p className="truncate text-xs font-semibold text-stone-700">
+                      <p className="truncate text-xs font-semibold text-ink">
                         {u.fullName || u.email}
                       </p>
                       <p className="truncate type-helper">
@@ -116,7 +116,7 @@ export function AssignUsersModal({
                         setPendingRemove({ id: u.id, label: u.fullName || u.email })
                       }
                       disabled={removeMut.isPending}
-                      className="shrink-0 rounded p-1 text-stone-400 transition hover:bg-stone-200 hover:text-stone-600 disabled:opacity-50"
+                      className="shrink-0 rounded p-1 text-ink-muted transition hover:bg-stone-200 hover:text-ink disabled:opacity-50"
                     >
                       {removeMut.isPending && pendingRemove?.id === u.id ? (
                         <Loader2 className="size-3.5 animate-spin" />
@@ -170,7 +170,7 @@ export function AssignUsersModal({
                   aria-label="Select a user to assign this role to"
                   value={selectedUserId}
                   onChange={(e) => setSelectedUserId(e.target.value)}
-                  className="h-9 min-w-0 flex-1 rounded-lg border border-stone-200 bg-white px-2.5 text-xs text-stone-700 focus:outline-none focus:ring-2 focus:ring-brand/50"
+                  className="h-9 min-w-0 flex-1 rounded-lg border border-stone-200 bg-white px-2.5 text-xs text-ink focus:outline-none focus:ring-2 focus:ring-brand/50"
                 >
                   <option value="">Add a user…</option>
                   {availableUsers.map((u) => (

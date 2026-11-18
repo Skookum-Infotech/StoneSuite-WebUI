@@ -80,17 +80,17 @@ function RoleCard({
       aria-busy={isSwitching}
     >
       <div className="flex items-start gap-3">
-        <div className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-colors', isActive ? 'bg-brand/20 text-link' : 'bg-stone-100 text-stone-400 group-hover:bg-stone-200')}>
+        <div className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-colors', isActive ? 'bg-brand/20 text-link' : 'bg-stone-100 text-ink-muted group-hover:bg-stone-200')}>
           {isSwitching ? <Loader2 className="size-4.5 animate-spin" /> : <Shield className="size-4.5" />}
         </div>
         <div className="flex-1 min-w-0">
-          <span className={cn('block text-xs font-bold transition-colors', isActive ? 'text-stone-900' : 'text-stone-700 group-hover:text-stone-900')}>
+          <span className={cn('block text-xs font-bold transition-colors', isActive ? 'text-ink-strong' : 'text-ink group-hover:text-ink-strong')}>
             {role.name}
           </span>
-          <span className="block text-xs text-stone-500 font-mono mt-0.5">{role.key}</span>
+          <span className="block text-xs text-ink-muted font-mono mt-0.5">{role.key}</span>
         </div>
         <div className={cn('flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-all mt-0.5', isActive ? 'border-brand bg-brand' : 'border-stone-300 bg-white group-hover:border-stone-400')}>
-          {isActive && <Check className="size-3 text-stone-900" />}
+          {isActive && <Check className="size-3 text-ink-strong" />}
         </div>
       </div>
     </button>
@@ -137,7 +137,7 @@ function accessLevel(grants: Grant[], resource: string): { label: string; desc: 
   if (has('configure'))
     return { label: 'Can configure', desc: 'Manage settings',          style: 'bg-violet-50 text-violet-700 border-violet-200' }
   if (has('read'))
-    return { label: 'View only',    desc: `Read ${scope} records`,     style: 'bg-stone-100 text-stone-600 border-stone-200' }
+    return { label: 'View only',    desc: `Read ${scope} records`,     style: 'bg-stone-100 text-ink border-stone-200' }
   return null
 }
 
@@ -151,7 +151,7 @@ function AccessSummary({ grants }: { grants: Grant[] }) {
           <Zap className="size-4" />
         </div>
         <div>
-          <p className="text-sm font-bold text-stone-900">Full Access — Super Admin</p>
+          <p className="text-sm font-bold text-ink-strong">Full Access — Super Admin</p>
           <p className="mt-0.5 type-helper">Unrestricted access to all features and settings.</p>
         </div>
       </div>
@@ -171,10 +171,10 @@ function AccessSummary({ grants }: { grants: Grant[] }) {
       {rows.map(row => (
         <div key={row.key} className="flex items-center gap-3 rounded-lg px-3 py-2.5 hover:bg-stone-50 transition-colors">
           <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-stone-100">
-            <Check className="size-3.5 text-stone-500" />
+            <Check className="size-3.5 text-ink-muted" />
           </div>
-          <span className="flex-1 text-xs font-medium text-stone-700">{row.label}</span>
-          <span className="text-xs text-stone-500">{row.level!.desc}</span>
+          <span className="flex-1 text-xs font-medium text-ink">{row.label}</span>
+          <span className="text-xs text-ink-muted">{row.level!.desc}</span>
           <span className={cn(
             'shrink-0 rounded-full border px-2.5 py-0.5 type-pill',
             row.level!.style,
@@ -192,7 +192,7 @@ function AccessSummary({ grants }: { grants: Grant[] }) {
 function Avatar({ name, className }: { name: string; className?: string }) {
   const initials = name.split(' ').filter(Boolean).slice(0, 2).map(n => n[0].toUpperCase()).join('')
   return (
-    <div className={cn('flex items-center justify-center bg-brand font-bold text-stone-900 shrink-0', className)}>
+    <div className={cn('flex items-center justify-center bg-brand font-bold text-ink-strong shrink-0', className)}>
       {initials || '?'}
     </div>
   )
@@ -295,7 +295,7 @@ export default function AccountSettingsPage() {
                   className="h-12 w-12 sm:h-20 sm:w-20 rounded-xl sm:rounded-2xl text-xl sm:text-3xl"
                 />
                 <div className="flex-1 sm:flex-none sm:text-center min-w-0">
-                  <p className="text-xs font-bold text-stone-900 leading-tight truncate">{user?.fullName ?? '—'}</p>
+                  <p className="text-xs font-bold text-ink-strong leading-tight truncate">{user?.fullName ?? '—'}</p>
                   <p className="mt-0.5 truncate sm:max-w-[168px] type-helper">{user?.email ?? '—'}</p>
                 </div>
                 {roles.length > 0 && (
@@ -316,13 +316,13 @@ export default function AccountSettingsPage() {
                       'group flex shrink-0 sm:w-full items-center gap-2 sm:gap-2.5 rounded-xl px-3 py-2 sm:py-2.5 text-left transition-all duration-150 cursor-pointer',
                       activeTab === id
                         ? 'bg-[#001219] text-white shadow-sm'
-                        : 'text-stone-600 hover:bg-stone-100 hover:text-stone-900',
+                        : 'text-ink hover:bg-stone-100 hover:text-ink-strong',
                     )}
                   >
-                    <Icon className={cn('size-3.5 sm:size-4 shrink-0', activeTab === id ? 'text-brand' : 'text-stone-400 group-hover:text-stone-600')} />
+                    <Icon className={cn('size-3.5 sm:size-4 shrink-0', activeTab === id ? 'text-brand' : 'text-ink-muted group-hover:text-ink')} />
                     <span className="text-xs font-semibold whitespace-nowrap">{label}</span>
                     {badge && (
-                      <span className={cn('flex h-4 w-4 sm:h-5 sm:w-5 items-center justify-center rounded-full text-micro font-bold', activeTab === id ? 'bg-brand/20 text-brand' : 'bg-stone-200 text-stone-500')}>
+                      <span className={cn('flex h-4 w-4 sm:h-5 sm:w-5 items-center justify-center rounded-full text-micro font-bold', activeTab === id ? 'bg-brand/20 text-brand' : 'bg-stone-200 text-ink-muted')}>
                         {badge}
                       </span>
                     )}
@@ -355,14 +355,14 @@ export default function AccountSettingsPage() {
                   {/* Account meta */}
                   <div className="grid grid-cols-2 gap-4 pt-2 border-t border-stone-100">
                     <div className="rounded-xl bg-stone-50 border border-stone-200 px-4 py-3">
-                      <p className="text-xs font-semibold text-stone-500">Account Type</p>
-                      <p className="text-xs font-semibold text-stone-800 mt-1">
+                      <p className="text-xs font-semibold text-ink-muted">Account Type</p>
+                      <p className="text-xs font-semibold text-ink-strong mt-1">
                         {user?.isPlatformAdmin ? 'Platform Admin' : 'Workspace Member'}
                       </p>
                     </div>
                     <div className="rounded-xl bg-stone-50 border border-stone-200 px-4 py-3">
-                      <p className="text-xs font-semibold text-stone-500">Active Role</p>
-                      <p className="text-xs font-semibold text-stone-800 mt-1">
+                      <p className="text-xs font-semibold text-ink-muted">Active Role</p>
+                      <p className="text-xs font-semibold text-ink-strong mt-1">
                         {roles.find(r => r.id === selectedRoleId)?.name ?? (roles[0]?.name ?? 'None')}
                       </p>
                     </div>
@@ -399,7 +399,7 @@ export default function AccountSettingsPage() {
                   <form onSubmit={handleSubmit(onPasswordSubmit)} className="space-y-5">
                     {/* Current password — full width */}
                     <div className="space-y-1.5">
-                      <Label htmlFor="currentPassword" className="text-xs font-semibold text-stone-500">
+                      <Label htmlFor="currentPassword" className="text-xs font-semibold text-ink-muted">
                         Current Password
                       </Label>
                       <PasswordInput
@@ -410,7 +410,7 @@ export default function AccountSettingsPage() {
                         placeholder="Enter your current password"
                         aria-invalid={Boolean(errors.currentPassword)}
                         {...register('currentPassword')}
-                        className="h-11 rounded-xl border-stone-200 bg-white text-stone-950 placeholder:text-stone-500"
+                        className="h-11 rounded-xl border-stone-200 bg-white text-ink-strong placeholder:text-ink-muted"
                       />
                       {errors.currentPassword && <p className="type-error">{errors.currentPassword.message}</p>}
                     </div>
@@ -418,7 +418,7 @@ export default function AccountSettingsPage() {
                     {/* New + Confirm — side by side on sm+ */}
                     <div className="grid gap-4 sm:gap-5 sm:grid-cols-2">
                       <div className="space-y-1.5">
-                        <Label htmlFor="newPassword" className="text-xs font-semibold text-stone-500">
+                        <Label htmlFor="newPassword" className="text-xs font-semibold text-ink-muted">
                           New Password
                         </Label>
                         <PasswordInput
@@ -429,14 +429,14 @@ export default function AccountSettingsPage() {
                           placeholder="Create a strong password"
                           aria-invalid={Boolean(errors.newPassword)}
                           {...register('newPassword')}
-                          className="h-11 rounded-xl border-stone-200 bg-white text-stone-950 placeholder:text-stone-500"
+                          className="h-11 rounded-xl border-stone-200 bg-white text-ink-strong placeholder:text-ink-muted"
                         />
                         {errors.newPassword && <p className="type-error">{errors.newPassword.message}</p>}
                         <PasswordStrengthMeter password={newPasswordValue} />
                       </div>
 
                       <div className="space-y-1.5">
-                        <Label htmlFor="confirmPassword" className="text-xs font-semibold text-stone-500">
+                        <Label htmlFor="confirmPassword" className="text-xs font-semibold text-ink-muted">
                           Confirm Password
                         </Label>
                         <PasswordInput
@@ -447,7 +447,7 @@ export default function AccountSettingsPage() {
                           placeholder="Repeat new password"
                           aria-invalid={Boolean(errors.confirmPassword)}
                           {...register('confirmPassword')}
-                          className="h-11 rounded-xl border-stone-200 bg-white text-stone-950 placeholder:text-stone-500"
+                          className="h-11 rounded-xl border-stone-200 bg-white text-ink-strong placeholder:text-ink-muted"
                         />
                         {errors.confirmPassword && <p className="type-error">{errors.confirmPassword.message}</p>}
                       </div>
@@ -496,7 +496,7 @@ export default function AccountSettingsPage() {
                       </div>
                     </div>
                     {roles.length > 0 && (
-                      <span className="inline-flex items-center gap-1.5 rounded-full border border-stone-200 bg-stone-100 px-3 py-1 text-stone-600 type-pill">
+                      <span className="inline-flex items-center gap-1.5 rounded-full border border-stone-200 bg-stone-100 px-3 py-1 text-ink type-pill">
                         {roles.length} {roles.length === 1 ? 'role' : 'roles'}
                       </span>
                     )}
@@ -506,9 +506,9 @@ export default function AccountSettingsPage() {
                   {roles.length === 0 ? (
                     <div className="rounded-xl border border-dashed border-stone-200 py-12 text-center">
                       <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-stone-100 mb-3">
-                        <Shield className="size-6 text-stone-400" />
+                        <Shield className="size-6 text-ink-faint" />
                       </div>
-                      <p className="text-xs font-semibold text-stone-500">No roles assigned</p>
+                      <p className="text-xs font-semibold text-ink-muted">No roles assigned</p>
                       <p className="mt-1 type-helper">Contact your workspace administrator to get access.</p>
                     </div>
                   ) : (
@@ -538,12 +538,12 @@ export default function AccountSettingsPage() {
                       <div className="flex items-center gap-3 rounded-xl border border-stone-100 bg-stone-50 px-4 py-3.5">
                         <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand shadow-sm">
                           {switchRoleMutation.isPending
-                            ? <Loader2 className="size-3.5 animate-spin text-stone-900" />
-                            : <Check className="size-3.5 text-stone-900" />}
+                            ? <Loader2 className="size-3.5 animate-spin text-ink-strong" />
+                            : <Check className="size-3.5 text-ink-strong" />}
                         </div>
-                        <p className="text-xs text-stone-600">
+                        <p className="text-xs text-ink">
                           Active role:{' '}
-                          <strong className="text-stone-900">
+                          <strong className="text-ink-strong">
                             {roles.find(r => r.id === selectedRoleId)?.name ?? '—'}
                           </strong>
                           {' '}— changes take effect immediately.
@@ -553,12 +553,12 @@ export default function AccountSettingsPage() {
                       {/* Permissions matrix */}
                       <div className="rounded-xl border border-stone-200 bg-white overflow-hidden">
                         <div className="flex items-center justify-between px-4 py-3 border-b border-stone-100 bg-stone-50/60">
-                          <p className="text-xs font-bold text-stone-700">Permission Summary</p>
+                          <p className="text-xs font-bold text-ink">Permission Summary</p>
                           <p className="type-helper">What your active role can do</p>
                         </div>
                         <div className="px-4 py-4">
                           {permissionsLoading ? (
-                            <div className="flex items-center gap-2 py-4 text-xs text-stone-500">
+                            <div className="flex items-center gap-2 py-4 text-xs text-ink-muted">
                               <Loader2 className="size-4 animate-spin" />
                               Loading permissions…
                             </div>

@@ -97,7 +97,7 @@ export function UserDetail({ user }: { user: WorkspaceUser }) {
       {locked && user.status !== "disabled" && (
         <p
           role="note"
-          className="rounded-lg border border-stone-200 bg-stone-50 px-3 py-2.5 text-xs text-stone-600"
+          className="rounded-lg border border-stone-200 bg-stone-50 px-3 py-2.5 text-xs text-ink"
         >
           Only a super admin can change another super admin.
         </p>
@@ -115,9 +115,9 @@ export function UserDetail({ user }: { user: WorkspaceUser }) {
               onClick={() => setShowEditName(true)}
               className={cn(buttonVariants({ variant: 'outline' }), 'flex w-full gap-2')}
             >
-              <Pencil className="size-4 text-stone-400" />
+              <Pencil className="size-4 text-ink-faint" />
               Edit display name
-              <ChevronRight className="size-4 text-stone-400 ml-auto" />
+              <ChevronRight className="size-4 text-ink-faint ml-auto" />
             </button>
           )}
 

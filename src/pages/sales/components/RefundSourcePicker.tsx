@@ -132,16 +132,16 @@ export function RefundSourcePicker({ customer, kind, value, onChange, excludeIds
   if (value) {
     return (
       <div className="flex items-center gap-2 rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm">
-        <Icon className="size-3.5 shrink-0 text-stone-400" aria-hidden="true" />
-        <span className="flex-1 truncate font-medium text-stone-800">{value.number}</span>
-        <span className="shrink-0 text-xs text-stone-500 tabular-nums">
+        <Icon className="size-3.5 shrink-0 text-ink-faint" aria-hidden="true" />
+        <span className="flex-1 truncate font-medium text-ink-strong">{value.number}</span>
+        <span className="shrink-0 text-xs text-ink-muted tabular-nums">
           {value.unappliedAmount.toLocaleString(undefined, { style: 'currency', currency: 'USD' })} unapplied
         </span>
         <button
           type="button"
           onClick={() => onChange(null)}
           aria-label={`Change ${label.toLowerCase()}`}
-          className="shrink-0 rounded p-0.5 text-stone-500 hover:bg-stone-100 hover:text-stone-600 transition-colors"
+          className="shrink-0 rounded p-0.5 text-ink-muted hover:bg-stone-100 hover:text-ink transition-colors"
         >
           <X className="size-3.5" />
         </button>
@@ -152,7 +152,7 @@ export function RefundSourcePicker({ customer, kind, value, onChange, excludeIds
   return (
     <div ref={containerRef} className="relative">
       <div className="relative">
-        <Search className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-stone-400" aria-hidden="true" />
+        <Search className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-ink-faint" aria-hidden="true" />
         <input
           type="text"
           role="combobox"
@@ -169,7 +169,7 @@ export function RefundSourcePicker({ customer, kind, value, onChange, excludeIds
           aria-label={`Search ${label.toLowerCase()}`}
         />
         {isFetching && (
-          <Loader2 className="absolute right-2.5 top-1/2 -translate-y-1/2 size-3.5 animate-spin text-stone-400" aria-hidden="true" />
+          <Loader2 className="absolute right-2.5 top-1/2 -translate-y-1/2 size-3.5 animate-spin text-ink-faint" aria-hidden="true" />
         )}
       </div>
 
@@ -194,13 +194,13 @@ export function RefundSourcePicker({ customer, kind, value, onChange, excludeIds
               role="option"
               aria-selected={false}
               onClick={() => select(source)}
-              className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-xs text-stone-700 hover:bg-accent/10 transition-colors"
+              className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-xs text-ink hover:bg-accent/10 transition-colors"
             >
               <span className="flex items-center gap-2 truncate">
-                <Icon className="size-3.5 shrink-0 text-stone-400" aria-hidden="true" />
+                <Icon className="size-3.5 shrink-0 text-ink-faint" aria-hidden="true" />
                 <span className="truncate">{source.number}</span>
               </span>
-              <span className="shrink-0 tabular-nums text-stone-500">
+              <span className="shrink-0 tabular-nums text-ink-muted">
                 {source.unappliedAmount.toLocaleString(undefined, { style: 'currency', currency: 'USD' })}
               </span>
             </button>

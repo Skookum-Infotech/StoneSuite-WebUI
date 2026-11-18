@@ -27,10 +27,10 @@ export function DuplicateWarnings({ duplicates, onOpenExisting, onCreateAnyway }
         {duplicates.map((d, i) => {
           const uuid = d.recordUuid;
           return (
-            <li key={`${d.kind}-${uuid ?? i}`} className="rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-white/[0.03] p-3 text-xs text-stone-700 dark:text-stone-300">
+            <li key={`${d.kind}-${uuid ?? i}`} className="rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-white/[0.03] p-3 text-xs text-ink dark:text-stone-300">
               <p>{d.reason}</p>
               {(d.number || d.status) && (
-                <p className="mt-0.5 text-stone-500 dark:text-stone-400">
+                <p className="mt-0.5 text-ink-muted dark:text-stone-400">
                   {[d.number, d.status && duplicateStatusText(d.status)].filter(Boolean).join(' · ')}
                 </p>
               )}

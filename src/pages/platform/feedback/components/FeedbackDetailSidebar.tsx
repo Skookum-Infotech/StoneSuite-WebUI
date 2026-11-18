@@ -51,7 +51,7 @@ export function FeedbackDetailSidebar({ ticket, assigneeCandidates, onExportPdf,
   return (
     <div className="space-y-4">
       <div className="mb-4 space-y-3 rounded-xl border border-stone-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
-        <p className="text-xs font-semibold text-stone-500">Quick Actions</p>
+        <p className="type-card-title">Quick Actions</p>
 
         <div>
           <label htmlFor="fb-status" className={fieldLabelCls}>Status</label>
@@ -107,9 +107,9 @@ export function FeedbackDetailSidebar({ ticket, assigneeCandidates, onExportPdf,
             onClick={onExportPdf}
             disabled={exportingPdf}
             aria-label="Export ticket as PDF"
-            className="flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2 text-left text-xs text-stone-700 transition-colors hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-60 dark:text-stone-200 dark:hover:bg-white/[0.06]"
+            className="flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2 text-left text-xs text-ink transition-colors hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-60 dark:text-stone-200 dark:hover:bg-white/[0.06]"
           >
-            {exportingPdf ? <Loader2 className="size-4 shrink-0 animate-spin text-stone-400" /> : <FileDown className="size-4 shrink-0 text-stone-400" />}
+            {exportingPdf ? <Loader2 className="size-4 shrink-0 animate-spin text-ink-faint" /> : <FileDown className="size-4 shrink-0 text-ink-faint" />}
             {exportingPdf ? 'Exporting…' : 'Export PDF'}
           </button>
           {exportPdfError && <p className="px-3 type-error">{exportPdfError}</p>}

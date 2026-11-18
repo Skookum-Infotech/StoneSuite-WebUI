@@ -12,7 +12,7 @@ export function PlSubcategoryRows({ sub, onAccountClick }: PlSubcategoryRowsProp
   return (
     <>
       <tr>
-        <th scope="row" className="px-3 py-1.5 pl-6 text-left font-medium text-stone-700">{sub.name}</th>
+        <th scope="row" className="type-th px-3 py-1.5 pl-6 text-left">{sub.name}</th>
         <PlAmountCell value={sub.total} />
       </tr>
       {sub.accounts.map((account) => (
@@ -22,7 +22,7 @@ export function PlSubcategoryRows({ sub, onAccountClick }: PlSubcategoryRowsProp
               type="button"
               aria-label={`Show journal lines for ${accountLabel(account.code, account.name)}`}
               onClick={() => onAccountClick(account)}
-              className="text-left text-stone-600 underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400"
+              className="text-left text-ink underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400"
             >
               {accountLabel(account.code, account.name)}
             </button>

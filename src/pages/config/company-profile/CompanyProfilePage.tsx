@@ -34,7 +34,7 @@ export default function CompanyProfilePage() {
             </div>
             <div>
               <h1 className="dark:text-white type-page-title">Company Info</h1>
-              <p className="text-sm text-stone-500 mt-0.5">
+              <p className="mt-0.5 type-page-subtitle">
                 Your company&apos;s own name and address — not a customer&apos;s or vendor&apos;s.
               </p>
             </div>

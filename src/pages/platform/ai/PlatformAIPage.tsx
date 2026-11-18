@@ -134,7 +134,7 @@ export default function PlatformAIPage() {
         ) : (
           <>
             <label className="flex items-center justify-between gap-3 select-none">
-              <span className="text-sm font-semibold text-stone-900 dark:text-stone-100">
+              <span className="text-sm font-semibold text-ink-strong dark:text-stone-100">
                 StoneSuite Assistant (all organizations)
               </span>
               <Switch
@@ -154,26 +154,26 @@ export default function PlatformAIPage() {
 
             <dl className="mt-5 grid gap-3 border-t border-stone-100 pt-4 text-xs dark:border-stone-800 sm:grid-cols-2">
               <div>
-                <dt className="font-semibold text-stone-500">AI server</dt>
+                <dt className="font-semibold text-ink-muted">AI server</dt>
                 <dd className="mt-0.5">
                   <Badge size="sm">{stateLabel}</Badge>
                 </dd>
               </div>
               <div>
-                <dt className="font-semibold text-stone-500">Help content last synced</dt>
-                <dd className="mt-0.5 text-stone-700 dark:text-stone-300">
+                <dt className="font-semibold text-ink-muted">Help content last synced</dt>
+                <dd className="mt-0.5 text-ink dark:text-stone-300">
                   {formatPlatformTimestamp(settings?.helpCorpusSyncedAt)}
                 </dd>
               </div>
               <div>
-                <dt className="font-semibold text-stone-500">Last changed</dt>
-                <dd className="mt-0.5 text-stone-700 dark:text-stone-300">
+                <dt className="font-semibold text-ink-muted">Last changed</dt>
+                <dd className="mt-0.5 text-ink dark:text-stone-300">
                   {formatPlatformTimestamp(settings?.updatedAt)}
                 </dd>
               </div>
               <div>
-                <dt className="font-semibold text-stone-500">Last changed by</dt>
-                <dd className="mt-0.5 text-stone-700 dark:text-stone-300">{settings?.updatedBy || '—'}</dd>
+                <dt className="font-semibold text-ink-muted">Last changed by</dt>
+                <dd className="mt-0.5 text-ink dark:text-stone-300">{settings?.updatedBy || '—'}</dd>
               </div>
             </dl>
 
@@ -200,10 +200,10 @@ export default function PlatformAIPage() {
                 <AlertTriangle className="size-4 text-danger-ink" aria-hidden="true" />
               </div>
               <div>
-                <AlertDialog.Title className="text-sm font-bold text-stone-900 dark:text-white">
+                <AlertDialog.Title className="text-sm font-bold text-ink-strong dark:text-white">
                   Turn off the StoneSuite Assistant?
                 </AlertDialog.Title>
-                <AlertDialog.Description id="disable-ai-dialog-desc" className="mt-0.5 text-xs text-stone-500">
+                <AlertDialog.Description id="disable-ai-dialog-desc" className="mt-0.5 text-xs text-ink-muted">
                   This stops the AI server and disables the assistant for every organization.
                 </AlertDialog.Description>
               </div>
@@ -212,7 +212,7 @@ export default function PlatformAIPage() {
             <div className="mt-5 flex justify-end gap-2">
               <AlertDialog.Cancel
                 disabled={toggle.isPending}
-                className="rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-50 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300"
+                className="rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-ink hover:bg-stone-50 disabled:opacity-50 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300"
               >
                 Cancel
               </AlertDialog.Cancel>

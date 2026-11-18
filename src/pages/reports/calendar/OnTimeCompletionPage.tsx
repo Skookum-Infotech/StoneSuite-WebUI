@@ -66,7 +66,7 @@ export default function OnTimeCompletionPage() {
           <ReportKpiGrid items={kpis} />
           <ReportCountBarChart data={chartData} label="Completed on time and late, by activity" primaryName="On time" secondaryName="Late" />
           <ReportDataTable copy={{ caption: "On-time completion", empty: EMPTY_TEXT }} columns={COLUMNS} rows={q.data.rows} getRowKey={(r) => r.code} />
-          <p className="text-label text-stone-500">{NOTE}</p>
+          <p className="text-label text-ink-muted">{NOTE}</p>
         </>
       )}
     </ReportPageShell>

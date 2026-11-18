@@ -31,8 +31,8 @@ export function DocumentFailedNotice({ fileName, reason, docType }: DocumentFail
         <h2 ref={ref} tabIndex={-1} className="mt-3 dark:text-stone-100 outline-none type-dialog-title">
           We Couldn&apos;t Read This Document
         </h2>
-        <p className="mt-1 break-words text-xs font-medium text-stone-500 dark:text-stone-400">{fileName}</p>
-        <p className="mt-2 text-sm text-stone-600 dark:text-stone-300">{reason}</p>
+        <p className="mt-1 break-words text-xs font-medium text-ink-muted dark:text-stone-400">{fileName}</p>
+        <p className="mt-2 text-sm text-ink dark:text-stone-300">{reason}</p>
         <div className="mt-5 flex flex-wrap justify-center gap-2">
           <Link
             to={routes.newPath}

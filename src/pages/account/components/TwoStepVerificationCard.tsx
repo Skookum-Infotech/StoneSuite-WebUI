@@ -80,7 +80,7 @@ export function TwoStepVerificationCard() {
 
       <div className="px-4 py-4 sm:px-6 sm:py-6">
         {status.isPending ? (
-          <div className="flex items-center gap-2 py-4 text-xs text-stone-500">
+          <div className="flex items-center gap-2 py-4 text-xs text-ink-muted">
             <Loader2 className="size-4 animate-spin" aria-hidden="true" />
             Loading…
           </div>
@@ -100,7 +100,7 @@ export function TwoStepVerificationCard() {
             </Button>
           </div>
         ) : !status.data.available ? (
-          <p className="rounded-xl border border-stone-200 bg-stone-50 px-4 py-3.5 text-xs text-stone-600">
+          <p className="rounded-xl border border-stone-200 bg-stone-50 px-4 py-3.5 text-xs text-ink">
             Your account signs in through your organization&apos;s single sign-on, which handles extra
             verification itself. There&apos;s nothing to turn on here.
           </p>
@@ -108,7 +108,7 @@ export function TwoStepVerificationCard() {
           <div className="space-y-4">
             <div className="flex items-center justify-between gap-4">
               <div className="min-w-0">
-                <p id="two-step-label" className="text-xs font-bold text-stone-900">Email code at sign-in</p>
+                <p id="two-step-label" className="text-xs font-bold text-ink-strong">Email code at sign-in</p>
                 <p id="two-step-hint" className="mt-1 type-helper">
                   {status.data.enabled
                     ? `After your password, we email a ${MFA_CODE_LENGTH}-digit code to ${status.data.maskedEmail}.`
@@ -117,7 +117,7 @@ export function TwoStepVerificationCard() {
               </div>
 
               <div className="flex shrink-0 items-center gap-2">
-                {startEnable.isPending && <Loader2 className="size-4 animate-spin text-stone-400" aria-hidden="true" />}
+                {startEnable.isPending && <Loader2 className="size-4 animate-spin text-ink-faint" aria-hidden="true" />}
                 {/* Controlled by the saved setting: it flips only once the code
                     (to turn on) or password (to turn off) has been accepted. */}
                 <Switch

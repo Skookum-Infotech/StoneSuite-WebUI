@@ -79,7 +79,7 @@ export function GrantPortalAccessModal({
             type="button"
             onClick={onClose}
             aria-label="Close modal"
-            className="rounded-lg p-1.5 text-stone-500 transition hover:bg-stone-100 hover:text-stone-600"
+            className="rounded-lg p-1.5 text-ink-muted transition hover:bg-stone-100 hover:text-ink"
           >
             <X className="size-4" />
           </button>

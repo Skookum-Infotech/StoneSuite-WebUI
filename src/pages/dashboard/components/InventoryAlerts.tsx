@@ -81,7 +81,7 @@ export function InventoryAlerts({
                       type="button"
                       onClick={() => navigate(`/inventory/item/${a.id}`)}
                       aria-label={`View inventory item ${a.itemName}`}
-                      className="block w-full truncate rounded text-left text-xs font-semibold text-stone-950 hover:text-accent-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      className="block w-full truncate rounded text-left text-xs font-semibold text-ink-strong hover:text-accent-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     >
                       {a.itemName}
                     </button>

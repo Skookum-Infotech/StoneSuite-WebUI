@@ -120,7 +120,7 @@ export function InvoiceFormBody({
                   <ModernFieldShell label="Billing Customer" required={!customerLocked}>
                     {customerLocked ? (
                       <div className={cn(readonlyCls, 'cursor-not-allowed select-none')}>
-                        {customer?.name || <span className="text-stone-500">—</span>}
+                        {customer?.name || <span className="text-ink-muted">—</span>}
                       </div>
                     ) : (
                       <CustomerPicker value={customer} onChange={setCustomer} required onCreateNew={onCreateCustomer} />

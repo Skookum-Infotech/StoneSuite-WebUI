@@ -13,7 +13,7 @@ import type { CreatedOrder } from '@/types/createdOrder';
 import { cn } from '@/lib/utils';
 const HEADERS = ['Install address', 'Builder', 'Dates', 'Areas', 'Status', 'Submitted'] as const;
 
-const CELL_CLS = 'px-4 py-3 align-top text-xs text-stone-700';
+const CELL_CLS = 'px-4 py-3 align-top text-xs text-ink';
 const DATE_LOCALE = 'en-US';
 
 /** A list-column date, or an em dash when the order has none. The server may
@@ -29,7 +29,7 @@ function EmptyOrders({ onCreate }: { onCreate: () => void }) {
         <ClipboardPlus className="size-7" aria-hidden="true" />
       </span>
       <h2 className="mt-4 type-dialog-title">No Orders Yet</h2>
-      <p className="mt-1 max-w-sm text-sm text-stone-500">
+      <p className="mt-1 max-w-sm text-sm text-ink-muted">
         Fill in the countertop order form and your fabricator receives it straight away. Your orders
         will be listed here.
       </p>
@@ -50,39 +50,39 @@ function OrderRow({ order }: { order: CreatedOrder }) {
         <Link
           to={createdOrderPath(order.id)}
           aria-label={`View order for ${order.installAddress}`}
-          className="font-semibold text-stone-900 underline-offset-2 hover:underline focus-visible:underline"
+          className="font-semibold text-ink-strong underline-offset-2 hover:underline focus-visible:underline"
         >
           {order.installAddress}
         </Link>
-        {place && <p className="text-stone-500">{place}</p>}
+        {place && <p className="text-ink-muted">{place}</p>}
         {order.editable && (
           <Link
             to={createdOrderEditPath(order.id)}
             aria-label={`Edit order for ${order.installAddress}`}
-            className="mt-1 inline-block text-xs font-medium text-stone-600 underline-offset-2 hover:underline focus-visible:underline"
+            className="mt-1 inline-block text-xs font-medium text-ink underline-offset-2 hover:underline focus-visible:underline"
           >
             Edit
           </Link>
         )}
       </td>
       <td className={CELL_CLS}>
-        <p className="font-medium text-stone-800">{builder[0] ?? '—'}</p>
-        {builder[1] && <p className="text-stone-500">{builder[1]}</p>}
-        {order.plan && <p className="text-stone-500">Plan {order.plan}</p>}
+        <p className="font-medium text-ink-strong">{builder[0] ?? '—'}</p>
+        {builder[1] && <p className="text-ink-muted">{builder[1]}</p>}
+        {order.plan && <p className="text-ink-muted">Plan {order.plan}</p>}
       </td>
       <td className={CELL_CLS}>
         <p>
-          <span className="text-stone-500">Measure </span>
+          <span className="text-ink-muted">Measure </span>
           {listDate(order.measureDate)}
         </p>
         <p>
-          <span className="text-stone-500">Install </span>
+          <span className="text-ink-muted">Install </span>
           {listDate(order.installDate)}
         </p>
       </td>
       <td className={CELL_CLS}>{areaCountLabel(order.areas.length)}</td>
       <td className={CELL_CLS}>
-        <span className="inline-flex items-center rounded-full border border-stone-200 bg-stone-100 px-2.5 py-0.5 text-stone-600 type-pill">
+        <span className="inline-flex items-center rounded-full border border-stone-200 bg-stone-100 px-2.5 py-0.5 text-ink type-pill">
           {orderStatusLabel(order.status)}
         </span>
       </td>
@@ -118,7 +118,7 @@ export default function CreatedOrderListPage() {
             </div>
             <div>
               <h1 className="type-page-title">Created Orders</h1>
-              <p className="text-sm text-stone-500">Countertop orders you have submitted.</p>
+              <p className="type-page-subtitle">Countertop orders you have submitted.</p>
             </div>
           </div>
           <button

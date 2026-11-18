@@ -192,11 +192,11 @@ export function LocationsTab({ actionsSlot }: { actionsSlot: HTMLDivElement | nu
         <div className="w-full rounded-2xl border border-dashed border-stone-200 bg-white overflow-hidden">
           <div className="px-5 py-4 sm:px-6 sm:py-5">
             <div className="flex items-center gap-2">
-              <Building2 className="size-4 text-stone-400" />
+              <Building2 className="size-4 text-ink-faint" />
               <h3 className="type-card-title">Default (from Company Profile)</h3>
             </div>
-            <div className="mt-2 flex items-start gap-1.5 text-xs text-stone-500">
-              <MapPin className="size-3.5 shrink-0 mt-0.5 text-stone-400" />
+            <div className="mt-2 flex items-start gap-1.5 text-xs text-ink-muted">
+              <MapPin className="size-3.5 shrink-0 mt-0.5 text-ink-faint" />
               <span>
                 {hasFallbackAddress && fallbackAddress
                   ? [fallbackAddress.line1, fallbackAddress.city, fallbackAddress.state, fallbackAddress.zip]

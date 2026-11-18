@@ -60,7 +60,7 @@ function JobRow({ job, onRetry, retrying }: { job: AsyncJob; onRetry: () => void
   return (
     <div className="rounded-lg border border-stone-200 bg-white p-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <span className="text-xs font-semibold text-stone-700">{job.jobType}</span>
+        <span className="text-xs font-semibold text-ink">{job.jobType}</span>
         <Badge color={JOB_STATUS_COLOR[job.status]}>{job.status}</Badge>
       </div>
       {job.progress?.step && <p className="mt-1 type-helper">Step: {job.progress.step}</p>}

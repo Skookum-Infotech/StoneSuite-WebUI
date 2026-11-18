@@ -7,7 +7,7 @@ import { slabArea, type ItemReceiptDraftSlab, type SlabUnits } from '@/lib/itemR
 import type { Bin } from '@/types/inventory';
 
 const inlineCls =
-  'w-full rounded border border-stone-200 bg-white px-2 py-1 type-input outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-900/5 placeholder:text-stone-500 transition-all';
+  'w-full rounded border border-stone-200 bg-white px-2 py-1 type-input outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-900/5 placeholder:text-ink-muted transition-all';
 
 const AREA_DISPLAY_DECIMALS = 3;
 const SERIAL_PENDING_HINT = 'assigned on save';
@@ -63,15 +63,15 @@ export function SlabIndividualTable({ entries, serials, bins, units, actions }: 
 
   return (
     <div className="overflow-x-auto modal-scrollbar">
-      <table className="w-full text-left text-xs">
+      <table className="w-full text-left type-cell">
         <thead>
           <tr className="type-th">
-            <th className="w-8 px-1.5 py-1.5"><span className="sr-only">More fields</span></th>
-            <th className="min-w-[150px] px-1.5 py-1.5">Serial</th>
-            {DIMENSION_COLUMNS.map((c) => <th key={c.key} className="w-28 px-1.5 py-1.5">{c.label} ({units.length}) *</th>)}
-            <th className="w-24 px-1.5 py-1.5 text-right">Area ({units.area})</th>
-            <th className="min-w-[160px] px-1.5 py-1.5">Bin</th>
-            <th className="w-20 px-1.5 py-1.5"><span className="sr-only">Actions</span></th>
+            <th className="type-th w-8 px-1.5 py-1.5"><span className="sr-only">More fields</span></th>
+            <th className="type-th min-w-[150px] px-1.5 py-1.5">Serial</th>
+            {DIMENSION_COLUMNS.map((c) => <th key={c.key} className="type-th w-28 px-1.5 py-1.5">{c.label} ({units.length}) *</th>)}
+            <th className="type-th w-24 px-1.5 py-1.5 text-right">Area ({units.area})</th>
+            <th className="type-th min-w-[160px] px-1.5 py-1.5">Bin</th>
+            <th className="type-th w-20 px-1.5 py-1.5"><span className="sr-only">Actions</span></th>
           </tr>
         </thead>
         <tbody>
@@ -90,14 +90,14 @@ export function SlabIndividualTable({ entries, serials, bins, units, actions }: 
                       aria-expanded={open}
                       aria-controls={moreId}
                       aria-label={`${open ? 'Hide' : 'Show'} more fields for slab ${n}`}
-                      className="rounded p-0.5 text-stone-500 hover:bg-stone-100 hover:text-stone-600"
+                      className="rounded p-0.5 text-ink-muted hover:bg-stone-100 hover:text-ink"
                     >
                       {open ? <ChevronDown className="size-3.5" /> : <ChevronRight className="size-3.5" />}
                     </button>
                   </td>
                   <td className="px-1.5 py-1.5 align-top type-record-id">
                     <span className="inline-block py-1" data-testid={`slab-serial-${n}`}>
-                      {serials[index] || <span className="text-stone-500">{SERIAL_PENDING_HINT}</span>}
+                      {serials[index] || <span className="text-ink-muted">{SERIAL_PENDING_HINT}</span>}
                     </span>
                   </td>
                   {DIMENSION_COLUMNS.map((c) => (
@@ -111,7 +111,7 @@ export function SlabIndividualTable({ entries, serials, bins, units, actions }: 
                       />
                     </td>
                   ))}
-                  <td className="px-1.5 py-1.5 align-top text-right tabular-nums text-stone-600">
+                  <td className="type-cell px-1.5 py-1.5 align-top text-right tabular-nums">
                     <span className="inline-block py-1">{area > 0 ? area.toFixed(AREA_DISPLAY_DECIMALS) : '—'}</span>
                   </td>
                   <td className="px-1.5 py-1.5 align-top">
@@ -123,11 +123,11 @@ export function SlabIndividualTable({ entries, serials, bins, units, actions }: 
                   <td className="px-1.5 py-1.5 align-top">
                     <div className="flex justify-end gap-0.5">
                       <button type="button" onClick={() => actions.duplicate(slab)} aria-label={`Duplicate slab ${n}`}
-                        className="rounded p-1 text-stone-500 hover:bg-stone-100 hover:text-stone-600">
+                        className="rounded p-1 text-ink-muted hover:bg-stone-100 hover:text-ink">
                         <Copy className="size-3.5" />
                       </button>
                       <button type="button" onClick={() => actions.remove(slab.key)} aria-label={`Remove slab ${n}`}
-                        className="rounded p-1 text-stone-500 hover:bg-red-50 hover:text-danger-ink">
+                        className="rounded p-1 text-ink-muted hover:bg-red-50 hover:text-danger-ink">
                         <Trash2 className="size-3.5" />
                       </button>
                     </div>

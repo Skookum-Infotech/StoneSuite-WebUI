@@ -59,7 +59,7 @@ export function EmailStep({ defaultEmail, onIdentified }: EmailStepProps) {
           Email
         </Label>
         <div className="relative">
-          <Mail className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-stone-400" />
+          <Mail className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-ink-faint" />
           <Input
             id="email"
             type="email"

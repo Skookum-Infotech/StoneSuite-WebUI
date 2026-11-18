@@ -21,7 +21,7 @@ const linkClass = ({ isActive }: { isActive: boolean }) =>
     'group flex items-center gap-2.5 rounded-md px-3 py-2 type-nav-item transition-all duration-200',
     isActive
       ? 'bg-accent text-accent-foreground'
-      : 'text-stone-700 hover:bg-accent/60 hover:text-stone-900',
+      : 'text-ink hover:bg-accent/60 hover:text-ink-strong',
   );
 
 const childLinkClass = ({ isActive }: { isActive: boolean }) =>
@@ -29,7 +29,7 @@ const childLinkClass = ({ isActive }: { isActive: boolean }) =>
     'group flex items-center gap-2 rounded-md px-2.5 py-1.5 type-nav-item transition-all duration-200',
     isActive
       ? 'bg-accent text-accent-foreground'
-      : 'text-stone-700 hover:bg-accent/50 hover:text-stone-900',
+      : 'text-ink hover:bg-accent/50 hover:text-ink-strong',
   );
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
@@ -222,7 +222,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             'group flex w-full cursor-pointer items-center justify-between rounded-md px-3 py-2 type-nav-item transition-all duration-200',
             active
               ? 'bg-accent/60 text-accent-foreground'
-              : 'text-stone-700 hover:bg-accent/40 hover:text-stone-900',
+              : 'text-ink hover:bg-accent/40 hover:text-ink-strong',
           )}
         >
           <div className="flex items-center gap-2.5">
@@ -274,11 +274,11 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         <div className="flex h-full flex-col overflow-y-auto modal-scrollbar">
           {/* Mobile-only close button row */}
           <div className="flex items-center justify-between border-b border-stone-200/80 px-4 py-3 lg:hidden">
-            <span className="text-xs font-semibold text-stone-700">Navigation</span>
+            <span className="text-xs font-semibold text-ink">Navigation</span>
             <button
               onClick={onClose}
               aria-label="Close menu"
-              className="rounded-lg p-1 text-stone-700 hover:bg-sidebar-accent hover:text-stone-900 dark:text-stone-700 dark:hover:text-stone-100"
+              className="rounded-lg p-1 text-ink hover:bg-sidebar-accent hover:text-ink-strong dark:text-stone-700 dark:hover:text-stone-100"
             >
               <X className="size-4" />
             </button>

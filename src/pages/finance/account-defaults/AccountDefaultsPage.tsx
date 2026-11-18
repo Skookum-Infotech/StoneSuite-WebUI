@@ -36,7 +36,7 @@ export default function AccountDefaultsPage() {
           </div>
           <div>
             <h1 className="type-page-title">Default Accounts</h1>
-            <p className="text-sm text-stone-500">
+            <p className="type-page-subtitle">
               Where each posting purpose lands. Clearing a picker unsets the slot.
             </p>
           </div>

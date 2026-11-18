@@ -38,13 +38,13 @@ export function DatePicker({ value, onChange, label, disabled, required, minDate
           aria-label={required ? `${label} (required)` : label}
           disabled={disabled}
           className={cn(
-            "flex h-8 w-full items-center gap-2 rounded-lg border border-stone-200 bg-white px-2.5 text-left text-sm text-stone-900 transition-colors outline-none",
+            "flex h-8 w-full items-center gap-2 rounded-lg border border-stone-200 bg-white px-2.5 text-left text-sm text-ink-strong transition-colors outline-none",
             "focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
             "disabled:cursor-not-allowed disabled:opacity-50",
-            !value && "text-stone-500"
+            !value && "text-ink-muted"
           )}
         >
-          <CalendarIcon className="size-3.5 shrink-0 text-stone-400" aria-hidden="true" />
+          <CalendarIcon className="size-3.5 shrink-0 text-ink-faint" aria-hidden="true" />
           <span className="flex-1 truncate">{value ? formatDisplayDate(value) : "Select date"}</span>
         </button>
       </PopoverTrigger>

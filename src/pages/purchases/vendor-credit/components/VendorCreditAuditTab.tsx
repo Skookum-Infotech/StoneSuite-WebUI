@@ -16,7 +16,7 @@ export function VendorCreditAuditTab({ vendorCreditId }: { vendorCreditId?: stri
   });
 
   if (!vendorCreditId) {
-    return <p className="py-12 text-center text-sm text-stone-500">Audit trail will be available after saving the vendor credit.</p>;
+    return <p className="py-12 text-center text-sm text-ink-muted">Audit trail will be available after saving the vendor credit.</p>;
   }
   if (isLoading) return <div className="py-6 flex justify-center"><Spinner label="Loading audit trail…" /></div>;
   if (error) return <p className="py-6 text-center type-error italic">Failed to load audit trail.</p>;
@@ -24,7 +24,7 @@ export function VendorCreditAuditTab({ vendorCreditId }: { vendorCreditId?: stri
 
   return (
     <div className="overflow-x-auto rounded-lg border border-stone-200 bg-white">
-      <table className="w-full text-xs border-collapse">
+      <table className="w-full type-cell border-collapse">
         <thead>
           <tr className="border-b border-stone-100">
             {['Action', 'Actor', 'IP Address', 'Version', 'Date'].map((h) => (
@@ -53,12 +53,12 @@ function AuditRow({ entry }: { entry: AuditEntry }) {
         onClick={() => hasChanges && setExpanded((v) => !v)}
       >
         <td className="py-2.5 px-3"><ActionBadge action={entry.action} /></td>
-        <td className="py-2.5 px-3 type-cell">{entry.actorName || <span className="text-stone-500 italic">system</span>}</td>
+        <td className="py-2.5 px-3 type-cell">{entry.actorName || <span className="text-ink-muted italic">system</span>}</td>
         <td className="py-2.5 px-3 type-record-id">{entry.ipAddress || '—'}</td>
         <td className="py-2.5 px-3 type-cell">{entry.appVersion || '—'}</td>
         <td className="py-2.5 px-3 whitespace-nowrap type-cell">
           {new Date(entry.at).toLocaleString()}
-          {hasChanges && <span className="ml-1.5 text-stone-500">{expanded ? '▲' : '▼'}</span>}
+          {hasChanges && <span className="ml-1.5 text-ink-muted">{expanded ? '▲' : '▼'}</span>}
         </td>
       </tr>
       {expanded && hasChanges && (
@@ -77,7 +77,7 @@ function ActionBadge({ action }: { action: string }) {
     action === 'create' ? 'bg-accent-lime text-accent-foreground' :
     action === 'delete' ? 'bg-destructive/10 text-danger-ink' :
     action === 'update' ? 'bg-workflow-prospect-bg text-workflow-prospect-text' :
-    'bg-stone-100 text-stone-600';
+    'bg-stone-100 text-ink';
   return (
     <span className={cn('inline-flex items-center rounded px-1.5 py-0.5 capitalize type-pill', color)}>
       {action}

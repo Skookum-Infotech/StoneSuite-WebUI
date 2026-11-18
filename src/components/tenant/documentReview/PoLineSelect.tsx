@@ -15,13 +15,13 @@ interface PoLineSelectProps {
  *  more than one fits (the same item twice on the order). */
 export function PoLineSelect({ label, choices, value, onChange }: PoLineSelectProps): React.JSX.Element {
   return (
-    <label className="flex flex-wrap items-center gap-1.5 text-stone-600 dark:text-stone-300">
+    <label className="flex flex-wrap items-center gap-1.5 text-ink dark:text-stone-300">
       <span>Purchase order line</span>
       <Select
         value={value}
         aria-label={`Purchase order line for ${label}`}
         onChange={(e) => onChange(e.target.value)}
-        className="rounded-md border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 px-1.5 py-0.5 text-xs text-stone-800 dark:text-stone-200"
+        className="rounded-md border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 px-1.5 py-0.5 text-xs text-ink-strong dark:text-stone-200"
       >
         <option value="">Not linked</option>
         {choices.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}

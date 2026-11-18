@@ -33,7 +33,7 @@ export function ReportFilters({ state, actions, showBasis, showBucket }: ReportF
             onChange={(from) => actions.setCustomRange({ from, to: state.range.to })}
           />
         </div>
-        <span className="text-xs text-stone-500" aria-hidden="true">to</span>
+        <span className="text-xs text-ink-muted" aria-hidden="true">to</span>
         <div className="w-40">
           <DatePicker
             label="To date"

@@ -18,7 +18,7 @@ import { CrmApprovalsSection } from './components/CrmApprovalsSection';
 const HTTP_FORBIDDEN = 403;
 const SKELETON_ROWS = [0, 1, 2];
 const NAV_BTN =
-  'flex items-center gap-1.5 h-8 px-3 rounded-lg border border-stone-200 bg-white text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors';
+  'flex items-center gap-1.5 h-8 px-3 rounded-lg border border-stone-200 bg-white text-xs font-medium text-ink hover:bg-stone-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors';
 
 export default function ApprovalsInboxPage() {
   const { isSuperAdmin, isLoading: permissionsLoading } = useUserPermissions();
@@ -96,7 +96,7 @@ export default function ApprovalsInboxPage() {
         </div>
         <div className="min-w-0 flex-1">
           <h1 className="type-page-title">Approvals</h1>
-          <p className="text-sm text-stone-500">Records waiting for your sign-off, oldest first.</p>
+          <p className="type-page-subtitle">Records waiting for your sign-off, oldest first.</p>
         </div>
         {isSuperAdmin && <ApprovalScopeToggle scope={scope} onChange={(s) => updateParams({ scope: s })} />}
       </div>
@@ -130,7 +130,7 @@ export default function ApprovalsInboxPage() {
         )}
 
         {isEmpty && (
-          <p className="rounded-xl border border-dashed border-stone-200 px-4 py-10 text-center text-sm text-stone-500">
+          <p className="rounded-xl border border-dashed border-stone-200 px-4 py-10 text-center text-sm text-ink-muted">
             {notApprover
               ? 'You are not an approver on any workflow. An admin can add you in Configure > Workflows.'
               : 'Nothing is waiting for you.'}

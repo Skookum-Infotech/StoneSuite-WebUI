@@ -62,7 +62,7 @@ export default function PortalUsersPage() {
         </div>
         <div>
           <h1 className="type-page-title">Customer Portal Users</h1>
-          <p className="text-sm text-stone-500">
+          <p className="type-page-subtitle">
             Every external login into this workspace, across all customers.
           </p>
         </div>
@@ -71,7 +71,7 @@ export default function PortalUsersPage() {
       <div className="mt-5 flex flex-1 flex-col gap-3 min-h-0 border-t border-stone-100 pt-4">
         <div className="flex flex-wrap items-center gap-2">
           <div className="relative flex-1 min-w-[200px] max-w-sm">
-            <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-stone-400" />
+            <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-ink-faint" />
             <input
               type="text"
               value={search}
@@ -85,7 +85,7 @@ export default function PortalUsersPage() {
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as PortalUserStatus | "all")}
             aria-label="Filter by status"
-            className="h-9 rounded-lg border border-stone-200 bg-white px-2.5 text-xs text-stone-700 outline-none focus:border-brand focus:ring-2 focus:ring-brand/20"
+            className="h-9 rounded-lg border border-stone-200 bg-white px-2.5 text-xs text-ink outline-none focus:border-brand focus:ring-2 focus:ring-brand/20"
           >
             {STATUS_FILTERS.map((f) => (
               <option key={f.value} value={f.value}>{f.label}</option>

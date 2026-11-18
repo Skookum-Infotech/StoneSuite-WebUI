@@ -32,22 +32,22 @@ export function TenantRow({ tenant }: { tenant: Tenant }) {
 
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <p className="text-sm font-bold text-stone-900">{tenant.displayName}</p>
+            <p className="text-sm font-bold text-ink-strong">{tenant.displayName}</p>
             <TenantStatusBadges tenant={tenant} />
           </div>
           <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5">
-            <span className="font-mono text-label text-stone-500">{tenant.slug}</span>
-            {contactEmail && <span className="text-label text-stone-500">{contactEmail}</span>}
-            {phone && <span className="text-label text-stone-500">{phone}</span>}
+            <span className="font-mono text-label text-ink-muted">{tenant.slug}</span>
+            {contactEmail && <span className="text-label text-ink-muted">{contactEmail}</span>}
+            {phone && <span className="text-label text-ink-muted">{phone}</span>}
           </div>
         </div>
 
         <div className="hidden shrink-0 flex-col items-end gap-0.5 sm:flex">
-          <span className="text-label text-stone-500">{formatTenantDate(tenant.createdAt)}</span>
+          <span className="text-label text-ink-muted">{formatTenantDate(tenant.createdAt)}</span>
           {tenant.dbName && <span className="font-mono type-subline">{tenant.dbName}</span>}
         </div>
 
-        <ChevronRight className="size-4 shrink-0 text-stone-400" aria-hidden="true" />
+        <ChevronRight className="size-4 shrink-0 text-ink-faint" aria-hidden="true" />
       </Link>
 
       <TenantActions tenant={tenant} />

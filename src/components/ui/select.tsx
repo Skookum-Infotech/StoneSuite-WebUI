@@ -126,12 +126,12 @@ export function Select({
           className={cn(
             'flex items-center justify-between gap-2 text-left',
             className,
-            isPlaceholder && 'text-stone-500',
+            isPlaceholder && 'text-ink-muted',
           )}
         >
           {selected?.flag && <Flag {...selected.flag} />}
           <span className="flex-1 truncate">{selected?.label ||' '}</span>
-          <ChevronDown className="size-3.5 shrink-0 text-stone-400" aria-hidden="true" />
+          <ChevronDown className="size-3.5 shrink-0 text-ink-faint" aria-hidden="true" />
         </button>
       </PopoverTrigger>
       <PopoverContent
@@ -155,7 +155,7 @@ export function Select({
               onKeyDown={onListKeyDown}
               placeholder="Search…"
               aria-label={`Search ${ariaLabel ?? 'options'}`}
-              className="w-full rounded-lg border border-stone-200 px-2.5 py-1.5 text-xs text-stone-900 outline-none focus:border-brand focus:ring-2 focus:ring-brand/30"
+              className="w-full rounded-lg border border-stone-200 px-2.5 py-1.5 text-xs text-ink-strong outline-none focus:border-brand focus:ring-2 focus:ring-brand/30"
             />
           </div>
         )}
@@ -167,7 +167,7 @@ export function Select({
           onWheel={(e) => e.stopPropagation()}
           className={cn(LISTBOX_MAX_HEIGHT_CLS, 'modal-scrollbar overflow-y-auto p-1')}
         >
-          {filtered.length === 0 && <p className="px-2.5 py-2 text-xs text-stone-500">No matches</p>}
+          {filtered.length === 0 && <p className="px-2.5 py-2 text-xs text-ink-muted">No matches</p>}
           {filtered.map((o, i) => {
             const header = o.group && o.group !== filtered[i - 1]?.group ? o.group : null;
             const isSelected = o.value === current;
@@ -184,10 +184,10 @@ export function Select({
                   disabled={o.disabled}
                   onClick={() => pick(o.value)}
                   className={cn(
-                    'flex w-full items-center justify-between gap-2 rounded-md px-2.5 py-1.5 text-left text-xs text-stone-700 outline-none transition-colors hover:bg-stone-100 focus-visible:bg-stone-100',
+                    'flex w-full items-center justify-between gap-2 rounded-md px-2.5 py-1.5 text-left text-xs text-ink outline-none transition-colors hover:bg-stone-100 focus-visible:bg-stone-100',
                     'disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent',
-                    o.value === '' && 'text-stone-500',
-                    isSelected && 'bg-brand/10 font-medium text-stone-900',
+                    o.value === '' && 'text-ink-muted',
+                    isSelected && 'bg-brand/10 font-medium text-ink-strong',
                   )}
                 >
                   {o.flag && <Flag {...o.flag} reserveSpace />}

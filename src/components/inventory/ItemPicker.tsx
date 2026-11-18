@@ -99,9 +99,9 @@ export function ItemPicker({
   if (value) {
     return (
       <div className={cn('flex items-center gap-2 rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm', className)}>
-        <Package className="size-3.5 shrink-0 text-stone-400" aria-hidden="true" />
+        <Package className="size-3.5 shrink-0 text-ink-faint" aria-hidden="true" />
         <span className="min-w-0 flex-1">
-          <span className="block truncate font-medium text-stone-800">{value.name}</span>
+          <span className="block truncate font-medium text-ink-strong">{value.name}</span>
           <span className="block truncate font-mono type-subline">
             {value.sku} · {value.tracking === TRACKING_SERIALIZED ? 'Serialized' : 'Quantity'}
           </span>
@@ -110,7 +110,7 @@ export function ItemPicker({
           type="button"
           onClick={() => onChange(null)}
           aria-label="Change item"
-          className="shrink-0 rounded p-0.5 text-stone-500 hover:bg-stone-100 hover:text-stone-600 transition-colors"
+          className="shrink-0 rounded p-0.5 text-ink-muted hover:bg-stone-100 hover:text-ink transition-colors"
         >
           <X className="size-3.5" />
         </button>
@@ -121,7 +121,7 @@ export function ItemPicker({
   return (
     <div ref={containerRef} className={cn('relative', className)}>
       <div className="relative">
-        <Search className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-stone-400" />
+        <Search className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-ink-faint" />
         <input
           type="text"
           required={required}
@@ -133,7 +133,7 @@ export function ItemPicker({
           aria-label="Search inventory item"
         />
         {isFetching && (
-          <Loader2 className="absolute right-2.5 top-1/2 -translate-y-1/2 size-3.5 animate-spin text-stone-400" />
+          <Loader2 className="absolute right-2.5 top-1/2 -translate-y-1/2 size-3.5 animate-spin text-ink-faint" />
         )}
       </div>
 
@@ -149,9 +149,9 @@ export function ItemPicker({
               onClick={() => select(item)}
               className="flex w-full items-start gap-2 px-3 py-2 text-left hover:bg-accent/10 transition-colors"
             >
-              <Package className="mt-0.5 size-3.5 shrink-0 text-stone-400" aria-hidden="true" />
+              <Package className="mt-0.5 size-3.5 shrink-0 text-ink-faint" aria-hidden="true" />
               <span className="min-w-0">
-                <span className="block truncate text-xs font-medium text-stone-800">{item.name}</span>
+                <span className="block truncate text-xs font-medium text-ink-strong">{item.name}</span>
                 <span className="block truncate font-mono type-subline">
                   {item.sku} · {item.tracking === TRACKING_SERIALIZED ? 'Serialized' : 'Quantity'}
                 </span>

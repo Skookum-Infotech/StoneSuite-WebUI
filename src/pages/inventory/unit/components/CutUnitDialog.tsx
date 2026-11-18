@@ -75,7 +75,7 @@ export function CutUnitDialog({ unit, onClose, onCut }: {
               <p className="mt-0.5 type-helper">{unit.serial} · {unit.area.toFixed(2)} sq</p>
             </div>
           </div>
-          <button type="button" onClick={onClose} aria-label="Close" className="rounded p-1 text-stone-400 hover:bg-stone-100"><X className="size-4" /></button>
+          <button type="button" onClick={onClose} aria-label="Close" className="rounded p-1 text-ink-muted hover:bg-stone-100"><X className="size-4" /></button>
         </div>
 
         <p className="mb-3 type-helper">
@@ -86,9 +86,9 @@ export function CutUnitDialog({ unit, onClose, onCut }: {
           {pieces.map((p, i) => (
             <div key={p.key} className="rounded-lg border border-stone-200 p-3 space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-micro font-semibold text-stone-500">Offcut {i + 1}</span>
+                <span className="text-micro font-semibold text-ink-muted">Offcut {i + 1}</span>
                 {pieces.length > 1 && (
-                  <button type="button" onClick={() => removePiece(p.key)} aria-label={`Remove offcut ${i + 1}`} className="text-stone-400 hover:text-danger-ink"><Trash2 className="size-3.5" /></button>
+                  <button type="button" onClick={() => removePiece(p.key)} aria-label={`Remove offcut ${i + 1}`} className="text-ink-muted hover:text-danger-ink"><Trash2 className="size-3.5" /></button>
                 )}
               </div>
               <div className="grid grid-cols-2 gap-2">

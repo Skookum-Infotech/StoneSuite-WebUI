@@ -19,7 +19,7 @@ interface FieldProps {
   children: (control: FieldControlProps) => ReactNode;
 }
 
-const LABEL_CLS = 'block text-xs font-semibold text-stone-900';
+const LABEL_CLS = 'block text-xs font-semibold text-ink-strong';
 
 // A labelled form control. The label is a real <label for>, and the error is
 // linked with aria-describedby, so a screen reader reads "Phone, required,

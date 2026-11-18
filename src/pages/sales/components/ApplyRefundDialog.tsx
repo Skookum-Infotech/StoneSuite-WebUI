@@ -103,7 +103,7 @@ export function ApplyRefundDialog({ refund, onClose, onApplied }: {
                     'flex-1 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors',
                     kind === k
                       ? 'border-accent-foreground/20 bg-accent text-accent-foreground'
-                      : 'border-stone-200 bg-white text-stone-500 hover:border-stone-300 hover:text-stone-700',
+                      : 'border-stone-200 bg-white text-ink-muted hover:border-stone-300 hover:text-ink',
                   )}
                 >
                   {SOURCE_KIND_LABELS[k]}
