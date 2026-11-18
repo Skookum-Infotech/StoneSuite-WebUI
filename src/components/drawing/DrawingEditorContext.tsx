@@ -3,28 +3,80 @@
 // without prop-drilling past the 5-prop cap (CLAUDE.md).
 
 import {
-  createContext, useCallback, useContext, useMemo, useReducer, useRef, useState, type Dispatch, type ReactNode,
+  createContext, useCallback, useContext, useEffect, useMemo, useReducer, useRef, useState, type Dispatch, type ReactNode,
 } from 'react';
-import type { Drawing, Piece } from '@/types/drawing';
+import type { Cutout, Drawing, Piece } from '@/types/drawing';
 import type { SalesOrderLine } from '@/types/salesOrder';
 import { bounds, transformOutline } from '@/lib/drawing/geometry';
 import { VIEWPORT_HEIGHT, VIEWPORT_WIDTH, ZOOM_MAX, ZOOM_MIN } from '@/lib/drawing/constants';
 import {
   createInitialEditorState, editorReducer, type EditorAction, type EditorState,
 } from '@/lib/drawing/drawingReducer';
+import { useBorderToolState, type BorderToolState } from './useBorderToolState';
+import { useCornerToolState, type CornerToolState } from './useCornerToolState';
+import { useEdgeToolState, type EdgeToolState } from './useEdgeToolState';
 
 /** Leaves this much of the viewport empty around the fitted content, so
  *  "Fit" doesn't crop a piece flush against the edge. */
 const FIT_MARGIN = 0.9;
 
-export type EditorTool = 'select' | 'polygon' | 'note' | 'dimension' | 'line';
+export type EditorTool = 'select' | 'draw' | 'polygon' | 'note' | 'text' | 'dimension' | 'line' | 'border' | 'corner' | 'edge';
+
+/** The editor's three working areas, picked from the top bar: the drawing
+ *  board itself, and the Cutout and Material side panels beside it. */
+export type EditorWorkspace = 'sketch' | 'cutout' | 'material';
+
+export interface PlacingCutout {
+  pieceId: string;
+  cutout: Cutout;
+}
 
 export interface DrawingEditorContextValue {
   state: EditorState;
   dispatch: Dispatch<EditorAction>;
   tool: EditorTool;
   setTool: (tool: EditorTool) => void;
+  /** Which top-bar section is open. Sketch is the plain board; Cutout and
+   *  Material each dock a panel on the right. */
+  workspace: EditorWorkspace;
+  setWorkspace: (workspace: EditorWorkspace) => void;
+  /** The cutout open in the Cutout dialog for editing (Cutout tab only —
+   *  clicking a cutout on the board or in the panel sets it), or null. */
+  editingCutoutId: string | null;
+  editCutout: (cutoutId: string | null) => void;
+  /** A new cutout, built in the Cutout dialog, waiting for the user to click
+   *  where on `pieceId` it goes (the cursor becomes a target). Null otherwise. */
+  placing: PlacingCutout | null;
+  /** The text on the board that the bottom control bar is editing, or null.
+   *  Picking a piece (or any other tool's work) lets go of it. */
+  selectedNoteId: string | null;
+  selectNote: (noteId: string | null) => void;
+  /** The Border tool's armed reshape, typed numbers and clicked side. */
+  border: BorderToolState;
+  /** The Corner tool's armed change, typed numbers and clicked corner. */
+  corner: CornerToolState;
+  /** The Edges tool's picked edge type. */
+  edge: EdgeToolState;
+  startPlacing: (pieceId: string, cutout: Cutout) => void;
+  cancelPlacing: () => void;
   materialLines: SalesOrderLine[];
+  /** Whether the corner map is showing (the M key and the bottom bar flip it). */
+  mapOpen: boolean;
+  toggleMap: () => void;
+  /** Whether every piece's auto-placed dimension lines are showing. Off by
+   *  default — a tall, narrow piece's side labels can reach far out at a
+   *  high zoom, and most of the time nobody is reading them. The bottom bar
+   *  flips it; the inspector's own numbers are unaffected either way. */
+  dimensionsOn: boolean;
+  toggleDimensions: () => void;
+  /** Whether the floating Properties panel is showing. Off by default and
+   *  independent of selection — it used to open on its own the moment a
+   *  piece was clicked, which the user found it popped up uninvited; now
+   *  only the bottom bar's own Properties button opens or closes it, same
+   *  as Dimensions and Map. Selecting a piece while it's already open just
+   *  changes what it shows. */
+  propertiesOpen: boolean;
+  toggleProperties: () => void;
   fitToArea: () => void;
   /** Copy / paste / duplicate act on the current multi-selection. */
   copySelection: () => void;
@@ -35,10 +87,72 @@ export interface DrawingEditorContextValue {
 const DrawingEditorContext = createContext<DrawingEditorContextValue | undefined>(undefined);
 
 export function DrawingEditorProvider(
-  { drawing, materialLines, children }: { drawing: Drawing; materialLines: SalesOrderLine[]; children: ReactNode },
+  { drawing, materialLines, initialZoom = 1, children }: {
+    drawing: Drawing;
+    materialLines: SalesOrderLine[];
+    /** The zoom the editor opens at; the page opens zoomed out (OPEN_ZOOM). */
+    initialZoom?: number;
+    children: ReactNode;
+  },
 ) {
-  const [state, dispatch] = useReducer(editorReducer, createInitialEditorState(drawing));
-  const [tool, setTool] = useState<EditorTool>('select');
+  const [state, dispatch] = useReducer(editorReducer, createInitialEditorState(drawing, initialZoom));
+  const [tool, setToolState] = useState<EditorTool>('select');
+  const border = useBorderToolState(tool === 'border');
+  const { setTarget: setBorderTarget } = border;
+  const corner = useCornerToolState(tool === 'corner');
+  const { setTarget: setCornerTarget } = corner;
+  const edge = useEdgeToolState();
+  const [workspace, setWorkspaceState] = useState<EditorWorkspace>('sketch');
+  const [editingCutoutId, editCutout] = useState<string | null>(null);
+  const [placing, setPlacing] = useState<PlacingCutout | null>(null);
+  const startPlacing = useCallback((pieceId: string, cutout: Cutout) => setPlacing({ pieceId, cutout }), []);
+  const cancelPlacing = useCallback(() => setPlacing(null), []);
+  const [pickedNoteId, setPickedNoteId] = useState<string | null>(null);
+  // Picking a piece of text lets go of any selected piece: the control bar is
+  // hidden while a piece is selected, so leaving it selected would swallow the
+  // bar the moment the text is placed or picked.
+  const selectNote = useCallback((noteId: string | null) => {
+    setPickedNoteId(noteId);
+    if (noteId !== null) dispatch({ type: 'selectPiece', pieceId: null });
+  }, []);
+  const [mapOpen, setMapOpen] = useState(true);
+  const toggleMap = useCallback(() => setMapOpen((open) => !open), []);
+  const [dimensionsOn, setDimensionsOn] = useState(false);
+  const toggleDimensions = useCallback(() => setDimensionsOn((on) => !on), []);
+  const [propertiesOpen, setPropertiesOpen] = useState(false);
+  const toggleProperties = useCallback(() => setPropertiesOpen((open) => !open), []);
+  // Cutout and Material only edit what is already drawn, so leaving Sketch
+  // disarms any drawing tool — and arming one from the rail goes back to Sketch.
+  // Either way an open cutout editor closes with the switch.
+  const setTool = useCallback((next: EditorTool) => {
+    setToolState(next);
+    setBorderTarget(null);
+    setCornerTarget(null);
+    if (next !== 'select') {
+      selectNote(null);
+      setWorkspaceState('sketch');
+      editCutout(null);
+      setPlacing(null);
+    }
+  }, [selectNote, setBorderTarget, setCornerTarget]);
+  const setWorkspace = useCallback((next: EditorWorkspace) => {
+    setWorkspaceState(next);
+    if (next !== 'sketch') setToolState('select');
+    editCutout(null);
+    setPlacing(null);
+  }, []);
+  // Cutouts are edited in the Cutout tab only: on leaving it, drop the cutout
+  // selection so Sketch and the Properties panel go back to showing the piece.
+  const previousWorkspace = useRef(workspace);
+  useEffect(() => {
+    const leftCutoutTab = previousWorkspace.current === 'cutout' && workspace !== 'cutout';
+    previousWorkspace.current = workspace;
+    if (leftCutoutTab && state.selectedCutoutId && state.selectedPieceId) {
+      dispatch({ type: 'selectCutout', pieceId: state.selectedPieceId, cutoutId: null });
+    }
+  }, [workspace, state.selectedCutoutId, state.selectedPieceId]);
+  // Picking a piece takes the control bar away from whatever text had it.
+  const selectedNoteId = state.selectedPieceIds.length > 0 ? null : pickedNoteId;
   // Copied pieces live outside the document so copying is not an edit, and
   // survive switching area (paste lands in whichever area is active).
   const clipboard = useRef<Piece[]>([]);
@@ -105,12 +219,16 @@ export function DrawingEditorProvider(
 
   const value = useMemo<DrawingEditorContextValue>(
     () => ({
-      state, dispatch, tool, setTool, materialLines, fitToArea, copySelection, pasteClipboard, duplicateSelection,
+      state, dispatch, tool, setTool, workspace, setWorkspace, editingCutoutId, editCutout, placing, startPlacing,
+      selectedNoteId, selectNote, border, corner, edge, cancelPlacing, materialLines, mapOpen, toggleMap, dimensionsOn, toggleDimensions, propertiesOpen, toggleProperties, fitToArea, copySelection, pasteClipboard, duplicateSelection,
     }),
     // fitToArea closes over state/materialLines, so it's already covered by
     // those deps — listing it too would just be the same change twice.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [state, tool, materialLines, copySelection, pasteClipboard, duplicateSelection],
+    [
+      state, tool, setTool, workspace, setWorkspace, editingCutoutId, placing, startPlacing, selectedNoteId, border, corner, edge, cancelPlacing, materialLines, mapOpen, toggleMap, dimensionsOn, toggleDimensions, propertiesOpen,
+      toggleProperties, copySelection, pasteClipboard, duplicateSelection,
+    ],
   );
 
   return <DrawingEditorContext.Provider value={value}>{children}</DrawingEditorContext.Provider>;

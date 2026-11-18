@@ -82,6 +82,11 @@ function PolygonToolButton() {
   return <button type="button" onClick={() => setTool('polygon')}>polygon tool</button>;
 }
 
+function DimensionsToggleButton() {
+  const { toggleDimensions } = useDrawingEditor();
+  return <button type="button" onClick={toggleDimensions}>toggle dimensions</button>;
+}
+
 function PieceOutlineReadout() {
   const { state } = useDrawingEditor();
   const piece = state.present.areas[0].pieces[0];
@@ -106,6 +111,22 @@ function renderCanvas() {
     </DrawingEditorProvider>,
   );
 }
+
+describe('DrawingCanvas dimensions', () => {
+  it('are hidden until the Dimensions toggle turns them on', async () => {
+    render(
+      <DrawingEditorProvider drawing={drawingWithOnePiece()} materialLines={[]}>
+        <DrawingCanvas />
+        <DimensionsToggleButton />
+      </DrawingEditorProvider>,
+    );
+    expect(screen.queryAllByText(/23 5\/8"/)).toHaveLength(0);
+    await userEvent.click(screen.getByRole('button', { name: 'toggle dimensions' }));
+    expect(screen.queryAllByText(/23 5\/8"/).length).toBeGreaterThan(0);
+    await userEvent.click(screen.getByRole('button', { name: 'toggle dimensions' }));
+    expect(screen.queryAllByText(/23 5\/8"/)).toHaveLength(0);
+  });
+});
 
 describe('DrawingCanvas keyboard handling', () => {
   it('ArrowRight with a piece selected moves it by ARROW_KEY_STEP_MM', async () => {
@@ -182,6 +203,44 @@ describe('DrawingCanvas background pan — rendered size correction', () => {
     // 50px at a 400-wide rect (half-size) -> 100 viewbox units, not the 50
     // a naive 1px=1unit assumption would give.
     expect(Number(screen.getByTestId('pan-x').textContent)).toBeCloseTo(100, 5);
+  });
+});
+
+describe('DrawingCanvas background pan — robust to a wrong movementX/Y', () => {
+  it('pans by the real change in pointer position, ignoring a movementX/Y that disagrees with it', () => {
+    // A scaled Windows display can report movementX/Y in device pixels while
+    // clientX/Y stay in CSS pixels, so the two disagree. A deliberately wrong
+    // movementX/Y (999) here must not move the pan by anything close to
+    // that — only the real 40px drop in clientX counts.
+    mockSvgRect(800, 600); // full viewBox size: 1 screen px = 1 viewbox unit
+    render(
+      <DrawingEditorProvider drawing={blankDrawing()} materialLines={[]}>
+        <DrawingCanvas />
+        <PanZoomReadout />
+      </DrawingEditorProvider>,
+    );
+    const background = screen.getByTestId('canvas-background');
+    fireEvent.pointerDown(background, { pointerId: 1, clientX: 100, clientY: 100 });
+    fireEvent.pointerMove(background, { pointerId: 1, clientX: 60, clientY: 100, movementX: 999, movementY: 999 });
+    expect(Number(screen.getByTestId('pan-x').textContent)).toBeCloseTo(-40, 5);
+    expect(Number(screen.getByTestId('pan-y').textContent)).toBeCloseTo(0, 5);
+  });
+
+  it('keeps panning smoothly across several moves, each measured from the last — not summed from the press', () => {
+    mockSvgRect(800, 600);
+    render(
+      <DrawingEditorProvider drawing={blankDrawing()} materialLines={[]}>
+        <DrawingCanvas />
+        <PanZoomReadout />
+      </DrawingEditorProvider>,
+    );
+    const background = screen.getByTestId('canvas-background');
+    fireEvent.pointerDown(background, { pointerId: 1, clientX: 0, clientY: 0 });
+    fireEvent.pointerMove(background, { pointerId: 1, clientX: 20, clientY: 0 });
+    fireEvent.pointerMove(background, { pointerId: 1, clientX: 50, clientY: 10 });
+    // Net movement is (50, 10), not (20+50, 0+10) or anything else double-counted.
+    expect(Number(screen.getByTestId('pan-x').textContent)).toBeCloseTo(50, 5);
+    expect(Number(screen.getByTestId('pan-y').textContent)).toBeCloseTo(10, 5);
   });
 });
 

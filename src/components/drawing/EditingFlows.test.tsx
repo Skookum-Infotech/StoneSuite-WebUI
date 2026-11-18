@@ -225,22 +225,112 @@ describe('Piece sides', () => {
 });
 
 describe('Corner handles and selection on the canvas', () => {
-  it('shows a handle per corner and a "+" per side for a single selected piece', async () => {
+  it('shows a handle per corner, and no split menu, for a single selected piece until a side is clicked', async () => {
     const user = setup([piece('p1', 'A-1')], { ids: ['p1'] }, 'canvas');
     await user.click(screen.getByRole('button', { name: 'select' }));
     expect(screen.getAllByRole('button', { name: /^Corner \d of A-1/ })).toHaveLength(4);
-    expect(screen.getAllByRole('button', { name: /^Add corner on side/ })).toHaveLength(4);
+    expect(screen.queryByRole('button', { name: /^Split side/ })).toBeNull();
   });
 
-  it('adds a corner at the middle of a side as one undoable step, turning the piece into a polygon', async () => {
+  it('clicking a side opens its own "Split" menu instead of splitting it right away', async () => {
     const user = setup([piece('p1', 'A-1')], { ids: ['p1'] }, 'canvas');
     await user.click(screen.getByRole('button', { name: 'select' }));
-    fireEvent.pointerDown(screen.getByRole('button', { name: 'Add corner on side A' }));
+    fireEvent.pointerDown(screen.getByRole('button', { name: /^Side A of A-1/ }));
+    expect(screen.getByRole('button', { name: 'Split side A' })).toBeDefined();
+    expect(piecesNow()[0].outline).toHaveLength(4);
+    expect(screen.getByRole('button', { name: /^Side A of A-1/ })).toHaveAttribute('aria-expanded', 'true');
+  });
+
+  it('clicking the same side again closes its menu', async () => {
+    const user = setup([piece('p1', 'A-1')], { ids: ['p1'] }, 'canvas');
+    await user.click(screen.getByRole('button', { name: 'select' }));
+    const side = screen.getByRole('button', { name: /^Side A of A-1/ });
+    fireEvent.pointerDown(side);
+    expect(screen.getByRole('button', { name: 'Split side A' })).toBeDefined();
+    fireEvent.pointerDown(side);
+    expect(screen.queryByRole('button', { name: 'Split side A' })).toBeNull();
+  });
+
+  it('clicking Split in the menu adds a corner at the middle of that side, as one undoable step, turning the piece into a polygon', async () => {
+    const user = setup([piece('p1', 'A-1')], { ids: ['p1'] }, 'canvas');
+    await user.click(screen.getByRole('button', { name: 'select' }));
+    fireEvent.pointerDown(screen.getByRole('button', { name: /^Side A of A-1/ }));
+    fireEvent.pointerDown(screen.getByRole('button', { name: 'Split side A' }));
     const [p] = piecesNow();
     expect(p.outline).toHaveLength(5);
     expect(p.outline[1]).toEqual({ x: 1000, y: 0 });
     expect(p.shape).toBe('polygon');
     expect(screen.getByTestId('past').textContent).toBe('1');
+    // The menu closes itself once the split lands.
+    expect(screen.queryByRole('button', { name: 'Split side A' })).toBeNull();
+  });
+
+  it('clicking away from the side closes its menu without splitting anything', async () => {
+    const user = setup([piece('p1', 'A-1')], { ids: ['p1'] }, 'canvas');
+    await user.click(screen.getByRole('button', { name: 'select' }));
+    fireEvent.pointerDown(screen.getByRole('button', { name: /^Side A of A-1/ }));
+    expect(screen.getByRole('button', { name: 'Split side A' })).toBeDefined();
+    fireEvent.pointerDown(screen.getByTestId('split-menu-click-away'));
+    expect(screen.queryByRole('button', { name: 'Split side A' })).toBeNull();
+    expect(piecesNow()[0].outline).toHaveLength(4);
+  });
+
+  it('its own "×" also closes the menu without splitting anything', async () => {
+    const user = setup([piece('p1', 'A-1')], { ids: ['p1'] }, 'canvas');
+    await user.click(screen.getByRole('button', { name: 'select' }));
+    fireEvent.pointerDown(screen.getByRole('button', { name: /^Side A of A-1/ }));
+    fireEvent.pointerDown(screen.getByRole('button', { name: 'Close split menu' }));
+    expect(screen.queryByRole('button', { name: 'Split side A' })).toBeNull();
+    expect(piecesNow()[0].outline).toHaveLength(4);
+  });
+
+  it('moving a corner closes a side\'s open menu, since its sides have changed', async () => {
+    const user = setup([piece('p1', 'A-1')], { ids: ['p1'] }, 'canvas');
+    await user.click(screen.getByRole('button', { name: 'select' }));
+    fireEvent.pointerDown(screen.getByRole('button', { name: /^Side A of A-1/ }));
+    expect(screen.getByRole('button', { name: 'Split side A' })).toBeDefined();
+    fireEvent.keyDown(screen.getByRole('button', { name: /^Corner 1 of A-1/ }), { key: 'ArrowRight' });
+    expect(screen.queryByRole('button', { name: 'Split side A' })).toBeNull();
+  });
+
+  it('Escape closes an open split menu instead of clearing the selection', async () => {
+    const user = setup([piece('p1', 'A-1')], { ids: ['p1'] }, 'canvas');
+    await user.click(screen.getByRole('button', { name: 'select' }));
+    const side = screen.getByRole('button', { name: /^Side A of A-1/ });
+    fireEvent.pointerDown(side);
+    expect(screen.getByRole('button', { name: 'Split side A' })).toBeDefined();
+    fireEvent.keyDown(side, { key: 'Escape' });
+    expect(screen.queryByRole('button', { name: 'Split side A' })).toBeNull();
+    // The piece is still selected — Escape only dismissed the menu.
+    expect(JSON.parse(screen.getByTestId('selected').textContent ?? '[]')[0]).toEqual(['p1']);
+  });
+
+  it('Escape on the Split button itself also just closes the menu, without splitting', async () => {
+    const user = setup([piece('p1', 'A-1')], { ids: ['p1'] }, 'canvas');
+    await user.click(screen.getByRole('button', { name: 'select' }));
+    fireEvent.pointerDown(screen.getByRole('button', { name: /^Side A of A-1/ }));
+    fireEvent.keyDown(screen.getByRole('button', { name: 'Split side A' }), { key: 'Escape' });
+    expect(screen.queryByRole('button', { name: 'Split side A' })).toBeNull();
+    expect(piecesNow()[0].outline).toHaveLength(4);
+  });
+
+  it('activating Split by keyboard leaves focus on the side, not dropped to the body', async () => {
+    const user = setup([piece('p1', 'A-1')], { ids: ['p1'] }, 'canvas');
+    await user.click(screen.getByRole('button', { name: 'select' }));
+    fireEvent.pointerDown(screen.getByRole('button', { name: /^Side A of A-1/ }));
+    fireEvent.keyDown(screen.getByRole('button', { name: 'Split side A' }), { key: 'Enter' });
+    expect(piecesNow()[0].outline).toHaveLength(5);
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: /^Side A of A-1/ }));
+  });
+
+  it('activating the "×" by keyboard also leaves focus on the side', async () => {
+    const user = setup([piece('p1', 'A-1')], { ids: ['p1'] }, 'canvas');
+    await user.click(screen.getByRole('button', { name: 'select' }));
+    const side = screen.getByRole('button', { name: /^Side A of A-1/ });
+    fireEvent.pointerDown(side);
+    fireEvent.keyDown(screen.getByRole('button', { name: 'Close split menu' }), { key: 'Enter' });
+    expect(screen.queryByRole('button', { name: 'Split side A' })).toBeNull();
+    expect(document.activeElement).toBe(side);
   });
 
   it('moves a corner with the arrow keys, but not into an invalid shape', async () => {

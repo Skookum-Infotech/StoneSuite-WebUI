@@ -1,16 +1,18 @@
-// Top toolbar: save, undo/redo, zoom, DXF export and version history. The tools
-// that add pieces and cutouts live in the left panel (ShapePalette,
-// CutoutLibrary).
+// Top bar, in three parts: full screen, DXF export and version history as small
+// icons on the left; the Sketch / Cutout / Material switch in the middle; undo,
+// redo and the save button on the right. The tools that add pieces live in the
+// left rail (ShapePalette), the cutout tools in the Cutout panel.
 
 import { useState } from 'react';
+import { AlertTriangle, Check, Download, History, Loader2, Maximize2, Minimize2, Redo2, Save, Undo2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { buildAreaExport, downloadDxf } from '@/lib/drawing/dxfDownload';
-import { ZOOM_STEP } from '@/lib/drawing/constants';
 import type { Drawing } from '@/types/drawing';
 import type { AutosaveStatus } from './useDrawingAutosave';
 import { VersionDrawer } from './VersionDrawer';
 import { useDrawingEditor } from './DrawingEditorContext';
 import { useFullscreen } from './useFullscreen';
+import { WorkspaceTabs } from './WorkspaceTabs';
 
 const SAVE_BUTTON_LABEL: Record<AutosaveStatus, string> = {
   idle: 'Saved',
@@ -28,12 +30,29 @@ const SAVE_STATUS_TEXT: Record<AutosaveStatus, string> = {
   error: 'Save failed — your changes are not saved',
 };
 
-const BUTTON_CLASS = 'rounded border border-stone-200 px-2 py-1 text-xs disabled:opacity-40';
+const SAVE_ICON: Record<AutosaveStatus, typeof Save> = {
+  idle: Check,
+  dirty: Save,
+  saving: Loader2,
+  saved: Check,
+  error: AlertTriangle,
+};
+
+const SAVE_TONE: Record<AutosaveStatus, string> = {
+  idle: 'text-stone-500',
+  dirty: 'bg-brand text-stone-900 hover:bg-brand-hover',
+  saving: 'text-stone-500',
+  saved: 'text-stone-500',
+  error: 'border border-destructive text-destructive hover:bg-stone-100',
+};
+
+const ICON_BUTTON_CLASS = 'flex h-7 w-7 items-center justify-center rounded text-stone-600 hover:bg-stone-100 disabled:opacity-40 disabled:hover:bg-transparent';
+const ICON_CLASS = 'h-4 w-4';
 
 export function DrawingToolbar(
   { saveStatus, onSave, orderNumber }: { saveStatus: AutosaveStatus; onSave: () => void; orderNumber: string },
 ) {
-  const { state, dispatch, fitToArea } = useDrawingEditor();
+  const { state, dispatch } = useDrawingEditor();
   const [showVersions, setShowVersions] = useState(false);
   const { isFullscreen, toggle: toggleFullscreen } = useFullscreen();
 
@@ -49,60 +68,69 @@ export function DrawingToolbar(
     toast.success(`Exported ${file.fileName}`);
   };
   const canSave = saveStatus === 'dirty' || saveStatus === 'error';
-  const statusTone = saveStatus === 'error' ? 'text-destructive' : saveStatus === 'dirty' ? 'text-amber-700' : 'text-stone-500';
+  const SaveIcon = SAVE_ICON[saveStatus];
+  const fullscreenLabel = isFullscreen ? 'Exit full screen' : 'Full screen';
+  const FullscreenIcon = isFullscreen ? Minimize2 : Maximize2;
 
   return (
-    <div className="flex items-center gap-2">
-      <button
-        type="button"
-        aria-label="Save drawing"
-        disabled={!canSave}
-        onClick={onSave}
-        className="rounded bg-brand px-3 py-1 text-xs font-medium text-white disabled:bg-stone-200 disabled:text-stone-500"
-      >
-        {SAVE_BUTTON_LABEL[saveStatus]}
-      </button>
-      <span role="status" className={`min-w-44 text-2xs ${statusTone}`}>{SAVE_STATUS_TEXT[saveStatus]}</span>
+    <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+      <div className="flex items-center gap-0.5">
+        <button
+          type="button"
+          aria-label={fullscreenLabel}
+          title={fullscreenLabel}
+          aria-pressed={isFullscreen}
+          onClick={(e) => toggleFullscreen(e.currentTarget.closest('[data-drawing-editor]'))}
+          className={ICON_BUTTON_CLASS}
+        >
+          <FullscreenIcon className={ICON_CLASS} aria-hidden="true" />
+        </button>
+        <button type="button" aria-label="Export DXF" title="Export DXF" onClick={exportDxf} className={ICON_BUTTON_CLASS}>
+          <Download className={ICON_CLASS} aria-hidden="true" />
+        </button>
+        <button type="button" aria-label="Version history" title="Version history" onClick={() => setShowVersions(true)} className={ICON_BUTTON_CLASS}>
+          <History className={ICON_CLASS} aria-hidden="true" />
+        </button>
+      </div>
 
-      <span className="mx-2 h-5 w-px bg-stone-200" aria-hidden="true" />
+      <WorkspaceTabs />
 
-      <button type="button" aria-label="Undo" disabled={state.past.length === 0} onClick={() => dispatch({ type: 'undo' })} className={BUTTON_CLASS}>
-        Undo
-      </button>
-      <button type="button" aria-label="Redo" disabled={state.future.length === 0} onClick={() => dispatch({ type: 'redo' })} className={BUTTON_CLASS}>
-        Redo
-      </button>
-
-      <span className="mx-2 h-5 w-px bg-stone-200" aria-hidden="true" />
-
-      <button type="button" aria-label="Zoom out" onClick={() => dispatch({ type: 'setZoom', zoom: state.zoom - ZOOM_STEP })} className={BUTTON_CLASS}>
-        −
-      </button>
-      <span className="w-10 text-center text-2xs text-stone-500" aria-label="Zoom level">{Math.round(state.zoom * 100)}%</span>
-      <button type="button" aria-label="Zoom in" onClick={() => dispatch({ type: 'setZoom', zoom: state.zoom + ZOOM_STEP })} className={BUTTON_CLASS}>
-        +
-      </button>
-      <button type="button" aria-label="Fit area" onClick={fitToArea} className={BUTTON_CLASS}>
-        Fit
-      </button>
-
-      <span className="mx-2 h-5 w-px bg-stone-200" aria-hidden="true" />
-
-      <button
-        type="button"
-        aria-label={isFullscreen ? 'Exit full screen' : 'Full screen'}
-        aria-pressed={isFullscreen}
-        onClick={(e) => toggleFullscreen(e.currentTarget.closest('[data-drawing-editor]'))}
-        className={`${BUTTON_CLASS} ml-auto`}
-      >
-        {isFullscreen ? 'Exit full screen' : 'Full screen'}
-      </button>
-      <button type="button" aria-label="Export DXF" onClick={exportDxf} className={BUTTON_CLASS}>
-        Export DXF
-      </button>
-      <button type="button" onClick={() => setShowVersions(true)} className={BUTTON_CLASS}>
-        Version history
-      </button>
+      <div className="flex items-center justify-end gap-0.5">
+        <button
+          type="button"
+          aria-label="Undo"
+          title="Undo"
+          disabled={state.past.length === 0}
+          onClick={() => dispatch({ type: 'undo' })}
+          className={ICON_BUTTON_CLASS}
+        >
+          <Undo2 className={ICON_CLASS} aria-hidden="true" />
+        </button>
+        <button
+          type="button"
+          aria-label="Redo"
+          title="Redo"
+          disabled={state.future.length === 0}
+          onClick={() => dispatch({ type: 'redo' })}
+          className={ICON_BUTTON_CLASS}
+        >
+          <Redo2 className={ICON_CLASS} aria-hidden="true" />
+        </button>
+        {/* The status sentence is the button's tooltip and, for screen readers,
+            a live region — it no longer takes room on the bar. */}
+        <span role="status" className="sr-only">{SAVE_STATUS_TEXT[saveStatus]}</span>
+        <button
+          type="button"
+          aria-label="Save drawing"
+          title={SAVE_STATUS_TEXT[saveStatus] || SAVE_BUTTON_LABEL[saveStatus]}
+          disabled={!canSave}
+          onClick={onSave}
+          className={`ml-1 flex h-7 items-center gap-1 rounded px-2 text-2xs font-medium ${SAVE_TONE[saveStatus]}`}
+        >
+          <SaveIcon className={`${ICON_CLASS} ${saveStatus === 'saving' ? 'animate-spin' : ''}`} aria-hidden="true" />
+          {SAVE_BUTTON_LABEL[saveStatus]}
+        </button>
+      </div>
 
       {showVersions && (
         <VersionDrawer

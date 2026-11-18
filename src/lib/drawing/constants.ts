@@ -83,6 +83,10 @@ export const MAX_DIMENSION_MM = 30000;
 /** How far outside a piece's own edge its auto-placed dimension line sits
  *  — 1 inch. */
 export const DEFAULT_DIMENSION_OFFSET_MM = 25.4;
+/** The canvas never draws a piece's dimension line closer to its edge than
+ *  this many ON-SCREEN pixels. A fixed millimetre offset collapses onto the
+ *  outline when the view is zoomed out, leaving the measurement unreadable. */
+export const MIN_DIMENSION_OFFSET_PX = 28;
 
 /** The editor's undo/redo history depth (build spec Task 3). */
 export const MAX_UNDO_STEPS = 50;
@@ -92,17 +96,30 @@ export const MAX_UNDO_STEPS = 50;
 export const ARROW_KEY_STEP_MM = MM_PER_INCH / 16;
 export const SHIFT_ARROW_KEY_STEP_MM = MM_PER_INCH;
 
-/** Zoom range and step, as a multiplier (1 = 100%) (build spec Task 3:
- *  "zoom 25–400%"). */
-export const ZOOM_MIN = 0.25;
+/** Zoom range and step, as a multiplier (1 = 100%). The build spec said
+ *  25–400%; the low end went to 10% so a whole kitchen (25 ft and more) fits
+ *  on the board at once. */
+export const ZOOM_MIN = 0.1;
 export const ZOOM_MAX = 4;
 export const ZOOM_STEP = 0.25;
+
+/** The zoom the editor opens at: about 10 ft of board across on a laptop
+ *  screen, so a default 25 5/8" square is a small part of it, not most of it. */
+export const OPEN_ZOOM = 0.4;
 
 /** The canvas SVG's viewBox size, in viewBox units. The SVG fills whatever
  *  room its container gives it and keeps these proportions (`xMidYMid meet`:
  *  scaled to fit the tighter dimension, centred, the grid running on past it)
  *  — every screen<->world conversion in viewport.ts follows the same rule. */
 export const VIEWPORT_WIDTH = 800;
+
+/** Half-width, in mm, of the invisible sheets that catch pointer events on the
+ *  board (the background, the armed tool's click sheet, the cutout-placement
+ *  sheet, the menu click-away). The white board has no edge, so these must
+ *  reach well past anywhere the user can zoom out or pan to — at 10% zoom the
+ *  screen already spans 12 m, and a sheet that stops short leaves dead patches
+ *  where a click does nothing. */
+export const CANVAS_EXTENT_MM = 500_000;
 export const VIEWPORT_HEIGHT = 600;
 
 /** A dragged cutout or vertex snaps to this step — 1/4". */
@@ -115,5 +132,49 @@ export const HANDLE_RADIUS_VB = 5;
 /** Width of the invisible strip around an edge that counts as clicking it. */
 export const EDGE_HIT_WIDTH_PX = 12;
 
+/** How far outside the piece a side's "Split" menu sits, clear of the side
+ *  itself, before dividing by zoom. */
+export const SPLIT_MENU_OFFSET_PX = 20;
+
 /** A piece dragged to this many mm from where it started counts as moved. */
 export const MIN_DRAG_MM = 0.01;
+
+/** The square the Draw tool drops on a click: 25 5/8" long by 25 1/2" deep —
+ *  25 1/2" being the standard countertop depth. */
+export const DEFAULT_DRAW_LENGTH_MM = (25 + 5 / 8) * MM_PER_INCH;
+export const DEFAULT_DRAW_DEPTH_MM = 25.5 * MM_PER_INCH;
+
+/** Dragging a side with the Draw tool grows or shrinks the piece in steps of
+ *  1/16", and a newly drawn square lands on the same 1/16" grid. */
+export const DRAW_RESIZE_STEP_MM = MM_PER_INCH / 16;
+
+/** Dragging a side along its own length grows a return leg this wide off
+ *  that end — 25 1/2", the standard countertop depth. */
+export const LEG_WIDTH_MM = DEFAULT_DRAW_DEPTH_MM;
+
+/** How far (screen pixels) a side drag must wander along the side before it
+ *  turns from a resize into a leg — enough to ignore hand wobble. */
+export const LEG_TURN_PX = 12;
+
+/** How close (screen pixels) a side dragged back must come to the line of its
+ *  neighbour to snap onto it and join it. */
+export const JOIN_SNAP_PX = 8;
+
+/** A leg that would leave less than this (1") of the side beside it extends
+ *  the whole piece instead, rather than leave a sliver of stone. */
+export const MIN_LEG_REMAINDER_MM = MM_PER_INCH;
+
+/** Thickness given to a piece drawn on the canvas (no thickness is asked for). */
+export const DEFAULT_PIECE_THICKNESS_MM = 30;
+
+/** Border tool defaults (a bump's gaps and height, an arc's height) — 4" and
+ *  3", in mm; shown in whatever unit the drawing displays. */
+export const DEFAULT_BORDER_GAP_MM = 4 * MM_PER_INCH;
+export const DEFAULT_BORDER_HEIGHT_MM = 3 * MM_PER_INCH;
+
+/** Corner tool default (each size and a bump's height) — 4", in mm. */
+export const DEFAULT_CORNER_SIZE_MM = 4 * MM_PER_INCH;
+
+/** Straight pieces an arc side is cut into when something needs a polyline
+ *  (DXF export, overlap checks, the mini-map) rather than a true SVG arc. */
+export const ARC_SEGMENTS = 32;

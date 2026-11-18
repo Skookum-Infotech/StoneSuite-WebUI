@@ -20,6 +20,22 @@ describe('pieceMetrics', () => {
     m.edges.forEach((e) => expect(e.startAngleDeg).toBeCloseTo(90));
   });
 
+  it('counts a bowed side in the area, the perimeter and the finished edge length', () => {
+    // The 600 mm side (index 1) bowed out by half its length is a half circle of radius 300.
+    const bowed = { ...piece(), edges: [{ index: 1, code: 'EE', arcHeightMm: 300 }] };
+    const m = pieceMetrics(bowed);
+    expect(m.grossAreaMm2).toBeCloseTo(1_200_000 + (Math.PI * 300 * 300) / 2);
+    expect(m.perimeterMm).toBeCloseTo(5200 - 600 + Math.PI * 300);
+    expect(m.edgeTotals.finishedLengthMm).toBeCloseTo(Math.PI * 300);
+    // The side's own length stays the straight line across it, the way the drawing labels it.
+    expect(m.edges[1].lengthMm).toBe(600);
+  });
+
+  it('takes a bowed-in side out of the area', () => {
+    const m = pieceMetrics({ ...piece(), edges: [{ index: 1, arcHeightMm: -300 }] });
+    expect(m.grossAreaMm2).toBeCloseTo(1_200_000 - (Math.PI * 300 * 300) / 2);
+  });
+
   it('has no cutout area without cutouts', () => {
     const m = pieceMetrics(piece());
     expect(m.cutoutAreaMm2).toBe(0);

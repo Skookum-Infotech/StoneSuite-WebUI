@@ -15,11 +15,20 @@ import { DRAWING_SCHEMA_VERSION, type Drawing } from '@/types/drawing';
 import type { SalesOrder } from '@/types/salesOrder';
 import { DrawingEditorProvider, useDrawingEditor } from '@/components/drawing/DrawingEditorContext';
 import { DrawingToolbar } from '@/components/drawing/DrawingToolbar';
-import { AreaTabs } from '@/components/drawing/AreaTabs';
 import { DrawingCanvas } from '@/components/drawing/DrawingCanvas';
-import { PieceInspector } from '@/components/drawing/PieceInspector';
+import { BorderModeBar } from '@/components/drawing/BorderModeBar';
+import { CornerModeBar } from '@/components/drawing/CornerModeBar';
+import { DrawModeBar } from '@/components/drawing/DrawModeBar';
+import { EdgeModeBar } from '@/components/drawing/EdgeModeBar';
+import { EdgeTypesProvider } from '@/components/drawing/EdgeTypesContext';
+import { MaterialPickerProvider } from '@/components/drawing/MaterialPickerContext';
+import { MiniMap } from '@/components/drawing/MiniMap';
+import { InspectorPanel } from '@/components/drawing/InspectorPanel';
+import { WorkspacePanel } from '@/components/drawing/WorkspacePanel';
+import { OPEN_ZOOM } from '@/lib/drawing/constants';
+import { TextControls } from '@/components/drawing/TextControls';
 import { ToolRail } from '@/components/drawing/ToolRail';
-import { AreaSummary } from '@/components/drawing/AreaSummary';
+import { DrawingStatusBar } from '@/components/drawing/DrawingStatusBar';
 import { ConflictDialog } from '@/components/drawing/ConflictDialog';
 import { SquareFootageBanner } from '@/components/drawing/SquareFootageBanner';
 import { useDrawingAutosave } from '@/components/drawing/useDrawingAutosave';
@@ -79,12 +88,16 @@ export default function SalesOrderDrawingPage() {
   const drawing = drawingQuery.data ?? blankDrawing(id);
 
   return (
-    <DrawingEditorProvider drawing={drawing} materialLines={orderQuery.data.items}>
-      <DrawingEditorBody
-        salesOrderId={id}
-        order={orderQuery.data}
-        onOrderUpdated={(updated) => queryClient.setQueryData(['sales-order', id], updated)}
-      />
+    <DrawingEditorProvider drawing={drawing} materialLines={orderQuery.data.items} initialZoom={OPEN_ZOOM}>
+      <EdgeTypesProvider>
+        <MaterialPickerProvider>
+          <DrawingEditorBody
+            salesOrderId={id}
+            order={orderQuery.data}
+            onOrderUpdated={(updated) => queryClient.setQueryData(['sales-order', id], updated)}
+          />
+        </MaterialPickerProvider>
+      </EdgeTypesProvider>
     </DrawingEditorProvider>
   );
 }
@@ -177,21 +190,30 @@ function DrawingEditorBody({ salesOrderId, order, onOrderUpdated }: {
       ref={fillRef}
       data-testid="drawing-editor"
       data-drawing-editor
-      className="flex h-[calc(100dvh-var(--fill-top))] flex-col gap-2 overflow-hidden bg-white p-2 [&:fullscreen]:h-dvh"
+      className="flex h-[calc(100dvh-var(--fill-top))] gap-2 overflow-hidden bg-white p-2 [&:fullscreen]:h-dvh"
     >
-      <DrawingToolbar saveStatus={status} onSave={saveNow} orderNumber={order.salesOrderNumber} />
-      <AreaTabs />
-      <SquareFootageBanner areas={state.present.areas} order={order} onLineUpdated={onOrderUpdated} />
-      <div className="flex min-h-0 flex-1 gap-2">
-        <ToolRail />
-        <div className="min-h-0 min-w-0 flex-1">
-          <DrawingCanvas />
+      {/* The side panel is its own full-height column, so the top bar (and its
+          undo / redo / save) shares the width left over beside it instead of
+          running across the top of it. */}
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-2">
+        <DrawingToolbar saveStatus={status} onSave={saveNow} orderNumber={order.salesOrderNumber} />
+        <SquareFootageBanner areas={state.present.areas} order={order} onLineUpdated={onOrderUpdated} />
+        <div className="flex min-h-0 flex-1 gap-2">
+          <ToolRail />
+          <div className="relative min-h-0 min-w-0 flex-1">
+            <DrawingCanvas />
+            <DrawModeBar />
+            <BorderModeBar />
+            <CornerModeBar />
+            <EdgeModeBar />
+            <TextControls />
+            <MiniMap />
+            <InspectorPanel />
+          </div>
         </div>
-        <aside aria-label="Properties" className="modal-scrollbar w-72 shrink-0 overflow-y-auto overflow-x-hidden border-l border-stone-200 pl-2">
-          <PieceInspector />
-        </aside>
+        <DrawingStatusBar />
       </div>
-      <AreaSummary />
+      <WorkspacePanel />
       {conflictOpen && (
         <ConflictDialog onReloadLatest={reloadLatest} onSaveAsCopy={saveAsCopy} onClose={() => setConflictOpen(false)} />
       )}

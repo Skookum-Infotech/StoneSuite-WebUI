@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Drawing, DrawingArea, Piece } from '@/types/drawing';
+import { ZOOM_MAX, ZOOM_MIN } from './constants';
 import { createInitialEditorState, editorReducer, type EditorState } from './drawingReducer';
 
 function makePiece(id: string, label: string, overrides: Partial<Piece> = {}): Piece {
@@ -129,7 +130,7 @@ describe('editorReducer — view-only actions and undo/redo', () => {
     expect(s1.pan).toEqual({ x: 5, y: 5 });
   });
 
-  it.each([[10, 4], [-1, 0.25], [1.5, 1.5]])('setZoom clamps %s to %s', (input, expected) => {
+  it.each([[10, ZOOM_MAX], [-1, ZOOM_MIN], [1.5, 1.5]])('setZoom clamps %s to %s', (input, expected) => {
     expect(editorReducer(blank(), { type: 'setZoom', zoom: input }).zoom).toBe(expected);
   });
 

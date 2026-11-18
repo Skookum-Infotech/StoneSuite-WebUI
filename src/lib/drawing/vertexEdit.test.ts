@@ -92,3 +92,21 @@ describe('insertVertex / removeVertex', () => {
     expect(out.edges.map((e) => e.code).sort()).toEqual(['X', 'Z']);
   });
 });
+
+describe('curved sides through corner edits', () => {
+  const curved = [{ index: 1, code: 'EE', arcHeightMm: 40 }, { index: 2, arcHeightMm: 10 }];
+
+  it('splitting a curved side leaves both halves straight but keeps their profile', () => {
+    const next = insertVertex({ outline: rectOutline(1000, 600), edges: curved }, 1);
+    expect(next.edges.find((e) => e.index === 1)).toEqual({ index: 1, code: 'EE' });
+    expect(next.edges.find((e) => e.index === 2)).toEqual({ index: 2, code: 'EE' });
+    // The side that was after it moved along and kept its own curve.
+    expect(next.edges.find((e) => e.index === 3)?.arcHeightMm).toBe(10);
+  });
+
+  it('removing a corner straightens the side that absorbs it', () => {
+    const next = removeVertex({ outline: rectOutline(1000, 600), edges: curved }, 2);
+    expect(next.edges.find((e) => e.index === 1)).toEqual({ index: 1, code: 'EE' });
+    expect(next.edges.some((e) => e.arcHeightMm !== undefined)).toBe(false);
+  });
+});

@@ -23,6 +23,13 @@ const drawing: Drawing = {
   updatedAt: '', updatedBy: { id: 'u1', name: 'T' },
 };
 
+// The rail no longer carries a Line tool; the tool itself still exists, so
+// these tests arm it directly.
+function ArmLine() {
+  const { setTool } = useDrawingEditor();
+  return <button type="button" onClick={() => setTool('line')}>Line</button>;
+}
+
 function Readout() {
   const { state } = useDrawingEditor();
   const area = state.present.areas[0];
@@ -45,6 +52,7 @@ function open() {
     <DrawingEditorProvider drawing={drawing} materialLines={[]}>
       <AnnotationPanel />
       <ToolRail />
+      <ArmLine />
       <DrawingCanvas />
       <Readout />
     </DrawingEditorProvider>,

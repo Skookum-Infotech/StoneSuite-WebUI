@@ -1,4 +1,4 @@
-// Draws the active area's notes and manual dimensions, plus the line being
+// Draws the active area's manual dimensions (its text is TextNoteLayer's), plus the line being
 // drawn right now: its first point, and a rubber band following the cursor.
 // Presentational — editing lives in the Annotations panel.
 
@@ -7,7 +7,6 @@ import { layoutDimension } from '@/lib/drawing/dimensions';
 import { useDrawingEditor } from './DrawingEditorContext';
 import { DimensionLine } from './DimensionLine';
 
-const NOTE_FONT_SIZE = 14;
 const PENDING_RADIUS = 4;
 
 export function AnnotationLayer({ pendingFrom, hoverPoint }: { pendingFrom: Point | null; hoverPoint: Point | null }) {
@@ -26,9 +25,6 @@ export function AnnotationLayer({ pendingFrom, hoverPoint }: { pendingFrom: Poin
           displayUnit={displayUnit}
           fractionDenominator={fractionDenominator}
         />
-      ))}
-      {area.notes.map((n) => (
-        <text key={n.id} x={n.at.x} y={-n.at.y} fontSize={px(NOTE_FONT_SIZE)} className="fill-brand">{n.text}</text>
       ))}
       {pendingFrom && hoverPoint && (
         <line

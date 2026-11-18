@@ -1,15 +1,15 @@
 import { Lock, Scissors } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { allocationOf, customerReservationOf } from '@/lib/unitAllocation';
+import { allocationOf, customerReservationOf, orderHoldOf } from '@/lib/unitAllocation';
 import type { InventoryUnit } from '@/types/inventory';
 import { UnitAllocationChips } from './UnitAllocationChips';
 
 // A strip under the slab page's header, on every tab, that says whose stone this
 // is: reserved for (amber, still whole) or cut for (grey, gone) a customer order,
-// or reserved straight for a customer from Inventory. Renders nothing for a slab
-// nobody has claimed.
+// reserved straight for a customer from Inventory, or held for a sales order from
+// its Material drawing. Renders nothing for a slab nobody has claimed.
 export function UnitAllocationBanner({ unit }: { unit: InventoryUnit }) {
-  const allocation = allocationOf(unit) ?? (customerReservationOf(unit) ? { held: true } : null);
+  const allocation = allocationOf(unit) ?? (customerReservationOf(unit) || orderHoldOf(unit) ? { held: true } : null);
   if (!allocation) return null;
 
   const Icon = allocation.held ? Lock : Scissors;
