@@ -8,7 +8,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { Drawing, Piece } from '@/types/drawing';
 import { MIN_DIMENSION_OFFSET_PX } from '@/lib/drawing/constants';
-import { rectOutline } from '@/lib/drawing/geometry';
+import { circleOutline, rectOutline } from '@/lib/drawing/geometry';
 import { DrawingEditorProvider, useDrawingEditor } from './DrawingEditorContext';
 import { PieceDimensions } from './PieceDimensions';
 
@@ -136,5 +136,43 @@ describe('PieceDimensions', () => {
     const group = lines.slice(0, 5);
     const shortest = group.reduce((a, b) => (byLength(b) < byLength(a) ? b : a));
     expect(shortest.getAttribute('stroke-dasharray')).toBeNull();
+  });
+});
+
+describe('PieceDimensions — a circle', () => {
+  // 5" radius, 10" across.
+  const circlePiece: Piece = {
+    id: 'c1', label: 'C-1', shape: 'circle', radiusMm: 127, outline: circleOutline(127), position: { x: 0, y: 0 },
+    rotationDeg: 0, thicknessMm: 30, edges: [], seams: [], cutouts: [],
+  };
+  const circleDrawing: Drawing = {
+    schemaVersion: 1, salesOrderId: 's', version: 0, displayUnit: 'in', fractionDenominator: 32,
+    areas: [{ id: 'a', name: 'A', code: '', sortOrder: 0, pieces: [circlePiece], cabinets: [], notes: [] }],
+    updatedAt: '', updatedBy: { id: 'u', name: 'U' },
+  };
+
+  function showCircle() {
+    render(
+      <DrawingEditorProvider drawing={circleDrawing} materialLines={[]}>
+        <svg data-testid="canvas"><PieceDimensions piece={circlePiece} displayUnit="in" fractionDenominator={32} /></svg>
+      </DrawingEditorProvider>,
+    );
+  }
+
+  it('shows exactly 3 dimensions — top width, bottom width, and the radius — not one per outline point', () => {
+    showCircle();
+    expect(texts().map((t) => t.textContent)).toEqual(['A: 10"', 'B: 10"', 'C: 5"']);
+  });
+
+  it('stays centred on the piece\'s position regardless of rotationDeg', () => {
+    render(
+      <DrawingEditorProvider drawing={circleDrawing} materialLines={[]}>
+        <svg data-testid="rotated">
+          <PieceDimensions piece={{ ...circlePiece, rotationDeg: 37 }} displayUnit="in" fractionDenominator={32} />
+        </svg>
+      </DrawingEditorProvider>,
+    );
+    const rotatedTexts = Array.from(screen.getByTestId('rotated').querySelectorAll('text'));
+    expect(rotatedTexts.map((t) => t.textContent)).toEqual(['A: 10"', 'B: 10"', 'C: 5"']);
   });
 });

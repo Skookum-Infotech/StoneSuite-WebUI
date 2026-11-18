@@ -10,7 +10,9 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { Drawing } from '@/types/drawing';
-import { DEFAULT_DRAW_DEPTH_MM, DEFAULT_DRAW_LENGTH_MM, DRAW_RESIZE_STEP_MM, LEG_WIDTH_MM } from '@/lib/drawing/constants';
+import {
+  DEFAULT_CIRCLE_RADIUS_MM, DEFAULT_DRAW_DEPTH_MM, DEFAULT_DRAW_LENGTH_MM, DRAW_RESIZE_STEP_MM, LEG_WIDTH_MM,
+} from '@/lib/drawing/constants';
 import { DrawModeBar } from './DrawModeBar';
 import { DrawingCanvas } from './DrawingCanvas';
 import { DrawingEditorProvider, useDrawingEditor } from './DrawingEditorContext';
@@ -116,10 +118,19 @@ describe('Draw tool — rail and mode bar', () => {
     expect(screen.getByRole('button', { name: 'Square' }).getAttribute('aria-pressed')).toBe('true');
   });
 
-  it('Circle and Points are present but disabled until they are built', async () => {
+  it('Circle arms the Circle mode and shows its radius form', async () => {
     await open(false);
-    expect((screen.getByRole('button', { name: 'Circle' }) as HTMLButtonElement).disabled).toBe(true);
-    expect((screen.getByRole('button', { name: 'Points' }) as HTMLButtonElement).disabled).toBe(true);
+    await userEvent.click(screen.getByRole('button', { name: 'Circle' }));
+    expect(screen.getByRole('button', { name: 'Circle' }).getAttribute('aria-pressed')).toBe('true');
+    expect(screen.getByRole('button', { name: 'Square' }).getAttribute('aria-pressed')).toBe('false');
+    expect(screen.getByRole('form', { name: 'Circle radius' })).toBeInTheDocument();
+  });
+
+  it('Points leaves the Draw tool for the editor\'s own point-by-point polygon tool', async () => {
+    await open(false);
+    await userEvent.click(screen.getByRole('button', { name: 'Points' }));
+    expect(screen.getByTestId('tool').textContent).toBe('polygon');
+    expect(screen.queryByRole('group', { name: 'Draw mode' })).toBeNull();
   });
 
   it('the pencil toggles the tool off again and hides the bar', async () => {
@@ -202,6 +213,70 @@ describe('Draw tool — click to drop a square', () => {
     fireEvent.pointerMove(sheet, { pointerId: 1, clientX: 100, clientY: 100, movementX: -60, movementY: 0 });
     fireEvent.pointerUp(sheet, { pointerId: 1, button: PRIMARY, clientX: 100, clientY: 100 });
     expect(pieces()).toHaveLength(0);
+  });
+});
+
+describe('Draw tool — click to drop a circle', () => {
+  it('drops a default-radius circle centred on the click and stays armed', async () => {
+    await open(false);
+    await userEvent.click(screen.getByRole('button', { name: 'Circle' }));
+    click(0, 0);
+    const [piece] = pieces();
+    expect(pieces()).toHaveLength(1);
+    // Centred on the click: every outline point is DEFAULT_CIRCLE_RADIUS_MM from the position.
+    expect(piece.position.x).toBeCloseTo(0, 6);
+    expect(piece.position.y).toBeCloseTo(0, 6);
+    const radii = piece.outline.map((p) => Math.hypot(p.x - piece.position.x, p.y - piece.position.y));
+    radii.forEach((r) => expect(r).toBeCloseTo(DEFAULT_CIRCLE_RADIUS_MM, 6));
+    expect(screen.getByTestId('tool').textContent).toBe('draw');
+  });
+
+  it('a typed radius and Apply arms the next circle with it', async () => {
+    await open(false);
+    await userEvent.click(screen.getByRole('button', { name: 'Circle' }));
+    const input = screen.getByRole('textbox', { name: /radius/i });
+    await userEvent.clear(input);
+    await userEvent.type(input, '10"');
+    await userEvent.click(screen.getByRole('button', { name: 'Apply' }));
+    click(0, 0);
+    const [piece] = pieces();
+    const radius = Math.hypot(piece.outline[0].x - piece.position.x, piece.outline[0].y - piece.position.y);
+    expect(radius).toBeCloseTo(10 * 25.4, 1);
+  });
+
+  it('places a second circle with the next label', async () => {
+    await open(false);
+    await userEvent.click(screen.getByRole('button', { name: 'Circle' }));
+    click(0, 0);
+    click(2000, 0);
+    expect(pieces().map((p) => p.label)).toEqual(['A-1', 'A-2']);
+  });
+
+  it('a click on an existing piece does not stack a circle on it', async () => {
+    await open(true);
+    await userEvent.click(screen.getByRole('button', { name: 'Circle' }));
+    click(300, -200);
+    expect(pieces()).toHaveLength(1);
+  });
+
+  it('switching back to Square drops a square again', async () => {
+    await open(false);
+    await userEvent.click(screen.getByRole('button', { name: 'Circle' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Square' }));
+    click(0, 0);
+    const [piece] = pieces();
+    expect(piece.outline).toHaveLength(4);
+  });
+
+  it('a selected circle shows no per-point drag handles — it stays the size it was created at', async () => {
+    await open(false);
+    await userEvent.click(screen.getByRole('button', { name: 'Circle' }));
+    click(0, 0);
+    // Back to Select, keeping the circle (just placed) selected.
+    await userEvent.click(screen.getByRole('button', { name: 'Draw' }));
+    expect(screen.getByTestId('tool').textContent).toBe('select');
+    expect(screen.queryAllByRole('button', { name: /^Corner \d+ of/ })).toHaveLength(0);
+    expect(screen.queryAllByRole('button', { name: /^Side [A-Z]+ of/ })).toHaveLength(0);
   });
 });
 

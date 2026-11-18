@@ -14,6 +14,7 @@ import {
 } from '@/lib/drawing/drawingReducer';
 import { useBorderToolState, type BorderToolState } from './useBorderToolState';
 import { useCornerToolState, type CornerToolState } from './useCornerToolState';
+import { useDrawToolState, type DrawToolState } from './useDrawToolState';
 import { useEdgeToolState, type EdgeToolState } from './useEdgeToolState';
 
 /** Leaves this much of the viewport empty around the fitted content, so
@@ -57,6 +58,8 @@ export interface DrawingEditorContextValue {
   corner: CornerToolState;
   /** The Edges tool's picked edge type. */
   edge: EdgeToolState;
+  /** The Draw tool's armed shape (Square/Circle) and Circle's own radius. */
+  draw: DrawToolState;
   startPlacing: (pieceId: string, cutout: Cutout) => void;
   cancelPlacing: () => void;
   materialLines: SalesOrderLine[];
@@ -102,6 +105,7 @@ export function DrawingEditorProvider(
   const corner = useCornerToolState(tool === 'corner');
   const { setTarget: setCornerTarget } = corner;
   const edge = useEdgeToolState();
+  const draw = useDrawToolState();
   const [workspace, setWorkspaceState] = useState<EditorWorkspace>('sketch');
   const [editingCutoutId, editCutout] = useState<string | null>(null);
   const [placing, setPlacing] = useState<PlacingCutout | null>(null);
@@ -220,13 +224,13 @@ export function DrawingEditorProvider(
   const value = useMemo<DrawingEditorContextValue>(
     () => ({
       state, dispatch, tool, setTool, workspace, setWorkspace, editingCutoutId, editCutout, placing, startPlacing,
-      selectedNoteId, selectNote, border, corner, edge, cancelPlacing, materialLines, mapOpen, toggleMap, dimensionsOn, toggleDimensions, propertiesOpen, toggleProperties, fitToArea, copySelection, pasteClipboard, duplicateSelection,
+      selectedNoteId, selectNote, border, corner, edge, draw, cancelPlacing, materialLines, mapOpen, toggleMap, dimensionsOn, toggleDimensions, propertiesOpen, toggleProperties, fitToArea, copySelection, pasteClipboard, duplicateSelection,
     }),
     // fitToArea closes over state/materialLines, so it's already covered by
     // those deps — listing it too would just be the same change twice.
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [
-      state, tool, setTool, workspace, setWorkspace, editingCutoutId, placing, startPlacing, selectedNoteId, border, corner, edge, cancelPlacing, materialLines, mapOpen, toggleMap, dimensionsOn, toggleDimensions, propertiesOpen,
+      state, tool, setTool, workspace, setWorkspace, editingCutoutId, placing, startPlacing, selectedNoteId, border, corner, edge, draw, cancelPlacing, materialLines, mapOpen, toggleMap, dimensionsOn, toggleDimensions, propertiesOpen,
       toggleProperties, copySelection, pasteClipboard, duplicateSelection,
     ],
   );

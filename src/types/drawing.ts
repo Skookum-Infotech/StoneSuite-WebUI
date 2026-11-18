@@ -143,14 +143,21 @@ export interface Cutout {
 export interface Piece {
   id: string;
   label: string; // 'A-1'
-  shape: 'rect' | 'L' | 'U' | 'polygon';
+  shape: 'rect' | 'L' | 'U' | 'polygon' | 'circle';
   kind?: PieceKind;
-  outline: Point[]; // local coords, clockwise, closed implicitly
+  /** local coords, clockwise, closed implicitly — for `shape: 'circle'` this
+   *  is a `radiusMm`-sized regular polygon approximation (lib/drawing/geometry.ts
+   *  `circleOutline`), centred on the origin, so area/export/slab-fit work on
+   *  it exactly like any other outline; `position` is the circle's centre. */
+  outline: Point[];
   position: Point;
   /** Clockwise rotation about the local origin, in degrees (any value). */
   rotationDeg: number;
   thicknessMm: number;
   cornerRadiusMm?: number;
+  /** Only for `shape: 'circle'` — the exact radius the outline approximates,
+   *  used for its true-circle dimension lines rather than per-edge ones. */
+  radiusMm?: number;
   salesOrderLineId?: string;
   edges: PieceEdge[];
   seams: Seam[];

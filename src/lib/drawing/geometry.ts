@@ -3,6 +3,7 @@
 // both the canvas and the exporter build on these.
 
 import type { Point } from '@/types/drawing';
+import { ROUND_CUTOUT_SEGMENTS } from './constants';
 
 /** Clockwise outline of a rectangle, `lengthMm` wide (+X) by `widthMm` deep
  *  (-Y), with the first point at the origin. */
@@ -13,6 +14,16 @@ export function rectOutline(lengthMm: number, widthMm: number): Point[] {
     { x: lengthMm, y: -widthMm },
     { x: 0, y: -widthMm },
   ];
+}
+
+/** Clockwise outline of a circle of `radiusMm`, centred on the origin —
+ *  same regular-polygon approximation `cutouts.ts`'s round shapes use, so
+ *  area/perimeter/export/slab-fit all treat it like any other outline. */
+export function circleOutline(radiusMm: number, segments: number = ROUND_CUTOUT_SEGMENTS): Point[] {
+  return Array.from({ length: segments }, (_, i) => {
+    const angle = -(2 * Math.PI * i) / segments;
+    return { x: radiusMm * Math.cos(angle), y: radiusMm * Math.sin(angle) };
+  });
 }
 
 /** The outline's edges, each as its two endpoints in winding order — the

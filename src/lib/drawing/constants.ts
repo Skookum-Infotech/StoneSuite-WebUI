@@ -167,6 +167,9 @@ export const MIN_LEG_REMAINDER_MM = MM_PER_INCH;
 /** Thickness given to a piece drawn on the canvas (no thickness is asked for). */
 export const DEFAULT_PIECE_THICKNESS_MM = 30;
 
+/** The Draw tool's Circle mode starting radius — 12 3/4", in mm. */
+export const DEFAULT_CIRCLE_RADIUS_MM = 12.75 * MM_PER_INCH;
+
 /** Border tool defaults (a bump's gaps and height, an arc's height) — 4" and
  *  3", in mm; shown in whatever unit the drawing displays. */
 export const DEFAULT_BORDER_GAP_MM = 4 * MM_PER_INCH;
@@ -178,3 +181,13 @@ export const DEFAULT_CORNER_SIZE_MM = 4 * MM_PER_INCH;
 /** Straight pieces an arc side is cut into when something needs a polyline
  *  (DXF export, overlap checks, the mini-map) rather than a true SVG arc. */
 export const ARC_SEGMENTS = 32;
+
+/** How close (screen pixels, not world mm — this is a click-precision target,
+ *  like CLICK_SLOP_PX/JOIN_SNAP_PX, not a world distance) the Points tool's
+ *  next click must land to ANY point already placed (not just the first) to
+ *  close the shape there. Also the on-screen size of each closable point's
+ *  own target ring, so what is drawn and what actually registers never drift
+ *  apart. A flat mm value
+ *  here would shrink to just a few on-screen pixels at the editor's own
+ *  opening zoom (0.4) — too small to reliably click. */
+export const CLOSE_POLYGON_HIT_PX = 14;
