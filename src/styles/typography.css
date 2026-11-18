@@ -14,7 +14,7 @@
 @theme {
   /* ── Type scale (px at a 16px root) ────────────────────────────────────── */
   --text-portal: 0.625rem;         /* 10   — "Workspace portal" label */
-  --text-nav-section: 0.65625rem;  /* 10.5 — sidebar section label */
+  --text-nav-section: 0.75rem;     /* 12   — sidebar section label */
   --text-micro: 0.6875rem;         /* 11   — KPI label, line under a value */
   --text-caption: 0.75rem;         /* 12   — table text, helper, error, pill */
   --text-button: 0.78125rem;       /* 12.5 — buttons, sidebar items, dialog message */
@@ -177,7 +177,7 @@
   line-height: 1.5;
   font-weight: 600;
   letter-spacing: 0.025em;
-  color: var(--color-ink-muted);
+  color: var(--color-ink);
 }
 /* No color: the sidebar sets it per state (idle ink, active lime-dark). */
 @utility type-nav-item {

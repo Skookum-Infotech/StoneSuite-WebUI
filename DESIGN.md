@@ -221,7 +221,7 @@ Every text role is one `type-*` class in `src/styles/typography.css` (sizes are 
 | Change vs last period | `type-delta` | 12px / 600 | Light green/amber pill with arrow |
 | KPI label / overline | `type-overline` | 11px / 600 caps, 0.06em | |
 | Sidebar item | `type-nav-item` | 12.5px / 600 | Casing as written |
-| Sidebar section | `type-nav-section` | 10.5px / 600 | Casing as written |
+| Sidebar section | `type-nav-section` | 12px / 600, ink | Casing as written |
 | Notification | `type-toast-title` / `type-toast-body` | 14px / 500 green · 13px / 400 | Success keeps its green background |
 | "Workspace portal" | `type-portal` | 10px / 700 caps, 0.35em | Decorative only |
 
@@ -281,7 +281,7 @@ One shared component (`components/ui/button.tsx`, or `buttonVariants()` for link
 - **Active item:** Lime-green background fill (`#ecfccb`), accent lime text (`#365314`), 8px radius
 - **Hover:** Stone-200 background tint, 150ms ease
 - **Items:** 12.5px Geist 600 (`type-nav-item`), ink. Active: accent lime text on lime-light.
-- **Section labels:** 10.5px 600 (`type-nav-section`), in their written casing (not capitals).
+- **Section labels:** 12px 600 in ink `#44403c`, 0.025em (`type-nav-section`), in their written casing (not capitals).
 - **Collapsed state:** Icon-only, 40px width; tooltip on hover
 
 ### Form Tab Bar
@@ -318,5 +318,5 @@ One shared component (`components/ui/button.tsx`, or `buttonVariants()` for link
 - **Don't** use display fonts (All Round Gothic) in buttons, form labels, or table cells. Geist is the UI font.
 - **Don't** use decorative motion. Transitions communicate state change, loading, or reveal — nothing else. No entrance animations for static content.
 - **Don't** mix the lime accent with the teal tab color on the same surface. They are complementary accents from different contexts.
-- **Don't** use font sizes below 11px. The only exceptions are the decorative "Workspace portal" label (10px) and sidebar section labels (10.5px).
+- **Don't** use font sizes below 11px. The only exception is the decorative "Workspace portal" label (10px).
 - **Don't** write inline `style={}` for fixed values. Inline styles are only for values computed at runtime (status colors, progress widths, popup positions).
