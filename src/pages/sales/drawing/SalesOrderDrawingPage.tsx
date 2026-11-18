@@ -5,7 +5,7 @@
 // immediately on Ctrl/Cmd+S), with a conflict dialog on a 409 and a
 // beforeunload guard while a save is pending (build spec §5 Task 5).
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { salesOrderService } from '@/services/salesOrderService';
@@ -33,6 +33,10 @@ import { ConflictDialog } from '@/components/drawing/ConflictDialog';
 import { SquareFootageBanner } from '@/components/drawing/SquareFootageBanner';
 import { useDrawingAutosave } from '@/components/drawing/useDrawingAutosave';
 import { useFillViewport } from '@/hooks/useFillViewport';
+import { ViewModeToggle, type ViewMode } from '@/components/drawing/ViewModeToggle';
+
+// three.js is heavy: it is only fetched the first time someone switches to 3D.
+const DrawingViewer3D = lazy(() => import('@/components/drawing/three/DrawingViewer3D').then((m) => ({ default: m.DrawingViewer3D })));
 
 function blankDrawing(salesOrderId: string): Drawing {
   return {
@@ -107,6 +111,7 @@ function DrawingEditorBody({ salesOrderId, order, onOrderUpdated }: {
 }) {
   const { state, dispatch, fitToArea } = useDrawingEditor();
   const [conflictOpen, setConflictOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<ViewMode>('2d');
   const fillRef = useFillViewport<HTMLDivElement>();
   const hasFitted = useRef(false);
 
@@ -201,14 +206,24 @@ function DrawingEditorBody({ salesOrderId, order, onOrderUpdated }: {
         <div className="flex min-h-0 flex-1 gap-2">
           <ToolRail />
           <div className="relative min-h-0 min-w-0 flex-1">
-            <DrawingCanvas />
-            <DrawModeBar />
-            <BorderModeBar />
-            <CornerModeBar />
-            <EdgeModeBar />
-            <TextControls />
-            <MiniMap />
-            <InspectorPanel />
+            {/* Stays mounted under the 3D view so its zoom, pan and selection survive a
+                round trip; inert keeps its shortcuts and focus out of reach meanwhile. */}
+            <div className="contents" inert={viewMode === '3d'}>
+              <DrawingCanvas />
+              <DrawModeBar />
+              <BorderModeBar />
+              <CornerModeBar />
+              <EdgeModeBar />
+              <TextControls />
+              <MiniMap />
+              <InspectorPanel />
+            </div>
+            {viewMode === '3d' && (
+              <Suspense fallback={<p role="status" className="absolute inset-0 z-40 grid place-items-center bg-stone-100 text-xs text-stone-500">Loading 3D view…</p>}>
+                <DrawingViewer3D />
+              </Suspense>
+            )}
+            <ViewModeToggle mode={viewMode} onChange={setViewMode} />
           </div>
         </div>
       </div>
