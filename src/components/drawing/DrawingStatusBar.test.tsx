@@ -1,13 +1,31 @@
 // @vitest-environment jsdom
 // The bottom bar: active area + Areas sidebar, square footage, zoom, map switch.
 
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import type { ReactNode } from 'react';
 import type { Drawing } from '@/types/drawing';
 import { ZOOM_MAX, ZOOM_MIN } from '@/lib/drawing/constants';
 import { DrawingEditorProvider, useDrawingEditor } from './DrawingEditorContext';
 import { DrawingStatusBar } from './DrawingStatusBar';
+
+vi.mock('@/services/companyProfileService', () => ({
+  companyProfileService: { get: vi.fn() },
+}));
+
+import { companyProfileService } from '@/services/companyProfileService';
+
+const BASE_PROFILE = {
+  companyName: 'Acme', legalName: '', industry: '', website: '', country: '', currency: '', timezone: '', taxId: '',
+  fabricationPercent: 20,
+  billingAddress: { line1: '', line2: '', suite: '', city: '', country: '', state: '', zip: '' },
+  shippingAddress: { line1: '', line2: '', suite: '', city: '', country: '', state: '', zip: '' },
+  returnAddress: { line1: '', line2: '', suite: '', city: '', country: '', state: '', zip: '' },
+  logoUrl: '',
+};
+vi.mocked(companyProfileService.get).mockResolvedValue(BASE_PROFILE);
 
 function drawing(): Drawing {
   return {
@@ -34,11 +52,16 @@ function Readout() {
 }
 
 function open() {
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const wrapper = ({ children }: { children: ReactNode }) => (
+    <QueryClientProvider client={client}>{children}</QueryClientProvider>
+  );
   render(
     <DrawingEditorProvider drawing={drawing()} materialLines={[]}>
       <DrawingStatusBar />
       <Readout />
     </DrawingEditorProvider>,
+    { wrapper },
   );
 }
 
@@ -70,10 +93,23 @@ describe('DrawingStatusBar — area', () => {
     expect(screen.queryByRole('complementary', { name: 'Areas' })).toBeNull();
   });
 
-  it('the ⓘ button shows the piece count and totals', async () => {
+  it('clicking the sq ft button pins the Countertop/Fabrication breakdown open until clicked again', async () => {
     open();
-    await userEvent.click(screen.getByRole('button', { name: 'Area details' }));
-    expect(screen.getByText('1 pieces')).toBeDefined();
+    const sqFtButton = screen.getByRole('button', { name: /^Sq ft:/ });
+    expect(screen.queryByText('Total Project Measurements (sq ft)')).toBeNull();
+
+    await userEvent.click(sqFtButton);
+    expect(screen.getByText('Total Project Measurements (sq ft)')).toBeInTheDocument();
+    expect(screen.getByText('Area: Kitchen')).toBeInTheDocument();
+    expect(screen.getByText('Piece: A-1')).toBeInTheDocument();
+    expect(sqFtButton).toHaveAttribute('aria-expanded', 'true');
+
+    // Stays open — moving the mouse away doesn't close it.
+    await userEvent.hover(document.body);
+    expect(screen.getByText('Total Project Measurements (sq ft)')).toBeInTheDocument();
+
+    await userEvent.click(sqFtButton);
+    expect(screen.queryByText('Total Project Measurements (sq ft)')).toBeNull();
   });
 });
 

@@ -192,6 +192,6 @@ describe('MiniMap', () => {
     open();
     const corner = screen.getByRole('region', { name: 'Drawing map' }).parentElement;
     expect(corner?.className).toContain('right-3');
-    expect(corner?.className).toContain('bottom-3');
+    expect(corner?.className).toContain('bottom-12');
   });
 });

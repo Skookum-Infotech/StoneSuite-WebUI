@@ -190,7 +190,7 @@ function DrawingEditorBody({ salesOrderId, order, onOrderUpdated }: {
       ref={fillRef}
       data-testid="drawing-editor"
       data-drawing-editor
-      className="flex h-[calc(100dvh-var(--fill-top))] gap-2 overflow-hidden bg-white p-2 [&:fullscreen]:h-dvh"
+      className="relative flex h-[calc(100dvh-var(--fill-top))] gap-2 overflow-hidden bg-white p-2 [&:fullscreen]:h-dvh"
     >
       {/* The side panel is its own full-height column, so the top bar (and its
           undo / redo / save) shares the width left over beside it instead of
@@ -211,9 +211,12 @@ function DrawingEditorBody({ salesOrderId, order, onOrderUpdated }: {
             <InspectorPanel />
           </div>
         </div>
-        <DrawingStatusBar />
       </div>
       <WorkspacePanel />
+      {/* Docked to the whole editor's own bottom edge/corners (not inside the
+          canvas column above), so opening WorkspacePanel never resizes or
+          squeezes it — see DrawingStatusBar's own comment. */}
+      <DrawingStatusBar />
       {conflictOpen && (
         <ConflictDialog onReloadLatest={reloadLatest} onSaveAsCopy={saveAsCopy} onClose={() => setConflictOpen(false)} />
       )}

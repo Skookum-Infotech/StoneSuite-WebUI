@@ -1,8 +1,14 @@
-// The bar along the bottom of the editor: the active area (click it to open
-// the Areas sidebar), its square footage, the zoom controls, and the
-// Dimensions / Properties / Map on-off switches.
+// The dock bar fixed to the bottom of the whole editor (SalesOrderDrawingPage
+// renders it as a sibling of the canvas column and the Material/Cutout
+// WorkspacePanel, not inside either, so opening that panel never resizes or
+// repositions it — see SalesOrderDrawingPage.tsx): the active area (click it
+// to open the Areas sidebar), its square footage (click to pin open the
+// Countertop/Fabrication breakdown — it stays open until clicked again, not
+// just while hovering), the zoom controls, and the Dimensions / Properties /
+// Map on-off switches.
 
 import { useState } from 'react';
+import { Ruler } from 'lucide-react';
 import { ZOOM_MAX, ZOOM_MIN, ZOOM_STEP } from '@/lib/drawing/constants';
 import { areaMetrics, mm2ToSqFt } from '@/lib/drawing/metrics';
 import { AreaSidebar } from './AreaSidebar';
@@ -12,7 +18,7 @@ import { useDrawingEditor } from './DrawingEditorContext';
 const SQ_FT_DECIMALS = 3;
 const PERCENT = 100;
 
-const BAR_BUTTON_CLASS = 'flex h-8 items-center justify-center rounded-md px-2.5 text-sm font-medium text-stone-200 hover:bg-stone-700 disabled:opacity-40 disabled:hover:bg-transparent aria-pressed:bg-brand aria-pressed:text-stone-900 aria-expanded:bg-brand aria-expanded:text-stone-900';
+const BAR_BUTTON_CLASS = 'flex h-7 items-center justify-center rounded px-2.5 text-sm font-medium text-stone-200 hover:bg-stone-700 disabled:opacity-40 disabled:hover:bg-transparent aria-pressed:bg-brand aria-pressed:text-stone-900 aria-expanded:bg-brand aria-expanded:text-stone-900';
 
 export function DrawingStatusBar() {
   const {
@@ -24,18 +30,12 @@ export function DrawingStatusBar() {
   const sqFt = mm2ToSqFt(areaMetrics(activeArea?.pieces ?? []).grossAreaMm2);
 
   return (
-    <div className="relative flex items-center justify-between gap-2 rounded-lg bg-stone-900 px-2 py-1.5 text-white">
+    <div className="absolute inset-x-0 bottom-0 z-30 flex items-center justify-between gap-2 bg-stone-900 px-2 py-1 text-white">
       {areasOpen && (
-        <div className="absolute bottom-full left-0 z-30 mb-2">
+        <div className="absolute bottom-full left-0 z-30 mb-1">
           <AreaSidebar onClose={() => setAreasOpen(false)} />
         </div>
       )}
-      {detailsOpen && (
-        <div className="absolute bottom-full right-0 z-30 mb-2 rounded-lg bg-white p-3 shadow-xl">
-          <AreaSummary />
-        </div>
-      )}
-
       <button
         type="button"
         aria-label={`Areas, ${activeArea?.name ?? 'none'} selected`}
@@ -48,18 +48,23 @@ export function DrawingStatusBar() {
       </button>
 
       <div className="flex items-center gap-2">
-        <span className="flex items-center gap-1 text-sm font-semibold">
-          {sqFt.toFixed(SQ_FT_DECIMALS)} sq ft
+        <div className="relative">
+          {detailsOpen && (
+            <div className="absolute bottom-full right-0 z-30 mb-1">
+              <AreaSummary />
+            </div>
+          )}
           <button
             type="button"
-            aria-label="Area details"
+            aria-label="Sq ft: Countertop and Fabrication by area and piece"
             aria-expanded={detailsOpen}
             onClick={() => setDetailsOpen((open) => !open)}
-            className="flex h-5 w-5 items-center justify-center rounded-full text-xs text-stone-300 hover:bg-stone-700 aria-expanded:bg-brand aria-expanded:text-stone-900"
+            className={`${BAR_BUTTON_CLASS} gap-1.5`}
           >
-            i
+            <Ruler className="size-3.5" aria-hidden="true" />
+            {sqFt.toFixed(SQ_FT_DECIMALS)} sq ft
           </button>
-        </span>
+        </div>
 
         <div role="group" aria-label="Zoom" className="flex items-center rounded-md border border-stone-700">
           <button

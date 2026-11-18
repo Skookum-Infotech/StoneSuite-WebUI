@@ -26,7 +26,7 @@ export function DrawModeBar() {
     <div
       role="group"
       aria-label="Draw mode"
-      className="pointer-events-auto absolute bottom-3 left-1/2 z-10 flex -translate-x-1/2 flex-col gap-1.5 rounded-lg bg-stone-900 px-3 py-2 shadow-lg"
+      className="pointer-events-auto absolute bottom-12 left-1/2 z-10 flex -translate-x-1/2 flex-col gap-1.5 rounded-lg bg-stone-900 px-3 py-2 shadow-lg"
     >
       <h3 className="text-sm font-semibold text-white">Draw</h3>
       <div className="flex gap-1 rounded-md border border-stone-700 p-0.5">

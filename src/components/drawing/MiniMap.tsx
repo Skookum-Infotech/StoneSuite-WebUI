@@ -169,7 +169,7 @@ export function MiniMap() {
   };
 
   return (
-    <div ref={rootRef} className="absolute bottom-3 right-3 z-10">
+    <div ref={rootRef} className="absolute bottom-12 right-3 z-10">
       {mapOpen && (
         <div
           ref={mapRef}

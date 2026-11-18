@@ -76,3 +76,14 @@ export function drawingMetrics(areas: DrawingArea[]): AreaMetrics {
 export function mm2ToSqFt(mm2: number): number {
   return mm2 / MM2_PER_FT2;
 }
+
+const PERCENT_DIVISOR = 100;
+
+/** Fabrication sq ft = countertop sq ft * (1 + fabricationPercent / 100) —
+ *  the Company Preferences tab's markup (types/companyProfile.ts), shown
+ *  alongside Countertop in the drawing editor's sq ft breakdown
+ *  (components/drawing/AreaSummary.tsx). Takes sq ft rather than mm² since
+ *  every caller already has the countertop figure in sq ft. */
+export function fabricationSqFt(countertopSqFt: number, fabricationPercent: number): number {
+  return countertopSqFt * (1 + fabricationPercent / PERCENT_DIVISOR);
+}

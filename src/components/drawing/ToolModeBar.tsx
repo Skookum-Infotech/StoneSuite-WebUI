@@ -37,7 +37,7 @@ export function ToolModeBar({ name, title, choices, onClose, children }: {
     <div
       role="group"
       aria-label={name}
-      className="pointer-events-auto absolute bottom-3 left-1/2 z-10 flex max-w-[95%] -translate-x-1/2 flex-col gap-2 rounded-lg bg-stone-900 px-3 py-2 shadow-lg"
+      className="pointer-events-auto absolute bottom-12 left-1/2 z-10 flex max-w-[95%] -translate-x-1/2 flex-col gap-2 rounded-lg bg-stone-900 px-3 py-2 shadow-lg"
     >
       <div className="flex items-center justify-between gap-6">
         <h3 className="text-sm font-semibold text-white">{title}</h3>
