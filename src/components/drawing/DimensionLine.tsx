@@ -7,19 +7,20 @@
 // Purely presentational: nothing on it is interactive, so it stays out of
 // the tab order and screen readers skip it.
 //
-// Strokes, dots and text are divided by the current zoom, so they stay the
-// same size on screen across the normal editing range — the whole point of
-// a dimension is that it can be read. Past TEXT_SCALE_FLOOR_ZOOM (zoomed out
-// to see a whole multi-piece layout) they shrink with the drawing instead, so
-// they don't pile up oversized on top of each other.
+// Strokes, dots and text are scaled by canvasTextScaleDivisor, so they stay
+// the same size on screen across the normal editing range — the whole point
+// of a dimension is that it can be read. Past TEXT_SCALE_FLOOR_ZOOM (zoomed
+// out to see a whole multi-piece layout) they shrink with the drawing
+// instead, so they don't pile up oversized on top of each other — down to
+// MIN_READABLE_TEXT_PX, below which they hold instead of vanishing.
 
 import type { Point } from '@/types/drawing';
 import type { DimensionLineLayout } from '@/lib/drawing/dimensions';
-import { TEXT_SCALE_FLOOR_ZOOM } from '@/lib/drawing/constants';
+import { DIMENSION_FONT_SIZE_PX, MIN_READABLE_TEXT_PX } from '@/lib/drawing/constants';
+import { canvasTextScaleDivisor } from '@/lib/drawing/textScale';
 import { formatLength } from '@/lib/drawing/units';
 import { useDrawingEditor } from './DrawingEditorContext';
 
-const FONT_SIZE_PX = 13;
 const STROKE_PX = 1.25;
 /** The dot on each measured point (the piece's corner). */
 const POINT_RADIUS_PX = 2.5;
@@ -52,12 +53,10 @@ export function DimensionLine(
   const edgeTo = toSvg(layout.edgeTo);
   const textAt = toSvg(layout.textAt);
 
-  // Everything below is in world units; dividing by the zoom gives a constant
-  // on-screen size, since the canvas draws inside a scale(zoom) group — but
-  // only down to TEXT_SCALE_FLOOR_ZOOM, below which it shrinks with the
-  // drawing instead, so a whole zoomed-out layout doesn't pile up oversized
-  // text (see the constant's own comment).
-  const px = (value: number) => value / Math.max(state.zoom, TEXT_SCALE_FLOOR_ZOOM);
+  // Everything below is in world units; see canvasTextScaleDivisor for what
+  // dividing by it does at each zoom.
+  const divisor = canvasTextScaleDivisor(state.zoom, DIMENSION_FONT_SIZE_PX, MIN_READABLE_TEXT_PX);
+  const px = (value: number) => value / divisor;
   const label = `${letter ? `${letter}: ` : ''}${formatLength(layout.lengthMm, displayUnit, fractionDenominator)}`;
   // The y-flip reverses the sense of rotation: a world angle of +θ is -θ on
   // screen, which is what keeps a vertical dimension reading bottom-to-top
@@ -102,7 +101,7 @@ export function DimensionLine(
         transform={`rotate(${textRotation} ${textAt.x} ${textAt.y})`}
         textAnchor="middle"
         dominantBaseline="central"
-        fontSize={px(FONT_SIZE_PX)}
+        fontSize={px(DIMENSION_FONT_SIZE_PX)}
         strokeWidth={px(HALO_PX)}
         strokeLinejoin="round"
         paintOrder="stroke"

@@ -1,15 +1,16 @@
 // The text in the middle of a cutout: its name, with its Length x Height
 // under it. Either line can be turned off in the Cutout dialog (the two Hide
 // boxes). Drawn in the piece's local group, so it is counter-flipped upright,
-// and sized by the zoom so it stays readable at any scale — down to
-// TEXT_SCALE_FLOOR_ZOOM, below which it shrinks with the drawing like every
-// other piece of text on the canvas (see that constant). Not interactive —
+// and sized by the zoom so it stays readable at any scale — see
+// canvasTextScaleDivisor for how it shrinks with the drawing once zoomed out
+// far enough, and holds instead of vanishing past that. Not interactive —
 // clicks fall through to the cutout.
 
 import type { Cutout } from '@/types/drawing';
-import { TEXT_SCALE_FLOOR_ZOOM } from '@/lib/drawing/constants';
+import { MIN_READABLE_TEXT_PX } from '@/lib/drawing/constants';
 import { CUTOUT_TYPE_LABELS, cutoutSize } from '@/lib/drawing/cutouts';
 import { uprightTransform } from '@/lib/drawing/svgText';
+import { canvasTextScaleDivisor } from '@/lib/drawing/textScale';
 import { formatLength } from '@/lib/drawing/units';
 import { useDrawingEditor } from './DrawingEditorContext';
 
@@ -28,7 +29,7 @@ export function CutoutLabel({ cutout, rotationDeg }: { cutout: Cutout; rotationD
   const { lengthMm, heightMm } = cutoutSize(cutout);
   const size = `${formatLength(lengthMm, displayUnit, fractionDenominator)} x ${formatLength(heightMm, displayUnit, fractionDenominator)}`;
   const name = cutout.label || CUTOUT_TYPE_LABELS[cutout.type];
-  const zoomDivisor = Math.max(state.zoom, TEXT_SCALE_FLOOR_ZOOM);
+  const zoomDivisor = canvasTextScaleDivisor(state.zoom, FONT_SIZE_PX, MIN_READABLE_TEXT_PX);
   const font = FONT_SIZE_PX / zoomDivisor;
   const both = showName && showSize;
   // A white halo behind the glyphs keeps them legible over the cutout's tint

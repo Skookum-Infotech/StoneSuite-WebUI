@@ -122,6 +122,23 @@ export const OPEN_ZOOM = 0.4;
  *  readable instead. */
 export const TEXT_SCALE_FLOOR_ZOOM = OPEN_ZOOM;
 
+/** The floor above never shrinks text all the way to zero: a job large or
+ *  spread-out enough that fitting it all on screen needs a zoom well below
+ *  TEXT_SCALE_FLOOR_ZOOM would otherwise shrink its labels into illegible
+ *  specks. `lib/drawing/textScale.ts`'s `canvasTextScaleDivisor` instead
+ *  holds a label's on-screen size at this many pixels once plain
+ *  proportional shrinking would take it any smaller — at the cost of letting
+ *  it overlap a neighbour again on a layout that dense, which is the better
+ *  trade: a number you can still read beats one that has vanished. */
+export const MIN_READABLE_TEXT_PX = 9;
+
+/** The dimension line's own text size, in the same constant-on-screen-pixels
+ *  sense `DIMENSION_OFFSET_PX` is — shared with it (and with the draft
+ *  dimension CanvasOverlays draws while a piece is mid-construction) so a
+ *  dimension's stand-off and the number sitting on it shrink, and hit the
+ *  MIN_READABLE_TEXT_PX floor, together rather than drifting apart. */
+export const DIMENSION_FONT_SIZE_PX = 13;
+
 /** The canvas SVG's viewBox size, in viewBox units. The SVG fills whatever
  *  room its container gives it and keeps these proportions (`xMidYMid meet`:
  *  scaled to fit the tighter dimension, centred, the grid running on past it)

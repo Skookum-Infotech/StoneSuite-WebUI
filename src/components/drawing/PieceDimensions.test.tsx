@@ -7,7 +7,9 @@ import { describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { Drawing, Piece } from '@/types/drawing';
-import { DIMENSION_OFFSET_PX, TEXT_SCALE_FLOOR_ZOOM, ZOOM_MAX } from '@/lib/drawing/constants';
+import {
+  DIMENSION_FONT_SIZE_PX, DIMENSION_OFFSET_PX, MIN_READABLE_TEXT_PX, TEXT_SCALE_FLOOR_ZOOM, ZOOM_MAX, ZOOM_MIN,
+} from '@/lib/drawing/constants';
 import { circleOutline, rectOutline } from '@/lib/drawing/geometry';
 import { DrawingEditorProvider, useDrawingEditor } from './DrawingEditorContext';
 import { PieceDimensions } from './PieceDimensions';
@@ -23,6 +25,15 @@ const drawing: Drawing = {
   updatedAt: '', updatedBy: { id: 'u', name: 'U' },
 };
 
+// The zoom below which plain proportional shrink would take the dimension
+// text's on-screen size under MIN_READABLE_TEXT_PX — canvasTextScaleDivisor
+// holds it at that floor instead, past this point.
+const CLAMP_ZOOM = (MIN_READABLE_TEXT_PX * TEXT_SCALE_FLOOR_ZOOM) / DIMENSION_FONT_SIZE_PX;
+// Comfortably on either side of that threshold, to test the two regimes
+// without landing exactly on the boundary.
+const MILD_ZOOM_OUT = (CLAMP_ZOOM + TEXT_SCALE_FLOOR_ZOOM) / 2;
+const EXTREME_ZOOM_OUT = CLAMP_ZOOM / 4;
+
 function ZoomOut() {
   const { dispatch } = useDrawingEditor();
   const zoomTo = (zoom: number) => dispatch({ type: 'setZoom', zoom });
@@ -31,7 +42,9 @@ function ZoomOut() {
       <button type="button" onClick={() => zoomTo(0.5)}>zoom out</button>
       <button type="button" onClick={() => zoomTo(ZOOM_MAX)}>zoom in</button>
       <button type="button" onClick={() => zoomTo(TEXT_SCALE_FLOOR_ZOOM)}>zoom to floor</button>
-      <button type="button" onClick={() => zoomTo(TEXT_SCALE_FLOOR_ZOOM / 4)}>zoom past floor</button>
+      <button type="button" onClick={() => zoomTo(MILD_ZOOM_OUT)}>zoom mildly past floor</button>
+      <button type="button" onClick={() => zoomTo(EXTREME_ZOOM_OUT)}>zoom extremely far</button>
+      <button type="button" onClick={() => zoomTo(ZOOM_MIN)}>zoom to minimum</button>
     </>
   );
 }
@@ -71,12 +84,23 @@ describe('PieceDimensions', () => {
     const screenPx = (zoom: number) => Number(texts()[0].getAttribute('font-size')) * zoom;
     await user.click(screen.getByRole('button', { name: 'zoom to floor' }));
     const atFloor = screenPx(TEXT_SCALE_FLOOR_ZOOM);
-    await user.click(screen.getByRole('button', { name: 'zoom past floor' }));
-    const pastFloor = screenPx(TEXT_SCALE_FLOOR_ZOOM / 4);
-    // Above/at the floor the on-screen size is constant; a quarter of the
-    // zoom below it means a quarter of the on-screen size too, same as every
-    // other piece of geometry on the canvas.
-    expect(pastFloor).toBeCloseTo(atFloor / 4);
+    await user.click(screen.getByRole('button', { name: 'zoom mildly past floor' }));
+    const mild = screenPx(MILD_ZOOM_OUT);
+    // Both still above MIN_READABLE_TEXT_PX, so this stays plain proportional
+    // shrink: the on-screen size scales with the zoom, same as every other
+    // piece of geometry on the canvas.
+    expect(mild).toBeCloseTo(atFloor * (MILD_ZOOM_OUT / TEXT_SCALE_FLOOR_ZOOM));
+  });
+
+  it('holds the text at MIN_READABLE_TEXT_PX instead of shrinking it away on a job far enough out to need an extreme zoom', async () => {
+    const user = show();
+    const screenPx = (zoom: number) => Number(texts()[0].getAttribute('font-size')) * zoom;
+    await user.click(screen.getByRole('button', { name: 'zoom extremely far' }));
+    expect(screenPx(EXTREME_ZOOM_OUT)).toBeCloseTo(MIN_READABLE_TEXT_PX);
+    // Zooming out further still doesn't shrink it any more — it's pinned,
+    // not just coincidentally close, at the absolute zoom floor too.
+    await user.click(screen.getByRole('button', { name: 'zoom to minimum' }));
+    expect(screenPx(ZOOM_MIN)).toBeCloseTo(MIN_READABLE_TEXT_PX);
   });
 
   it('stands the dimension line the same on-screen distance off the piece across the normal editing range, in or out', async () => {
@@ -108,8 +132,31 @@ describe('PieceDimensions', () => {
       );
       return worldLength * zoom;
     };
-    await user.click(screen.getByRole('button', { name: 'zoom past floor' }));
-    expect(extensionScreenPx(TEXT_SCALE_FLOOR_ZOOM / 4)).toBeCloseTo(DIMENSION_OFFSET_PX / 4);
+    await user.click(screen.getByRole('button', { name: 'zoom to floor' }));
+    const atFloor = extensionScreenPx(TEXT_SCALE_FLOOR_ZOOM);
+    await user.click(screen.getByRole('button', { name: 'zoom mildly past floor' }));
+    // Still above MIN_READABLE_TEXT_PX, so plain proportional shrink.
+    expect(extensionScreenPx(MILD_ZOOM_OUT)).toBeCloseTo(atFloor * (MILD_ZOOM_OUT / TEXT_SCALE_FLOOR_ZOOM));
+  });
+
+  it('holds the stand-off at its own floor alongside the text once zoomed out past MIN_READABLE_TEXT_PX\'s threshold, instead of shrinking it to nothing', async () => {
+    const user = show();
+    const extensionScreenPx = (zoom: number) => {
+      const line = screen.getByTestId('canvas').querySelector('line') as SVGLineElement;
+      const worldLength = Math.hypot(
+        Number(line.getAttribute('x2')) - Number(line.getAttribute('x1')),
+        Number(line.getAttribute('y2')) - Number(line.getAttribute('y1')),
+      );
+      return worldLength * zoom;
+    };
+    // Once the text is clamped, the stand-off shares that same divisor, so
+    // it settles at this fixed fraction of its full size regardless of how
+    // much further out the view goes.
+    const expected = DIMENSION_OFFSET_PX * (MIN_READABLE_TEXT_PX / DIMENSION_FONT_SIZE_PX);
+    await user.click(screen.getByRole('button', { name: 'zoom extremely far' }));
+    expect(extensionScreenPx(EXTREME_ZOOM_OUT)).toBeCloseTo(expected);
+    await user.click(screen.getByRole('button', { name: 'zoom to minimum' }));
+    expect(extensionScreenPx(ZOOM_MIN)).toBeCloseTo(expected);
   });
 
   it('sits each measurement on its line with a white halo', () => {

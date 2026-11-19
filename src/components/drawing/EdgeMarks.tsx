@@ -6,8 +6,9 @@
 
 import { memo, useMemo } from 'react';
 import type { Piece } from '@/types/drawing';
-import { TEXT_SCALE_FLOOR_ZOOM } from '@/lib/drawing/constants';
+import { MIN_READABLE_TEXT_PX } from '@/lib/drawing/constants';
 import { outlineEdges, transformOutline } from '@/lib/drawing/geometry';
+import { canvasTextScaleDivisor } from '@/lib/drawing/textScale';
 import { useDrawingEditor } from './DrawingEditorContext';
 
 const LABEL_INSET_PX = 16;
@@ -29,8 +30,9 @@ interface Mark {
 
 export const EdgeMarks = memo(function EdgeMarks({ piece }: { piece: Piece }) {
   const { state } = useDrawingEditor();
-  // See TEXT_SCALE_FLOOR_ZOOM.
-  const px = (value: number) => value / Math.max(state.zoom, TEXT_SCALE_FLOOR_ZOOM);
+  // See canvasTextScaleDivisor.
+  const divisor = canvasTextScaleDivisor(state.zoom, LABEL_FONT_SIZE_PX, MIN_READABLE_TEXT_PX);
+  const px = (value: number) => value / divisor;
   const insetMm = px(LABEL_INSET_PX);
   const marks = useMemo<Mark[]>(() => {
     const sides = outlineEdges(transformOutline(piece.outline, piece.position, piece.rotationDeg));

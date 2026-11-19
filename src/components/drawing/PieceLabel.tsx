@@ -5,7 +5,8 @@
 // the canvas. Not interactive: pointer events fall through.
 
 import type { Point } from '@/types/drawing';
-import { DIMENSION_OFFSET_PX, TEXT_SCALE_FLOOR_ZOOM } from '@/lib/drawing/constants';
+import { DIMENSION_OFFSET_PX, MIN_READABLE_TEXT_PX } from '@/lib/drawing/constants';
+import { canvasTextScaleDivisor } from '@/lib/drawing/textScale';
 import { useDrawingEditor } from './DrawingEditorContext';
 
 const FONT_SIZE_PX = 20;
@@ -30,9 +31,9 @@ export function PieceLabel({ label, worldOutline }: { label: string; worldOutlin
   const { state, dimensionsOn } = useDrawingEditor();
   if (worldOutline.length === 0 || !label) return null;
 
-  // See TEXT_SCALE_FLOOR_ZOOM: pixel-constant above it, shrinking with the
-  // drawing below it so a crowded, zoomed-out layout stays readable.
-  const px = (value: number) => value / Math.max(state.zoom, TEXT_SCALE_FLOOR_ZOOM);
+  // See canvasTextScaleDivisor.
+  const divisor = canvasTextScaleDivisor(state.zoom, FONT_SIZE_PX, MIN_READABLE_TEXT_PX);
+  const px = (value: number) => value / divisor;
   const corner = topLeftVertex(worldOutline);
 
   return (
