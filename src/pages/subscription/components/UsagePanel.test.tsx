@@ -97,6 +97,23 @@ describe('UsagePanel', () => {
     expect(screen.queryByText('No limit on your current plan')).not.toBeInTheDocument()
   })
 
+  it('says "Limit reached" and shows a red bar, not green, once usage hits the limit', async () => {
+    vi.mocked(subscriptionService.getUsage).mockResolvedValue({
+      ...BASE_USAGE,
+      storage: { ...BASE_USAGE.storage, usedBytes: 6 * GB, limitBytes: 5 * GB },
+      aiTokens: { ...BASE_USAGE.aiTokens, totalTokens: 500_000, limitTokens: 2_000_000 },
+    })
+    renderPanel()
+
+    const storageBar = await screen.findByRole('progressbar', { name: 'File storage used' })
+    expect(storageBar).toHaveAttribute('aria-valuenow', '100')
+    expect(storageBar.querySelectorAll('.bg-red-500')).toHaveLength(10)
+    expect(storageBar.querySelectorAll('.bg-emerald-500')).toHaveLength(0)
+    // Exactly one meter is over its limit, so exactly one "Limit reached" note.
+    expect(screen.getAllByText('Limit reached')).toHaveLength(1)
+    expect(screen.getByRole('progressbar', { name: 'AI tokens used' }).querySelectorAll('.bg-red-500')).toHaveLength(0)
+  })
+
   it('explains a workspace that has not been measured or used AI yet', async () => {
     vi.mocked(subscriptionService.getUsage).mockResolvedValue({
       ...BASE_USAGE,
