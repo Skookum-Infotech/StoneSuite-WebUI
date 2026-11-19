@@ -27,7 +27,7 @@ export function MaterialSummary({ bare }: { bare?: boolean } = {}) {
             <div>{u.pieceCount} {u.pieceCount === 1 ? 'piece' : 'pieces'} · {sqFt(u.billableAreaMm2)} sq ft</div>
             {u.verticalAreaMm2 > 0 && (
               <div className="text-2xs text-stone-500">
-                includes {sqFt(u.verticalAreaMm2)} sq ft of backsplash / waterfall
+                includes {sqFt(u.verticalAreaMm2)} sq ft of attached profiles
               </div>
             )}
             {ordered !== undefined && <div className="text-2xs text-stone-500">Ordered {ordered.toFixed(1)} sq ft</div>}

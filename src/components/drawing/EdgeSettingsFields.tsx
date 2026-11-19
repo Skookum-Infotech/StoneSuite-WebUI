@@ -1,5 +1,7 @@
-// The editable settings of one side: edge profile, overhang, backsplash and
-// waterfall. Heights are lengths in the drawing's display unit; 0 clears one.
+// The editable settings of one side: edge profile and overhang. Backsplash /
+// waterfall / lamination / etc. are painted with the Profiles tool instead
+// (ProfilePickLayer), not typed in here. Heights are lengths in the
+// drawing's display unit; 0 clears one.
 
 import type { Piece } from '@/types/drawing';
 import { edgeAt, edgeSettingsProblem, setEdgeSettings, type EdgeSettings } from '@/lib/drawing/edges';
@@ -8,12 +10,10 @@ import { useDrawingEditor } from './DrawingEditorContext';
 import { LengthInput } from './LengthInput';
 import { useEdgeCodes } from './useEdgeCodes';
 
-type HeightKey = 'overhangMm' | 'splashHeightMm' | 'waterfallHeightMm';
+type HeightKey = 'overhangMm';
 
 const HEIGHTS: { key: HeightKey; label: string }[] = [
   { key: 'overhangMm', label: 'Overhang' },
-  { key: 'splashHeightMm', label: 'Backsplash height' },
-  { key: 'waterfallHeightMm', label: 'Waterfall height' },
 ];
 
 export function EdgeSettingsFields({ piece, index }: { piece: Piece; index: number }) {

@@ -68,6 +68,12 @@ export const MIN_EDGE_LENGTH_MM = 1;
  *  exactly on top of its source — 2 inches each way. */
 export const COPY_OFFSET_MM = 50.8;
 
+/** Gap, in mm, between a piece's painted side and its unfolded attached-profile
+ *  rectangle (Profiles tool) — 4 inches, so the two never visually touch and the
+ *  parent's own dimension lines (when Dimensions is on) have room to sit in the
+ *  gap without piling onto the profile piece's own band/arrow/dimensioning. */
+export const ATTACHED_PROFILE_GAP_MM = 101.6;
+
 /** Cutouts must keep at least this much stone between their edge and the
  *  piece's outer edge (1/2"), and between each other (1/8"). These are
  *  defaults chosen here, not shop-confirmed figures. */
@@ -83,10 +89,12 @@ export const MAX_DIMENSION_MM = 30000;
 /** How far outside a piece's own edge its auto-placed dimension line sits
  *  — 1 inch. */
 export const DEFAULT_DIMENSION_OFFSET_MM = 25.4;
-/** The canvas never draws a piece's dimension line closer to its edge than
- *  this many ON-SCREEN pixels. A fixed millimetre offset collapses onto the
- *  outline when the view is zoomed out, leaving the measurement unreadable. */
-export const MIN_DIMENSION_OFFSET_PX = 28;
+/** How far a piece's auto-placed dimension line stands off its edge on the
+ *  canvas, in ON-SCREEN pixels at every zoom. A millimetre offset either
+ *  collapses onto the outline when zoomed out or drifts away from the piece
+ *  (taking its extension lines with it) when zoomed in; a fixed pixel offset
+ *  keeps the dimensions looking the same at any zoom. */
+export const DIMENSION_OFFSET_PX = 28;
 
 /** The editor's undo/redo history depth (build spec Task 3). */
 export const MAX_UNDO_STEPS = 50;
@@ -97,15 +105,45 @@ export const ARROW_KEY_STEP_MM = MM_PER_INCH / 16;
 export const SHIFT_ARROW_KEY_STEP_MM = MM_PER_INCH;
 
 /** Zoom range and step, as a multiplier (1 = 100%). The build spec said
- *  25–400%; the low end went to 10% so a whole kitchen (25 ft and more) fits
- *  on the board at once. */
-export const ZOOM_MIN = 0.1;
+ *  25–400%; the low end went to 10% so a whole kitchen fits on the board at
+ *  once, then to 2% so a whole floor of rooms, or a long run of pieces laid
+ *  out side by side, can be seen at once (roughly 60 m of board across). */
+export const ZOOM_MIN = 0.02;
 export const ZOOM_MAX = 4;
 export const ZOOM_STEP = 0.25;
 
 /** The zoom the editor opens at: about 10 ft of board across on a laptop
  *  screen, so a default 25 5/8" square is a small part of it, not most of it. */
 export const OPEN_ZOOM = 0.4;
+
+/** Below this zoom, piece labels, dimension text and their stand-off lines
+ *  stop holding a constant on-screen size and start shrinking along with the
+ *  drawing instead. At or above it — the normal range for working one piece
+ *  or a handful of them — they stay pixel-constant, so they never look
+ *  bigger just because the view was zoomed in or out. Below it — zoomed out
+ *  far enough to see a whole multi-piece layout at once — constant-size text
+ *  would occupy the same screen space regardless of how small each piece has
+ *  become, and neighbouring pieces' labels pile on top of each other; letting
+ *  the text shrink with the drawing past this point keeps a crowded layout
+ *  readable instead. */
+export const TEXT_SCALE_FLOOR_ZOOM = OPEN_ZOOM;
+
+/** The floor above never shrinks text all the way to zero: a job large or
+ *  spread-out enough that fitting it all on screen needs a zoom well below
+ *  TEXT_SCALE_FLOOR_ZOOM would otherwise shrink its labels into illegible
+ *  specks. `lib/drawing/textScale.ts`'s `canvasTextScaleDivisor` instead
+ *  holds a label's on-screen size at this many pixels once plain
+ *  proportional shrinking would take it any smaller — at the cost of letting
+ *  it overlap a neighbour again on a layout that dense, which is the better
+ *  trade: a number you can still read beats one that has vanished. */
+export const MIN_READABLE_TEXT_PX = 9;
+
+/** The dimension line's own text size, in the same constant-on-screen-pixels
+ *  sense `DIMENSION_OFFSET_PX` is — shared with it (and with the draft
+ *  dimension CanvasOverlays draws while a piece is mid-construction) so a
+ *  dimension's stand-off and the number sitting on it shrink, and hit the
+ *  MIN_READABLE_TEXT_PX floor, together rather than drifting apart. */
+export const DIMENSION_FONT_SIZE_PX = 13;
 
 /** The canvas SVG's viewBox size, in viewBox units. The SVG fills whatever
  *  room its container gives it and keeps these proportions (`xMidYMid meet`:
@@ -116,10 +154,10 @@ export const VIEWPORT_WIDTH = 800;
 /** Half-width, in mm, of the invisible sheets that catch pointer events on the
  *  board (the background, the armed tool's click sheet, the cutout-placement
  *  sheet, the menu click-away). The white board has no edge, so these must
- *  reach well past anywhere the user can zoom out or pan to — at 10% zoom the
- *  screen already spans 12 m, and a sheet that stops short leaves dead patches
- *  where a click does nothing. */
-export const CANVAS_EXTENT_MM = 500_000;
+ *  reach well past anywhere the user can zoom out or pan to — at the 2% zoom
+ *  floor the screen spans about 60 m, and a sheet that stops short leaves dead
+ *  patches where a click does nothing. */
+export const CANVAS_EXTENT_MM = 2_000_000;
 export const VIEWPORT_HEIGHT = 600;
 
 /** A dragged cutout or vertex snaps to this step — 1/4". */
@@ -167,6 +205,9 @@ export const MIN_LEG_REMAINDER_MM = MM_PER_INCH;
 /** Thickness given to a piece drawn on the canvas (no thickness is asked for). */
 export const DEFAULT_PIECE_THICKNESS_MM = 30;
 
+/** The Draw tool's Circle mode starting radius — 12 3/4", in mm. */
+export const DEFAULT_CIRCLE_RADIUS_MM = 12.75 * MM_PER_INCH;
+
 /** Border tool defaults (a bump's gaps and height, an arc's height) — 4" and
  *  3", in mm; shown in whatever unit the drawing displays. */
 export const DEFAULT_BORDER_GAP_MM = 4 * MM_PER_INCH;
@@ -178,3 +219,13 @@ export const DEFAULT_CORNER_SIZE_MM = 4 * MM_PER_INCH;
 /** Straight pieces an arc side is cut into when something needs a polyline
  *  (DXF export, overlap checks, the mini-map) rather than a true SVG arc. */
 export const ARC_SEGMENTS = 32;
+
+/** How close (screen pixels, not world mm — this is a click-precision target,
+ *  like CLICK_SLOP_PX/JOIN_SNAP_PX, not a world distance) the Points tool's
+ *  next click must land to ANY point already placed (not just the first) to
+ *  close the shape there. Also the on-screen size of each closable point's
+ *  own target ring, so what is drawn and what actually registers never drift
+ *  apart. A flat mm value
+ *  here would shrink to just a few on-screen pixels at the editor's own
+ *  opening zoom (0.4) — too small to reliably click. */
+export const CLOSE_POLYGON_HIT_PX = 14;

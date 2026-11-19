@@ -12,6 +12,7 @@ function companyProfile(overrides: Partial<CompanyProfile> = {}): CompanyProfile
     currency: '',
     timezone: '',
     taxId: '',
+    fabricationPercent: 20,
     billingAddress: { line1: '', line2: '', suite: '', city: '', country: '', state: '', zip: '' },
     shippingAddress: {
       line1: '456 Shop St', line2: '', suite: 'Bay 2', city: 'Springfield', country: 'United States', state: 'IL', zip: '62704',

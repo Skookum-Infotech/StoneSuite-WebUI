@@ -5,13 +5,29 @@
 
 import { memo, useMemo } from 'react';
 import type { Piece } from '@/types/drawing';
-import { layoutEdgeDimensions } from '@/lib/drawing/dimensions';
-import { DEFAULT_DIMENSION_OFFSET_MM, MIN_DIMENSION_OFFSET_PX } from '@/lib/drawing/constants';
+import { layoutDimension, layoutEdgeDimensions, type DimensionLineLayout } from '@/lib/drawing/dimensions';
+import { DIMENSION_FONT_SIZE_PX, DIMENSION_OFFSET_PX, MIN_READABLE_TEXT_PX } from '@/lib/drawing/constants';
 import { transformOutline } from '@/lib/drawing/geometry';
 import { edgeLetter } from '@/lib/drawing/labels';
+import { canvasTextScaleDivisor } from '@/lib/drawing/textScale';
 import { DimensionLine } from './DimensionLine';
 import { useDrawingEditor } from './DrawingEditorContext';
 import { EdgeMarks } from './EdgeMarks';
+
+/** A circle has no straight sides to dimension per-edge, so it gets three
+ *  dimensions instead of layoutEdgeDimensions's one-per-edge: the bounding
+ *  width across the top and across the bottom (matching a rect piece's own
+ *  top/bottom side dimensions), and the radius itself, centre to rim. */
+function layoutCircleDimensions(center: Piece['position'], radiusMm: number, offsetMm: number): DimensionLineLayout[] {
+  const top = layoutDimension({ x: center.x - radiusMm, y: center.y + radiusMm }, { x: center.x + radiusMm, y: center.y + radiusMm }, offsetMm);
+  const bottom = layoutDimension({ x: center.x + radiusMm, y: center.y - radiusMm }, { x: center.x - radiusMm, y: center.y - radiusMm }, offsetMm);
+  const radius = layoutDimension(center, { x: center.x, y: center.y + radiusMm }, 0);
+  return [
+    { ...top, edgeIndex: 0 },
+    { ...bottom, edgeIndex: 1 },
+    { ...radius, edgeIndex: 2 },
+  ];
+}
 
 export const PieceDimensions = memo(function PieceDimensions(
   { piece, displayUnit, fractionDenominator }: {
@@ -19,15 +35,16 @@ export const PieceDimensions = memo(function PieceDimensions(
   },
 ) {
   const { state } = useDrawingEditor();
-  // The dimension line stands off the edge by a constant number of screen
-  // pixels (never less than the default in millimetres), so zooming out to
-  // fit a large piece pushes it further out in world units instead of
-  // letting it collapse onto the outline.
-  const offsetMm = Math.max(DEFAULT_DIMENSION_OFFSET_MM, MIN_DIMENSION_OFFSET_PX / state.zoom);
-  const layouts = useMemo(
-    () => layoutEdgeDimensions(transformOutline(piece.outline, piece.position, piece.rotationDeg), offsetMm),
-    [piece.outline, piece.position, piece.rotationDeg, offsetMm],
-  );
+  // The dimension line's stand-off shares DimensionLine's own divisor (keyed
+  // off the same DIMENSION_FONT_SIZE_PX/MIN_READABLE_TEXT_PX), so the line
+  // and the number sitting on it scale — and hit their floor — together.
+  const offsetMm = DIMENSION_OFFSET_PX / canvasTextScaleDivisor(state.zoom, DIMENSION_FONT_SIZE_PX, MIN_READABLE_TEXT_PX);
+  const layouts = useMemo(() => {
+    // A circle is rotationally symmetric, so its dimensions stay axis-aligned
+    // on its centre (piece.position) regardless of piece.rotationDeg.
+    if (piece.shape === 'circle' && piece.radiusMm) return layoutCircleDimensions(piece.position, piece.radiusMm, offsetMm);
+    return layoutEdgeDimensions(transformOutline(piece.outline, piece.position, piece.rotationDeg), offsetMm);
+  }, [piece.shape, piece.radiusMm, piece.outline, piece.position, piece.rotationDeg, offsetMm]);
   return (
     <>
       <EdgeMarks piece={piece} />

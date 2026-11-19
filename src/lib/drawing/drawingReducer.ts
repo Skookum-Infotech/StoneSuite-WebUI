@@ -4,7 +4,7 @@
 // (capped at MAX_UNDO_STEPS) and clear `future`; "view-only" actions
 // (selection, zoom, pan) touch neither.
 
-import type { Cutout, Dimension, Drawing, Note, Piece, Point, Seam } from '@/types/drawing';
+import type { Cutout, Dimension, Drawing, Note, Piece, Point, Seam, SlabPlacement } from '@/types/drawing';
 import { ZOOM_MAX, ZOOM_MIN } from './constants';
 import {
   NO_SELECTION, copyPieces, duplicateInto, keepSavedVersion, movePieces, mutateDocument, newArea, normalizeDegrees,
@@ -23,6 +23,9 @@ export type EditorAction =
   | { type: 'setActiveArea'; areaId: string }
   | { type: 'addPiece'; areaId: string; piece: Piece }
   | { type: 'updatePiece'; areaId: string; pieceId: string; patch: Partial<Piece> }
+  /** Where the Material tab laid one painted Profiles side on a slab —
+   *  the attached-profile-piece equivalent of updatePiece's own `slab` patch. */
+  | { type: 'updateAttachedProfileSlab'; areaId: string; pieceId: string; edgeIndex: number; slab: SlabPlacement | undefined }
   | { type: 'deletePiece'; areaId: string; pieceId: string }
   | { type: 'duplicatePiece'; areaId: string; pieceId: string; newId: string }
   | { type: 'movePiece'; areaId: string; pieceId: string; delta: Point }
@@ -129,6 +132,14 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
     case 'updatePiece':
       return mutateDocument(state, (drawing) => updatePieceIn(drawing, action.areaId, action.pieceId, (p) => ({
         ...p, ...action.patch,
+      })));
+
+    case 'updateAttachedProfileSlab':
+      return mutateDocument(state, (drawing) => updatePieceIn(drawing, action.areaId, action.pieceId, (p) => ({
+        ...p,
+        edges: p.edges.map((e) => (e.index === action.edgeIndex && e.attachedProfile
+          ? { ...e, attachedProfile: { ...e.attachedProfile, slab: action.slab } }
+          : e)),
       })));
 
     case 'deletePiece':

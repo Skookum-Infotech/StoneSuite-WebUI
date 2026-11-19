@@ -15,19 +15,13 @@ import { DRAWING_SCHEMA_VERSION, type Drawing } from '@/types/drawing';
 import type { SalesOrder } from '@/types/salesOrder';
 import { DrawingEditorProvider, useDrawingEditor } from '@/components/drawing/DrawingEditorContext';
 import { DrawingToolbar } from '@/components/drawing/DrawingToolbar';
-import { DrawingCanvas } from '@/components/drawing/DrawingCanvas';
-import { BorderModeBar } from '@/components/drawing/BorderModeBar';
-import { CornerModeBar } from '@/components/drawing/CornerModeBar';
-import { DrawModeBar } from '@/components/drawing/DrawModeBar';
-import { EdgeModeBar } from '@/components/drawing/EdgeModeBar';
+import { DrawingBoard } from '@/components/drawing/DrawingBoard';
+import { useExitDrawing } from '@/components/drawing/useExitDrawing';
 import { EdgeTypesProvider } from '@/components/drawing/EdgeTypesContext';
+import { AttachedProfileTypesProvider } from '@/components/drawing/AttachedProfileTypesContext';
 import { MaterialPickerProvider } from '@/components/drawing/MaterialPickerContext';
-import { MiniMap } from '@/components/drawing/MiniMap';
-import { InspectorPanel } from '@/components/drawing/InspectorPanel';
 import { WorkspacePanel } from '@/components/drawing/WorkspacePanel';
 import { OPEN_ZOOM } from '@/lib/drawing/constants';
-import { TextControls } from '@/components/drawing/TextControls';
-import { ToolRail } from '@/components/drawing/ToolRail';
 import { DrawingStatusBar } from '@/components/drawing/DrawingStatusBar';
 import { ConflictDialog } from '@/components/drawing/ConflictDialog';
 import { SquareFootageBanner } from '@/components/drawing/SquareFootageBanner';
@@ -90,13 +84,15 @@ export default function SalesOrderDrawingPage() {
   return (
     <DrawingEditorProvider drawing={drawing} materialLines={orderQuery.data.items} initialZoom={OPEN_ZOOM}>
       <EdgeTypesProvider>
-        <MaterialPickerProvider>
-          <DrawingEditorBody
-            salesOrderId={id}
-            order={orderQuery.data}
-            onOrderUpdated={(updated) => queryClient.setQueryData(['sales-order', id], updated)}
-          />
-        </MaterialPickerProvider>
+        <AttachedProfileTypesProvider>
+          <MaterialPickerProvider>
+            <DrawingEditorBody
+              salesOrderId={id}
+              order={orderQuery.data}
+              onOrderUpdated={(updated) => queryClient.setQueryData(['sales-order', id], updated)}
+            />
+          </MaterialPickerProvider>
+        </AttachedProfileTypesProvider>
       </EdgeTypesProvider>
     </DrawingEditorProvider>
   );
@@ -147,6 +143,7 @@ function DrawingEditorBody({ salesOrderId, order, onOrderUpdated }: {
     onConflict,
     paused: conflictOpen,
   });
+  const exit = useExitDrawing(salesOrderId, status, saveNow);
 
   // Warn before leaving with unsaved changes (build spec §5 Task 5) — not
   // once a save has actually landed.
@@ -190,30 +187,20 @@ function DrawingEditorBody({ salesOrderId, order, onOrderUpdated }: {
       ref={fillRef}
       data-testid="drawing-editor"
       data-drawing-editor
-      className="flex h-[calc(100dvh-var(--fill-top))] gap-2 overflow-hidden bg-white p-2 [&:fullscreen]:h-dvh"
+      className="relative flex h-[calc(100dvh-var(--fill-top))] flex-col overflow-hidden bg-white [&:fullscreen]:h-dvh"
     >
-      {/* The side panel is its own full-height column, so the top bar (and its
-          undo / redo / save) shares the width left over beside it instead of
-          running across the top of it. */}
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-2">
-        <DrawingToolbar saveStatus={status} onSave={saveNow} orderNumber={order.salesOrderNumber} />
-        <SquareFootageBanner areas={state.present.areas} order={order} onLineUpdated={onOrderUpdated} />
-        <div className="flex min-h-0 flex-1 gap-2">
-          <ToolRail />
-          <div className="relative min-h-0 min-w-0 flex-1">
-            <DrawingCanvas />
-            <DrawModeBar />
-            <BorderModeBar />
-            <CornerModeBar />
-            <EdgeModeBar />
-            <TextControls />
-            <MiniMap />
-            <InspectorPanel />
-          </div>
+      {/* The top bar runs the full width under the app header, and the status bar the full width
+          at the bottom. Between them the board and the side panel sit side by side, the panel
+          touching both bars, so opening it never squeezes either bar. */}
+      <DrawingToolbar saveStatus={status} onSave={saveNow} orderNumber={order.salesOrderNumber} onExit={exit} />
+      <div className="flex min-h-0 flex-1">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+          <SquareFootageBanner areas={state.present.areas} order={order} onLineUpdated={onOrderUpdated} />
+          <DrawingBoard />
         </div>
-        <DrawingStatusBar />
+        <WorkspacePanel />
       </div>
-      <WorkspacePanel />
+      <DrawingStatusBar />
       {conflictOpen && (
         <ConflictDialog onReloadLatest={reloadLatest} onSaveAsCopy={saveAsCopy} onClose={() => setConflictOpen(false)} />
       )}

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 // The rail down the left of the board: the pointer, Draw, Text and Border (with
-// its flyout), Corner (likewise) and Edges, which arms straight away (its type is
-// picked in the bottom bar).
+// its flyout), Corner (likewise), Edges and Profiles, which both arm straight
+// away (their type is picked in the bottom bar).
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
@@ -47,11 +47,11 @@ const tool = () => screen.getByTestId('tool').textContent;
 afterEach(() => vi.restoreAllMocks());
 
 describe('ToolRail', () => {
-  it('holds the pointer, Draw, Text, Border, Corner and Edges — no Line and no other sections', () => {
+  it('holds the pointer, Draw, Text, Border, Corner, Edges and Profiles — no Line and no other sections', () => {
     open();
     const rail = screen.getByRole('navigation', { name: 'Drawing tools' });
     expect(within(rail).getAllByRole('button').map((b) => b.getAttribute('aria-label')))
-      .toEqual(['Select', 'Draw', 'Text', 'Border', 'Corner', 'Edges']);
+      .toEqual(['Select', 'Draw', 'Text', 'Border', 'Corner', 'Edges', 'Profiles']);
     for (const gone of ['Line', 'Shapes', 'Cutouts', 'Annotations', 'Materials']) {
       expect(screen.queryByRole('button', { name: gone })).toBeNull();
     }
@@ -85,6 +85,20 @@ describe('ToolRail', () => {
     expect(edges.getAttribute('aria-pressed')).toBe('true');
     expect(screen.getByRole('button', { name: 'Select' }).getAttribute('aria-pressed')).toBe('false');
     await user.click(edges);
+    expect(tool()).toBe('select');
+  });
+
+  it('Profiles arms with one click, lights while armed, and puts itself away on a second', async () => {
+    const user = open();
+    const profiles = screen.getByRole('button', { name: 'Profiles' });
+    expect((profiles as HTMLButtonElement).disabled).toBe(false);
+    // No flyout: its list lives in the bottom bar.
+    expect(profiles.getAttribute('aria-haspopup')).toBeNull();
+    await user.click(profiles);
+    expect(tool()).toBe('profile');
+    expect(profiles.getAttribute('aria-pressed')).toBe('true');
+    expect(screen.getByRole('button', { name: 'Select' }).getAttribute('aria-pressed')).toBe('false');
+    await user.click(profiles);
     expect(tool()).toBe('select');
   });
 

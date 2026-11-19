@@ -41,7 +41,7 @@ function Readout() {
 function renderToolbar(saveStatus: Parameters<typeof DrawingToolbar>[0]['saveStatus'] = 'idle', onSave: () => void = () => {}) {
   render(
     <DrawingEditorProvider drawing={blankDrawing()} materialLines={[]}>
-      <div data-drawing-editor><DrawingToolbar saveStatus={saveStatus} onSave={onSave} orderNumber="1001" /></div>
+      <div data-drawing-editor><DrawingToolbar saveStatus={saveStatus} onSave={onSave} orderNumber="1001" onExit={() => {}} /></div>
       {/* The add-piece buttons live in the left panel, not the toolbar. */}
       <ShapePalette />
       <Readout />

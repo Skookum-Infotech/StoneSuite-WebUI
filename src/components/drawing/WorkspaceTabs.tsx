@@ -14,7 +14,7 @@ export function WorkspaceTabs() {
   const { workspace, setWorkspace } = useDrawingEditor();
 
   return (
-    <div role="tablist" aria-label="Workspace" className="flex overflow-hidden rounded-md border border-stone-200 bg-stone-50">
+    <div role="tablist" aria-label="Workspace" className="flex overflow-hidden rounded-md border border-stone-700 bg-stone-800">
       {TABS.map(({ id, label }) => (
         <button
           key={id}
@@ -22,7 +22,7 @@ export function WorkspaceTabs() {
           role="tab"
           aria-selected={workspace === id}
           onClick={() => setWorkspace(id)}
-          className="px-4 py-1 text-xs font-medium text-stone-600 hover:bg-stone-100 aria-selected:bg-brand aria-selected:text-stone-900"
+          className="px-4 py-1 text-xs font-medium text-stone-300 hover:bg-stone-700 hover:text-white aria-selected:bg-brand aria-selected:text-stone-900"
         >
           {label}
         </button>

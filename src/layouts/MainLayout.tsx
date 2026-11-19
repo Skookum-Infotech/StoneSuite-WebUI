@@ -20,6 +20,7 @@ import { useTrackLastAppPath } from '@/hooks/useTrackLastAppPath';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { isCustomerAllowedPath } from '@/config/customerPortal';
 import { Breadcrumbs } from '@/layouts/Breadcrumbs';
+import { hidesBreadcrumbs } from '@/layouts/breadcrumbVisibility';
 import { SessionExpiryModal } from '@/components/SessionExpiryModal';
 import { SessionReplacedOverlay } from '@/components/SessionReplacedOverlay';
 import { useSessionWatch } from '@/hooks/useSessionWatch';
@@ -477,7 +478,7 @@ export default function MainLayout(): React.JSX.Element {
         <main className="flex-1 w-full flex flex-col min-h-0 bg-background">
 
           {/* Breadcrumb bar — contextual, scrolls with page */}
-          {pathSegments.length > 0 && (
+          {pathSegments.length > 0 && !hidesBreadcrumbs(location.pathname) && (
             <Breadcrumbs segments={pathSegments} labels={breadcrumbLabels} routes={routes} />
           )}
 
