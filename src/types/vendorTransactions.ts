@@ -104,3 +104,21 @@ export interface VendorTransactionFilters {
 export interface VendorTransactionsQuery extends Partial<VendorTransactionFilters> {
   limit?: number;
 }
+
+/** One days-past-due band of a vendor's open bills; `label` is the server's key (current, 1-30, 31-60, 61+). */
+export interface VendorAgingBucket {
+  label: string;
+  amount: number;
+  count: number;
+}
+
+/**
+ * The vendor's open bills aged by due date. `buckets` is null when the caller
+ * cannot read vendor bills, and `total` equals the summary's open balance.
+ */
+export interface VendorAging {
+  buckets: VendorAgingBucket[] | null;
+  total: number;
+  /** True when the figures cover only the records the caller can see. */
+  scopeLimited: boolean;
+}
