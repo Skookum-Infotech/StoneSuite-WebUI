@@ -92,7 +92,7 @@ export default function OnboardingApplyPage() {
         {/* Logo */}
         <div className="flex items-center gap-3">
           <img src="/logo-only.png" alt="Stone Suite" className="h-9 w-9 object-contain drop-shadow-[0_0_8px_rgba(255,255,255,0.15)]" />
-          <span className="font-brand text-sm uppercase tracking-wordmark text-white/90">
+          <span className="font-brand text-sm uppercase tracking-wordmark-tight text-white/90">
             Stone Suite
           </span>
         </div>

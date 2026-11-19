@@ -293,7 +293,7 @@ export default function MainLayout(): React.JSX.Element {
               className={cn(
                 'rounded-xl border p-2 transition-colors sm:hidden cursor-pointer',
                 isMobileSearchOpen
-                  ? 'border-brand bg-brand/10 text-link'
+                  ? 'border-brand bg-brand/10 text-link-on-dark'
                   : 'border-white/10 text-ink-faint hover:bg-white/[0.06] hover:text-stone-200',
               )}
             >
@@ -328,7 +328,7 @@ export default function MainLayout(): React.JSX.Element {
                     <h5 className="text-xs font-bold text-stone-200">
                       {user?.fullName || 'Guest User'}
                     </h5>
-                    <p className="truncate mt-0.5 type-helper">
+                    <p className="truncate mt-0.5 type-helper text-ink-faint">
                       {user?.email || 'guest@stonesuite.com'}
                     </p>
                   </div>
@@ -354,7 +354,7 @@ export default function MainLayout(): React.JSX.Element {
                   <div className="h-px bg-white/[0.08] my-1" />
                   {isCustomer ? (
                     <div className="py-1">
-                      <div className="px-3 py-2 type-overline">
+                      <div className="px-3 py-2 type-overline text-ink-faint">
                         Workspaces
                       </div>
                       {workspaces.length > 0 ? (
@@ -383,19 +383,19 @@ export default function MainLayout(): React.JSX.Element {
                           })}
                         </div>
                       ) : (
-                        <div className="px-3 py-2 type-subline">
+                        <div className="px-3 py-2 type-subline text-ink-faint">
                           No workspaces
                         </div>
                       )}
                       {switchWorkspaceMutation.isError && (
-                        <p className="px-3 pt-1 type-error">
+                        <p className="px-3 pt-1 type-error text-destructive-red">
                           {apiErrorMessage(switchWorkspaceMutation.error, 'Failed to switch workspace. Try again.')}
                         </p>
                       )}
                     </div>
                   ) : (
                     <div className="py-1">
-                      <div className="px-3 py-2 type-overline">
+                      <div className="px-3 py-2 type-overline text-ink-faint">
                         Roles
                       </div>
                       {roles.length > 0 ? (
@@ -424,12 +424,12 @@ export default function MainLayout(): React.JSX.Element {
                           })}
                         </div>
                       ) : (
-                        <div className="px-3 py-2 type-subline">
+                        <div className="px-3 py-2 type-subline text-ink-faint">
                           No roles assigned
                         </div>
                       )}
                       {switchRoleMutation.isError && (
-                        <p className="px-3 pt-1 type-error">
+                        <p className="px-3 pt-1 type-error text-destructive-red">
                           Failed to switch role. Try again.
                         </p>
                       )}
@@ -438,7 +438,7 @@ export default function MainLayout(): React.JSX.Element {
                   <div className="h-px bg-white/[0.08] my-1" />
                   <button
                     onClick={handleLogout}
-                    className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-bold text-danger-ink hover:bg-destructive/10 transition-colors text-left cursor-pointer"
+                    className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-bold text-destructive-red hover:bg-destructive/10 transition-colors text-left cursor-pointer"
                   >
                     <LogOut className="size-4" />
                     <span>Sign Out</span>

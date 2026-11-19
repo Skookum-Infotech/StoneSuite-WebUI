@@ -155,7 +155,7 @@ export function GlobalSearch({ className, inputClassName, autoFocus, onNavigate 
           aria-controls="global-search-results"
           autoComplete="off"
           className={cn(
-            'h-10 w-full rounded-full border border-white/[0.13] bg-white/[0.07] pl-4 pr-11 placeholder:text-ink-muted transition-all focus:outline-none focus:border-brand/60 focus:bg-white/[0.10] type-input',
+            'h-10 w-full rounded-full border border-white/[0.13] bg-white/[0.07] pl-4 pr-11 text-sm text-stone-200 placeholder:text-ink-faint pointer-coarse:text-base transition-all focus:outline-none focus:border-brand/60 focus:bg-white/[0.10]',
             inputClassName,
           )}
           onChange={(e) => {
