@@ -16,6 +16,9 @@ import { Badge } from '@/components/tenant/ui';
 import { resolveStatusColor } from '@/components/crm/formUtils';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { buildCrmCsvFilename, buildCrmRecordsCsv, downloadCsv } from '@/lib/crmCsvExport';
+import { useIdSelection } from '@/hooks/useIdSelection';
+import { BulkSelectionBar } from '@/components/tenant/BulkSelectionBar';
+import { SelectAllCheckbox, SelectRowCheckbox } from '@/components/tenant/SelectionCheckboxes';
 import { CRM_WORKFLOW_ROUTES } from '@/components/crm/crmWorkflowRoutes';
 import {
   recordApprovalState,
@@ -56,6 +59,8 @@ export type CrmTableConfig = {
   editPath:   (id: string) => string;
   queryKey:   readonly [string, string];
   showEmail?: boolean;
+  /** Adds a checkbox column and an "Export selected (CSV)" bar. */
+  selectable?: boolean;
 };
 
 // ── Internal types ─────────────────────────────────────────────────────────────
@@ -183,6 +188,12 @@ export function CrmRecordTable({ config }: Props) {
   });
 
   const records  = data?.records  ?? [];
+  // Ticked rows (only used when config.selectable). Ids that leave the page (a
+  // re-sort can swap them out) stop counting but return with their row, so a
+  // selection survives sorting; a change of search or status clears it.
+  const pageIds   = useMemo(() => (data?.records ?? []).map((r) => r.id), [data?.records]);
+  const selection = useIdSelection(pageIds);
+  const selectable = Boolean(config.selectable);
   const hasMore  = data?.hasMore  ?? false;
   const hasPrev  = prevCursors.length > 0;
   const pageNum  = prevCursors.length + 1;
@@ -210,6 +221,7 @@ export function CrmRecordTable({ config }: Props) {
   const hasFilters = Boolean(nameFilter || statusFilter);
 
   function clearFilters() {
+    selection.clear();
     setNameFilter('');
     setStatusFilter('');
     setCursor('');
@@ -268,6 +280,20 @@ export function CrmRecordTable({ config }: Props) {
     }
   }
 
+  function toggleAllOnPage() {
+    if (selection.selected.size === pageIds.length) selection.clear();
+    else selection.setAll(pageIds);
+  }
+
+  // Only the ticked rows, from the page on screen: nothing is fetched.
+  function handleExportSelected() {
+    const chosen = records.filter((r) => selection.selected.has(r.id));
+    downloadCsv(
+      buildCrmCsvFilename(config.label),
+      buildCrmRecordsCsv(chosen, statusMap, Boolean(config.showEmail), userMap),
+    );
+  }
+
   const lowerLabel = config.label.toLowerCase();
 
   return (
@@ -283,7 +309,7 @@ export function CrmRecordTable({ config }: Props) {
             type="text"
             placeholder={`Search ${lowerLabel}s…`}
             value={nameFilter}
-            onChange={(e) => setNameFilter(e.target.value)}
+            onChange={(e) => { setNameFilter(e.target.value); selection.clear(); }}
             className="h-8 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-3 text-xs text-stone-900 placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150"
           />
         </div>
@@ -292,7 +318,7 @@ export function CrmRecordTable({ config }: Props) {
         <div className="relative w-full sm:w-auto">
           <Select
             value={statusFilter}
-            onChange={(e) => { setStatusFilter(e.target.value); setCursor(''); setPrevCursors([]); }}
+            onChange={(e) => { setStatusFilter(e.target.value); setCursor(''); setPrevCursors([]); selection.clear(); }}
             className={cn(
               'h-8 w-full rounded-lg border border-stone-200 bg-white pl-3 pr-7 text-xs focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150 appearance-none',
               statusFilter === '' ? 'text-stone-500' : 'text-stone-900',
@@ -373,6 +399,11 @@ export function CrmRecordTable({ config }: Props) {
           <table className="w-full min-w-[520px] text-left text-xs">
             <thead className="border-b border-stone-200 bg-table-header">
               <tr>
+                {selectable && (
+                  <th className="w-10 px-4 py-3">
+                    <SelectAllCheckbox selectedCount={selection.selected.size} pageCount={pageIds.length} onToggle={toggleAllOnPage} />
+                  </th>
+                )}
                 <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Company</th>
                 <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Status</th>
                 <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Owner</th>
@@ -389,6 +420,7 @@ export function CrmRecordTable({ config }: Props) {
               {isLoading ? (
                 Array.from({ length: 5 }, (_, i) => (
                   <tr key={i}>
+                    {selectable && <td className="w-10 px-4 py-3" />}
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
                         <div className="animate-pulse size-8 rounded-full bg-stone-100 shrink-0" />
@@ -413,6 +445,15 @@ export function CrmRecordTable({ config }: Props) {
                   const gated      = approvalState === 'pending' || approvalState === 'rejected';
                   return (
                     <tr key={record.id} className="group hover:bg-accent/10 transition-colors duration-150">
+                      {selectable && (
+                        <td className="w-10 px-4 py-3.5">
+                          <SelectRowCheckbox
+                            checked={selection.selected.has(record.id)}
+                            label={`Select ${company}`}
+                            onToggle={() => selection.toggle(record.id)}
+                          />
+                        </td>
+                      )}
                       <td className="px-4 py-3.5">
                         <div className="flex items-center gap-3">
                           <span
@@ -480,7 +521,7 @@ export function CrmRecordTable({ config }: Props) {
                 })
               ) : (
                 <tr>
-                  <td colSpan={4 + (config.showEmail ? 1 : 0) + (canEdit ? 1 : 0)} className="py-16 text-center">
+                  <td colSpan={4 + (selectable ? 1 : 0) + (config.showEmail ? 1 : 0) + (canEdit ? 1 : 0)} className="py-16 text-center">
                     {!hasFilters ? (
                       <div className="flex flex-col items-center gap-3">
                         <div className="rounded-2xl bg-stone-100 p-4">
@@ -534,6 +575,14 @@ export function CrmRecordTable({ config }: Props) {
           </div>
         )}
       </div>
+
+      {selectable && selection.selected.size > 0 && (
+        <BulkSelectionBar
+          count={selection.selected.size}
+          onExport={handleExportSelected}
+          onClear={selection.clear}
+        />
+      )}
     </div>
   );
 }
