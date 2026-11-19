@@ -259,7 +259,7 @@ export function CrmRecordTable({ config }: Props) {
 
       downloadCsv(
         buildCrmCsvFilename(config.label),
-        buildCrmRecordsCsv(allRecords, statusMap, Boolean(config.showEmail)),
+        buildCrmRecordsCsv(allRecords, statusMap, Boolean(config.showEmail), userMap),
       );
     } catch (err) {
       setExportError(apiErrorMessage(err));
