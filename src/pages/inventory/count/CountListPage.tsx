@@ -98,11 +98,11 @@ export default function CountListPage() {
                   <tr><td colSpan={5} className="type-cell px-4 py-6 text-center">Loading…</td></tr>
                 ) : records.length > 0 ? records.map((c) => (
                   <tr key={c.id} className="relative hover:bg-accent/10 transition-colors">
-                    <td className="px-4 py-3.5 type-record-id"><Link to={`/inventory/count/${c.id}`} className="after:absolute after:inset-0">{c.number || '—'}</Link></td>
-                    <td className="type-cell px-4 py-3.5">{c.warehouseName || '—'}</td>
-                    <td className="px-4 py-3.5"><Badge color={DOC_STATUS_COLORS[c.statusCode] ?? '#a8a29e'}>{docStatusLabel(c.statusCode)}</Badge></td>
-                    <td className="type-cell px-4 py-3.5 tabular-nums">{fmtDate(c.date)}</td>
-                    <td className="type-cell px-4 py-3.5 text-right tabular-nums">{c.countedCount}/{c.lineCount}</td>
+                    <td className="px-4 py-2.5 type-record-id"><Link to={`/inventory/count/${c.id}`} className="after:absolute after:inset-0">{c.number || '—'}</Link></td>
+                    <td className="type-cell px-4 py-2.5">{c.warehouseName || '—'}</td>
+                    <td className="px-4 py-2.5"><Badge color={DOC_STATUS_COLORS[c.statusCode] ?? '#a8a29e'}>{docStatusLabel(c.statusCode)}</Badge></td>
+                    <td className="type-cell px-4 py-2.5 tabular-nums">{fmtDate(c.date)}</td>
+                    <td className="type-cell px-4 py-2.5 text-right tabular-nums">{c.countedCount}/{c.lineCount}</td>
                   </tr>
                 )) : (
                   <tr><td colSpan={5} className="type-cell py-16 text-center">No counts yet.</td></tr>

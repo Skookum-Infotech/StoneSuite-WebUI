@@ -40,9 +40,9 @@ export function VendorTransactionsTable({ rows }: { rows: VendorTransactionRow[]
                   idx === rows.length - 1 && 'border-b-0',
                 )}
               >
-                <td className="type-cell whitespace-nowrap px-4 py-3.5">{dateOrDash(row.date)}</td>
-                <td className="whitespace-nowrap px-4 py-3.5"><TypeBadge row={row} /></td>
-                <td className="px-4 py-3.5">
+                <td className="type-cell whitespace-nowrap px-4 py-2.5">{dateOrDash(row.date)}</td>
+                <td className="whitespace-nowrap px-4 py-2.5"><TypeBadge row={row} /></td>
+                <td className="px-4 py-2.5">
                   <Link
                     to={href}
                     onClick={(e) => e.stopPropagation()}
@@ -52,17 +52,17 @@ export function VendorTransactionsTable({ rows }: { rows: VendorTransactionRow[]
                     {row.number || '—'}
                   </Link>
                 </td>
-                <td className="px-4 py-3.5">
+                <td className="px-4 py-2.5">
                   <div className="flex flex-wrap items-center gap-1.5">
                     <StatusBadge row={row} />
                     {row.isOverdue && <OverdueBadge />}
                   </div>
                 </td>
-                <td className="type-cell whitespace-nowrap px-4 py-3.5">{dateOrDash(row.dueDate)}</td>
-                <td className="type-cell-strong whitespace-nowrap px-4 py-3.5 text-right tabular-nums">
+                <td className="type-cell whitespace-nowrap px-4 py-2.5">{dateOrDash(row.dueDate)}</td>
+                <td className="type-cell-strong whitespace-nowrap px-4 py-2.5 text-right tabular-nums">
                   {moneyOrDash(row.amount)}
                 </td>
-                <td className="type-cell whitespace-nowrap px-4 py-3.5 text-right tabular-nums">
+                <td className="type-cell whitespace-nowrap px-4 py-2.5 text-right tabular-nums">
                   {row.balance === null ? '—' : (
                     <>
                       <span className="font-bold">{moneyOrDash(row.balance)}</span>

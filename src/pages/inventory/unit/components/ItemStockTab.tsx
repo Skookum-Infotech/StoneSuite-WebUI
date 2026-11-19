@@ -94,16 +94,16 @@ export function ItemStockTab({ item }: { item: InventoryItem }) {
                 const errorId = `reorder-error-${r.warehouseId}`;
                 return (
                   <tr key={r.warehouseId} className="hover:bg-accent/10 transition-colors duration-150">
-                    <td className="px-4 py-3.5 type-cell">
+                    <td className="px-4 py-2.5 type-cell">
                       {r.warehouseName}
                       {isLowStock(r.onHand, r.reorderPoint) && (
                         <span className="ml-2 rounded-md bg-amber-50 px-2 py-0.5 text-warning-ink type-pill">Low stock</span>
                       )}
                     </td>
-                    <td className="type-cell px-4 py-3.5 text-right tabular-nums">{formatStockQty(r.onHand)}</td>
-                    <td className="type-cell px-4 py-3.5 text-right tabular-nums">{formatStockQty(r.allocated)}</td>
-                    <td className="type-cell-strong px-4 py-3.5 text-right tabular-nums">{formatStockQty(r.available)}</td>
-                    <td className="px-4 py-3.5 text-right">
+                    <td className="type-cell px-4 py-2.5 text-right tabular-nums">{formatStockQty(r.onHand)}</td>
+                    <td className="type-cell px-4 py-2.5 text-right tabular-nums">{formatStockQty(r.allocated)}</td>
+                    <td className="type-cell-strong px-4 py-2.5 text-right tabular-nums">{formatStockQty(r.available)}</td>
+                    <td className="px-4 py-2.5 text-right">
                       {canEdit ? (
                         <div className="flex items-center justify-end gap-2">
                           <input

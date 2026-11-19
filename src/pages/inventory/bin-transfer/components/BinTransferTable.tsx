@@ -157,7 +157,7 @@ export function BinTransferTable({ emptyAction }: { emptyAction?: () => void }) 
                 Array.from({ length: 5 }, (_, i) => (
                   <tr key={i}>
                     {Array.from({ length: COLUMN_COUNT }, (_, j) => (
-                      <td key={j} className="px-4 py-3"><div className="h-3 w-16 animate-pulse rounded bg-stone-100" /></td>
+                      <td key={j} className="px-4 py-2.5"><div className="h-3 w-16 animate-pulse rounded bg-stone-100" /></td>
                     ))}
                   </tr>
                 ))
@@ -168,7 +168,7 @@ export function BinTransferTable({ emptyAction }: { emptyAction?: () => void }) 
                     onClick={() => navigate(`/inventory/bin_transfer/${t.id}`)}
                     className="cursor-pointer transition-colors hover:bg-accent/10"
                   >
-                    <td className="px-4 py-3.5">
+                    <td className="px-4 py-2.5">
                       <button
                         type="button"
                         onClick={(e) => { e.stopPropagation(); navigate(`/inventory/bin_transfer/${t.id}`); }}
@@ -177,15 +177,15 @@ export function BinTransferTable({ emptyAction }: { emptyAction?: () => void }) 
                         {t.number || '—'}
                       </button>
                     </td>
-                    <td className="type-cell px-4 py-3.5">{t.warehouseName || '—'}</td>
-                    <td className="type-cell whitespace-nowrap px-4 py-3.5 tabular-nums">
+                    <td className="type-cell px-4 py-2.5">{t.warehouseName || '—'}</td>
+                    <td className="type-cell whitespace-nowrap px-4 py-2.5 tabular-nums">
                       {slabsLabel(t)}
                       <span className="ml-1 text-ink-muted">· {t.totalArea.toFixed(2)}</span>
                     </td>
-                    <td className="type-cell max-w-[220px] truncate px-4 py-3.5">{t.toBinSummary || '—'}</td>
-                    <td className="px-4 py-3.5"><Badge color={BT_STATUS_COLORS[t.statusCode] ?? '#a8a29e'}>{t.statusName}</Badge></td>
-                    <td className="type-cell max-w-[160px] truncate px-4 py-3.5">{t.ownerName || '—'}</td>
-                    <td className="type-cell whitespace-nowrap px-4 py-3.5 tabular-nums">{fmtDate(t.date)}</td>
+                    <td className="type-cell max-w-[220px] truncate px-4 py-2.5">{t.toBinSummary || '—'}</td>
+                    <td className="px-4 py-2.5"><Badge color={BT_STATUS_COLORS[t.statusCode] ?? '#a8a29e'}>{t.statusName}</Badge></td>
+                    <td className="type-cell max-w-[160px] truncate px-4 py-2.5">{t.ownerName || '—'}</td>
+                    <td className="type-cell whitespace-nowrap px-4 py-2.5 tabular-nums">{fmtDate(t.date)}</td>
                   </tr>
                 ))
               ) : (

@@ -320,7 +320,7 @@ export function VendorCreditTable() {
                 Array.from({ length: 5 }, (_, i) => (
                   <tr key={i}>
                     {Array.from({ length: canEdit ? 9 : 8 }, (_, j) => (
-                      <td key={j} className={cn('px-4 max-sm:px-2 py-3', !PHONE_COLUMNS.has(j) && 'max-sm:hidden')}><div className="animate-pulse h-3 rounded bg-stone-100 w-16" /></td>
+                      <td key={j} className={cn('px-4 max-sm:px-2 py-2.5', !PHONE_COLUMNS.has(j) && 'max-sm:hidden')}><div className="animate-pulse h-3 rounded bg-stone-100 w-16" /></td>
                     ))}
                   </tr>
                 ))
@@ -329,7 +329,7 @@ export function VendorCreditTable() {
                   const ownerName = credit.ownerEmployeeId ? employeeNames.get(String(credit.ownerEmployeeId)) : undefined;
                   return (
                     <tr key={credit.id} className="group hover:bg-accent/10 transition-colors duration-150">
-                      <td className="px-4 max-sm:px-2 py-3.5">
+                      <td className="px-4 max-sm:px-2 py-2.5">
                         <Link
                           to={`/purchases/vendor_credit/${credit.id}`}
                           className="whitespace-nowrap hover:text-accent-foreground transition-colors type-record-id"
@@ -337,10 +337,10 @@ export function VendorCreditTable() {
                           {credit.vendorCreditNumber || '—'}
                         </Link>
                       </td>
-                      <td className="px-4 max-sm:px-2 py-3.5 truncate max-w-[200px] type-cell-strong">
+                      <td className="px-4 max-sm:px-2 py-2.5 truncate max-w-[200px] type-cell-strong">
                         <VendorLink vendor={credit.vendor} />
                       </td>
-                      <td className="px-4 max-sm:px-2 py-3.5">
+                      <td className="px-4 max-sm:px-2 py-2.5">
                         {isSuperAdmin ? (
                           <VendorCreditStatusControl
                             order={{ statusCode: credit.statusCode }}
@@ -352,23 +352,23 @@ export function VendorCreditTable() {
                           <ReadOnlyStatusPill label={credit.status} color={VC_STATUS_COLORS[credit.statusCode]} />
                         )}
                       </td>
-                      <td className="px-4 max-sm:px-2 py-3.5 truncate max-w-[200px] max-sm:hidden type-cell">
+                      <td className="px-4 max-sm:px-2 py-2.5 truncate max-w-[200px] max-sm:hidden type-cell">
                         {credit.reason || '—'}
                       </td>
-                      <td className="px-4 max-sm:px-2 py-3.5 tabular-nums whitespace-nowrap max-sm:hidden type-cell">
+                      <td className="px-4 max-sm:px-2 py-2.5 tabular-nums whitespace-nowrap max-sm:hidden type-cell">
                         {fmtDate(credit.creditDate)}
                       </td>
-                      <td className="px-4 max-sm:px-2 py-3.5 truncate max-w-[140px] max-sm:hidden type-cell">
+                      <td className="px-4 max-sm:px-2 py-2.5 truncate max-w-[140px] max-sm:hidden type-cell">
                         {ownerName ?? '—'}
                       </td>
-                      <td className="px-4 max-sm:px-2 py-3.5 tabular-nums text-right whitespace-nowrap type-cell-strong">
+                      <td className="px-4 max-sm:px-2 py-2.5 tabular-nums text-right whitespace-nowrap type-cell-strong">
                         {currency(credit.grandTotal)}
                       </td>
-                      <td className="px-4 max-sm:px-2 py-3.5 tabular-nums text-right whitespace-nowrap max-sm:hidden type-cell-strong">
+                      <td className="px-4 max-sm:px-2 py-2.5 tabular-nums text-right whitespace-nowrap max-sm:hidden type-cell-strong">
                         {currency(credit.unappliedAmount)}
                       </td>
                       {canEdit && (
-                        <td className="px-4 max-sm:px-2 py-3.5 text-right max-sm:hidden">
+                        <td className="px-4 max-sm:px-2 py-2.5 text-right max-sm:hidden">
                           {VC_EDITABLE_STATUSES.has(credit.statusCode) ? (
                             <button
                               type="button"

@@ -330,7 +330,7 @@ export function RequisitionTable() {
                 Array.from({ length: 5 }, (_, i) => (
                   <tr key={i}>
                     {Array.from({ length: canEdit ? 10 : 9 }, (_, j) => (
-                      <td key={j} className={cn('px-4 max-sm:px-2 py-3', !PHONE_COLUMNS.has(j) && 'max-sm:hidden')}><div className="animate-pulse h-3 rounded bg-stone-100 w-16" /></td>
+                      <td key={j} className={cn('px-4 max-sm:px-2 py-2.5', !PHONE_COLUMNS.has(j) && 'max-sm:hidden')}><div className="animate-pulse h-3 rounded bg-stone-100 w-16" /></td>
                     ))}
                   </tr>
                 ))
@@ -343,7 +343,7 @@ export function RequisitionTable() {
                   const priorityColor = PRIORITY_COLORS[reqn.priority] ?? '#a8a29e';
                   return (
                     <tr key={reqn.id} className="group hover:bg-accent/10 transition-colors duration-150">
-                      <td className="px-4 max-sm:px-2 py-3.5 whitespace-nowrap">
+                      <td className="px-4 max-sm:px-2 py-2.5 whitespace-nowrap">
                         <Link
                           to={`/purchases/requisition/${reqn.id}`}
                           aria-label={`Open requisition ${reqn.requisitionNumber}`}
@@ -352,13 +352,13 @@ export function RequisitionTable() {
                           {reqn.requisitionNumber || '—'}
                         </Link>
                       </td>
-                      <td className="px-4 max-sm:px-2 py-3.5 truncate max-w-[140px] type-cell">
+                      <td className="px-4 max-sm:px-2 py-2.5 truncate max-w-[140px] type-cell">
                         {requesterName ?? '—'}
                       </td>
-                      <td className="px-4 max-sm:px-2 py-3.5 truncate max-w-[120px] max-sm:hidden type-cell">
+                      <td className="px-4 max-sm:px-2 py-2.5 truncate max-w-[120px] max-sm:hidden type-cell">
                         {reqn.department || '—'}
                       </td>
-                      <td className="px-4 max-sm:px-2 py-3.5">
+                      <td className="px-4 max-sm:px-2 py-2.5">
                         {isSuperAdmin ? (
                           <RequisitionStatusControl
                             order={{ statusCode: reqn.statusCode, approvalStatus: reqn.approvalStatus, nextStatusCodes: reqn.nextStatusCodes }}
@@ -370,7 +370,7 @@ export function RequisitionTable() {
                           <ReadOnlyStatusPill label={reqn.status} color={REQUISITION_STATUS_COLORS[reqn.statusCode]} />
                         )}
                       </td>
-                      <td className="px-4 max-sm:px-2 py-3.5 max-sm:hidden">
+                      <td className="px-4 max-sm:px-2 py-2.5 max-sm:hidden">
                         {approvalLabel ? (
                           <StatusPill color={APPROVAL_COLORS[reqn.approvalStatus]} dot={false}><ShieldCheck className="size-2.5" aria-hidden="true" />
                             {approvalLabel}</StatusPill>
@@ -378,20 +378,20 @@ export function RequisitionTable() {
                           <span className="type-subline">—</span>
                         )}
                       </td>
-                      <td className="px-4 max-sm:px-2 py-3.5 max-sm:hidden">
+                      <td className="px-4 max-sm:px-2 py-2.5 max-sm:hidden">
                         <StatusPill color={priorityColor} dot={false}>{priorityLabel(reqn.priority)}</StatusPill>
                       </td>
-                      <td className="px-4 max-sm:px-2 py-3.5 tabular-nums whitespace-nowrap max-sm:hidden type-cell">
+                      <td className="px-4 max-sm:px-2 py-2.5 tabular-nums whitespace-nowrap max-sm:hidden type-cell">
                         {fmtDate(reqn.neededByDate)}
                       </td>
-                      <td className="px-4 max-sm:px-2 py-3.5 truncate max-w-[160px] max-sm:hidden type-cell-strong">
+                      <td className="px-4 max-sm:px-2 py-2.5 truncate max-w-[160px] max-sm:hidden type-cell-strong">
                         <VendorLink vendor={reqn.vendor} />
                       </td>
-                      <td className="px-4 max-sm:px-2 py-3.5 tabular-nums text-right whitespace-nowrap type-cell-strong">
+                      <td className="px-4 max-sm:px-2 py-2.5 tabular-nums text-right whitespace-nowrap type-cell-strong">
                         {currency(reqn.estimatedTotal)}
                       </td>
                       {canEdit && (
-                        <td className="px-4 max-sm:px-2 py-3.5 text-right max-sm:hidden">
+                        <td className="px-4 max-sm:px-2 py-2.5 text-right max-sm:hidden">
                           <button
                             type="button"
                             onClick={() => navigate(`/purchases/requisition/${reqn.id}/edit`)}

@@ -267,20 +267,20 @@ export function RefundTable() {
               {isLoading ? (
                 Array.from({ length: 5 }, (_, i) => (
                   <tr key={i}>
-                    <td className="px-4 max-sm:px-2 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-20" /></td>
-                    <td className="px-4 max-sm:px-2 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-36" /></td>
-                    <td className="px-4 max-sm:px-2 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-20" /></td>
-                    <td className="px-4 max-sm:px-2 py-3 max-sm:hidden"><div className="animate-pulse h-3 rounded bg-stone-100 w-16" /></td>
-                    <td className="px-4 max-sm:px-2 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-16 ml-auto" /></td>
-                    <td className="px-4 max-sm:px-2 py-3 max-sm:hidden"><div className="animate-pulse h-3 rounded bg-stone-100 w-16 ml-auto" /></td>
-                    {canEdit && <td className="px-4 max-sm:px-2 py-3 max-sm:hidden" />}
+                    <td className="px-4 max-sm:px-2 py-2.5"><div className="animate-pulse h-3 rounded bg-stone-100 w-20" /></td>
+                    <td className="px-4 max-sm:px-2 py-2.5"><div className="animate-pulse h-3 rounded bg-stone-100 w-36" /></td>
+                    <td className="px-4 max-sm:px-2 py-2.5"><div className="animate-pulse h-3 rounded bg-stone-100 w-20" /></td>
+                    <td className="px-4 max-sm:px-2 py-2.5 max-sm:hidden"><div className="animate-pulse h-3 rounded bg-stone-100 w-16" /></td>
+                    <td className="px-4 max-sm:px-2 py-2.5"><div className="animate-pulse h-3 rounded bg-stone-100 w-16 ml-auto" /></td>
+                    <td className="px-4 max-sm:px-2 py-2.5 max-sm:hidden"><div className="animate-pulse h-3 rounded bg-stone-100 w-16 ml-auto" /></td>
+                    {canEdit && <td className="px-4 max-sm:px-2 py-2.5 max-sm:hidden" />}
                   </tr>
                 ))
               ) : records.length > 0 ? (
                 records.map((r) => {
                   return (
                     <tr key={r.id} className="group hover:bg-accent/10 transition-colors duration-150">
-                      <td className="px-4 max-sm:px-2 py-3.5">
+                      <td className="px-4 max-sm:px-2 py-2.5">
                         <Link
                           to={`/sales/refund/${r.id}`}
                           className="whitespace-nowrap hover:text-accent-foreground transition-colors type-record-id"
@@ -288,10 +288,10 @@ export function RefundTable() {
                           {r.refundNumber || '—'}
                         </Link>
                       </td>
-                      <td className="px-4 max-sm:px-2 py-3.5 truncate max-w-[200px] type-cell-strong">
+                      <td className="px-4 max-sm:px-2 py-2.5 truncate max-w-[200px] type-cell-strong">
                         {r.customer?.name ? <CustomerLink id={r.customer.id} name={r.customer.name} className="hover:text-accent-foreground hover:underline" /> : '—'}
                       </td>
-                      <td className="px-4 max-sm:px-2 py-3.5">
+                      <td className="px-4 max-sm:px-2 py-2.5">
                         {isSuperAdmin ? (
                           <RefundStatusControl
                             refund={{ statusCode: r.statusCode, approvalStatus: r.approvalStatus ?? 'none' }}
@@ -303,19 +303,19 @@ export function RefundTable() {
                           <ReadOnlyStatusPill label={r.status} color={REFUND_STATUS_COLORS[r.status]} />
                         )}
                       </td>
-                      <td className="px-4 max-sm:px-2 py-3.5 tabular-nums whitespace-nowrap max-sm:hidden type-cell">
+                      <td className="px-4 max-sm:px-2 py-2.5 tabular-nums whitespace-nowrap max-sm:hidden type-cell">
                         {r.refundDate
                           ? formatDateValue(r.refundDate, undefined, LIST_DATE_OPTIONS)
                           : '—'}
                       </td>
-                      <td className="px-4 max-sm:px-2 py-3.5 tabular-nums text-right whitespace-nowrap type-cell-strong">
+                      <td className="px-4 max-sm:px-2 py-2.5 tabular-nums text-right whitespace-nowrap type-cell-strong">
                         {currency(r.amount)}
                       </td>
-                      <td className="px-4 max-sm:px-2 py-3.5 tabular-nums text-right whitespace-nowrap max-sm:hidden type-cell">
+                      <td className="px-4 max-sm:px-2 py-2.5 tabular-nums text-right whitespace-nowrap max-sm:hidden type-cell">
                         {currency(r.unappliedAmount)}
                       </td>
                       {canEdit && (
-                        <td className="px-4 max-sm:px-2 py-3.5 text-right max-sm:hidden">
+                        <td className="px-4 max-sm:px-2 py-2.5 text-right max-sm:hidden">
                           <button
                             type="button"
                             onClick={() => navigate(`/sales/refund/${r.id}/edit`)}

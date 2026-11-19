@@ -99,12 +99,12 @@ export function BillingHistory() {
                     idx === filtered.length - 1 && 'border-b-0',
                   )}
                 >
-                  <td className="type-cell px-4 py-3.5 whitespace-nowrap">{fmtDate(inv.date)}</td>
-                  <td className="px-4 py-3.5">
+                  <td className="type-cell px-4 py-2.5 whitespace-nowrap">{fmtDate(inv.date)}</td>
+                  <td className="px-4 py-2.5">
                     <span className="type-record-id">{inv.id}</span>
                   </td>
-                  <td className="type-cell-strong px-4 py-3.5 text-right tabular-nums">{fmt.format(inv.amount)}</td>
-                  <td className="px-4 py-3.5">
+                  <td className="type-cell-strong px-4 py-2.5 text-right tabular-nums">{fmt.format(inv.amount)}</td>
+                  <td className="px-4 py-2.5">
                     <StatusBadge status={inv.status} />
                   </td>
                 </tr>

@@ -263,19 +263,19 @@ export function SalesOrderTable({ toolbarActions }: { toolbarActions?: ReactNode
               {isLoading ? (
                 Array.from({ length: 5 }, (_, i) => (
                   <tr key={i}>
-                    <td className="px-4 max-sm:px-2 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-20" /></td>
-                    <td className="px-4 max-sm:px-2 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-36" /></td>
-                    <td className="px-4 max-sm:px-2 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-20" /></td>
-                    <td className="px-4 max-sm:px-2 py-3 max-sm:hidden"><div className="animate-pulse h-3 rounded bg-stone-100 w-16" /></td>
-                    <td className="px-4 max-sm:px-2 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-16 ml-auto" /></td>
-                    {canEdit && <td className="px-4 max-sm:px-2 py-3 max-sm:hidden" />}
+                    <td className="px-4 max-sm:px-2 py-2.5"><div className="animate-pulse h-3 rounded bg-stone-100 w-20" /></td>
+                    <td className="px-4 max-sm:px-2 py-2.5"><div className="animate-pulse h-3 rounded bg-stone-100 w-36" /></td>
+                    <td className="px-4 max-sm:px-2 py-2.5"><div className="animate-pulse h-3 rounded bg-stone-100 w-20" /></td>
+                    <td className="px-4 max-sm:px-2 py-2.5 max-sm:hidden"><div className="animate-pulse h-3 rounded bg-stone-100 w-16" /></td>
+                    <td className="px-4 max-sm:px-2 py-2.5"><div className="animate-pulse h-3 rounded bg-stone-100 w-16 ml-auto" /></td>
+                    {canEdit && <td className="px-4 max-sm:px-2 py-2.5 max-sm:hidden" />}
                   </tr>
                 ))
               ) : records.length > 0 ? (
                 records.map((order) => {
                   return (
                     <tr key={order.id} className="group hover:bg-accent/10 transition-colors duration-150">
-                      <td className="px-4 max-sm:px-2 py-3.5">
+                      <td className="px-4 max-sm:px-2 py-2.5">
                         <Link
                           to={`/sales/sales_order/${order.id}`}
                           className="whitespace-nowrap hover:text-accent-foreground transition-colors type-record-id"
@@ -283,10 +283,10 @@ export function SalesOrderTable({ toolbarActions }: { toolbarActions?: ReactNode
                           {order.salesOrderNumber || '—'}
                         </Link>
                       </td>
-                      <td className="px-4 max-sm:px-2 py-3.5 truncate max-w-[200px] type-cell-strong">
+                      <td className="px-4 max-sm:px-2 py-2.5 truncate max-w-[200px] type-cell-strong">
                         {order.customer?.name ? <CustomerLink id={order.customer.id} name={order.customer.name} className="hover:text-accent-foreground hover:underline" /> : '—'}
                       </td>
-                      <td className="px-4 max-sm:px-2 py-3.5">
+                      <td className="px-4 max-sm:px-2 py-2.5">
                         {isSuperAdmin ? (
                           <SalesOrderStatusControl
                             order={{ statusCode: order.statusCode ?? '', approvalStatus: order.approvalStatus ?? 'none', nextStatusCodes: order.nextStatusCodes }}
@@ -298,16 +298,16 @@ export function SalesOrderTable({ toolbarActions }: { toolbarActions?: ReactNode
                           <ReadOnlyStatusPill label={order.status} color={SO_STATUS_COLORS[order.status]} />
                         )}
                       </td>
-                      <td className="px-4 max-sm:px-2 py-3.5 tabular-nums whitespace-nowrap max-sm:hidden type-cell">
+                      <td className="px-4 max-sm:px-2 py-2.5 tabular-nums whitespace-nowrap max-sm:hidden type-cell">
                         {order.orderDate
                           ? formatDateValue(order.orderDate, undefined, LIST_DATE_OPTIONS)
                           : '—'}
                       </td>
-                      <td className="px-4 max-sm:px-2 py-3.5 tabular-nums text-right whitespace-nowrap type-cell-strong">
+                      <td className="px-4 max-sm:px-2 py-2.5 tabular-nums text-right whitespace-nowrap type-cell-strong">
                         {currency(order.grandTotal)}
                       </td>
                       {canEdit && (
-                        <td className="px-4 max-sm:px-2 py-3.5 text-right max-sm:hidden">
+                        <td className="px-4 max-sm:px-2 py-2.5 text-right max-sm:hidden">
                           <button
                             type="button"
                             onClick={() => navigate(`/sales/sales_order/${order.id}/edit`)}

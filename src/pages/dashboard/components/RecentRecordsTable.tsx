@@ -98,12 +98,12 @@ export function RecentRecordsTable({
               const typeLabel = formatBreadcrumbSegment(r.module);
               return (
                 <tr key={r.id} className="transition-colors duration-150 hover:bg-stone-50">
-                  <td className="whitespace-nowrap px-[19px] py-3">
+                  <td className="whitespace-nowrap px-[19px] py-2.5">
                     <span className={cn('inline-block rounded-full px-2.5 py-1 type-pill', meta.bg, meta.text)}>
                       {typeLabel}
                     </span>
                   </td>
-                  <td className="whitespace-nowrap px-[19px] py-3 type-record-id">
+                  <td className="whitespace-nowrap px-[19px] py-2.5 type-record-id">
                     <Link
                       to={recordRoute(r.domain, r.module, r.id)}
                       aria-label={`View ${typeLabel} ${r.recordNumber}${r.account ? ` for ${r.account}` : ''}`}
@@ -112,14 +112,14 @@ export function RecentRecordsTable({
                       {r.recordNumber}
                     </Link>
                   </td>
-                  <td className="px-[19px] py-3 type-cell">{r.account ?? '—'}</td>
-                  <td className="whitespace-nowrap px-[19px] py-3 text-right type-cell-strong">
+                  <td className="px-[19px] py-2.5 type-cell">{r.account ?? '—'}</td>
+                  <td className="whitespace-nowrap px-[19px] py-2.5 text-right type-cell-strong">
                     {currency(r.value)}
                   </td>
-                  <td className="whitespace-nowrap px-[19px] py-3">
+                  <td className="whitespace-nowrap px-[19px] py-2.5">
                     <span className="type-cell">{r.status}</span>
                   </td>
-                  <td className="whitespace-nowrap px-[19px] py-3 text-right type-helper tabular-nums">
+                  <td className="whitespace-nowrap px-[19px] py-2.5 text-right type-helper tabular-nums">
                     <time dateTime={r.updatedAt} title={new Date(r.updatedAt).toLocaleString()}>
                       {relativeTime(r.updatedAt)}
                     </time>

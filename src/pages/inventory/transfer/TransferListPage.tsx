@@ -118,11 +118,11 @@ export default function TransferListPage() {
                   <tr><td colSpan={5} className="type-cell px-4 py-6 text-center">Loading…</td></tr>
                 ) : records.length > 0 ? records.map((t) => (
                   <tr key={t.id} className="relative hover:bg-accent/10 transition-colors">
-                    <td className="px-4 py-3.5 type-record-id"><Link to={`/inventory/transfer/${t.id}`} className="after:absolute after:inset-0">{t.number || '—'}</Link></td>
-                    <td className="type-cell px-4 py-3.5">{t.fromWarehouseName || '—'}</td>
-                    <td className="type-cell px-4 py-3.5">{t.toWarehouseName || '—'}</td>
-                    <td className="px-4 py-3.5"><Badge color={DOC_STATUS_COLORS[t.statusCode] ?? '#a8a29e'}>{docStatusLabel(t.statusCode)}</Badge></td>
-                    <td className="type-cell px-4 py-3.5 tabular-nums">{fmtDate(t.date)}</td>
+                    <td className="px-4 py-2.5 type-record-id"><Link to={`/inventory/transfer/${t.id}`} className="after:absolute after:inset-0">{t.number || '—'}</Link></td>
+                    <td className="type-cell px-4 py-2.5">{t.fromWarehouseName || '—'}</td>
+                    <td className="type-cell px-4 py-2.5">{t.toWarehouseName || '—'}</td>
+                    <td className="px-4 py-2.5"><Badge color={DOC_STATUS_COLORS[t.statusCode] ?? '#a8a29e'}>{docStatusLabel(t.statusCode)}</Badge></td>
+                    <td className="type-cell px-4 py-2.5 tabular-nums">{fmtDate(t.date)}</td>
                   </tr>
                 )) : (
                   <tr><td colSpan={5} className="type-cell py-16 text-center">No transfers yet.</td></tr>

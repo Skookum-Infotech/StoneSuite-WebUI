@@ -117,14 +117,14 @@ export function KitTable() {
                 Array.from({ length: SKELETON_ROWS }, (_, i) => (
                   <tr key={i}>
                     {Array.from({ length: colCount }, (_, j) => (
-                      <td key={j} className="px-4 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-16" /></td>
+                      <td key={j} className="px-4 py-2.5"><div className="animate-pulse h-3 rounded bg-stone-100 w-16" /></td>
                     ))}
                   </tr>
                 ))
               ) : records.length > 0 ? (
                 records.map((kit) => (
                   <tr key={kit.id} className="group hover:bg-accent/10 transition-colors duration-150">
-                    <td className="px-4 py-3.5">
+                    <td className="px-4 py-2.5">
                       {canEdit ? (
                         <Link
                           to={`/inventory/kit/${kit.id}`}
@@ -140,16 +140,16 @@ export function KitTable() {
                         </span>
                       )}
                     </td>
-                    <td className="px-4 py-3.5 tabular-nums text-right type-cell">{kit.itemCount}</td>
-                    <td className="px-4 py-3.5 truncate max-w-[280px] type-cell">{kit.description || '—'}</td>
-                    <td className="px-4 py-3.5">
+                    <td className="px-4 py-2.5 tabular-nums text-right type-cell">{kit.itemCount}</td>
+                    <td className="px-4 py-2.5 truncate max-w-[280px] type-cell">{kit.description || '—'}</td>
+                    <td className="px-4 py-2.5">
                       <span className={cn('inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 whitespace-nowrap type-pill', kit.isActive ? 'bg-emerald-50 text-emerald-700' : 'bg-stone-100 text-ink-muted')}>
                         <span className={cn('size-1.5 shrink-0 rounded-full', kit.isActive ? 'bg-emerald-500' : 'bg-stone-400')} aria-hidden="true" />
                         {kit.isActive ? 'Active' : 'Inactive'}
                       </span>
                     </td>
                     {canEdit && (
-                      <td className="px-4 py-3.5 text-right">
+                      <td className="px-4 py-2.5 text-right">
                         <Link
                           to={`/inventory/kit/${kit.id}`}
                           aria-label={`Edit kit/package ${kit.name}`}

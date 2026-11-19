@@ -390,17 +390,17 @@ export function CrmRecordTable({ config }: Props) {
               {isLoading ? (
                 Array.from({ length: 5 }, (_, i) => (
                   <tr key={i}>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-2.5">
                       <div className="flex items-center gap-3">
                         <div className="animate-pulse size-8 rounded-full bg-stone-100 shrink-0" />
                         <div className="animate-pulse h-3 rounded bg-stone-100 w-36" />
                       </div>
                     </td>
-                    <td className="px-4 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-24" /></td>
-                    <td className="px-4 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-16" /></td>
-                    {config.showEmail && <td className="px-4 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-32" /></td>}
-                    <td className="px-4 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-20" /></td>
-                    {canEdit && <td className="px-4 py-3" />}
+                    <td className="px-4 py-2.5"><div className="animate-pulse h-3 rounded bg-stone-100 w-24" /></td>
+                    <td className="px-4 py-2.5"><div className="animate-pulse h-3 rounded bg-stone-100 w-16" /></td>
+                    {config.showEmail && <td className="px-4 py-2.5"><div className="animate-pulse h-3 rounded bg-stone-100 w-32" /></td>}
+                    <td className="px-4 py-2.5"><div className="animate-pulse h-3 rounded bg-stone-100 w-20" /></td>
+                    {canEdit && <td className="px-4 py-2.5" />}
                   </tr>
                 ))
               ) : records.length > 0 ? (
@@ -414,7 +414,7 @@ export function CrmRecordTable({ config }: Props) {
                   const gated      = approvalState === 'pending' || approvalState === 'rejected';
                   return (
                     <tr key={record.id} className="group hover:bg-accent/10 transition-colors duration-150">
-                      <td className="px-4 py-3.5">
+                      <td className="px-4 py-2.5">
                         <div className="flex items-center gap-3">
                           <span
                             className="flex size-8 shrink-0 items-center justify-center rounded-full text-xs font-bold"
@@ -436,7 +436,7 @@ export function CrmRecordTable({ config }: Props) {
                           </div>
                         </div>
                       </td>
-                      <td className="px-4 py-3.5">
+                      <td className="px-4 py-2.5">
                         {statusInfo && !canChangeStatusInList ? (
                           <Badge color={resolveStatusColor(statusInfo.stateKey, statusInfo.color)}>{statusInfo.statusLabel}</Badge>
                         ) : statusInfo ? (
@@ -454,19 +454,19 @@ export function CrmRecordTable({ config }: Props) {
                           <span className="text-xs text-ink-muted">—</span>
                         )}
                       </td>
-                      <td className="px-4 py-3.5 truncate max-w-[160px] type-cell">
+                      <td className="px-4 py-2.5 truncate max-w-[160px] type-cell">
                         {(record.ownerUserId && userMap.get(record.ownerUserId)) || (
                           <span className="text-ink-muted">—</span>
                         )}
                       </td>
                       {config.showEmail && (
-                        <td className="px-4 py-3.5 truncate max-w-[180px] type-cell">{email}</td>
+                        <td className="px-4 py-2.5 truncate max-w-[180px] type-cell">{email}</td>
                       )}
-                      <td className="px-4 py-3.5 tabular-nums whitespace-nowrap type-cell">
+                      <td className="px-4 py-2.5 tabular-nums whitespace-nowrap type-cell">
                         {new Date(record.createdAt).toLocaleDateString(undefined, LIST_DATE_OPTIONS)}
                       </td>
                       {canEdit && (
-                        <td className="px-4 py-3.5 text-right">
+                        <td className="px-4 py-2.5 text-right">
                           <Link
                             to={config.editPath(record.id)}
                             aria-label={`Edit ${label}`}

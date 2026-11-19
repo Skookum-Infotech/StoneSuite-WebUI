@@ -201,7 +201,7 @@ export function UnitTable() {
             <tbody className="divide-y divide-stone-100">
               {isLoading ? (
                 Array.from({ length: 5 }, (_, i) => (
-                  <tr key={i}>{Array.from({ length: canUpdate ? 9 : 8 }, (_, j) => <td key={j} className="px-4 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-16" /></td>)}</tr>
+                  <tr key={i}>{Array.from({ length: canUpdate ? 9 : 8 }, (_, j) => <td key={j} className="px-4 py-2.5"><div className="animate-pulse h-3 rounded bg-stone-100 w-16" /></td>)}</tr>
                 ))
               ) : records.length > 0 ? (
                 records.map((u) => {
@@ -217,22 +217,22 @@ export function UnitTable() {
                   const scrapDisabledReason = received ? undefined : disabledReason;
                   return (
                     <tr key={u.id} className="group hover:bg-accent/10 transition-colors duration-150">
-                      <td className="px-4 py-3.5">
+                      <td className="px-4 py-2.5">
                         <Link to={`/inventory/unit/${u.id}`} className="whitespace-nowrap hover:text-accent-foreground transition-colors type-record-id">{u.serial}</Link>
                       </td>
-                      <td className="px-4 py-3.5 truncate max-w-[180px] type-cell">{u.inventoryItemName ?? '—'}</td>
-                      <td className="px-4 py-3.5 capitalize type-cell">{u.kind}</td>
-                      <td className="px-4 py-3.5">
+                      <td className="px-4 py-2.5 truncate max-w-[180px] type-cell">{u.inventoryItemName ?? '—'}</td>
+                      <td className="px-4 py-2.5 capitalize type-cell">{u.kind}</td>
+                      <td className="px-4 py-2.5">
                         <StatusPill color={STATUS_COLORS[u.status] ?? '#a8a29e'}>{u.status.replace('_', ' ')}</StatusPill>
                       </td>
-                      <td className="px-4 py-3.5">
+                      <td className="px-4 py-2.5">
                         {isAllocated(u) ? <UnitAllocationChips unit={u} /> : <span className="text-ink-muted" aria-label="Not allocated">—</span>}
                       </td>
-                      <td className="px-4 py-3.5 tabular-nums text-right whitespace-nowrap type-cell">{formatUnitArea(u.area, u.areaUnitCode)}</td>
-                      <td className="px-4 py-3.5"><UnitConsumptionCell unit={u} /></td>
-                      <td className="px-4 py-3.5 truncate max-w-[160px] type-cell">{u.binPath || u.warehouseName || '—'}</td>
+                      <td className="px-4 py-2.5 tabular-nums text-right whitespace-nowrap type-cell">{formatUnitArea(u.area, u.areaUnitCode)}</td>
+                      <td className="px-4 py-2.5"><UnitConsumptionCell unit={u} /></td>
+                      <td className="px-4 py-2.5 truncate max-w-[160px] type-cell">{u.binPath || u.warehouseName || '—'}</td>
                       {canUpdate && (
-                        <td className="px-4 py-3.5">
+                        <td className="px-4 py-2.5">
                           <div className="flex items-center justify-end gap-1.5">
                             {heldForCustomer ? (
                               <button type="button" disabled={isReleasing} onClick={() => releaseReservation(u)} aria-label={`Release reservation on ${u.serial}`} title="Give this slab back to available stock" className={buttonVariants({ variant: 'outline', size: 'sm' })}>

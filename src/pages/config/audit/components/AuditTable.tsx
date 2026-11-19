@@ -83,7 +83,7 @@ function AuditRow({
   return (
     <Fragment>
       <tr className="hover:bg-stone-50/60 transition-colors duration-150">
-        <td className="px-4 py-3 text-ink-muted">
+        <td className="px-4 py-2.5 text-ink-muted">
           <button
             type="button"
             aria-label={
@@ -98,28 +98,28 @@ function AuditRow({
             {expanded ? <ChevronDown className="size-3.5" /> : <ChevronRight className="size-3.5" />}
           </button>
         </td>
-        <td className="type-cell px-4 py-3 tabular-nums whitespace-nowrap">
+        <td className="type-cell px-4 py-2.5 tabular-nums whitespace-nowrap">
           {formatAuditTime(entry.createdAt)}
         </td>
-        <td className="type-cell px-4 py-3 whitespace-nowrap font-medium">
+        <td className="type-cell px-4 py-2.5 whitespace-nowrap font-medium">
           {resourceLabel(entry.resource)}
         </td>
-        <td className="type-cell px-4 py-3 whitespace-nowrap">{actionLabel(entry.action)}</td>
+        <td className="type-cell px-4 py-2.5 whitespace-nowrap">{actionLabel(entry.action)}</td>
         <td
           className={cn(
-            'px-4 py-3 whitespace-nowrap',
+            'px-4 py-2.5 whitespace-nowrap',
             rawActor ? 'font-mono type-subline' : 'text-ink',
           )}
         >
           {actorLabel(entry, names)}
         </td>
-        <td className="px-4 py-3 truncate max-w-[160px] type-record-id">
+        <td className="px-4 py-2.5 truncate max-w-[160px] type-record-id">
           {entry.resourceId || '—'}
         </td>
       </tr>
       {expanded && (
         <tr className="bg-stone-50/60">
-          <td colSpan={COLUMN_COUNT} className="px-4 py-3">
+          <td colSpan={COLUMN_COUNT} className="px-4 py-2.5">
             <AuditChanges oldValue={snapshots.old} newValue={snapshots.new} />
           </td>
         </tr>
@@ -131,20 +131,20 @@ function AuditRow({
 function SkeletonRow() {
   return (
     <tr>
-      <td className="px-4 py-3" />
-      <td className="px-4 py-3">
+      <td className="px-4 py-2.5" />
+      <td className="px-4 py-2.5">
         <div className="animate-pulse h-3 w-28 rounded bg-stone-100" />
       </td>
-      <td className="px-4 py-3">
+      <td className="px-4 py-2.5">
         <div className="animate-pulse h-3 w-20 rounded bg-stone-100" />
       </td>
-      <td className="px-4 py-3">
+      <td className="px-4 py-2.5">
         <div className="animate-pulse h-3 w-16 rounded bg-stone-100" />
       </td>
-      <td className="px-4 py-3">
+      <td className="px-4 py-2.5">
         <div className="animate-pulse h-3 w-24 rounded bg-stone-100" />
       </td>
-      <td className="px-4 py-3">
+      <td className="px-4 py-2.5">
         <div className="animate-pulse h-3 w-20 rounded bg-stone-100" />
       </td>
     </tr>

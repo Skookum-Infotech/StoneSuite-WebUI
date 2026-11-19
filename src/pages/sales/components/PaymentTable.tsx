@@ -253,20 +253,20 @@ export function PaymentTable() {
               {isLoading ? (
                 Array.from({ length: 5 }, (_, i) => (
                   <tr key={i}>
-                    <td className="px-4 max-sm:px-2 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-20" /></td>
-                    <td className="px-4 max-sm:px-2 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-36" /></td>
-                    <td className="px-4 max-sm:px-2 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-20" /></td>
-                    <td className="px-4 max-sm:px-2 py-3 max-sm:hidden"><div className="animate-pulse h-3 rounded bg-stone-100 w-16" /></td>
-                    <td className="px-4 max-sm:px-2 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-16 ml-auto" /></td>
-                    <td className="px-4 max-sm:px-2 py-3 max-sm:hidden"><div className="animate-pulse h-3 rounded bg-stone-100 w-16 ml-auto" /></td>
-                    {canEdit && <td className="px-4 max-sm:px-2 py-3 max-sm:hidden" />}
+                    <td className="px-4 max-sm:px-2 py-2.5"><div className="animate-pulse h-3 rounded bg-stone-100 w-20" /></td>
+                    <td className="px-4 max-sm:px-2 py-2.5"><div className="animate-pulse h-3 rounded bg-stone-100 w-36" /></td>
+                    <td className="px-4 max-sm:px-2 py-2.5"><div className="animate-pulse h-3 rounded bg-stone-100 w-20" /></td>
+                    <td className="px-4 max-sm:px-2 py-2.5 max-sm:hidden"><div className="animate-pulse h-3 rounded bg-stone-100 w-16" /></td>
+                    <td className="px-4 max-sm:px-2 py-2.5"><div className="animate-pulse h-3 rounded bg-stone-100 w-16 ml-auto" /></td>
+                    <td className="px-4 max-sm:px-2 py-2.5 max-sm:hidden"><div className="animate-pulse h-3 rounded bg-stone-100 w-16 ml-auto" /></td>
+                    {canEdit && <td className="px-4 max-sm:px-2 py-2.5 max-sm:hidden" />}
                   </tr>
                 ))
               ) : records.length > 0 ? (
                 records.map((p) => {
                   return (
                     <tr key={p.id} className="group hover:bg-accent/10 transition-colors duration-150">
-                      <td className="px-4 max-sm:px-2 py-3.5">
+                      <td className="px-4 max-sm:px-2 py-2.5">
                         <Link
                           to={`/sales/payment/${p.id}`}
                           className="whitespace-nowrap hover:text-accent-foreground transition-colors type-record-id"
@@ -274,10 +274,10 @@ export function PaymentTable() {
                           {p.paymentNumber || '—'}
                         </Link>
                       </td>
-                      <td className="px-4 max-sm:px-2 py-3.5 truncate max-w-[200px] type-cell-strong">
+                      <td className="px-4 max-sm:px-2 py-2.5 truncate max-w-[200px] type-cell-strong">
                         {p.customer?.name ? <CustomerLink id={p.customer.id} name={p.customer.name} className="hover:text-accent-foreground hover:underline" /> : '—'}
                       </td>
-                      <td className="px-4 max-sm:px-2 py-3.5">
+                      <td className="px-4 max-sm:px-2 py-2.5">
                         {isSuperAdmin ? (
                           <PaymentStatusControl
                             payment={{ statusCode: p.statusCode, approvalStatus: p.approvalStatus ?? 'none' }}
@@ -289,19 +289,19 @@ export function PaymentTable() {
                           <ReadOnlyStatusPill label={p.status} color={PAYMENT_STATUS_COLORS[p.status]} />
                         )}
                       </td>
-                      <td className="px-4 max-sm:px-2 py-3.5 tabular-nums whitespace-nowrap max-sm:hidden type-cell">
+                      <td className="px-4 max-sm:px-2 py-2.5 tabular-nums whitespace-nowrap max-sm:hidden type-cell">
                         {p.paymentDate
                           ? formatDateValue(p.paymentDate, undefined, LIST_DATE_OPTIONS)
                           : '—'}
                       </td>
-                      <td className="px-4 max-sm:px-2 py-3.5 tabular-nums text-right whitespace-nowrap type-cell-strong">
+                      <td className="px-4 max-sm:px-2 py-2.5 tabular-nums text-right whitespace-nowrap type-cell-strong">
                         {currency(p.amount)}
                       </td>
-                      <td className="px-4 max-sm:px-2 py-3.5 tabular-nums text-right whitespace-nowrap max-sm:hidden type-cell">
+                      <td className="px-4 max-sm:px-2 py-2.5 tabular-nums text-right whitespace-nowrap max-sm:hidden type-cell">
                         {currency(p.unappliedAmount)}
                       </td>
                       {canEdit && (
-                        <td className="px-4 max-sm:px-2 py-3.5 text-right max-sm:hidden">
+                        <td className="px-4 max-sm:px-2 py-2.5 text-right max-sm:hidden">
                           <button
                             type="button"
                             onClick={() => navigate(`/sales/payment/${p.id}/edit`)}

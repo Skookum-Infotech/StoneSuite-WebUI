@@ -41,7 +41,7 @@ export function TransactionsTable({ rows }: { rows: TransactionRow[] }) {
                   idx === rows.length - 1 && 'border-b-0',
                 )}
               >
-                <td className="px-4 py-3.5">
+                <td className="px-4 py-2.5">
                   <Link
                     to={href}
                     onClick={(e) => e.stopPropagation()}
@@ -52,16 +52,16 @@ export function TransactionsTable({ rows }: { rows: TransactionRow[] }) {
                   </Link>
                   {subline && <p className="mt-0.5 max-w-[240px] truncate text-ink-muted">{subline}</p>}
                 </td>
-                <td className="whitespace-nowrap px-4 py-3.5"><TypeBadge row={row} /></td>
-                <td className="max-w-[220px] px-4 py-3.5">
+                <td className="whitespace-nowrap px-4 py-2.5"><TypeBadge row={row} /></td>
+                <td className="max-w-[220px] px-4 py-2.5">
                   <span className="block truncate font-semibold text-ink-strong">{row.account || '—'}</span>
                 </td>
-                <td className="px-4 py-3.5"><StatusBadge row={row} /></td>
-                <td className="type-cell-strong whitespace-nowrap px-4 py-3.5 text-right tabular-nums">
+                <td className="px-4 py-2.5"><StatusBadge row={row} /></td>
+                <td className="type-cell-strong whitespace-nowrap px-4 py-2.5 text-right tabular-nums">
                   {formatAmount(row.amount)}
                 </td>
-                <td className="px-4 py-3.5"><RoleBadge role={row.role} /></td>
-                <td className="type-cell whitespace-nowrap px-4 py-3.5 text-right">
+                <td className="px-4 py-2.5"><RoleBadge role={row.role} /></td>
+                <td className="type-cell whitespace-nowrap px-4 py-2.5 text-right">
                   <time dateTime={row.updatedAt} title={new Date(row.updatedAt).toLocaleString()}>
                     {relativeTime(row.updatedAt)}
                   </time>

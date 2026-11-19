@@ -77,12 +77,12 @@ export default function BundleListPage() {
                     <tr><td colSpan={6} className="type-cell py-12 text-center">No bundles yet.</td></tr>
                   ) : bundles.map((b) => (
                     <tr key={b.id} className="relative hover:bg-accent/10 transition-colors">
-                      <td className="px-4 py-3.5 type-record-id"><Link to={`/inventory/bundle/${b.id}`} className="after:absolute after:inset-0">{b.code}</Link></td>
-                      <td className="type-cell px-4 py-3.5 truncate max-w-[180px]">{b.inventoryItemName || <span className="text-ink-muted">Unadopted</span>}</td>
-                      <td className="px-4 py-3.5"><Badge color={STATUS_COLORS[b.status] ?? '#a8a29e'}>{b.status}</Badge></td>
-                      <td className="type-cell px-4 py-3.5 tabular-nums text-right">{b.memberCount}</td>
-                      <td className="type-cell px-4 py-3.5 tabular-nums text-right">{b.totalArea.toFixed(2)}</td>
-                      <td className="type-cell px-4 py-3.5 truncate max-w-[160px]">{b.binPath || b.warehouseName || '—'}</td>
+                      <td className="px-4 py-2.5 type-record-id"><Link to={`/inventory/bundle/${b.id}`} className="after:absolute after:inset-0">{b.code}</Link></td>
+                      <td className="type-cell px-4 py-2.5 truncate max-w-[180px]">{b.inventoryItemName || <span className="text-ink-muted">Unadopted</span>}</td>
+                      <td className="px-4 py-2.5"><Badge color={STATUS_COLORS[b.status] ?? '#a8a29e'}>{b.status}</Badge></td>
+                      <td className="type-cell px-4 py-2.5 tabular-nums text-right">{b.memberCount}</td>
+                      <td className="type-cell px-4 py-2.5 tabular-nums text-right">{b.totalArea.toFixed(2)}</td>
+                      <td className="type-cell px-4 py-2.5 truncate max-w-[160px]">{b.binPath || b.warehouseName || '—'}</td>
                     </tr>
                   ))}
                 </tbody>

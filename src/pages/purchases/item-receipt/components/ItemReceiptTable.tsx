@@ -287,7 +287,7 @@ export function ItemReceiptTable() {
                 Array.from({ length: 5 }, (_, i) => (
                   <tr key={i}>
                     {Array.from({ length: canEdit ? 8 : 7 }, (_, j) => (
-                      <td key={j} className={cn('px-4 max-sm:px-2 py-3', !PHONE_COLUMNS.has(j) && 'max-sm:hidden')}><div className="animate-pulse h-3 rounded bg-stone-100 w-16" /></td>
+                      <td key={j} className={cn('px-4 max-sm:px-2 py-2.5', !PHONE_COLUMNS.has(j) && 'max-sm:hidden')}><div className="animate-pulse h-3 rounded bg-stone-100 w-16" /></td>
                     ))}
                   </tr>
                 ))
@@ -298,7 +298,7 @@ export function ItemReceiptTable() {
                   const editable = canEdit && IR_EDITABLE_STATUSES.has(ir.statusCode);
                   return (
                     <tr key={ir.id} className="group hover:bg-accent/10 transition-colors duration-150">
-                      <td className="px-4 max-sm:px-2 py-3.5">
+                      <td className="px-4 max-sm:px-2 py-2.5">
                         <Link
                           to={`/purchases/item_receipt/${ir.id}`}
                           className="whitespace-nowrap hover:text-accent-foreground transition-colors type-record-id"
@@ -306,26 +306,26 @@ export function ItemReceiptTable() {
                           {ir.itemReceiptNumber || '—'}
                         </Link>
                       </td>
-                      <td className="px-4 max-sm:px-2 py-3.5 max-sm:hidden type-cell">
+                      <td className="px-4 max-sm:px-2 py-2.5 max-sm:hidden type-cell">
                         {ir.purchaseOrder?.number ?? '—'}
                       </td>
-                      <td className="px-4 max-sm:px-2 py-3.5 truncate max-w-[180px] type-cell-strong">
+                      <td className="px-4 max-sm:px-2 py-2.5 truncate max-w-[180px] type-cell-strong">
                         <VendorLink vendor={ir.vendor} />
                       </td>
-                      <td className="px-4 max-sm:px-2 py-3.5">
+                      <td className="px-4 max-sm:px-2 py-2.5">
                         <StatusPill color={color}>{ir.status}</StatusPill>
                       </td>
-                      <td className="px-4 max-sm:px-2 py-3.5 tabular-nums whitespace-nowrap max-sm:hidden type-cell">
+                      <td className="px-4 max-sm:px-2 py-2.5 tabular-nums whitespace-nowrap max-sm:hidden type-cell">
                         {fmtDate(ir.receiptDate)}
                       </td>
-                      <td className="px-4 max-sm:px-2 py-3.5 truncate max-w-[140px] max-sm:hidden type-cell">
+                      <td className="px-4 max-sm:px-2 py-2.5 truncate max-w-[140px] max-sm:hidden type-cell">
                         {ir.warehouseName || '—'}
                       </td>
-                      <td className="px-4 max-sm:px-2 py-3.5 truncate max-w-[140px] max-sm:hidden type-cell">
+                      <td className="px-4 max-sm:px-2 py-2.5 truncate max-w-[140px] max-sm:hidden type-cell">
                         {ownerName ?? '—'}
                       </td>
                       {canEdit && (
-                        <td className="px-4 max-sm:px-2 py-3.5 text-right max-sm:hidden">
+                        <td className="px-4 max-sm:px-2 py-2.5 text-right max-sm:hidden">
                           {editable && (
                             <button
                               type="button"

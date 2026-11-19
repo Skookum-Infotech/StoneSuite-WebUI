@@ -327,7 +327,7 @@ export function PurchaseOrderTable({ toolbarActions }: { toolbarActions?: ReactN
                 Array.from({ length: 5 }, (_, i) => (
                   <tr key={i}>
                     {Array.from({ length: canEdit ? 10 : 9 }, (_, j) => (
-                      <td key={j} className={cn('px-4 max-sm:px-2 py-3', !PHONE_COLUMNS.has(j) && 'max-sm:hidden')}><div className="animate-pulse h-3 rounded bg-stone-100 w-16" /></td>
+                      <td key={j} className={cn('px-4 max-sm:px-2 py-2.5', !PHONE_COLUMNS.has(j) && 'max-sm:hidden')}><div className="animate-pulse h-3 rounded bg-stone-100 w-16" /></td>
                     ))}
                   </tr>
                 ))
@@ -337,7 +337,7 @@ export function PurchaseOrderTable({ toolbarActions }: { toolbarActions?: ReactN
                   const ownerName = po.ownerEmployeeId ? employeeNames.get(String(po.ownerEmployeeId)) : undefined;
                   return (
                     <tr key={po.id} className="group hover:bg-accent/10 transition-colors duration-150">
-                      <td className="px-4 max-sm:px-2 py-3.5">
+                      <td className="px-4 max-sm:px-2 py-2.5">
                         <Link
                           to={`/purchases/purchase_order/${po.id}`}
                           className="whitespace-nowrap hover:text-accent-foreground transition-colors type-record-id"
@@ -345,10 +345,10 @@ export function PurchaseOrderTable({ toolbarActions }: { toolbarActions?: ReactN
                           {po.purchaseOrderNumber || '—'}
                         </Link>
                       </td>
-                      <td className="px-4 max-sm:px-2 py-3.5 truncate max-w-[200px] type-cell-strong">
+                      <td className="px-4 max-sm:px-2 py-2.5 truncate max-w-[200px] type-cell-strong">
                         <VendorLink vendor={po.vendor} />
                       </td>
-                      <td className="px-4 max-sm:px-2 py-3.5">
+                      <td className="px-4 max-sm:px-2 py-2.5">
                         {isSuperAdmin ? (
                           <PurchaseOrderStatusControl
                             order={{ statusCode: po.statusCode, approvalStatus: po.approvalStatus, nextStatusCodes: po.nextStatusCodes }}
@@ -360,10 +360,10 @@ export function PurchaseOrderTable({ toolbarActions }: { toolbarActions?: ReactN
                           <ReadOnlyStatusPill label={po.status} color={PO_STATUS_COLORS[po.statusCode]} />
                         )}
                       </td>
-                      <td className="px-4 max-sm:px-2 py-3.5 max-sm:hidden">
+                      <td className="px-4 max-sm:px-2 py-2.5 max-sm:hidden">
                         <PurchaseOrderReceivingProgress order={po} />
                       </td>
-                      <td className="px-4 max-sm:px-2 py-3.5 max-sm:hidden">
+                      <td className="px-4 max-sm:px-2 py-2.5 max-sm:hidden">
                         {approvalLabel ? (
                           <StatusPill color={APPROVAL_COLORS[po.approvalStatus]} dot={false}><ShieldCheck className="size-2.5" aria-hidden="true" />
                             {approvalLabel}</StatusPill>
@@ -371,20 +371,20 @@ export function PurchaseOrderTable({ toolbarActions }: { toolbarActions?: ReactN
                           <span className="type-subline">—</span>
                         )}
                       </td>
-                      <td className="px-4 max-sm:px-2 py-3.5 tabular-nums whitespace-nowrap max-sm:hidden type-cell">
+                      <td className="px-4 max-sm:px-2 py-2.5 tabular-nums whitespace-nowrap max-sm:hidden type-cell">
                         {fmtDate(po.orderDate)}
                       </td>
-                      <td className="px-4 max-sm:px-2 py-3.5 tabular-nums whitespace-nowrap max-sm:hidden type-cell">
+                      <td className="px-4 max-sm:px-2 py-2.5 tabular-nums whitespace-nowrap max-sm:hidden type-cell">
                         {fmtDate(po.expectedDate)}
                       </td>
-                      <td className="px-4 max-sm:px-2 py-3.5 truncate max-w-[140px] max-sm:hidden type-cell">
+                      <td className="px-4 max-sm:px-2 py-2.5 truncate max-w-[140px] max-sm:hidden type-cell">
                         {ownerName ?? '—'}
                       </td>
-                      <td className="px-4 max-sm:px-2 py-3.5 tabular-nums text-right whitespace-nowrap type-cell-strong">
+                      <td className="px-4 max-sm:px-2 py-2.5 tabular-nums text-right whitespace-nowrap type-cell-strong">
                         {currency(po.grandTotal)}
                       </td>
                       {canEdit && (
-                        <td className="px-4 max-sm:px-2 py-3.5 text-right max-sm:hidden">
+                        <td className="px-4 max-sm:px-2 py-2.5 text-right max-sm:hidden">
                           <button
                             type="button"
                             onClick={() => navigate(`/purchases/purchase_order/${po.id}/edit`)}

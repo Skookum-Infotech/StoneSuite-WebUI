@@ -55,12 +55,12 @@ export function RemnantsFinder() {
                 ) : remnants.length > 0 ? (
                   remnants.map((r) => (
                     <tr key={r.id} className="hover:bg-accent/10 transition-colors">
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-2.5">
                         <button type="button" onClick={() => navigate(`/inventory/unit/${r.id}`)} className="hover:text-accent-foreground type-record-id">{r.serial}</button>
                       </td>
-                      <td className="type-cell px-4 py-3 tabular-nums text-right">{r.area.toFixed(2)}</td>
-                      <td className="type-cell px-4 py-3">{r.grade || '—'}</td>
-                      <td className="type-cell px-4 py-3">{r.binPath || r.warehouseName || '—'}</td>
+                      <td className="type-cell px-4 py-2.5 tabular-nums text-right">{r.area.toFixed(2)}</td>
+                      <td className="type-cell px-4 py-2.5">{r.grade || '—'}</td>
+                      <td className="type-cell px-4 py-2.5">{r.binPath || r.warehouseName || '—'}</td>
                     </tr>
                   ))
                 ) : (

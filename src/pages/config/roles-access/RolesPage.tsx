@@ -543,7 +543,7 @@ function RoleDetail({
                                   key={row.id}
                                   className="hover:bg-stone-50/60 transition-colors"
                                 >
-                                  <td className="py-3 pl-4 pr-3">
+                                  <td className="py-2.5 pl-4 pr-3">
                                     <p className="font-medium text-ink">
                                       {row.label}
                                     </p>
@@ -557,7 +557,7 @@ function RoleDetail({
                                     return (
                                       <td
                                         key={col}
-                                        className="px-4 py-3 text-center"
+                                        className="px-4 py-2.5 text-center"
                                       >
                                         {granted ? (
                                           <span className="inline-flex size-5 items-center justify-center rounded-full bg-brand/15 mx-auto">
@@ -571,7 +571,7 @@ function RoleDetail({
                                       </td>
                                     );
                                   })}
-                                  <td className="px-4 py-3 text-center">
+                                  <td className="px-4 py-2.5 text-center">
                                     {scopeVal ? (
                                       <span className="inline-block rounded border border-stone-200 bg-stone-50 px-1.5 py-0.5 type-subline">
                                         {SCOPE_LABELS[scopeVal]}
@@ -673,7 +673,7 @@ function RoleUsersList({
               key={user.id}
               className="hover:bg-stone-50/60 transition-colors"
             >
-              <td className="py-2 pl-3 pr-2 sm:py-3 sm:pl-4 sm:pr-3">
+              <td className="py-2 pl-3 pr-2 sm:py-2.5 sm:pl-4 sm:pr-3">
                 <div className="flex items-center gap-2">
                   <span
                     className={cn(
@@ -688,10 +688,10 @@ function RoleUsersList({
                   </span>
                 </div>
               </td>
-              <td className="px-2 py-2 sm:px-4 sm:py-3 hidden sm:table-cell">
+              <td className="px-2 py-2 sm:px-4 sm:py-2.5 hidden sm:table-cell">
                 <span className="text-ink-muted truncate">{user.email}</span>
               </td>
-              <td className="px-2 py-2 sm:px-4 sm:py-3">
+              <td className="px-2 py-2 sm:px-4 sm:py-2.5">
                 {user.status === "active" ? (
                   <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 text-success-ink type-pill">
                     <span className="size-1.5 rounded-full bg-emerald-500" />
@@ -704,7 +704,7 @@ function RoleUsersList({
                   </span>
                 )}
               </td>
-              <td className="px-2 py-2 sm:px-4 sm:py-3 hidden md:table-cell">
+              <td className="px-2 py-2 sm:px-4 sm:py-2.5 hidden md:table-cell">
                 <span className="text-ink-muted">
                   {new Date(user.createdAt).toLocaleDateString("en-US", {
                     month: "short",

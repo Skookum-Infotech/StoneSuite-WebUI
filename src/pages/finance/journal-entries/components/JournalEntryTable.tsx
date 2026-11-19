@@ -290,7 +290,7 @@ export function JournalEntryTable() {
                 Array.from({ length: 5 }, (_, i) => (
                   <tr key={i}>
                     {Array.from({ length: canEdit ? 8 : 7 }, (_, j) => (
-                      <td key={j} className="px-4 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-16" /></td>
+                      <td key={j} className="px-4 py-2.5"><div className="animate-pulse h-3 rounded bg-stone-100 w-16" /></td>
                     ))}
                   </tr>
                 ))
@@ -300,7 +300,7 @@ export function JournalEntryTable() {
                   const editable = canEdit && JE_EDITABLE_STATUSES.has(je.statusCode);
                   return (
                     <tr key={je.id} className="group hover:bg-accent/10 transition-colors duration-150">
-                      <td className="px-4 py-3.5">
+                      <td className="px-4 py-2.5">
                         <Link
                           to={`/finance/journal-entries/${je.id}`}
                           className="whitespace-nowrap hover:text-accent-foreground transition-colors type-record-id"
@@ -308,26 +308,26 @@ export function JournalEntryTable() {
                           {je.transferNumber || '—'}
                         </Link>
                       </td>
-                      <td className="px-4 py-3.5">
+                      <td className="px-4 py-2.5">
                         <StatusPill color={color}>{je.status}</StatusPill>
                       </td>
-                      <td className="px-4 py-3.5 tabular-nums whitespace-nowrap type-cell">
+                      <td className="px-4 py-2.5 tabular-nums whitespace-nowrap type-cell">
                         {fmtDate(je.transferDate)}
                       </td>
-                      <td className="px-4 py-3.5 truncate max-w-[180px] type-cell">
+                      <td className="px-4 py-2.5 truncate max-w-[180px] type-cell">
                         {je.fromAccount ? `${je.fromAccount.code} — ${je.fromAccount.name}` : '—'}
                       </td>
-                      <td className="px-4 py-3.5 truncate max-w-[180px] type-cell">
+                      <td className="px-4 py-2.5 truncate max-w-[180px] type-cell">
                         {je.toAccount ? `${je.toAccount.code} — ${je.toAccount.name}` : '—'}
                       </td>
-                      <td className="px-4 py-3.5 tabular-nums text-right whitespace-nowrap type-cell-strong">
+                      <td className="px-4 py-2.5 tabular-nums text-right whitespace-nowrap type-cell-strong">
                         {currency(je.amount)}
                       </td>
-                      <td className="px-4 py-3.5 truncate max-w-[140px] type-cell">
+                      <td className="px-4 py-2.5 truncate max-w-[140px] type-cell">
                         {je.reference || '—'}
                       </td>
                       {canEdit && (
-                        <td className="px-4 py-3.5 text-right">
+                        <td className="px-4 py-2.5 text-right">
                           {editable && (
                             <button
                               type="button"

@@ -22,6 +22,8 @@ export const CUSTOM_FONT_SIZES = [
   "page-title",
   "display",
   "kpi",
+  "cell",
+  "record-id",
 ] as const
 
 const twMerge = extendTailwindMerge({

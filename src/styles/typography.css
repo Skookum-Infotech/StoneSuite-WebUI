@@ -16,7 +16,9 @@
   --text-portal: 0.625rem;         /* 10   — "Workspace portal" label */
   --text-nav-section: 0.75rem;     /* 12   — sidebar section label */
   --text-micro: 0.6875rem;         /* 11   — KPI label, line under a value */
-  --text-caption: 0.75rem;         /* 12   — table text, helper, error, pill */
+  --text-caption: 0.75rem;         /* 12   — helper, error, pill, table header */
+  --text-cell: 0.8125rem;          /* 13   — table text (Option B, Nov 19) */
+  --text-record-id: 0.75rem;       /* 12   — record numbers; 13 inside table cells */
   --text-button: 0.78125rem;       /* 12.5 — buttons, sidebar items, dialog message */
   --text-field: 0.8125rem;         /* 13   — field labels, page subtitle */
   --text-input: 0.8125rem;         /* 13   — typed text; 16px on touch screens */
@@ -139,13 +141,13 @@
   color: var(--color-ink-muted);
 }
 @utility type-cell {
-  font-size: var(--text-caption);
+  font-size: var(--text-cell);
   line-height: 1.5;
   color: var(--color-ink);
   font-variant-numeric: tabular-nums;
 }
 @utility type-cell-strong {
-  font-size: var(--text-caption);
+  font-size: var(--text-cell);
   line-height: 1.5;
   font-weight: 600;
   color: var(--color-ink-strong);
@@ -158,7 +160,7 @@
 }
 @utility type-record-id {
   font-family: var(--font-mono);
-  font-size: var(--text-caption);
+  font-size: var(--text-record-id);
   font-weight: 400;
   color: var(--color-ink-strong);
 }
@@ -273,4 +275,12 @@
     border-radius: 9999px;
     background-color: var(--pill);
   }
+}
+
+/* ── Tables ───────────────────────────────────────────────────────────────
+   A record number inside a table cell matches the 13px cell text; an
+   explicit size class on the element (e.g. text-micro on a sub-line) still
+   wins, because it sets font-size directly. */
+@layer base {
+  td { --text-record-id: var(--text-cell); }
 }

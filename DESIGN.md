@@ -214,7 +214,7 @@ Every text role is one `type-*` class in `src/styles/typography.css` (sizes are 
 | Typed text | `type-input` | 13px; **16px on touch screens** | Stops iOS/iPadOS Safari zooming into fields |
 | Helper / error | `type-helper` / `type-error` | 12px / 400 | Error in danger-ink, with an icon |
 | Table header | `type-th` | 12px / 600 caps, 0.05em | |
-| Table text | `type-cell` / `type-cell-strong` | 12px / 400 · 600 | Names (vendor, customer) and amounts bold |
+| Table text | `type-cell` / `type-cell-strong` | 13px / 400 · 600 | Names (vendor, customer) and amounts bold; rows use 10px vertical padding (`py-2.5`). Record numbers in a cell are 13px too |
 | Line under a value | `type-subline` | 11px / 400 muted | e.g. the email under a vendor |
 | Record number | `type-record-id` | IBM Plex Mono 12px / 400 | Never bold |
 | Status pill | `type-pill` / `StatusPill` | 12px / 500 | Tinted from the status color |

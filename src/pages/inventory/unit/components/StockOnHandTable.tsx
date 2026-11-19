@@ -113,7 +113,7 @@ export function StockOnHandTable() {
               {isLoading && Array.from({ length: 5 }, (_, i) => (
                 <tr key={i}>
                   {Array.from({ length: COLUMN_COUNT }, (_, j) => (
-                    <td key={j} className="px-4 py-3"><div className="h-3 w-16 animate-pulse rounded bg-stone-100" /></td>
+                    <td key={j} className="px-4 py-2.5"><div className="h-3 w-16 animate-pulse rounded bg-stone-100" /></td>
                   ))}
                 </tr>
               ))}
@@ -124,7 +124,7 @@ export function StockOnHandTable() {
                 return (
                   <Fragment key={it.id}>
                     <tr className="hover:bg-accent/10 transition-colors duration-150">
-                      <td className="px-3 py-3.5">
+                      <td className="px-3 py-2.5">
                         <button
                           type="button"
                           onClick={() => toggle(it.id)}
@@ -135,14 +135,14 @@ export function StockOnHandTable() {
                           {expanded ? <ChevronDown className="size-3.5" /> : <ChevronRight className="size-3.5" />}
                         </button>
                       </td>
-                      <td className="px-4 py-3.5 whitespace-nowrap type-record-id">{it.sku}</td>
-                      <td className="type-cell max-w-[240px] truncate px-4 py-3.5">{it.name}</td>
-                      <td className="type-cell px-4 py-3.5 text-right tabular-nums">
+                      <td className="px-4 py-2.5 whitespace-nowrap type-record-id">{it.sku}</td>
+                      <td className="type-cell max-w-[240px] truncate px-4 py-2.5">{it.name}</td>
+                      <td className="type-cell px-4 py-2.5 text-right tabular-nums">
                         {total ? <>{formatStockQty(total.onHand)}{unit && <span className="ml-1 text-ink-muted">{unit}</span>}</> : totalsLoading ? '…' : '—'}
                       </td>
-                      <td className="type-cell px-4 py-3.5 text-right tabular-nums">{total ? formatStockQty(total.allocated) : '—'}</td>
-                      <td className="type-cell-strong px-4 py-3.5 text-right tabular-nums">{total ? formatStockQty(total.available) : '—'}</td>
-                      <td className="px-4 py-3.5">
+                      <td className="type-cell px-4 py-2.5 text-right tabular-nums">{total ? formatStockQty(total.allocated) : '—'}</td>
+                      <td className="type-cell-strong px-4 py-2.5 text-right tabular-nums">{total ? formatStockQty(total.available) : '—'}</td>
+                      <td className="px-4 py-2.5">
                         {total?.belowReorder && (
                           <span className="rounded-md bg-amber-50 px-2 py-0.5 text-warning-ink type-pill">Low stock</span>
                         )}

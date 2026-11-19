@@ -63,7 +63,7 @@ export function BinContentsTab({ binId }: { binId: string }) {
           <tbody className="divide-y divide-stone-100">
             {units.map((u) => (
               <tr key={u.id} className="transition-colors hover:bg-accent/10">
-                <td className="px-4 py-3">
+                <td className="px-4 py-2.5">
                   <button
                     type="button"
                     onClick={() => navigate(`/inventory/unit/${u.id}`)}
@@ -72,11 +72,11 @@ export function BinContentsTab({ binId }: { binId: string }) {
                     {u.serial}
                   </button>
                 </td>
-                <td className="type-cell max-w-[240px] truncate px-4 py-3">{u.inventoryItemName ?? '—'}</td>
-                <td className="type-cell whitespace-nowrap px-4 py-3 text-right tabular-nums">
+                <td className="type-cell max-w-[240px] truncate px-4 py-2.5">{u.inventoryItemName ?? '—'}</td>
+                <td className="type-cell whitespace-nowrap px-4 py-2.5 text-right tabular-nums">
                   {u.area.toFixed(2)} {u.areaUnitCode ?? ''}
                 </td>
-                <td className="px-4 py-3">
+                <td className="px-4 py-2.5">
                   <Badge color={STATUS_COLORS[u.status] ?? '#a8a29e'}>{u.status.replace('_', ' ')}</Badge>
                 </td>
               </tr>

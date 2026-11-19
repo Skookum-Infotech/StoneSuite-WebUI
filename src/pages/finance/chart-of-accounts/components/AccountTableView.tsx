@@ -315,7 +315,7 @@ export function AccountTableView() {
                   {Array.from({ length: 5 }, (_, i) => (
                     <tr key={i} aria-hidden="true">
                       {Array.from({ length: canUpdate ? 9 : 7 }, (_, j) => (
-                        <td key={j} className="px-4 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-16" /></td>
+                        <td key={j} className="px-4 py-2.5"><div className="animate-pulse h-3 rounded bg-stone-100 w-16" /></td>
                       ))}
                     </tr>
                   ))}
@@ -328,7 +328,7 @@ export function AccountTableView() {
                     className="group cursor-pointer hover:bg-accent/10 transition-colors duration-150"
                   >
                     {canUpdate && (
-                      <td className="px-4 py-3.5" onClick={(e) => e.stopPropagation()}>
+                      <td className="px-4 py-2.5" onClick={(e) => e.stopPropagation()}>
                         <input
                           type="checkbox"
                           checked={selectedIds.has(a.id)}
@@ -338,7 +338,7 @@ export function AccountTableView() {
                         />
                       </td>
                     )}
-                    <td className="px-4 py-3.5">
+                    <td className="px-4 py-2.5">
                       <button
                         type="button"
                         onClick={(e) => { e.stopPropagation(); navigate(`/finance/chart-of-accounts/${a.id}`); }}
@@ -347,27 +347,27 @@ export function AccountTableView() {
                         {a.code}
                       </button>
                     </td>
-                    <td className="px-4 py-3.5 truncate max-w-[220px] type-cell">
+                    <td className="px-4 py-2.5 truncate max-w-[220px] type-cell">
                       <span className={cn(!a.isActive && 'italic text-ink-muted')}>{a.name}</span>
                       {a.isSystem && <span className="ml-1.5 text-micro font-semibold text-ink-muted">SYS</span>}
                     </td>
-                    <td className="px-4 py-3.5 whitespace-nowrap type-cell">{ACCOUNT_TYPE_LABELS[a.type]}</td>
-                    <td className="px-4 py-3.5 truncate max-w-[180px] type-cell">
+                    <td className="px-4 py-2.5 whitespace-nowrap type-cell">{ACCOUNT_TYPE_LABELS[a.type]}</td>
+                    <td className="px-4 py-2.5 truncate max-w-[180px] type-cell">
                       {placementLabel(a)}
                     </td>
-                    <td className="px-4 py-3.5 type-cell">{a.bsPnl}</td>
-                    <td className="px-4 py-3.5">
+                    <td className="px-4 py-2.5 type-cell">{a.bsPnl}</td>
+                    <td className="px-4 py-2.5">
                       <div className="flex items-center gap-1.5">
                         {!a.isActive && <span className="text-micro font-semibold text-ink-muted">Inactive</span>}
                         {!a.isVisible && <span className="text-micro font-semibold text-ink-muted">Hidden</span>}
                         {a.isActive && a.isVisible && <span className="text-micro font-semibold text-success-ink">Active</span>}
                       </div>
                     </td>
-                    <td className="px-4 py-3.5 tabular-nums whitespace-nowrap type-cell">
+                    <td className="px-4 py-2.5 tabular-nums whitespace-nowrap type-cell">
                       {fmtDate(a.updatedAt)}
                     </td>
                     {canUpdate && (
-                      <td className="px-4 py-3.5 text-right" onClick={(e) => e.stopPropagation()}>
+                      <td className="px-4 py-2.5 text-right" onClick={(e) => e.stopPropagation()}>
                         <button
                           type="button"
                           onClick={() => setEditingAccount(a)}

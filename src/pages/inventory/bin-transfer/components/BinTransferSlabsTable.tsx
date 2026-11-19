@@ -49,7 +49,7 @@ export function BinTransferSlabsTable({ lines, pending }: {
             const warning = lineWarning(l, pending);
             return (
               <tr key={l.id} className="align-top">
-                <td className="px-4 py-3">
+                <td className="px-4 py-2.5">
                   <Link
                     to={`/inventory/unit/${l.unitId}`}
                     className="transition-colors hover:text-accent-foreground type-record-id"
@@ -64,14 +64,14 @@ export function BinTransferSlabsTable({ lines, pending }: {
                     </span>
                   )}
                 </td>
-                <td className="type-cell whitespace-nowrap px-4 py-3 text-right tabular-nums">
+                <td className="type-cell whitespace-nowrap px-4 py-2.5 text-right tabular-nums">
                   {l.area.toFixed(2)} {l.areaUnitCode}
                 </td>
-                <td className="type-cell px-4 py-3">
+                <td className="type-cell px-4 py-2.5">
                   {l.fromBinPath || <span className="text-ink-muted">No bin</span>}
                 </td>
-                <td className="px-0 py-3 text-ink-muted"><ArrowRight className="size-3.5" aria-hidden="true" /></td>
-                <td className="px-4 py-3">
+                <td className="px-0 py-2.5 text-ink-muted"><ArrowRight className="size-3.5" aria-hidden="true" /></td>
+                <td className="px-4 py-2.5">
                   <span className={cn('font-medium', l.movedAt ? 'text-success-ink' : 'text-ink-strong')}>{l.toBinPath}</span>
                   {l.toBinName && <span className="block type-subline">{l.toBinName}</span>}
                   {l.movedAt && (

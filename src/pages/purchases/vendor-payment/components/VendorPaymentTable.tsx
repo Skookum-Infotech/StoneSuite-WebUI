@@ -310,7 +310,7 @@ export function VendorPaymentTable() {
                 Array.from({ length: 5 }, (_, i) => (
                   <tr key={i}>
                     {Array.from({ length: canEdit ? 9 : 8 }, (_, j) => (
-                      <td key={j} className={cn('px-4 max-sm:px-2 py-3', !PHONE_COLUMNS.has(j) && 'max-sm:hidden')}><div className="animate-pulse h-3 rounded bg-stone-100 w-16" /></td>
+                      <td key={j} className={cn('px-4 max-sm:px-2 py-2.5', !PHONE_COLUMNS.has(j) && 'max-sm:hidden')}><div className="animate-pulse h-3 rounded bg-stone-100 w-16" /></td>
                     ))}
                   </tr>
                 ))
@@ -319,7 +319,7 @@ export function VendorPaymentTable() {
                   const approvalLabel = APPROVAL_LABELS[payment.approvalStatus];
                   return (
                     <tr key={payment.id} className="group hover:bg-accent/10 transition-colors duration-150">
-                      <td className="px-4 max-sm:px-2 py-3.5">
+                      <td className="px-4 max-sm:px-2 py-2.5">
                         <Link
                           to={`/purchases/vendor_payment/${payment.id}`}
                           className="whitespace-nowrap hover:text-accent-foreground transition-colors type-record-id"
@@ -327,13 +327,13 @@ export function VendorPaymentTable() {
                           {payment.vendorPaymentNumber || '—'}
                         </Link>
                       </td>
-                      <td className="px-4 max-sm:px-2 py-3.5 truncate max-w-[200px] type-cell-strong">
+                      <td className="px-4 max-sm:px-2 py-2.5 truncate max-w-[200px] type-cell-strong">
                         <VendorLink vendor={payment.vendor} />
                       </td>
-                      <td className="px-4 max-sm:px-2 py-3.5">
+                      <td className="px-4 max-sm:px-2 py-2.5">
                         <ReadOnlyStatusPill label={payment.status} color={VP_STATUS_COLORS[payment.statusCode]} />
                       </td>
-                      <td className="px-4 max-sm:px-2 py-3.5 max-sm:hidden">
+                      <td className="px-4 max-sm:px-2 py-2.5 max-sm:hidden">
                         {approvalLabel ? (
                           <StatusPill color={APPROVAL_COLORS[payment.approvalStatus]} dot={false}><ShieldCheck className="size-2.5" aria-hidden="true" />
                             {approvalLabel}</StatusPill>
@@ -341,20 +341,20 @@ export function VendorPaymentTable() {
                           <span className="type-subline">—</span>
                         )}
                       </td>
-                      <td className="px-4 max-sm:px-2 py-3.5 whitespace-nowrap max-sm:hidden type-cell">
+                      <td className="px-4 max-sm:px-2 py-2.5 whitespace-nowrap max-sm:hidden type-cell">
                         {payment.method || '—'}
                       </td>
-                      <td className="px-4 max-sm:px-2 py-3.5 tabular-nums whitespace-nowrap max-sm:hidden type-cell">
+                      <td className="px-4 max-sm:px-2 py-2.5 tabular-nums whitespace-nowrap max-sm:hidden type-cell">
                         {fmtDate(payment.paymentDate)}
                       </td>
-                      <td className="px-4 max-sm:px-2 py-3.5 tabular-nums text-right whitespace-nowrap type-cell-strong">
+                      <td className="px-4 max-sm:px-2 py-2.5 tabular-nums text-right whitespace-nowrap type-cell-strong">
                         {currency(payment.amount)}
                       </td>
-                      <td className="px-4 max-sm:px-2 py-3.5 tabular-nums text-right whitespace-nowrap max-sm:hidden type-cell-strong">
+                      <td className="px-4 max-sm:px-2 py-2.5 tabular-nums text-right whitespace-nowrap max-sm:hidden type-cell-strong">
                         {currency(payment.unappliedAmount)}
                       </td>
                       {canEdit && (
-                        <td className="px-4 max-sm:px-2 py-3.5 text-right max-sm:hidden">
+                        <td className="px-4 max-sm:px-2 py-2.5 text-right max-sm:hidden">
                           {VP_EDITABLE_STATUSES.has(payment.statusCode) ? (
                             <button
                               type="button"

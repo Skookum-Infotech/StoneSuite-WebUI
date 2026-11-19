@@ -232,32 +232,32 @@ export function ItemTable() {
                 Array.from({ length: 5 }, (_, i) => (
                   <tr key={i}>
                     {Array.from({ length: canEdit ? 7 : 6 }, (_, j) => (
-                      <td key={j} className="px-4 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-16" /></td>
+                      <td key={j} className="px-4 py-2.5"><div className="animate-pulse h-3 rounded bg-stone-100 w-16" /></td>
                     ))}
                   </tr>
                 ))
               ) : records.length > 0 ? (
                 records.map((it) => (
                   <tr key={it.id} className="group hover:bg-accent/10 transition-colors duration-150">
-                    <td className="px-4 py-3.5">
+                    <td className="px-4 py-2.5">
                       <Link to={`/inventory/item/${it.id}`} className="whitespace-nowrap hover:text-accent-foreground transition-colors type-record-id">
                         {it.sku}
                       </Link>
                     </td>
-                    <td className="px-4 py-3.5 truncate max-w-[220px] type-cell">{it.name}</td>
-                    <td className="px-4 py-3.5 type-cell">
+                    <td className="px-4 py-2.5 truncate max-w-[220px] type-cell">{it.name}</td>
+                    <td className="px-4 py-2.5 type-cell">
                       {it.tracking === TRACKING_SERIALIZED ? 'Serialized' : 'Quantity'}
                     </td>
-                    <td className="px-4 py-3.5 tabular-nums text-right type-cell">${itemPrice(it, 'purchasing').toFixed(2)}</td>
-                    <td className="px-4 py-3.5 tabular-nums text-right type-cell">${itemPrice(it, 'selling').toFixed(2)}</td>
-                    <td className="px-4 py-3.5">
+                    <td className="px-4 py-2.5 tabular-nums text-right type-cell">${itemPrice(it, 'purchasing').toFixed(2)}</td>
+                    <td className="px-4 py-2.5 tabular-nums text-right type-cell">${itemPrice(it, 'selling').toFixed(2)}</td>
+                    <td className="px-4 py-2.5">
                       <span className={cn('inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 whitespace-nowrap type-pill', it.isActive ? 'bg-emerald-50 text-emerald-700' : 'bg-stone-100 text-ink-muted')}>
                         <span className={cn('size-1.5 shrink-0 rounded-full', it.isActive ? 'bg-emerald-500' : 'bg-stone-400')} aria-hidden="true" />
                         {it.isActive ? 'Active' : 'Inactive'}
                       </span>
                     </td>
                     {canEdit && (
-                      <td className="px-4 py-3.5 text-right">
+                      <td className="px-4 py-2.5 text-right">
                         <button
                           type="button"
                           onClick={() => navigate(`/inventory/item/${it.id}/edit`)}

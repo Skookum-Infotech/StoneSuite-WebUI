@@ -238,12 +238,12 @@ export function VendorTable() {
               {isLoading ? (
                 Array.from({ length: 5 }, (_, i) => (
                   <tr key={i}>
-                    <td className="px-4 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-16" /></td>
-                    <td className="px-4 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-36" /></td>
-                    <td className="px-4 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-20" /></td>
-                    <td className="px-4 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-16" /></td>
-                    <td className="px-4 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-32" /></td>
-                    {canEdit && <td className="px-4 py-3" />}
+                    <td className="px-4 py-2.5"><div className="animate-pulse h-3 rounded bg-stone-100 w-16" /></td>
+                    <td className="px-4 py-2.5"><div className="animate-pulse h-3 rounded bg-stone-100 w-36" /></td>
+                    <td className="px-4 py-2.5"><div className="animate-pulse h-3 rounded bg-stone-100 w-20" /></td>
+                    <td className="px-4 py-2.5"><div className="animate-pulse h-3 rounded bg-stone-100 w-16" /></td>
+                    <td className="px-4 py-2.5"><div className="animate-pulse h-3 rounded bg-stone-100 w-32" /></td>
+                    {canEdit && <td className="px-4 py-2.5" />}
                   </tr>
                 ))
               ) : records.length > 0 ? (
@@ -252,7 +252,7 @@ export function VendorTable() {
                   const statusColor = VENDOR_STATUS_COLORS[vendor.status] ?? '#a8a29e';
                   return (
                     <tr key={vendor.id} className="group hover:bg-accent/10 transition-colors duration-150">
-                      <td className="px-4 py-3.5">
+                      <td className="px-4 py-2.5">
                         <Link
                           to={`/purchases/vendor/${vendor.id}`}
                           className="whitespace-nowrap hover:text-accent-foreground transition-colors type-record-id"
@@ -260,23 +260,23 @@ export function VendorTable() {
                           {vendor.vendorNumber || '—'}
                         </Link>
                       </td>
-                      <td className="px-4 py-3.5 truncate max-w-[240px] type-cell-strong">
+                      <td className="px-4 py-2.5 truncate max-w-[240px] type-cell-strong">
                         {vendor.displayName}
                       </td>
-                      <td className="px-4 py-3.5">
+                      <td className="px-4 py-2.5">
                         <span className="inline-flex items-center gap-1.5 rounded-md bg-stone-100 px-2.5 py-1 text-ink whitespace-nowrap type-pill">
                           <TypeIcon className="size-3" />
                           {vendor.vendorType}
                         </span>
                       </td>
-                      <td className="px-4 py-3.5">
+                      <td className="px-4 py-2.5">
                         <StatusPill color={statusColor}>{vendor.status}</StatusPill>
                       </td>
-                      <td className="px-4 py-3.5 whitespace-nowrap type-cell">
+                      <td className="px-4 py-2.5 whitespace-nowrap type-cell">
                         {vendor.email || '—'}
                       </td>
                       {canEdit && (
-                        <td className="px-4 py-3.5 text-right">
+                        <td className="px-4 py-2.5 text-right">
                           <button
                             type="button"
                             onClick={() => navigate(`/purchases/vendor/${vendor.id}/edit`)}
