@@ -115,9 +115,6 @@ const EntraSamlSetupPage = lazyWithRetry(
 const CustomSamlSetupPage = lazyWithRetry(
   () => import("@/pages/config/saml-setup/CustomSamlSetupPage"),
 );
-const WorkflowPlaceholderPage = lazyWithRetry(
-  () => import("@/pages/common/WorkflowPlaceholderPage"),
-);
 const AccountSettingsPage = lazyWithRetry(
   () => import("@/pages/account/AccountSettingsPage"),
 );
@@ -1697,20 +1694,6 @@ export const router = createBrowserRouter([
             <CountDetailPage />
           </PermissionGuard>,
         ),
-      },
-
-      // Sales, Purchases & Inventory modules (placeholder pages — full functionality coming soon)
-      {
-        path: "sales/:moduleKey",
-        element: lazy_(<WorkflowPlaceholderPage />),
-      },
-      {
-        path: "purchases/:moduleKey",
-        element: lazy_(<WorkflowPlaceholderPage />),
-      },
-      {
-        path: "inventory/:moduleKey",
-        element: lazy_(<WorkflowPlaceholderPage />),
       },
 
       // Configuration hub
