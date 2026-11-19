@@ -18,6 +18,8 @@ import { exportPagedCsv, fmtCsvDate } from '@/lib/csvExport';
 import type { InvoiceSearchRequest } from '@/types/invoice';
 import { formatDateValue, LIST_DATE_OPTIONS } from '@/lib/dateUtils';
 import { CustomerLink } from '@/components/crm/CustomerLink';
+import { InvoiceSavedViews } from './InvoiceSavedViews';
+import type { InvoiceViewState } from '@/lib/invoiceSavedViews';
 
 const EXPORT_PAGE_SIZE = 200;
 
@@ -135,6 +137,15 @@ export function InvoiceTable() {
     setPrevCursors([]);
   }
 
+  // A saved view is the same as typing the search and picking the sort by hand.
+  function applyView(view: InvoiceViewState) {
+    setTerm(view.term);
+    setSortBy(view.sortBy);
+    setSortDir(view.sortDir);
+    setCursor('');
+    setPrevCursors([]);
+  }
+
   function handleSort(field: SortField) {
     if (sortBy === field) {
       setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
@@ -210,6 +221,8 @@ export function InvoiceTable() {
             </button>
           ))}
         </div>
+
+        <InvoiceSavedViews current={{ term, sortBy, sortDir }} onApply={applyView} />
 
         {hasFilters && (
           <button
