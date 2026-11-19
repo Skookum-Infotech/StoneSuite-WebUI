@@ -97,9 +97,10 @@ export const ARROW_KEY_STEP_MM = MM_PER_INCH / 16;
 export const SHIFT_ARROW_KEY_STEP_MM = MM_PER_INCH;
 
 /** Zoom range and step, as a multiplier (1 = 100%). The build spec said
- *  25–400%; the low end went to 10% so a whole kitchen (25 ft and more) fits
- *  on the board at once. */
-export const ZOOM_MIN = 0.1;
+ *  25–400%; the low end went to 10% so a whole kitchen fits on the board at
+ *  once, then to 2% so a whole floor of rooms, or a long run of pieces laid
+ *  out side by side, can be seen at once (roughly 60 m of board across). */
+export const ZOOM_MIN = 0.02;
 export const ZOOM_MAX = 4;
 export const ZOOM_STEP = 0.25;
 
@@ -116,10 +117,10 @@ export const VIEWPORT_WIDTH = 800;
 /** Half-width, in mm, of the invisible sheets that catch pointer events on the
  *  board (the background, the armed tool's click sheet, the cutout-placement
  *  sheet, the menu click-away). The white board has no edge, so these must
- *  reach well past anywhere the user can zoom out or pan to — at 10% zoom the
- *  screen already spans 12 m, and a sheet that stops short leaves dead patches
- *  where a click does nothing. */
-export const CANVAS_EXTENT_MM = 500_000;
+ *  reach well past anywhere the user can zoom out or pan to — at the 2% zoom
+ *  floor the screen spans about 60 m, and a sheet that stops short leaves dead
+ *  patches where a click does nothing. */
+export const CANVAS_EXTENT_MM = 2_000_000;
 export const VIEWPORT_HEIGHT = 600;
 
 /** A dragged cutout or vertex snaps to this step — 1/4". */

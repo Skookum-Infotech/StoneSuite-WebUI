@@ -133,9 +133,9 @@ describe('fitToArea', () => {
   });
 
   it('clamps to ZOOM_MIN for content too large to fit even at the floor, rather than under- or over-shooting it', async () => {
-    // 300" x 200" — larger than the viewport can show even at the 10% floor. "Fit" can only get as close as that floor
-    // allows; it must not pick something smaller or larger than it.
-    const piece = makePiece('p1', rectOutline(300 * 25.4, 200 * 25.4));
+    // 3000" x 2000" (76 m x 51 m) — larger than the viewport can show even at the 2% floor. "Fit" can only get as close
+    // as that floor allows; it must not pick something smaller or larger than it.
+    const piece = makePiece('p1', rectOutline(3000 * 25.4, 2000 * 25.4));
     render(
       <DrawingEditorProvider
         drawing={{ ...DRAWING, areas: [{ ...DRAWING.areas[0], pieces: [piece] }] }}
