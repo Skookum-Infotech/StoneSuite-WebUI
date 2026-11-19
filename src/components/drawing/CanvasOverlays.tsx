@@ -2,7 +2,7 @@
 // shift-drag selection rectangle and the polygon being drawn.
 
 import type { Point } from '@/types/drawing';
-import { CLOSE_POLYGON_HIT_PX, DEFAULT_DIMENSION_OFFSET_MM, MIN_DIMENSION_OFFSET_PX } from '@/lib/drawing/constants';
+import { CLOSE_POLYGON_HIT_PX, DIMENSION_OFFSET_PX, TEXT_SCALE_FLOOR_ZOOM } from '@/lib/drawing/constants';
 import { layoutDimension } from '@/lib/drawing/dimensions';
 import { DimensionLine } from './DimensionLine';
 
@@ -42,7 +42,7 @@ export function CanvasOverlays({ marquee, draftPoints, cursorPoint, zoom, dimens
   const draftEdges: [Point, Point][] = draftPoints.slice(1).map((p, i) => [draftPoints[i], p]);
   // Same stand-off rule PieceDimensions uses, so a side's length reads the
   // same before and after the shape is finalized.
-  const dimensionOffsetMm = Math.max(DEFAULT_DIMENSION_OFFSET_MM, MIN_DIMENSION_OFFSET_PX / zoom);
+  const dimensionOffsetMm = DIMENSION_OFFSET_PX / Math.max(zoom, TEXT_SCALE_FLOOR_ZOOM);
   return (
     <>
       {marquee && (

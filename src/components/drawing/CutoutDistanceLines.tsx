@@ -4,6 +4,7 @@
 // so they show in the Cutout tab only and are gone again in Sketch.
 
 import type { Cutout, Piece } from '@/types/drawing';
+import { TEXT_SCALE_FLOOR_ZOOM } from '@/lib/drawing/constants';
 import { cutoutDistances } from '@/lib/drawing/cutoutDistances';
 import { uprightTransform } from '@/lib/drawing/svgText';
 import { formatLength } from '@/lib/drawing/units';
@@ -21,7 +22,8 @@ export function CutoutDistanceLines({ piece, cutout }: { piece: Piece; cutout: C
   const { state, workspace } = useDrawingEditor();
   if (workspace !== 'cutout') return null;
   const { displayUnit, fractionDenominator } = state.present;
-  const px = (value: number) => value / state.zoom;
+  // See TEXT_SCALE_FLOOR_ZOOM.
+  const px = (value: number) => value / Math.max(state.zoom, TEXT_SCALE_FLOOR_ZOOM);
 
   return (
     <g aria-hidden="true" pointerEvents="none">

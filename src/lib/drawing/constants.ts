@@ -83,10 +83,12 @@ export const MAX_DIMENSION_MM = 30000;
 /** How far outside a piece's own edge its auto-placed dimension line sits
  *  — 1 inch. */
 export const DEFAULT_DIMENSION_OFFSET_MM = 25.4;
-/** The canvas never draws a piece's dimension line closer to its edge than
- *  this many ON-SCREEN pixels. A fixed millimetre offset collapses onto the
- *  outline when the view is zoomed out, leaving the measurement unreadable. */
-export const MIN_DIMENSION_OFFSET_PX = 28;
+/** How far a piece's auto-placed dimension line stands off its edge on the
+ *  canvas, in ON-SCREEN pixels at every zoom. A millimetre offset either
+ *  collapses onto the outline when zoomed out or drifts away from the piece
+ *  (taking its extension lines with it) when zoomed in; a fixed pixel offset
+ *  keeps the dimensions looking the same at any zoom. */
+export const DIMENSION_OFFSET_PX = 28;
 
 /** The editor's undo/redo history depth (build spec Task 3). */
 export const MAX_UNDO_STEPS = 50;
@@ -107,6 +109,18 @@ export const ZOOM_STEP = 0.25;
 /** The zoom the editor opens at: about 10 ft of board across on a laptop
  *  screen, so a default 25 5/8" square is a small part of it, not most of it. */
 export const OPEN_ZOOM = 0.4;
+
+/** Below this zoom, piece labels, dimension text and their stand-off lines
+ *  stop holding a constant on-screen size and start shrinking along with the
+ *  drawing instead. At or above it — the normal range for working one piece
+ *  or a handful of them — they stay pixel-constant, so they never look
+ *  bigger just because the view was zoomed in or out. Below it — zoomed out
+ *  far enough to see a whole multi-piece layout at once — constant-size text
+ *  would occupy the same screen space regardless of how small each piece has
+ *  become, and neighbouring pieces' labels pile on top of each other; letting
+ *  the text shrink with the drawing past this point keeps a crowded layout
+ *  readable instead. */
+export const TEXT_SCALE_FLOOR_ZOOM = OPEN_ZOOM;
 
 /** The canvas SVG's viewBox size, in viewBox units. The SVG fills whatever
  *  room its container gives it and keeps these proportions (`xMidYMid meet`:

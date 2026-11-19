@@ -6,7 +6,7 @@
 import { memo, useMemo } from 'react';
 import type { Piece } from '@/types/drawing';
 import { layoutDimension, layoutEdgeDimensions, type DimensionLineLayout } from '@/lib/drawing/dimensions';
-import { DEFAULT_DIMENSION_OFFSET_MM, MIN_DIMENSION_OFFSET_PX } from '@/lib/drawing/constants';
+import { DIMENSION_OFFSET_PX, TEXT_SCALE_FLOOR_ZOOM } from '@/lib/drawing/constants';
 import { transformOutline } from '@/lib/drawing/geometry';
 import { edgeLetter } from '@/lib/drawing/labels';
 import { DimensionLine } from './DimensionLine';
@@ -35,10 +35,11 @@ export const PieceDimensions = memo(function PieceDimensions(
 ) {
   const { state } = useDrawingEditor();
   // The dimension line stands off the edge by a constant number of screen
-  // pixels (never less than the default in millimetres), so zooming out to
-  // fit a large piece pushes it further out in world units instead of
-  // letting it collapse onto the outline.
-  const offsetMm = Math.max(DEFAULT_DIMENSION_OFFSET_MM, MIN_DIMENSION_OFFSET_PX / state.zoom);
+  // pixels down to TEXT_SCALE_FLOOR_ZOOM, so the dimensions look the same
+  // across the normal editing range — they neither hug the outline nor
+  // drift away. Below that zoom the stand-off shrinks with everything else,
+  // same reasoning as the text it carries.
+  const offsetMm = DIMENSION_OFFSET_PX / Math.max(state.zoom, TEXT_SCALE_FLOOR_ZOOM);
   const layouts = useMemo(() => {
     // A circle is rotationally symmetric, so its dimensions stay axis-aligned
     // on its centre (piece.position) regardless of piece.rotationDeg.

@@ -7,7 +7,7 @@ import { describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { Drawing, Piece } from '@/types/drawing';
-import { MIN_DIMENSION_OFFSET_PX } from '@/lib/drawing/constants';
+import { DIMENSION_OFFSET_PX, TEXT_SCALE_FLOOR_ZOOM, ZOOM_MAX } from '@/lib/drawing/constants';
 import { circleOutline, rectOutline } from '@/lib/drawing/geometry';
 import { DrawingEditorProvider, useDrawingEditor } from './DrawingEditorContext';
 import { PieceDimensions } from './PieceDimensions';
@@ -25,7 +25,15 @@ const drawing: Drawing = {
 
 function ZoomOut() {
   const { dispatch } = useDrawingEditor();
-  return <button type="button" onClick={() => dispatch({ type: 'setZoom', zoom: 0.25 })}>zoom out</button>;
+  const zoomTo = (zoom: number) => dispatch({ type: 'setZoom', zoom });
+  return (
+    <>
+      <button type="button" onClick={() => zoomTo(0.5)}>zoom out</button>
+      <button type="button" onClick={() => zoomTo(ZOOM_MAX)}>zoom in</button>
+      <button type="button" onClick={() => zoomTo(TEXT_SCALE_FLOOR_ZOOM)}>zoom to floor</button>
+      <button type="button" onClick={() => zoomTo(TEXT_SCALE_FLOOR_ZOOM / 4)}>zoom past floor</button>
+    </>
+  );
 }
 
 function show() {
@@ -48,19 +56,34 @@ describe('PieceDimensions', () => {
     expect(texts().map((t) => t.textContent)).toEqual(['A: 100"', 'B: 50"', 'C: 100"', 'D: 50"']);
   });
 
-  it('counter-scales the text so it stays legible when the view is zoomed out', async () => {
+  it('counter-scales the text so it stays legible across the normal editing range', async () => {
     const user = show();
     const before = Number(texts()[0].getAttribute('font-size'));
     await user.click(screen.getByRole('button', { name: 'zoom out' }));
     const after = Number(texts()[0].getAttribute('font-size'));
-    // A quarter of the zoom means four times the world font size — the same
-    // number of pixels on screen either way.
-    expect(after).toBeCloseTo(before * 4);
+    // Half the zoom means twice the world font size — the same number of
+    // pixels on screen either way.
+    expect(after).toBeCloseTo(before * 2);
   });
 
-  it('keeps the dimension line a readable distance off the piece at any zoom, so it does not hug the outline when zoomed out', async () => {
+  it('lets the text shrink with the drawing once zoomed out past TEXT_SCALE_FLOOR_ZOOM, instead of piling up at a constant size', async () => {
+    const user = show();
+    const screenPx = (zoom: number) => Number(texts()[0].getAttribute('font-size')) * zoom;
+    await user.click(screen.getByRole('button', { name: 'zoom to floor' }));
+    const atFloor = screenPx(TEXT_SCALE_FLOOR_ZOOM);
+    await user.click(screen.getByRole('button', { name: 'zoom past floor' }));
+    const pastFloor = screenPx(TEXT_SCALE_FLOOR_ZOOM / 4);
+    // Above/at the floor the on-screen size is constant; a quarter of the
+    // zoom below it means a quarter of the on-screen size too, same as every
+    // other piece of geometry on the canvas.
+    expect(pastFloor).toBeCloseTo(atFloor / 4);
+  });
+
+  it('stands the dimension line the same on-screen distance off the piece across the normal editing range, in or out', async () => {
     const user = show();
     const extensionPx = (zoom: number) => {
+      // The first line drawn is a side's extension line, corner -> dimension
+      // line, so its on-screen length is the stand-off the user sees.
       const line = screen.getByTestId('canvas').querySelector('line') as SVGLineElement;
       const worldLength = Math.hypot(
         Number(line.getAttribute('x2')) - Number(line.getAttribute('x1')),
@@ -68,27 +91,36 @@ describe('PieceDimensions', () => {
       );
       return worldLength * zoom;
     };
-    // The extension line spans edge -> dimension line, so its on-screen length
-    // is the stand-off distance the user actually sees.
-    expect(extensionPx(1)).toBeGreaterThanOrEqual(MIN_DIMENSION_OFFSET_PX);
+    expect(extensionPx(1)).toBeCloseTo(DIMENSION_OFFSET_PX);
     await user.click(screen.getByRole('button', { name: 'zoom out' }));
-    expect(extensionPx(0.25)).toBeGreaterThanOrEqual(MIN_DIMENSION_OFFSET_PX);
+    expect(extensionPx(0.5)).toBeCloseTo(DIMENSION_OFFSET_PX);
+    await user.click(screen.getByRole('button', { name: 'zoom in' }));
+    expect(extensionPx(ZOOM_MAX)).toBeCloseTo(DIMENSION_OFFSET_PX);
   });
 
-  it('sits each measurement on its line with a white halo, and draws no dotted extension lines', () => {
+  it('shrinks the dimension line\'s stand-off below TEXT_SCALE_FLOOR_ZOOM too, so it does not drift away from a piece that has itself shrunk', async () => {
+    const user = show();
+    const extensionScreenPx = (zoom: number) => {
+      const line = screen.getByTestId('canvas').querySelector('line') as SVGLineElement;
+      const worldLength = Math.hypot(
+        Number(line.getAttribute('x2')) - Number(line.getAttribute('x1')),
+        Number(line.getAttribute('y2')) - Number(line.getAttribute('y1')),
+      );
+      return worldLength * zoom;
+    };
+    await user.click(screen.getByRole('button', { name: 'zoom past floor' }));
+    expect(extensionScreenPx(TEXT_SCALE_FLOOR_ZOOM / 4)).toBeCloseTo(DIMENSION_OFFSET_PX / 4);
+  });
+
+  it('sits each measurement on its line with a white halo', () => {
     show();
     const text = texts()[0];
     expect(text.getAttribute('paint-order')).toBe('stroke');
     expect(text.getAttribute('class')).toContain('stroke-white');
-    const dotted = Array.from(screen.getByTestId('canvas').querySelectorAll('line'))
-      .filter((l) => l.getAttribute('stroke-linecap') === 'round');
-    expect(dotted).toHaveLength(0);
   });
 
-  it('drops the text of a side too short on screen to hold it, instead of printing over its neighbours', async () => {
+  it('keeps every measurement visible when zoomed far out, even on a small piece', async () => {
     const user = show();
-    await user.click(screen.getByRole('button', { name: 'zoom out' }));
-    expect(texts()).toHaveLength(4);
     const tiny: Piece = { ...piece, outline: rectOutline(100, 50) };
     render(
       <DrawingEditorProvider drawing={drawing} materialLines={[]}>
@@ -97,45 +129,40 @@ describe('PieceDimensions', () => {
       </DrawingEditorProvider>,
     );
     await user.click(screen.getAllByRole('button', { name: 'zoom out' })[1]);
-    expect(screen.getByTestId('tiny').querySelectorAll('text')).toHaveLength(0);
-    // The lines stay, so the side is still measured.
-    expect(screen.getByTestId('tiny').querySelectorAll('line').length).toBeGreaterThan(0);
+    expect(screen.getByTestId('tiny').querySelectorAll('text')).toHaveLength(4);
   });
 
-  it('draws an extension line and an end tick for every dimension, not just a bare line', () => {
-    show();
-    // 4 sides x (2 extension + 1 dimension + 2 ticks)
-    expect(screen.getByTestId('canvas').querySelectorAll('line')).toHaveLength(20);
-  });
-
-  it('the dimension line itself is dashed, not a plain solid rule', () => {
+  it('draws each side as a joined bracket: two extension lines and a two-half dimension line, all dashed, with no end ticks', () => {
     show();
     const lines = Array.from(screen.getByTestId('canvas').querySelectorAll('line'));
-    // Every side's own dimension line (the longest of its 5 lines, between
-    // the two ticks) carries a visible dash pattern.
-    const byLength = (l: SVGLineElement) => Math.hypot(
-      Number(l.getAttribute('x2')) - Number(l.getAttribute('x1')),
-      Number(l.getAttribute('y2')) - Number(l.getAttribute('y1')),
-    );
-    for (let side = 0; side < 4; side += 1) {
-      const group = lines.slice(side * 5, side * 5 + 5);
-      const dimensionLine = group.reduce((a, b) => (byLength(b) > byLength(a) ? b : a));
-      const dasharray = dimensionLine.getAttribute('stroke-dasharray');
-      expect(dasharray).toBeTruthy();
-      expect(dasharray).not.toBe('none');
+    // 4 sides x (2 extension + 2 dimension-line halves)
+    expect(lines).toHaveLength(16);
+    for (const line of lines) {
+      expect(line.getAttribute('stroke-dasharray')).toBeTruthy();
+      // Square caps close the notch where an extension meets the dimension line.
+      expect(line.getAttribute('stroke-linecap')).toBe('square');
     }
   });
 
-  it('an end tick stays a plain solid line, not dashed', () => {
+  it('starts every dashed segment at a bracket corner, so each corner opens on a dash and reads as joined', () => {
     show();
     const lines = Array.from(screen.getByTestId('canvas').querySelectorAll('line'));
-    const byLength = (l: SVGLineElement) => Math.hypot(
-      Number(l.getAttribute('x2')) - Number(l.getAttribute('x1')),
-      Number(l.getAttribute('y2')) - Number(l.getAttribute('y1')),
-    );
-    const group = lines.slice(0, 5);
-    const shortest = group.reduce((a, b) => (byLength(b) < byLength(a) ? b : a));
-    expect(shortest.getAttribute('stroke-dasharray')).toBeNull();
+    for (let side = 0; side < 4; side += 1) {
+      const [extA, extB, halfA, halfB] = lines.slice(side * 4, side * 4 + 4);
+      expect(halfA.getAttribute('x1')).toBe(extA.getAttribute('x1'));
+      expect(halfA.getAttribute('y1')).toBe(extA.getAttribute('y1'));
+      expect(halfB.getAttribute('x1')).toBe(extB.getAttribute('x1'));
+      expect(halfB.getAttribute('y1')).toBe(extB.getAttribute('y1'));
+    }
+  });
+
+  it('marks each measured corner with a dot that keeps its on-screen size', async () => {
+    const user = show();
+    const dots = () => Array.from(screen.getByTestId('canvas').querySelectorAll('circle'));
+    expect(dots()).toHaveLength(8);
+    const before = Number(dots()[0].getAttribute('r'));
+    await user.click(screen.getByRole('button', { name: 'zoom out' }));
+    expect(Number(dots()[0].getAttribute('r'))).toBeCloseTo(before * 2);
   });
 });
 
