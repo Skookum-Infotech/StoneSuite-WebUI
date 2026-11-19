@@ -3,7 +3,7 @@
 // <areaIndex>_<seq>.dxf"). Pure — no file-system or network access, so the
 // save/export flow and its tests can call this the same way.
 
-import type { DrawingArea, Piece, PieceEdge, Point } from '@/types/drawing';
+import type { AttachedProfileType, DrawingArea, Piece, PieceEdge, Point } from '@/types/drawing';
 import { outlinePolyline } from './arcs';
 import { cutoutOutline } from './cutouts';
 import { outlineEdges, transformOutline } from './geometry';
@@ -32,10 +32,12 @@ export function dxfFileName(orderNumber: string, areaName: string, meta: Pick<Dx
 /** Builds one area's DXF: every piece's outline (a closed POLYLINE), its
  *  label, one aligned dimension per outer edge, each cutout's outline (round
  *  ones as 48-sided polylines) on the CUTOUTS layer, per-side edge notes
- *  (profile, backsplash, waterfall) on EDGES, and the area's notes and manual
- *  dimensions, and each seam as an open LINE. */
-export function buildAreaDxf(area: DrawingArea, meta: DxfExportMeta): string {
+ *  (profile code, plus any attached profile's alias and measurement) on
+ *  EDGES, and the area's notes and manual dimensions, and each seam as an
+ *  open LINE. */
+export function buildAreaDxf(area: DrawingArea, meta: DxfExportMeta, profileTypes: AttachedProfileType[] = []): string {
   const writer = new DxfWriter();
+  const profileTypesById = new Map(profileTypes.map((t) => [t.id, t]));
 
   for (const piece of area.pieces) {
     // World coordinates: the piece's own outline never carries its position
@@ -66,7 +68,7 @@ export function buildAreaDxf(area: DrawingArea, meta: DxfExportMeta): string {
     const sides = outlineEdges(worldMm);
     for (const edge of piece.edges) {
       const side = sides[edge.index];
-      const text = edgeNote(edge, meta);
+      const text = edgeNote(edge, meta, profileTypesById);
       if (side && text) writer.addLabel(text, mmPointToInches(midpoint(side[0], side[1])), DXF_LAYER.EDGES);
     }
   }
@@ -88,14 +90,16 @@ function midpoint(a: Point, b: Point): Point {
   return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
 }
 
-/** "BN BS 4 WF 36" — the profile code, then backsplash / waterfall heights. */
-function edgeNote(edge: PieceEdge, meta: DxfExportMeta): string {
+/** "BN BS 4" — the profile code, then the attached profile's alias (or name)
+ *  and its chosen measurement. */
+function edgeNote(edge: PieceEdge, meta: DxfExportMeta, profileTypesById: Map<string, AttachedProfileType>): string {
   const unit = meta.displayUnit ?? 'in';
   const fmt = (mm: number) => formatLength(mm, unit, meta.fractionDenominator);
+  const attached = edge.attachedProfile;
+  const type = attached && profileTypesById.get(attached.profileTypeId);
   return [
     edge.code,
-    edge.splashHeightMm ? `BS ${fmt(edge.splashHeightMm)}` : undefined,
-    edge.waterfallHeightMm ? `WF ${fmt(edge.waterfallHeightMm)}` : undefined,
+    type && attached ? `${type.alias || type.name} ${fmt(attached.measurementMm)}` : undefined,
   ].filter(Boolean).join(' ');
 }
 

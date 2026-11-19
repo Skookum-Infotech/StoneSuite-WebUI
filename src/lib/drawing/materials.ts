@@ -3,7 +3,8 @@
 // checked against.
 //
 // "Billable" area is the outline area (cutouts are NOT deducted — the stone
-// is bought and cut as a whole) plus any backsplash and waterfall panels.
+// is bought and cut as a whole) plus any attached-profile panels (Backsplash,
+// Lamination, Miter Edge, Waterfall, ...) painted with the Profiles tool.
 // It is a quantity to compare with the order line, not a slab-consumption
 // figure: layout, kerf and waste are not modelled.
 
@@ -15,7 +16,7 @@ export interface MaterialUsage {
   lineId: string | null;
   pieceCount: number;
   grossAreaMm2: number;
-  /** Backsplash plus waterfall panels. */
+  /** Attached-profile panels (Backsplash, Lamination, Miter Edge, Waterfall, ...). */
   verticalAreaMm2: number;
   billableAreaMm2: number;
   /** Finished top surface: outline minus openings. */
@@ -27,7 +28,7 @@ export function materialUsage(areas: DrawingArea[]): MaterialUsage[] {
   for (const piece of areas.flatMap((a) => a.pieces)) {
     const key = piece.salesOrderLineId ?? null;
     const m = pieceMetrics(piece);
-    const vertical = m.edgeTotals.splashAreaMm2 + m.edgeTotals.waterfallAreaMm2;
+    const vertical = m.edgeTotals.profileAreaMm2;
     const sum = groups.get(key) ?? {
       lineId: key, pieceCount: 0, grossAreaMm2: 0, verticalAreaMm2: 0, billableAreaMm2: 0, netAreaMm2: 0,
     };

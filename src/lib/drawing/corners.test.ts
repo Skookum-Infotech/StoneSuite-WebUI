@@ -108,9 +108,12 @@ describe('applyCorner geometry', () => {
   });
 
   it('keeps every other side\'s settings on the side they were on', () => {
-    const { edges } = applied(1, 'notch', params, [{ index: 0, splashHeightMm: 100 }, { index: 2, code: 'W' }, { index: 3, code: 'Z' }]);
+    const { edges } = applied(1, 'notch', params, [
+      { index: 0, attachedProfile: { profileTypeId: 'backsplash-1', measurementMm: 100 } },
+      { index: 2, code: 'W' }, { index: 3, code: 'Z' },
+    ]);
     expect(edges.filter((e) => e.cornerId === undefined)).toEqual([
-      { index: 0, splashHeightMm: 100 }, { index: 4, code: 'W' }, { index: 5, code: 'Z' },
+      { index: 0, attachedProfile: { profileTypeId: 'backsplash-1', measurementMm: 100 } }, { index: 4, code: 'W' }, { index: 5, code: 'Z' },
     ]);
   });
 
@@ -200,7 +203,7 @@ describe('applyCorner refusals', () => {
 });
 
 describe('removeCorner', () => {
-  const settings: PieceEdge[] = [{ index: 0, code: 'W' }, { index: 2, splashHeightMm: 80 }, { index: 3, code: 'Z' }];
+  const settings: PieceEdge[] = [{ index: 0, code: 'W' }, { index: 2, attachedProfile: { profileTypeId: 'backsplash-1', measurementMm: 80 } }, { index: 3, code: 'Z' }];
 
   it.each(
     CORNER_STYLES.flatMap(({ id }) => [0, 1, 2, 3].map((vertex) => [id, vertex] as const)),

@@ -71,16 +71,63 @@ export interface EdgeType {
   isSystem: boolean;
 }
 
+/** How an attached-profile type stands relative to its parent piece in 3D:
+ *  90 = upright on the counter's top face (a backsplash), 180 = flat, running
+ *  on in the same plane (a lamination build-up), 270 = dropped flush down the
+ *  side (a waterfall). */
+export type ProfileAngle = 90 | 180 | 270;
+
+/** Whether two painted sides meeting at a piece's corner get a mitered joint
+ *  or a plain square one. Not drawn on the sketch directly — it shapes the
+ *  derived attached-profile geometry at that corner. */
+export type ProfileFinish = 'none' | 'mitered';
+
+/** How an attached-profile type is priced. Only a rate per linear length so far. */
+export type ProfilePricingType = 'linear';
+
+/** One kind of attached piece the Profiles tool paints onto a side (Backsplash,
+ *  Lamination, Miter Edge, Waterfall ...): the shop's own list, kept on the
+ *  server (GET /tenant/settings/attached-profile-types). Named "attached
+ *  profile" to stay distinct from the edge-code dropdown (also loosely called
+ *  "edge profile") and from EdgeFinish's 3D cross-section shape. Supersedes
+ *  PieceEdge's old plain splashHeightMm/waterfallHeightMm fields. */
+export interface AttachedProfileType {
+  id: string;
+  name: string;
+  pricingType: ProfilePricingType;
+  /** The rate, per linear unit of the type's pricing. */
+  price: number;
+  /** A short tag (e.g. "BS"); may be empty. */
+  alias: string;
+  /** The colour the side is drawn in, as #rrggbb. */
+  color: string;
+  /** Preset widths/heights (mm) offered when painting this type onto a side —
+   *  the "Measurements" list in the type's editor. Always at least one. */
+  measurementPresetsMm: number[];
+  angle: ProfileAngle;
+  finish: ProfileFinish;
+  /** One of the four every shop starts with. They can be edited, not duplicated. */
+  isSystem: boolean;
+}
+
+/** The attached-profile type (Profiles tool) painted onto a side, plus the
+ *  measurement chosen for this one instance (one of the type's presets, or a
+ *  value carried over from a migrated splashHeightMm/waterfallHeightMm). */
+export interface AttachedProfile {
+  profileTypeId: string;
+  measurementMm: number;
+  /** Where the Material tab laid this profile piece on a slab; absent until
+   *  it is placed. Same shape and meaning as Piece.slab — a profile piece
+   *  sits on one slab at a time, independently of its parent piece. */
+  slab?: SlabPlacement;
+}
+
 export interface PieceEdge {
   index: number;
   /** Edge profile — a code from the tenant's edge list (lkp_edge_code). */
   code?: EdgeCode;
   /** How far the stone projects past its support. Informational. */
   overhangMm?: number;
-  /** Backsplash standing along this side. */
-  splashHeightMm?: number;
-  /** Waterfall panel dropping from this side. */
-  waterfallHeightMm?: number;
   /** Bows this side into a circular arc: the gap between the chord (corner to
    *  corner) and the arc's crown, in mm. Positive bulges to the left of corner
    *  i -> i+1 — away from the stone on the usual clockwise outline — negative
@@ -99,6 +146,9 @@ export interface PieceEdge {
   /** The edge type the Edges tool painted onto this side (EdgeType.id). Absent is
    *  a side nobody has painted. */
   edgeTypeId?: string;
+  /** The attached-profile type the Profiles tool painted onto this side.
+   *  Independent of edgeTypeId — a side can carry both at once. */
+  attachedProfile?: AttachedProfile;
 }
 
 export interface Seam {
@@ -143,14 +193,21 @@ export interface Cutout {
 export interface Piece {
   id: string;
   label: string; // 'A-1'
-  shape: 'rect' | 'L' | 'U' | 'polygon';
+  shape: 'rect' | 'L' | 'U' | 'polygon' | 'circle';
   kind?: PieceKind;
-  outline: Point[]; // local coords, clockwise, closed implicitly
+  /** local coords, clockwise, closed implicitly — for `shape: 'circle'` this
+   *  is a `radiusMm`-sized regular polygon approximation (lib/drawing/geometry.ts
+   *  `circleOutline`), centred on the origin, so area/export/slab-fit work on
+   *  it exactly like any other outline; `position` is the circle's centre. */
+  outline: Point[];
   position: Point;
   /** Clockwise rotation about the local origin, in degrees (any value). */
   rotationDeg: number;
   thicknessMm: number;
   cornerRadiusMm?: number;
+  /** Only for `shape: 'circle'` — the exact radius the outline approximates,
+   *  used for its true-circle dimension lines rather than per-edge ones. */
+  radiusMm?: number;
   salesOrderLineId?: string;
   edges: PieceEdge[];
   seams: Seam[];

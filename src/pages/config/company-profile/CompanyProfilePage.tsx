@@ -3,10 +3,12 @@ import { Building2 } from 'lucide-react';
 import { TAB_LIST_CLASS, tabClass } from '@/components/ui/tabStyles';
 import { CompanyProfileTab } from './components/CompanyProfileTab';
 import { LocationsTab } from './components/LocationsTab';
+import { CompanyPreferencesTab } from './components/CompanyPreferencesTab';
 
 const TABS = [
   { key: 'profile', label: 'Company Profile' },
   { key: 'locations', label: 'Locations' },
+  { key: 'preferences', label: 'Company Preferences' },
 ] as const;
 
 type TabKey = (typeof TABS)[number]['key'];
@@ -75,6 +77,11 @@ export default function CompanyProfilePage() {
           {activeTab === 'locations' && (
             <div id="company-info-tabpanel-locations" role="tabpanel" aria-labelledby="company-info-tab-locations">
               <LocationsTab actionsSlot={actionsSlot} />
+            </div>
+          )}
+          {activeTab === 'preferences' && (
+            <div id="company-info-tabpanel-preferences" role="tabpanel" aria-labelledby="company-info-tab-preferences">
+              <CompanyPreferencesTab actionsSlot={actionsSlot} />
             </div>
           )}
         </div>

@@ -27,8 +27,8 @@ describe('MaterialSummary', () => {
     show([]);
     expect(screen.queryByRole('region', { name: 'Materials' })).toBeNull();
   });
-  it('shows area against the ordered quantity, including backsplash', () => {
-    show([piece('p1', { salesOrderLineId: 'L1', edges: [{ index: 0, splashHeightMm: 101.6 }] })]);
+  it('shows area against the ordered quantity, including an attached profile', () => {
+    show([piece('p1', { salesOrderLineId: 'L1', edges: [{ index: 0, attachedProfile: { profileTypeId: 'backsplash-1', measurementMm: 101.6 } }] })]);
     expect(screen.getByText('GRN-01 — Granite')).toBeTruthy();
     expect(screen.getByText('1 piece · 23.3 sq ft')).toBeTruthy(); // 20 + 10 ft x 4 in = 3.3
     expect(screen.getByText('Ordered 25.0 sq ft')).toBeTruthy();

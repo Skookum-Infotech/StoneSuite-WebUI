@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Cutout, Piece } from '@/types/drawing';
 import { lShapeOutline, rectOutline } from './geometry';
-import { areaMetrics, mm2ToSqFt, pieceMetrics } from './metrics';
+import { areaMetrics, fabricationSqFt, mm2ToSqFt, pieceMetrics } from './metrics';
 
 const piece = (outline = rectOutline(2000, 600), cutouts: Cutout[] = []): Piece => ({
   id: 'p', label: 'A-1', shape: 'rect', outline, position: { x: 0, y: 0 }, rotationDeg: 0,
@@ -67,5 +67,16 @@ describe('areaMetrics', () => {
 describe('mm2ToSqFt', () => {
   it('converts square millimetres to square feet', () => {
     expect(mm2ToSqFt(92903.04)).toBeCloseTo(1);
+  });
+});
+
+describe('fabricationSqFt', () => {
+  it.each([
+    [100, 20, 120],
+    [100, 0, 100],
+    [58.252, 20, 69.9024],
+    [50, 100, 100],
+  ])('countertop %s sq ft at %s%% -> %s sq ft', (countertopSqFt, percent, want) => {
+    expect(fabricationSqFt(countertopSqFt, percent)).toBeCloseTo(want);
   });
 });

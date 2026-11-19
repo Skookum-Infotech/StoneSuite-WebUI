@@ -1,19 +1,23 @@
-// One slab with the pieces laid on it: the photo (or plain stone) at true proportions,
-// and each placed piece's outline on top — light blue where it fits, red where it
-// runs off the slab or overlaps another piece. Drag an outline to move it; the
-// arrow keys nudge it, R turns it, Delete takes it off the slab.
+// One slab with the pieces (and profile pieces — a painted Profiles side can
+// be laid on a slab of its own, lib/drawing/slabPlaceables.ts) laid on it:
+// the photo (or plain stone) at true proportions, and each placed item's
+// outline on top — light blue where it fits, red where it runs off the slab
+// or overlaps another item. Drag an outline to move it; the arrow keys nudge
+// it, R turns it, Delete takes it off the slab.
 //
 // Dragging tracks the pointer in local state and dispatches once on release, the
 // same way PieceShape does, so one drag is one undo step.
 
 import { useMemo, useState } from 'react';
 import { RotateCw, Trash2 } from 'lucide-react';
-import type { Piece, SlabPlacement } from '@/types/drawing';
+import type { SlabPlacement } from '@/types/drawing';
 import type { DrawingSlabUnit } from '@/types/drawingSlab';
 import {
   SLAB_NUDGE_MM, placedOutline, rotatedPlacement, slabFit, type SlabFit,
 } from '@/lib/drawing/slabs';
+import { slabPlaceables, type SlabPlaceable } from '@/lib/drawing/slabPlaceables';
 import { cn } from '@/lib/utils';
+import { useAttachedProfileTypeList } from './AttachedProfileTypesContext';
 import { useDrawingEditor } from './DrawingEditorContext';
 
 /** The slab's length is divided by this to size piece labels, so they read the same on any slab. */
@@ -21,13 +25,12 @@ const LABEL_DIVISOR = 45;
 const KEY_ROTATE = 'r';
 
 interface Placed {
-  areaId: string;
-  piece: Piece;
+  item: SlabPlaceable;
   placement: SlabPlacement;
 }
 
 interface DragState {
-  pieceId: string;
+  id: string;
   pointerId: number;
   startClientX: number;
   startClientY: number;
@@ -49,34 +52,42 @@ const FIT_LABELS: Record<SlabFit, string> = {
 
 export function SlabCanvas({ slab }: { slab: DrawingSlabUnit }) {
   const { state, dispatch } = useDrawingEditor();
+  const profileTypes = useAttachedProfileTypeList();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [drag, setDrag] = useState<DragState | null>(null);
 
   const placed = useMemo<Placed[]>(
-    () => state.present.areas.flatMap((area) => area.pieces.flatMap((piece) => (
-      piece.slab?.slabId === slab.id ? [{ areaId: area.id, piece, placement: piece.slab }] : []
-    ))),
-    [state.present.areas, slab.id],
+    () => slabPlaceables(state.present.areas, profileTypes).flatMap((item) => (
+      item.slab?.slabId === slab.id ? [{ item, placement: item.slab }] : []
+    )),
+    [state.present.areas, profileTypes, slab.id],
   );
 
-  // What is drawn: the dragged piece at its preview spot, the rest as saved. Each
-  // piece is checked against the others as drawn, so neighbours react live to a drag.
-  const shown = placed.map((p) => (drag?.pieceId === p.piece.id ? { ...p, placement: drag.current } : p));
+  // What is drawn: the dragged item at its preview spot, the rest as saved. Each
+  // item is checked against the others as drawn, so neighbours react live to a drag.
+  const shown = placed.map((p) => (drag?.id === p.item.id ? { ...p, placement: drag.current } : p));
   const liveFit = (target: Placed): SlabFit => {
-    const others = shown.filter((p) => p.piece.id !== target.piece.id).map((p) => placedOutline(p.piece, p.placement));
-    return slabFit(placedOutline(target.piece, target.placement), slab, others);
+    const others = shown.filter((p) => p.item.id !== target.item.id).map((p) => placedOutline(p.item, p.placement));
+    return slabFit(placedOutline(target.item, target.placement), slab, others);
   };
-  const selected = shown.find((p) => p.piece.id === selectedId) ?? null;
+  const selected = shown.find((p) => p.item.id === selectedId) ?? null;
   const labelSize = slab.lengthMm / LABEL_DIVISOR;
 
   function commit(target: Placed, placement: SlabPlacement | undefined) {
-    dispatch({ type: 'updatePiece', areaId: target.areaId, pieceId: target.piece.id, patch: { slab: placement } });
+    const { item } = target;
+    if (item.edgeIndex === undefined) {
+      dispatch({ type: 'updatePiece', areaId: item.areaId, pieceId: item.pieceId, patch: { slab: placement } });
+    } else {
+      dispatch({
+        type: 'updateAttachedProfileSlab', areaId: item.areaId, pieceId: item.pieceId, edgeIndex: item.edgeIndex, slab: placement,
+      });
+    }
   }
 
   function onPointerDown(e: React.PointerEvent<SVGGElement>, target: Placed) {
-    setSelectedId(target.piece.id);
+    setSelectedId(target.item.id);
     setDrag({
-      pieceId: target.piece.id, pointerId: e.pointerId, startClientX: e.clientX, startClientY: e.clientY,
+      id: target.item.id, pointerId: e.pointerId, startClientX: e.clientX, startClientY: e.clientY,
       start: target.placement, current: target.placement,
     });
     e.currentTarget.setPointerCapture?.(e.pointerId);
@@ -138,18 +149,18 @@ export function SlabCanvas({ slab }: { slab: DrawingSlabUnit }) {
           <rect x={0} y={0} width={slab.lengthMm} height={slab.widthMm} className="fill-stone-300" />
         )}
         {shown.map((p) => {
-          const outline = placedOutline(p.piece, p.placement);
+          const outline = placedOutline(p.item, p.placement);
           const fit = liveFit(p);
           const xs = outline.map((pt) => pt.x);
           const ys = outline.map((pt) => pt.y);
           const centre = { x: (Math.min(...xs) + Math.max(...xs)) / 2, y: (Math.min(...ys) + Math.max(...ys)) / 2 };
           return (
             <g
-              key={p.piece.id}
+              key={p.item.id}
               tabIndex={0}
               role="button"
-              aria-label={`Piece ${p.piece.label} on slab ${slab.serial}, ${FIT_LABELS[fit]}`}
-              aria-pressed={selectedId === p.piece.id}
+              aria-label={`Piece ${p.item.label} on slab ${slab.serial}, ${FIT_LABELS[fit]}`}
+              aria-pressed={selectedId === p.item.id}
               onPointerDown={(e) => onPointerDown(e, p)}
               onPointerMove={onPointerMove}
               onPointerUp={(e) => onPointerUp(e, p)}
@@ -158,7 +169,7 @@ export function SlabCanvas({ slab }: { slab: DrawingSlabUnit }) {
             >
               <polygon
                 points={outline.map((pt) => `${pt.x},${pt.y}`).join(' ')}
-                strokeWidth={selectedId === p.piece.id ? 3 : 2}
+                strokeWidth={selectedId === p.item.id ? 3 : 2}
                 vectorEffect="non-scaling-stroke"
                 strokeLinejoin="round"
                 className={cn(FIT_CLASSES[fit])}
@@ -171,7 +182,7 @@ export function SlabCanvas({ slab }: { slab: DrawingSlabUnit }) {
                 dominantBaseline="central"
                 className="pointer-events-none select-none fill-stone-900 font-semibold"
               >
-                {p.piece.label}
+                {p.item.label}
               </text>
             </g>
           );
@@ -189,11 +200,11 @@ export function SlabCanvas({ slab }: { slab: DrawingSlabUnit }) {
       {selected && (
         <div className="flex items-center gap-1.5">
           <span className="min-w-0 flex-1 truncate text-2xs text-stone-600">
-            {selected.piece.label}: {FIT_LABELS[liveFit(selected)]}
+            {selected.item.label}: {FIT_LABELS[liveFit(selected)]}
           </span>
           <button
             type="button"
-            aria-label={`Rotate piece ${selected.piece.label} a quarter turn`}
+            aria-label={`Rotate piece ${selected.item.label} a quarter turn`}
             title="Rotate 90° (R)"
             onClick={() => commit(selected, rotatedPlacement(selected.placement))}
             className="inline-flex items-center gap-1 rounded border border-stone-300 bg-white px-2 py-1 text-2xs font-medium text-stone-700 hover:bg-stone-50"
@@ -202,7 +213,7 @@ export function SlabCanvas({ slab }: { slab: DrawingSlabUnit }) {
           </button>
           <button
             type="button"
-            aria-label={`Take piece ${selected.piece.label} off this slab`}
+            aria-label={`Take piece ${selected.item.label} off this slab`}
             title="Take off the slab (Delete)"
             onClick={() => { commit(selected, undefined); setSelectedId(null); }}
             className="inline-flex items-center gap-1 rounded px-2 py-1 text-2xs font-medium text-destructive hover:bg-destructive/10"

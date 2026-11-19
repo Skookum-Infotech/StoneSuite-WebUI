@@ -4,8 +4,10 @@
 // so they show in the Cutout tab only and are gone again in Sketch.
 
 import type { Cutout, Piece } from '@/types/drawing';
+import { MIN_READABLE_TEXT_PX } from '@/lib/drawing/constants';
 import { cutoutDistances } from '@/lib/drawing/cutoutDistances';
 import { uprightTransform } from '@/lib/drawing/svgText';
+import { canvasTextScaleDivisor } from '@/lib/drawing/textScale';
 import { formatLength } from '@/lib/drawing/units';
 import { useDrawingEditor } from './DrawingEditorContext';
 
@@ -21,7 +23,9 @@ export function CutoutDistanceLines({ piece, cutout }: { piece: Piece; cutout: C
   const { state, workspace } = useDrawingEditor();
   if (workspace !== 'cutout') return null;
   const { displayUnit, fractionDenominator } = state.present;
-  const px = (value: number) => value / state.zoom;
+  // See canvasTextScaleDivisor.
+  const divisor = canvasTextScaleDivisor(state.zoom, FONT_SIZE_PX, MIN_READABLE_TEXT_PX);
+  const px = (value: number) => value / divisor;
 
   return (
     <g aria-hidden="true" pointerEvents="none">

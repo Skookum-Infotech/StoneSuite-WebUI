@@ -1,4 +1,4 @@
-// Per-side settings (edge profile, overhang, backsplash, waterfall) and the
+// Per-side settings (edge profile, overhang, attached profile) and the
 // quantities derived from them. Settings live in `Piece.edges`, keyed by the
 // side's index; a side with nothing set has no entry. Lengths and areas are
 // always computed from the outline, never stored, so they cannot drift.
@@ -13,11 +13,9 @@ import { distance, outlineEdges } from './geometry';
 
 export type EdgeSettings = Partial<Omit<PieceEdge, 'index'>>;
 
-const SETTING_KEYS = ['code', 'overhangMm', 'splashHeightMm', 'waterfallHeightMm', 'arcHeightMm', 'borderId', 'borderStyle', 'cornerId', 'cornerStyle', 'edgeTypeId'] as const;
-const HEIGHT_FIELDS: { key: 'overhangMm' | 'splashHeightMm' | 'waterfallHeightMm'; label: string }[] = [
+const SETTING_KEYS = ['code', 'overhangMm', 'arcHeightMm', 'borderId', 'borderStyle', 'cornerId', 'cornerStyle', 'edgeTypeId', 'attachedProfile'] as const;
+const HEIGHT_FIELDS: { key: 'overhangMm'; label: string }[] = [
   { key: 'overhangMm', label: 'Overhang' },
-  { key: 'splashHeightMm', label: 'Backsplash height' },
-  { key: 'waterfallHeightMm', label: 'Waterfall height' },
 ];
 
 export function edgeAt(edges: PieceEdge[], index: number): PieceEdge {
@@ -38,13 +36,19 @@ export function setEdgeSettings(edges: PieceEdge[], index: number, patch: EdgeSe
   return (hasSettings ? [...others, cleaned] : others).sort((a, b) => a.index - b.index);
 }
 
-/** Why `patch` cannot be saved, or null. Heights are non-negative and bounded. */
+/** Why `patch` cannot be saved, or null. Heights and the attached-profile
+ *  measurement are non-negative and bounded. */
 export function edgeSettingsProblem(patch: EdgeSettings): string | null {
   for (const { key, label } of HEIGHT_FIELDS) {
     const value = patch[key];
     if (value === undefined) continue;
     if (!Number.isFinite(value) || value < 0) return `${label} cannot be negative.`;
     if (value > MAX_DIMENSION_MM) return `${label} is too large.`;
+  }
+  if (patch.attachedProfile) {
+    const { measurementMm } = patch.attachedProfile;
+    if (!Number.isFinite(measurementMm) || measurementMm <= 0) return 'The profile measurement must be greater than zero.';
+    if (measurementMm > MAX_DIMENSION_MM) return 'The profile measurement is too large.';
   }
   return null;
 }
@@ -53,15 +57,17 @@ export interface EdgeTotals {
   /** Length of finished (profiled) edge per code. */
   finishedByCode: Record<string, number>;
   finishedLengthMm: number;
-  splashLengthMm: number;
-  splashAreaMm2: number;
-  waterfallLengthMm: number;
-  waterfallAreaMm2: number;
+  /** Length of every side with an attached profile painted on it (Backsplash,
+   *  Lamination, Miter Edge, Waterfall, ...), regardless of which type. */
+  profileLengthMm: number;
+  /** Sum of each painted side's length x its chosen measurement — the stone
+   *  area those attached profiles consume. */
+  profileAreaMm2: number;
 }
 
 export function edgeTotals(piece: Pick<Piece, 'outline' | 'edges'>): EdgeTotals {
   const totals: EdgeTotals = {
-    finishedByCode: {}, finishedLengthMm: 0, splashLengthMm: 0, splashAreaMm2: 0, waterfallLengthMm: 0, waterfallAreaMm2: 0,
+    finishedByCode: {}, finishedLengthMm: 0, profileLengthMm: 0, profileAreaMm2: 0,
   };
   const sides = outlineEdges(piece.outline);
   for (const edge of piece.edges) {
@@ -73,13 +79,9 @@ export function edgeTotals(piece: Pick<Piece, 'outline' | 'edges'>): EdgeTotals 
       totals.finishedByCode[edge.code] = (totals.finishedByCode[edge.code] ?? 0) + length;
       totals.finishedLengthMm += length;
     }
-    if (edge.splashHeightMm) {
-      totals.splashLengthMm += length;
-      totals.splashAreaMm2 += length * edge.splashHeightMm;
-    }
-    if (edge.waterfallHeightMm) {
-      totals.waterfallLengthMm += length;
-      totals.waterfallAreaMm2 += length * edge.waterfallHeightMm;
+    if (edge.attachedProfile) {
+      totals.profileLengthMm += length;
+      totals.profileAreaMm2 += length * edge.attachedProfile.measurementMm;
     }
   }
   return totals;
@@ -91,9 +93,7 @@ export function addEdgeTotals(a: EdgeTotals, b: EdgeTotals): EdgeTotals {
   return {
     finishedByCode,
     finishedLengthMm: a.finishedLengthMm + b.finishedLengthMm,
-    splashLengthMm: a.splashLengthMm + b.splashLengthMm,
-    splashAreaMm2: a.splashAreaMm2 + b.splashAreaMm2,
-    waterfallLengthMm: a.waterfallLengthMm + b.waterfallLengthMm,
-    waterfallAreaMm2: a.waterfallAreaMm2 + b.waterfallAreaMm2,
+    profileLengthMm: a.profileLengthMm + b.profileLengthMm,
+    profileAreaMm2: a.profileAreaMm2 + b.profileAreaMm2,
   };
 }

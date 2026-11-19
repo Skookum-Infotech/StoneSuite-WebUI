@@ -126,6 +126,32 @@ describe('drawingService edge types', () => {
   });
 });
 
+describe('drawingService attached profile types', () => {
+  const input = {
+    name: 'Lamination', pricingType: 'linear' as const, price: 18, alias: 'LM', color: '#9333ea',
+    measurementPresetsMm: [38.1, 50.8], angle: 180 as const, finish: 'mitered' as const,
+  };
+  const saved = { ...input, id: 'pt1', isSystem: false };
+
+  it('GETs the profile type list', async () => {
+    vi.mocked(tenantClient.get).mockResolvedValue({ data: { success: true, profileTypes: [saved] } });
+    expect(await drawingService.getAttachedProfileTypes()).toEqual([saved]);
+    expect(tenantClient.get).toHaveBeenCalledWith('/tenant/settings/attached-profile-types');
+  });
+
+  it('POSTs a new profile type and returns what the server saved', async () => {
+    vi.mocked(tenantClient.post).mockResolvedValue({ data: { success: true, profileType: saved } });
+    expect(await drawingService.createAttachedProfileType(input)).toEqual(saved);
+    expect(tenantClient.post).toHaveBeenCalledWith('/tenant/settings/attached-profile-types', input);
+  });
+
+  it('PUTs changes to an existing profile type', async () => {
+    vi.mocked(tenantClient.put).mockResolvedValue({ data: { success: true, profileType: saved } });
+    expect(await drawingService.updateAttachedProfileType('pt1', input)).toEqual(saved);
+    expect(tenantClient.put).toHaveBeenCalledWith('/tenant/settings/attached-profile-types/pt1', input);
+  });
+});
+
 describe('drawingService.getEdgeCodes', () => {
   it('GETs the edge code list', async () => {
     const edgeCodes = [{ code: 'EE', label: 'Eased Edge' }];

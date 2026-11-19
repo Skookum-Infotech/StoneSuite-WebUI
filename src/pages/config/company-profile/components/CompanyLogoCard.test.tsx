@@ -23,6 +23,7 @@ const BASE_PROFILE: CompanyProfile = {
   currency: '',
   timezone: '',
   taxId: '',
+  fabricationPercent: 20,
   billingAddress: EMPTY_ADDRESS,
   shippingAddress: EMPTY_ADDRESS,
   returnAddress: EMPTY_ADDRESS,

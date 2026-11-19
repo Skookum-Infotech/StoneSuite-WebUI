@@ -82,6 +82,14 @@ function PolygonToolButton() {
   return <button type="button" onClick={() => setTool('polygon')}>polygon tool</button>;
 }
 
+/** A different tool, picked some other way than Escape (the rail, the Draw
+ *  bar's own pencil, Cutout/Material...) — any of which must abandon an
+ *  unfinished Points draft just the same. */
+function SelectToolButton() {
+  const { setTool } = useDrawingEditor();
+  return <button type="button" onClick={() => setTool('select')}>select tool</button>;
+}
+
 function DimensionsToggleButton() {
   const { toggleDimensions } = useDrawingEditor();
   return <button type="button" onClick={toggleDimensions}>toggle dimensions</button>;
@@ -313,5 +321,196 @@ describe('DrawingCanvas polygon tool', () => {
     fireEvent.doubleClick(background);
     const outline = JSON.parse(screen.getByTestId('outline').textContent ?? 'null');
     expect(outline).toHaveLength(3);
+  });
+
+  it('closes on a real (not pixel-exact) click back near the first point, scaled for the editor\'s own opening zoom', async () => {
+    // At a 0.2 zoom (the editor can open as low as OPEN_ZOOM = 0.4, and a
+    // user can zoom out further), a flat world-mm closing tolerance shrinks
+    // to just a few on-screen pixels — effectively unclickable. The closing
+    // click below lands 50mm away from the first point in world space, which
+    // a flat 12mm tolerance would have missed entirely; it must still close,
+    // scaled to a constant on-screen hit radius instead.
+    mockSvgRect(800, 600);
+    render(
+      <DrawingEditorProvider drawing={blankDrawing()} materialLines={[]} initialZoom={0.2}>
+        <DrawingCanvas />
+        <PolygonToolButton />
+        <PieceOutlineReadout />
+      </DrawingEditorProvider>,
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'polygon tool' }));
+    const background = screen.getByTestId('canvas-background');
+    // Clockwise: (0,0) -> (0,100) -> (100,0), each world point scaled by the
+    // 0.2 zoom into screen pixels (screenPointToMm's own inverse).
+    fireEvent.pointerDown(background, { clientX: 400, clientY: 300 }); // world (0,0)
+    fireEvent.pointerDown(background, { clientX: 400, clientY: 280 }); // world (0,100)
+    fireEvent.pointerDown(background, { clientX: 420, clientY: 300 }); // world (100,0)
+    // 50mm (10 screen px at this zoom) off the first point — not pixel-exact,
+    // and well past the old flat 12mm tolerance.
+    fireEvent.pointerDown(background, { clientX: 410, clientY: 300 });
+    const outline = JSON.parse(screen.getByTestId('outline').textContent ?? 'null');
+    expect(outline).toHaveLength(3);
+  });
+
+  it('does not close on a click too far from the first point, even at a low zoom', async () => {
+    mockSvgRect(800, 600);
+    render(
+      <DrawingEditorProvider drawing={blankDrawing()} materialLines={[]} initialZoom={0.2}>
+        <DrawingCanvas />
+        <PolygonToolButton />
+        <PieceOutlineReadout />
+      </DrawingEditorProvider>,
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'polygon tool' }));
+    const background = screen.getByTestId('canvas-background');
+    fireEvent.pointerDown(background, { clientX: 400, clientY: 300 }); // world (0,0)
+    fireEvent.pointerDown(background, { clientX: 400, clientY: 280 }); // world (0,100)
+    fireEvent.pointerDown(background, { clientX: 420, clientY: 300 }); // world (100,0)
+    // 500mm (100 screen px) off the first point — well outside even the
+    // zoom-scaled tolerance (70mm at this zoom).
+    fireEvent.pointerDown(background, { clientX: 500, clientY: 300 });
+    expect(screen.queryByTestId('outline')?.textContent).toBe('none');
+  });
+
+  it('shows each side\'s length while drawing, once Dimensions is on — not before', async () => {
+    mockSvgRect(800, 600);
+    render(
+      <DrawingEditorProvider drawing={blankDrawing()} materialLines={[]}>
+        <DrawingCanvas />
+        <PolygonToolButton />
+        <DimensionsToggleButton />
+      </DrawingEditorProvider>,
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'polygon tool' }));
+    const background = screen.getByTestId('canvas-background');
+    // 2540mm = 100" (same round-inch convention PieceDimensions' own tests use).
+    fireEvent.pointerDown(background, { clientX: 400, clientY: 300 }); // world (0,0)
+    fireEvent.pointerMove(background, { clientX: 2940, clientY: 300 }); // cursor at world (2540,0)
+    expect(screen.queryByText('100"')).toBeNull(); // Dimensions is off by default
+
+    await userEvent.click(screen.getByRole('button', { name: 'toggle dimensions' }));
+    // The not-yet-placed side, following the cursor, already shows its length.
+    expect(screen.getByText('100"')).toBeInTheDocument();
+
+    fireEvent.pointerDown(background, { clientX: 2940, clientY: 300 }); // places the 2nd point, world (2540,0)
+    fireEvent.pointerMove(background, { clientX: 2940, clientY: -2240 }); // cursor at world (2540,2540)
+    // The side just placed keeps showing its length too, not just the live one.
+    expect(screen.getAllByText('100"')).toHaveLength(2);
+  });
+
+  it('closes the shape when clicked back on ANY point already down — not just the first', async () => {
+    mockSvgRect(800, 600);
+    render(
+      <DrawingEditorProvider drawing={blankDrawing()} materialLines={[]}>
+        <DrawingCanvas />
+        <PolygonToolButton />
+        <PieceOutlineReadout />
+      </DrawingEditorProvider>,
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'polygon tool' }));
+    const background = screen.getByTestId('canvas-background');
+    fireEvent.pointerDown(background, { clientX: 400, clientY: 300 }); // world (0,0)
+    fireEvent.pointerDown(background, { clientX: 400, clientY: 200 }); // world (0,100)
+    fireEvent.pointerDown(background, { clientX: 500, clientY: 300 }); // world (100,0)
+    fireEvent.pointerDown(background, { clientX: 500, clientY: 400 }); // world (100,-100)
+    // Closes on the SECOND point (0,100), not the first — the figure is
+    // still a closed, 4-sided shape with no open side either way.
+    fireEvent.pointerDown(background, { clientX: 400, clientY: 200 });
+    const outline = JSON.parse(screen.getByTestId('outline').textContent ?? 'null');
+    expect(outline).toHaveLength(4);
+  });
+
+  it('closes the shape when clicked back on its own first point, once it has at least 3 points', async () => {
+    mockSvgRect(800, 600);
+    render(
+      <DrawingEditorProvider drawing={blankDrawing()} materialLines={[]}>
+        <DrawingCanvas />
+        <PolygonToolButton />
+        <PieceOutlineReadout />
+      </DrawingEditorProvider>,
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'polygon tool' }));
+    const background = screen.getByTestId('canvas-background');
+    // Clockwise, like the first test above: (0,0) -> (0,100) -> (100,0).
+    fireEvent.pointerDown(background, { clientX: 400, clientY: 300 }); // world (0,0) — the first point
+    fireEvent.pointerDown(background, { clientX: 400, clientY: 200 }); // world (0,100)
+    fireEvent.pointerDown(background, { clientX: 500, clientY: 300 }); // world (100,0)
+    // Clicking back on the first point closes it — no Enter, no double-click.
+    fireEvent.pointerDown(background, { clientX: 400, clientY: 300 });
+    const outline = JSON.parse(screen.getByTestId('outline').textContent ?? 'null');
+    expect(outline).toHaveLength(3);
+    expect(outline[0]).toMatchObject({ x: 0, y: 0 });
+    expect(outline[2]).toMatchObject({ x: 100, y: 0 });
+  });
+
+  it('follows the cursor with a rubber-band line from the last point, so the border never looks like it just stops', async () => {
+    mockSvgRect(800, 600);
+    render(
+      <DrawingEditorProvider drawing={blankDrawing()} materialLines={[]}>
+        <DrawingCanvas />
+        <PolygonToolButton />
+      </DrawingEditorProvider>,
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'polygon tool' }));
+    const background = screen.getByTestId('canvas-background');
+    expect(document.querySelectorAll('line')).toHaveLength(0);
+    fireEvent.pointerDown(background, { clientX: 400, clientY: 300 }); // world (0,0)
+    fireEvent.pointerMove(background, { clientX: 500, clientY: 300 }); // cursor at world (100,0), no click yet
+    const rubberBand = document.querySelector('line');
+    expect(rubberBand).not.toBeNull();
+    expect(Number(rubberBand?.getAttribute('x1'))).toBeCloseTo(0);
+    expect(Number(rubberBand?.getAttribute('x2'))).toBeCloseTo(100);
+    // A properly weighted, visible border — not the SVG default hairline.
+    expect(rubberBand?.getAttribute('stroke-width')).not.toBe('1');
+  });
+
+  it('does not close on only 2 points — a click near the first just adds a 3rd point', async () => {
+    mockSvgRect(800, 600);
+    render(
+      <DrawingEditorProvider drawing={blankDrawing()} materialLines={[]}>
+        <DrawingCanvas />
+        <PolygonToolButton />
+        <PieceOutlineReadout />
+      </DrawingEditorProvider>,
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'polygon tool' }));
+    const background = screen.getByTestId('canvas-background');
+    fireEvent.pointerDown(background, { clientX: 400, clientY: 300 }); // world (0,0) — the first point
+    fireEvent.pointerDown(background, { clientX: 500, clientY: 300 }); // world (100,0)
+    // Within SNAP_TOLERANCE_MM of the first point, but only 2 points are down
+    // so far — too few to close, and this lands as a normal 3rd point.
+    fireEvent.pointerDown(background, { clientX: 410, clientY: 290 }); // world (10,10)
+    expect(screen.getByTestId('outline').textContent).toBe('none'); // still drafting, no piece yet
+    fireEvent.doubleClick(background);
+    const outline = JSON.parse(screen.getByTestId('outline').textContent ?? 'null');
+    expect(outline).toHaveLength(3);
+  });
+
+  it('abandons an unfinished draft when a different tool is picked any other way than Escape', async () => {
+    mockSvgRect(800, 600);
+    render(
+      <DrawingEditorProvider drawing={blankDrawing()} materialLines={[]}>
+        <DrawingCanvas />
+        <PolygonToolButton />
+        <SelectToolButton />
+        <PieceOutlineReadout />
+      </DrawingEditorProvider>,
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'polygon tool' }));
+    const background = screen.getByTestId('canvas-background');
+    fireEvent.pointerDown(background, { clientX: 400, clientY: 300 });
+    fireEvent.pointerDown(background, { clientX: 500, clientY: 300 });
+    // Left unfinished (only 2 points) — picked Select instead of Escape.
+    await userEvent.click(screen.getByRole('button', { name: 'select tool' }));
+
+    // Arming Points again starts clean, not picking up the abandoned points.
+    await userEvent.click(screen.getByRole('button', { name: 'polygon tool' }));
+    fireEvent.pointerDown(background, { clientX: 400, clientY: 300 }); // world (0,0)
+    fireEvent.pointerDown(background, { clientX: 400, clientY: 200 }); // world (0,100)
+    fireEvent.pointerDown(background, { clientX: 500, clientY: 300 }); // world (100,0)
+    fireEvent.doubleClick(background);
+    const outline = JSON.parse(screen.getByTestId('outline').textContent ?? 'null');
+    expect(outline).toHaveLength(3);
+    expect(outline[0]).toMatchObject({ x: 0, y: 0 });
   });
 });

@@ -64,6 +64,30 @@ describe('editorReducer — document-mutating actions', () => {
     expect(s1.present.areas[0].pieces[0].thicknessMm).toBe(30);
   });
 
+  it('updateAttachedProfileSlab sets the slab on the matching side only, leaving the piece\'s own slab and other sides untouched', () => {
+    const s0 = withPiece('area-1', makePiece('p1', 'A-1', {
+      slab: { slabId: 'parent-slab', x: 0, y: 0, rotationDeg: 0 },
+      edges: [
+        { index: 0, attachedProfile: { profileTypeId: 't1', measurementMm: 100 } },
+        { index: 1, attachedProfile: { profileTypeId: 't2', measurementMm: 50 } },
+      ],
+    }));
+    const slab = { slabId: 's1', x: 10, y: 20, rotationDeg: 90 };
+    const s1 = editorReducer(s0, { type: 'updateAttachedProfileSlab', areaId: 'area-1', pieceId: 'p1', edgeIndex: 0, slab });
+    const [edge0, edge1] = s1.present.areas[0].pieces[0].edges;
+    expect(edge0.attachedProfile?.slab).toEqual(slab);
+    expect(edge1.attachedProfile?.slab).toBeUndefined();
+    expect(s1.present.areas[0].pieces[0].slab).toEqual({ slabId: 'parent-slab', x: 0, y: 0, rotationDeg: 0 });
+  });
+
+  it('updateAttachedProfileSlab with no slab clears a placement', () => {
+    const s0 = withPiece('area-1', makePiece('p1', 'A-1', {
+      edges: [{ index: 0, attachedProfile: { profileTypeId: 't1', measurementMm: 100, slab: { slabId: 's1', x: 0, y: 0, rotationDeg: 0 } } }],
+    }));
+    const s1 = editorReducer(s0, { type: 'updateAttachedProfileSlab', areaId: 'area-1', pieceId: 'p1', edgeIndex: 0, slab: undefined });
+    expect(s1.present.areas[0].pieces[0].edges[0].attachedProfile?.slab).toBeUndefined();
+  });
+
   it('deletePiece removes it and clears selection if it was selected', () => {
     const s0 = { ...withPiece('area-1', makePiece('p1', 'A-1')), selectedPieceId: 'p1' };
     const s1 = editorReducer(s0, { type: 'deletePiece', areaId: 'area-1', pieceId: 'p1' });

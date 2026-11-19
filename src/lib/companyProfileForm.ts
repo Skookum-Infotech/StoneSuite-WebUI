@@ -3,6 +3,7 @@
 // Bounds mirror the backend's companyprofile.Validate (VARCHAR(255) columns).
 
 import { z } from 'zod';
+import { DEFAULT_FABRICATION_PERCENT } from '@/types/companyProfile';
 
 export const MAX_FIELD_LENGTH = 255;
 
@@ -42,6 +43,20 @@ const EMPTY_PAYMENT_DETAILS = { bankName: '', accountNumber: '', routingNumber: 
 // Mirrors the backend's companyprofile.MaxWordingLength.
 export const MAX_WORDING_LENGTH = 5000;
 
+// Mirrors the backend's companyprofile.MaxFabricationPercent — comfortably
+// covers any real markup while still catching a stray typo.
+export const MAX_FABRICATION_PERCENT = 1000;
+
+// Company Preferences tab: fabrication sq ft = countertop sq ft * (1 +
+// fabricationPercent / 100). z.coerce because the input renders the value as
+// a text-pattern numeric field (CompanyInfoTextField), same as every other
+// field in this form.
+const fabricationPercentField = z.coerce
+  .number()
+  .min(0, 'Must be at least 0')
+  .max(MAX_FABRICATION_PERCENT, `Must be at most ${MAX_FABRICATION_PERCENT}`)
+  .default(DEFAULT_FABRICATION_PERCENT);
+
 const wordingField = z.string().max(MAX_WORDING_LENGTH, `Must be at most ${MAX_WORDING_LENGTH} characters`).default('');
 
 const wordingSchema = z.object({ terms: wordingField, notes: wordingField });
@@ -73,6 +88,7 @@ export const companyProfileSchema = z.object({
   currency: shortField,
   timezone: shortField,
   taxId: shortField,
+  fabricationPercent: fabricationPercentField,
   // .default({}) so an entirely-omitted address (e.g. a brand-new profile)
   // still parses -- the nested per-field defaults then fill in ''.
   billingAddress: addressSchema.default(EMPTY_ADDRESS),

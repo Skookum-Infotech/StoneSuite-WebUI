@@ -1,11 +1,13 @@
 // Builds the active area's DXF and hands it to the browser as a download.
 
-import type { Drawing } from '@/types/drawing';
+import type { AttachedProfileType, Drawing } from '@/types/drawing';
 import { buildAreaDxf, dxfFileName } from './dxfExport';
 import { DXF_CONTENT_TYPE } from './dxfFiles';
 
 /** Builds the DXF for one area and its file name; null when the area does not exist. */
-export function buildAreaExport(drawing: Drawing, areaId: string, orderNumber: string): { fileName: string; content: string } | null {
+export function buildAreaExport(
+  drawing: Drawing, areaId: string, orderNumber: string, profileTypes: AttachedProfileType[] = [],
+): { fileName: string; content: string } | null {
   const areaIndex = drawing.areas.findIndex((a) => a.id === areaId);
   if (areaIndex < 0) return null;
   const area = drawing.areas[areaIndex];
@@ -13,7 +15,7 @@ export function buildAreaExport(drawing: Drawing, areaId: string, orderNumber: s
     orderNumber, areaIndex: areaIndex + 1, seq: 1,
     fractionDenominator: drawing.fractionDenominator, displayUnit: drawing.displayUnit,
   };
-  return { fileName: dxfFileName(orderNumber, area.name, meta), content: buildAreaDxf(area, meta) };
+  return { fileName: dxfFileName(orderNumber, area.name, meta), content: buildAreaDxf(area, meta, profileTypes) };
 }
 
 export function downloadDxf(fileName: string, content: string): void {

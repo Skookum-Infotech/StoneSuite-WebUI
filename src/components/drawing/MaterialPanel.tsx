@@ -7,6 +7,8 @@ import { useState } from 'react';
 import { Boxes } from 'lucide-react';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { usedSlabIds } from '@/lib/drawing/slabs';
+import { slabPlaceables } from '@/lib/drawing/slabPlaceables';
+import { useAttachedProfileTypeList } from './AttachedProfileTypesContext';
 import { useDrawingEditor } from './DrawingEditorContext';
 import { useMaterialPicker } from './MaterialPickerContext';
 import { SlabCard } from './SlabCard';
@@ -17,9 +19,10 @@ export function MaterialPanel() {
   const { state } = useDrawingEditor();
   const { pickingSlab, stopPicking } = useMaterialPicker();
   const { onDrawing, isLoading, error } = useOrderSlabs(state.present.salesOrderId);
+  const profileTypes = useAttachedProfileTypeList();
   const [dialogOpen, setDialogOpen] = useState(false);
 
-  const used = usedSlabIds(state.present.areas.flatMap((a) => a.pieces));
+  const used = usedSlabIds(slabPlaceables(state.present.areas, profileTypes));
   const usedCount = onDrawing.filter((slab) => used.has(slab.id)).length;
 
   return (
@@ -44,7 +47,7 @@ export function MaterialPanel() {
 
       {pickingSlab && (
         <div role="status" className="flex items-center justify-between gap-2 border-b border-stone-200 bg-brand/20 px-3 py-2 text-xs text-stone-800">
-          <span>Click a piece on the drawing to lay it on slab {pickingSlab.serial}.</span>
+          <span>Click a piece or a painted profile on the drawing to lay it on slab {pickingSlab.serial}.</span>
           <button type="button" onClick={stopPicking} className="shrink-0 rounded border border-stone-300 bg-white px-2 py-0.5 text-2xs font-medium">
             Done
           </button>

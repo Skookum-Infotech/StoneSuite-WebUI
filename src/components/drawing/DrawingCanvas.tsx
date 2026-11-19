@@ -11,7 +11,7 @@ import { bounds, isClockwise, transformOutline } from '@/lib/drawing/geometry';
 import { areaLetter, nextPieceLabel } from '@/lib/drawing/labels';
 import { validateOutline } from '@/lib/drawing/validation';
 import {
-  ARROW_KEY_STEP_MM, CANVAS_EXTENT_MM, DEFAULT_PIECE_THICKNESS_MM, SHIFT_ARROW_KEY_STEP_MM, VIEWPORT_HEIGHT, VIEWPORT_WIDTH, ZOOM_STEP,
+  ARROW_KEY_STEP_MM, CANVAS_EXTENT_MM, CLOSE_POLYGON_HIT_PX, DEFAULT_PIECE_THICKNESS_MM, SHIFT_ARROW_KEY_STEP_MM, VIEWPORT_HEIGHT, VIEWPORT_WIDTH, ZOOM_STEP,
 } from '@/lib/drawing/constants';
 import { pixelDeltaToViewboxUnits, screenPointToMm } from '@/lib/drawing/viewport';
 import { DragPreviewContext, type DragPreview } from './DragPreviewContext';
@@ -19,6 +19,7 @@ import { useDrawingEditor } from './DrawingEditorContext';
 import { PieceShape } from './PieceShape';
 import { PieceHandles } from './PieceHandles';
 import { PieceDimensions } from './PieceDimensions';
+import { AttachedProfilePieces } from './AttachedProfilePieces';
 import { AnnotationLayer } from './AnnotationLayer';
 import { TextNoteLayer } from './TextNoteLayer';
 import { CanvasOverlays, type Marquee } from './CanvasOverlays';
@@ -26,6 +27,7 @@ import { CutoutPlacementLayer } from './CutoutPlacementLayer';
 import { BorderPickLayer } from './BorderPickLayer';
 import { CornerPickLayer } from './CornerPickLayer';
 import { EdgePickLayer } from './EdgePickLayer';
+import { ProfilePickLayer } from './ProfilePickLayer';
 import { EdgeDragLayer } from './EdgeDragLayer';
 import { ToolCursorHint } from './ToolCursorHint';
 import { useAnnotationTool } from './useAnnotationTool';
@@ -69,6 +71,23 @@ export function DrawingCanvas() {
   const annotate = useAnnotationTool();
   const draw = useDrawTool();
   const edgeDrag = useEdgeDrag();
+
+  // Leaving the Points tool any other way than Escape (picking a different
+  // tool from the rail, the Draw bar's own pencil, switching to Cutout/
+  // Material...) used to leave an unfinished shape's points sitting in local
+  // state; arming Points again later then picked up right where that old,
+  // abandoned draft left off instead of starting fresh. Done during render
+  // (React's own "adjusting state when a prop changes" pattern, same as
+  // PieceHandles' own outlineForMenu reset), not in an effect — this repo's
+  // react-hooks/set-state-in-effect rule refuses a bare setState there.
+  const [prevTool, setPrevTool] = useState(tool);
+  if (tool !== prevTool) {
+    setPrevTool(tool);
+    if (tool !== 'polygon') {
+      setDraftPoints([]);
+      setHoverPoint(null);
+    }
+  }
 
   const activeArea = state.present.areas.find((a) => a.id === state.activeAreaId);
   const areaIndex = state.present.areas.findIndex((a) => a.id === state.activeAreaId);
@@ -131,6 +150,10 @@ export function DrawingCanvas() {
       setTool(tool === 'edge' ? 'select' : 'edge');
       return;
     }
+    if (e.key === 'p') {
+      setTool(tool === 'profile' ? 'select' : 'profile');
+      return;
+    }
     if (selectedIds.length === 0) return;
     if (!sketching && e.key !== 'Delete' && e.key !== 'Backspace') return;
     const step = e.shiftKey ? SHIFT_ARROW_KEY_STEP_MM : ARROW_KEY_STEP_MM;
@@ -185,6 +208,22 @@ export function DrawingCanvas() {
     // jsdom lacks pointer capture on SVG elements; every real browser has it.
     e.currentTarget.setPointerCapture?.(e.pointerId);
     if (tool === 'polygon') {
+      // Clicking back near any point already down closes the shape with the
+      // points placed so far — not just the first one. There's no separate
+      // "which point did I click" step: the outline is always implicitly
+      // closed from its last point back to its first (outlineEdges), so
+      // landing near any existing point already guarantees a closed figure
+      // with no open side, whichever one it was. Nothing else a click can
+      // land on (another piece, a different point) ever attaches to it:
+      // each click here just drops a raw coordinate, regardless of what's
+      // under it.
+      const closeHitMm = CLOSE_POLYGON_HIT_PX / state.zoom;
+      const closesHere = draftPoints.length >= 3
+        && draftPoints.some((p) => Math.hypot(point.x - p.x, point.y - p.y) < closeHitMm);
+      if (closesHere) {
+        finalizePolygon();
+        return;
+      }
       setDraftPoints((points) => {
         const last = points[points.length - 1];
         // A double-click's second pointerdown lands on (nearly) the same
@@ -207,9 +246,10 @@ export function DrawingCanvas() {
   };
 
   const onBackgroundPointerMove = (e: React.PointerEvent<SVGRectElement>) => {
-    // The second point of a two-click tool follows the cursor, so the user
-    // can see what they are about to draw before they commit to it.
-    if (annotate.pendingFrom) setHoverPoint(pointerMm(e));
+    // The second point of a two-click tool, and the Points tool's own next
+    // point, both follow the cursor, so the user can see what they are about
+    // to draw before they commit to it.
+    if (annotate.pendingFrom || (tool === 'polygon' && draftPoints.length > 0)) setHoverPoint(pointerMm(e));
     else if (hoverPoint) setHoverPoint(null);
     if (marquee) {
       const point = pointerMm(e);
@@ -374,6 +414,7 @@ export function DrawingCanvas() {
                 return (
                   <g key={piece.id}>
                     <PieceShape piece={piece} selected={selectedIds.includes(piece.id)} />
+                    <AttachedProfilePieces piece={piece} />
                     {dimensionsOn && (
                       <PieceDimensions
                         piece={piece}
@@ -385,8 +426,24 @@ export function DrawingCanvas() {
                 );
               })}
             </DragPreviewContext.Provider>
-            {singleSelected && tool === 'select' && workspace === 'sketch' && <PieceHandles piece={singleSelected} />}
-            <CanvasOverlays marquee={marquee} draftPoints={tool === 'polygon' ? draftPoints : []} />
+            {/* A circle's outline is a many-point polygon approximation
+                (lib/drawing/geometry.ts circleOutline), not real corners to
+                edit — showing one drag handle per point would let it be
+                dragged into an arbitrary lumpy shape. It stays the fixed
+                size it was created at; it can still be moved, rotated as a
+                whole, and deleted like any other piece. */}
+            {singleSelected && singleSelected.shape !== 'circle' && tool === 'select' && workspace === 'sketch' && (
+              <PieceHandles piece={singleSelected} />
+            )}
+            <CanvasOverlays
+              marquee={marquee}
+              draftPoints={tool === 'polygon' ? draftPoints : []}
+              cursorPoint={tool === 'polygon' ? hoverPoint : null}
+              zoom={state.zoom}
+              dimensionsOn={dimensionsOn}
+              displayUnit={state.present.displayUnit}
+              fractionDenominator={state.present.fractionDenominator}
+            />
             <AnnotationLayer pendingFrom={annotate.pendingFrom} hoverPoint={hoverPoint} />
             <TextNoteLayer />
             {/* While a drawing tool is armed, every click belongs to that
@@ -415,6 +472,7 @@ export function DrawingCanvas() {
             {tool === 'border' && <BorderPickLayer />}
             {tool === 'corner' && <CornerPickLayer />}
             {tool === 'edge' && <EdgePickLayer />}
+            {tool === 'profile' && <ProfilePickLayer />}
             <CutoutPlacementLayer />
           </g>
         </g>
