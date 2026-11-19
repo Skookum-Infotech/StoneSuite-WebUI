@@ -1,7 +1,8 @@
 import { isAxiosError } from 'axios';
 import { tenantClient } from '@/api/tenantClient';
-import type { CutoutType, Drawing, DrawingArea, EdgeType } from '@/types/drawing';
+import type { AttachedProfileType, CutoutType, Drawing, DrawingArea, EdgeType } from '@/types/drawing';
 import type { EdgeTypeInput } from '@/lib/drawing/edgeTypes';
+import type { AttachedProfileTypeInput } from '@/lib/drawing/attachedProfileTypes';
 
 const HTTP_NOT_FOUND = 404;
 const HTTP_CONFLICT = 409;
@@ -113,6 +114,21 @@ export const drawingService = {
     tenantClient
       .put<{ success: boolean; edgeType: EdgeType }>(`/tenant/settings/edge-types/${id}`, input)
       .then((r) => r.data.edgeType),
+
+  getAttachedProfileTypes: (): Promise<AttachedProfileType[]> =>
+    tenantClient
+      .get<{ success: boolean; profileTypes: AttachedProfileType[] }>('/tenant/settings/attached-profile-types')
+      .then((r) => r.data.profileTypes),
+
+  createAttachedProfileType: (input: AttachedProfileTypeInput): Promise<AttachedProfileType> =>
+    tenantClient
+      .post<{ success: boolean; profileType: AttachedProfileType }>('/tenant/settings/attached-profile-types', input)
+      .then((r) => r.data.profileType),
+
+  updateAttachedProfileType: (id: string, input: AttachedProfileTypeInput): Promise<AttachedProfileType> =>
+    tenantClient
+      .put<{ success: boolean; profileType: AttachedProfileType }>(`/tenant/settings/attached-profile-types/${id}`, input)
+      .then((r) => r.data.profileType),
 
   getCutoutTypes: (): Promise<CutoutTypeOption[]> =>
     tenantClient

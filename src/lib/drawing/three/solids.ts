@@ -8,11 +8,12 @@
 // laying the shape flat (shape y -> depth, extrusion -> up), so nothing is re-derived
 // here and 3D always agrees with what is on the board.
 
-import type { DrawingArea, EdgeFinish, EdgeType, Piece, Point } from '@/types/drawing';
+import type { AttachedProfileType, DrawingArea, EdgeFinish, EdgeType, Piece, Point } from '@/types/drawing';
 import { cutoutOutline } from '../cutouts';
 import { edgeAt } from '../edges';
 import { bounds, transformOutline } from '../geometry';
 import { isSimplePolygon, pointInPolygon } from '../polygon';
+import { slabPlaceables, type SlabPlaceable } from '../slabPlaceables';
 import { COUNTER_HEIGHT_MM, DEFAULT_PIECE_THICKNESS_MM, MIN_OUTLINE_POINTS } from './constants';
 import { sampleSides, shapesEdge } from './edgeProfile';
 import { buildPanels, type PanelSolid } from './panels';
@@ -71,11 +72,14 @@ export interface SolidsContext {
   photos: Record<string, SlabPhoto>;
   /** The shop's edge types, to know which finish each painted side has. */
   edgeTypes?: EdgeType[];
+  /** The shop's attached-profile types, to know each painted side's angle
+   *  and measurement (Profiles tool). */
+  profileTypes?: AttachedProfileType[];
 }
 
 const EMPTY_BOUNDS: SolidsBounds = { centerX: 0, centerY: 0, sizeMm: COUNTER_HEIGHT_MM };
 
-function pieceSolid(piece: Piece, context: SolidsContext | undefined): PieceSolid | null {
+function pieceSolid(piece: Piece, context: SolidsContext | undefined, placeables: SlabPlaceable[]): PieceSolid | null {
   const { points: local, sideOf } = sampleSides(piece);
   if (local.length < MIN_OUTLINE_POINTS || !isSimplePolygon(local)) return null;
   const toWorld = (points: Point[]) => transformOutline(points, piece.position, piece.rotationDeg);
@@ -105,7 +109,7 @@ function pieceSolid(piece: Piece, context: SolidsContext | undefined): PieceSoli
     holes,
     thicknessMm,
     baseMm: COUNTER_HEIGHT_MM - thicknessMm,
-    panels: buildPanels(piece, thicknessMm),
+    panels: buildPanels(piece, thicknessMm, context?.profileTypes, placeables, context?.photos),
     segmentFinishes: finishes.some(shapesEdge) ? finishes : null,
     bowls,
     seams,
@@ -123,7 +127,13 @@ function cabinetSolids(area: DrawingArea, pieces: PieceSolid[]): CabinetSolid[] 
 }
 
 export function buildAreaSolids(area: DrawingArea | undefined, context?: SolidsContext): AreaSolids {
-  const built = (area?.pieces ?? []).map((piece) => pieceSolid(piece, context));
+  // Every piece and profile piece in the drawing (not just this area — a slab
+  // is shared across areas the same way context.allPieces already is), for a
+  // panel's own "does it still fit the slab it was laid on" check.
+  const placeables = context
+    ? slabPlaceables([{ id: '', name: '', code: '', sortOrder: 0, pieces: context.allPieces, cabinets: [], notes: [] }], context.profileTypes ?? [])
+    : [];
+  const built = (area?.pieces ?? []).map((piece) => pieceSolid(piece, context, placeables));
   const pieces = built.filter((p): p is PieceSolid => p !== null);
   const cabinets = area ? cabinetSolids(area, pieces) : [];
   if (pieces.length === 0) return { pieces, cabinets, skipped: built.length, bounds: EMPTY_BOUNDS };

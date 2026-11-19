@@ -1,7 +1,9 @@
 // One piece as a slab of stone: its outline extruded by its thickness, with its cutouts
 // punched through, plus its backsplash/waterfall walls and seams. Built in the drawing's own
 // millimetres; the scene scales it down. When the piece sits on a photographed slab, the top
-// face shows that stone; the underside is always a dark, plain face.
+// face AND the edge around its thickness show that stone — a real slab's polished edge is the
+// same stone as its face, not a flat, unrelated colour — but the underside, which nobody sees,
+// stays a dark, plain face regardless.
 
 import { useEffect, useMemo } from 'react';
 import { DoubleSide, Float32BufferAttribute, FrontSide, type Texture } from 'three';
@@ -22,8 +24,10 @@ const STONE_ROUGHNESS = 0.35;
 const STONE_METALNESS = 0.05;
 const UNDERSIDE_ROUGHNESS = 0.9;
 
-/** `photo` is the slab's texture once loaded, or null (plain stone). */
-export function PieceMesh({ solid, photo }: { solid: PieceSolid; photo: Texture | null }) {
+/** `photo` is the slab's texture once loaded, or null (plain stone). `photos`
+ *  is every loaded texture by photo link, so each of the piece's own panels
+ *  can look up its own (possibly different) slab photo the same way. */
+export function PieceMesh({ solid, photo, photos }: { solid: PieceSolid; photo: Texture | null; photos: Record<string, Texture> }) {
   const { texture: slab } = solid;
   // The finished-edge mesh has no consistent winding, so its faces are drawn from both sides.
   const faceSide = solid.segmentFinishes ? DoubleSide : FrontSide;
@@ -38,7 +42,10 @@ export function PieceMesh({ solid, photo }: { solid: PieceSolid; photo: Texture 
       groupFaces(built, solid.thicknessMm);
     }
     if (slab) {
-      // Planar mapping from above: right for the top face, the only one that shows the photo.
+      // Planar mapping from above, shared by the top face and the side (edge) face — a
+      // vertex's height within the slab's thickness never changes which bit of the photo
+      // it reads, so the edge just carries straight down whatever the top shows right at
+      // that boundary, the same way a slab's own polished edge does in the real world.
       const positions = built.getAttribute('position');
       const uvs: number[] = [];
       for (let i = 0; i < positions.count; i += 1) uvs.push(...slabUv({ x: positions.getX(i), y: positions.getY(i) }, slab));
@@ -61,11 +68,17 @@ export function PieceMesh({ solid, photo }: { solid: PieceSolid; photo: Texture 
           <meshStandardMaterial attach={`material-${FACE_TOP}`} color={STONE_COLOR} roughness={STONE_ROUGHNESS} metalness={STONE_METALNESS} side={faceSide} />
         )}
         <meshStandardMaterial attach={`material-${FACE_BOTTOM}`} color={UNDERSIDE_COLOR} roughness={UNDERSIDE_ROUGHNESS} side={faceSide} />
-        <meshStandardMaterial attach={`material-${FACE_SIDE}`} color={STONE_COLOR} roughness={STONE_ROUGHNESS} metalness={STONE_METALNESS} side={faceSide} />
+        {photo ? (
+          <meshBasicMaterial attach={`material-${FACE_SIDE}`} map={photo} toneMapped={false} side={faceSide} />
+        ) : (
+          <meshStandardMaterial attach={`material-${FACE_SIDE}`} color={STONE_COLOR} roughness={STONE_ROUGHNESS} metalness={STONE_METALNESS} side={faceSide} />
+        )}
         <Edges threshold={EDGE_LINE_THRESHOLD_DEG} color={EDGE_LINE_COLOR} />
       </mesh>
       {solid.bowls.map((outline, i) => <SinkBowl key={i} outline={outline} baseMm={solid.baseMm} />)}
-      {solid.panels.map((panel) => <PanelMesh key={panel.id} panel={panel} />)}
+      {solid.panels.map((panel) => (
+        <PanelMesh key={panel.id} panel={panel} photo={panel.texture ? photos[panel.texture.photoUrl] ?? null : null} />
+      ))}
       <SeamLines seams={solid.seams} />
     </group>
   );

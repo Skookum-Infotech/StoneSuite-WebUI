@@ -7,9 +7,11 @@ import { Crosshair, Trash2 } from 'lucide-react';
 import { apiErrorMessage } from '@/api/tenantClient';
 import type { DrawingSlabUnit } from '@/types/drawingSlab';
 import { isHandedToJob } from '@/lib/drawing/slabHolds';
+import { slabPlaceables } from '@/lib/drawing/slabPlaceables';
 import { formatLength } from '@/lib/drawing/units';
 import { formatUnitArea } from '@/lib/unitConsumption';
 import { cn } from '@/lib/utils';
+import { useAttachedProfileTypeList } from './AttachedProfileTypesContext';
 import { useDrawingEditor } from './DrawingEditorContext';
 import { useMaterialPicker } from './MaterialPickerContext';
 import { SlabCanvas } from './SlabCanvas';
@@ -21,6 +23,7 @@ export function SlabCard({ slab }: { slab: DrawingSlabUnit }) {
   const { state, dispatch } = useDrawingEditor();
   const { pickingSlab, startPicking, stopPicking } = useMaterialPicker();
   const { removeSlab } = useOrderSlabs(state.present.salesOrderId);
+  const profileTypes = useAttachedProfileTypeList();
   const [confirming, setConfirming] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -31,17 +34,18 @@ export function SlabCard({ slab }: { slab: DrawingSlabUnit }) {
   const name = [slab.inventoryItemName, slab.serial].filter(Boolean).join(' ');
   const size = `${formatLength(slab.lengthMm, displayUnit, fractionDenominator)} × ${formatLength(slab.widthMm, displayUnit, fractionDenominator)}`;
 
-  const onSlab = state.present.areas.flatMap((area) => area.pieces
-    .filter((piece) => piece.slab?.slabId === slab.id)
-    .map((piece) => ({ areaId: area.id, pieceId: piece.id })));
+  const onSlab = slabPlaceables(state.present.areas, profileTypes).filter((it) => it.slab?.slabId === slab.id);
 
   async function deleteSlab() {
     setBusy(true);
     setError(null);
     try {
       await removeSlab(slab.id);
-      // The slab is no longer the order's, so nothing may stay laid on it.
-      onSlab.forEach(({ areaId, pieceId }) => dispatch({ type: 'updatePiece', areaId, pieceId, patch: { slab: undefined } }));
+      // The slab is no longer the order's, so nothing — piece or profile
+      // piece — may stay laid on it.
+      onSlab.forEach((it) => (it.edgeIndex === undefined
+        ? dispatch({ type: 'updatePiece', areaId: it.areaId, pieceId: it.pieceId, patch: { slab: undefined } })
+        : dispatch({ type: 'updateAttachedProfileSlab', areaId: it.areaId, pieceId: it.pieceId, edgeIndex: it.edgeIndex, slab: undefined })));
       if (picking) stopPicking();
     } catch (err) {
       setError(apiErrorMessage(err, 'Could not give the slab back.'));

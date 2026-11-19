@@ -99,9 +99,9 @@ describe('bump', () => {
     expect(r.edges.find((e) => e.code === 'BN')?.index).toBe(6);
   });
 
-  it('gives the legs only the profile, not a splash or waterfall', () => {
-    const r = apply('bumpOut', 0, [{ index: 0, code: 'EE', splashHeightMm: 100 }]);
-    expect(r.edges.map((e) => [e.index, e.splashHeightMm])).toEqual([[0, 100], [1, undefined], [2, 100], [3, undefined], [4, 100]]);
+  it('gives the legs only the profile, not an attached profile', () => {
+    const r = apply('bumpOut', 0, [{ index: 0, code: 'EE', attachedProfile: { profileTypeId: 'backsplash-1', measurementMm: 100 } }]);
+    expect(r.edges.map((e) => [e.index, e.attachedProfile?.measurementMm])).toEqual([[0, 100], [1, undefined], [2, 100], [3, undefined], [4, 100]]);
   });
 
   it('reshapes the closing side, whose far corner is the first corner', () => {

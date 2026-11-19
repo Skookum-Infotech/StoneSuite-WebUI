@@ -18,6 +18,7 @@ import { DrawingToolbar } from '@/components/drawing/DrawingToolbar';
 import { DrawingBoard } from '@/components/drawing/DrawingBoard';
 import { useExitDrawing } from '@/components/drawing/useExitDrawing';
 import { EdgeTypesProvider } from '@/components/drawing/EdgeTypesContext';
+import { AttachedProfileTypesProvider } from '@/components/drawing/AttachedProfileTypesContext';
 import { MaterialPickerProvider } from '@/components/drawing/MaterialPickerContext';
 import { WorkspacePanel } from '@/components/drawing/WorkspacePanel';
 import { OPEN_ZOOM } from '@/lib/drawing/constants';
@@ -83,13 +84,15 @@ export default function SalesOrderDrawingPage() {
   return (
     <DrawingEditorProvider drawing={drawing} materialLines={orderQuery.data.items} initialZoom={OPEN_ZOOM}>
       <EdgeTypesProvider>
-        <MaterialPickerProvider>
-          <DrawingEditorBody
-            salesOrderId={id}
-            order={orderQuery.data}
-            onOrderUpdated={(updated) => queryClient.setQueryData(['sales-order', id], updated)}
-          />
-        </MaterialPickerProvider>
+        <AttachedProfileTypesProvider>
+          <MaterialPickerProvider>
+            <DrawingEditorBody
+              salesOrderId={id}
+              order={orderQuery.data}
+              onOrderUpdated={(updated) => queryClient.setQueryData(['sales-order', id], updated)}
+            />
+          </MaterialPickerProvider>
+        </AttachedProfileTypesProvider>
       </EdgeTypesProvider>
     </DrawingEditorProvider>
   );

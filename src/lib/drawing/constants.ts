@@ -68,6 +68,12 @@ export const MIN_EDGE_LENGTH_MM = 1;
  *  exactly on top of its source — 2 inches each way. */
 export const COPY_OFFSET_MM = 50.8;
 
+/** Gap, in mm, between a piece's painted side and its unfolded attached-profile
+ *  rectangle (Profiles tool) — 4 inches, so the two never visually touch and the
+ *  parent's own dimension lines (when Dimensions is on) have room to sit in the
+ *  gap without piling onto the profile piece's own band/arrow/dimensioning. */
+export const ATTACHED_PROFILE_GAP_MM = 101.6;
+
 /** Cutouts must keep at least this much stone between their edge and the
  *  piece's outer edge (1/2"), and between each other (1/8"). These are
  *  defaults chosen here, not shop-confirmed figures. */

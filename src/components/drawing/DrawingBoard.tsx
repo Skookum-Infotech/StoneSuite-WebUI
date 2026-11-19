@@ -9,6 +9,7 @@ import { CornerModeBar } from './CornerModeBar';
 import { DrawingCanvas } from './DrawingCanvas';
 import { DrawModeBar } from './DrawModeBar';
 import { EdgeModeBar } from './EdgeModeBar';
+import { ProfileModeBar } from './ProfileModeBar';
 import { InspectorPanel } from './InspectorPanel';
 import { MiniMap } from './MiniMap';
 import { TextControls } from './TextControls';
@@ -32,6 +33,7 @@ export function DrawingBoard() {
         <BorderModeBar />
         <CornerModeBar />
         <EdgeModeBar />
+        <ProfileModeBar />
         <TextControls />
         <MiniMap />
         <InspectorPanel />

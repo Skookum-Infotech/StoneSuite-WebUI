@@ -6,7 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import type { Drawing, Piece } from '@/types/drawing';
+import type { AttachedProfileType, Drawing, Piece } from '@/types/drawing';
 import type { DrawingSlabItem, DrawingSlabUnit } from '@/types/drawingSlab';
 import { makeUnit } from '@/pages/inventory/unit/components/unitFixtures';
 
@@ -16,18 +16,27 @@ vi.mock('@/services/drawingService', () => ({
     listVersions: vi.fn().mockResolvedValue({ items: [], nextCursor: null }),
     getEdgeCodes: vi.fn().mockResolvedValue([]),
     getCutoutTypes: vi.fn().mockResolvedValue([]),
+    getAttachedProfileTypes: vi.fn().mockResolvedValue([]),
   },
 }));
 vi.mock('@/services/drawingSlabService', () => ({
   drawingSlabService: { listOptions: vi.fn(), hold: vi.fn(), release: vi.fn() },
 }));
 
+import { drawingService } from '@/services/drawingService';
 import { drawingSlabService } from '@/services/drawingSlabService';
+import { AttachedProfilePieces } from './AttachedProfilePieces';
+import { AttachedProfileTypesProvider } from './AttachedProfileTypesContext';
 import { DrawingEditorProvider, useDrawingEditor } from './DrawingEditorContext';
 import { DrawingToolbar } from './DrawingToolbar';
 import { MaterialPickerProvider } from './MaterialPickerContext';
 import { PieceShape } from './PieceShape';
 import { WorkspacePanel } from './WorkspacePanel';
+
+const BACKSPLASH: AttachedProfileType = {
+  id: 'bs1', name: 'Backsplash', pricingType: 'linear', price: 12, alias: 'BS', color: '#2563eb',
+  measurementPresetsMm: [101.6], angle: 90, finish: 'none', isSystem: true,
+};
 
 const ORDER = 'so1';
 
@@ -36,6 +45,15 @@ function rectPiece(width: number, height: number): Piece {
     id: 'p1', label: 'A-1', shape: 'rect',
     outline: [{ x: 0, y: 0 }, { x: width, y: 0 }, { x: width, y: -height }, { x: 0, y: -height }],
     position: { x: 0, y: 0 }, rotationDeg: 0, thicknessMm: 30, edges: [], seams: [], cutouts: [],
+  };
+}
+
+/** A piece with a Backsplash painted onto side A, so its own profile piece
+ *  can be laid on a slab independently of the parent. */
+function rectPieceWithProfile(width: number, height: number): Piece {
+  return {
+    ...rectPiece(width, height),
+    edges: [{ index: 0, attachedProfile: { profileTypeId: BACKSPLASH.id, measurementMm: BACKSPLASH.measurementPresetsMm[0] } }],
   };
 }
 
@@ -64,36 +82,51 @@ const options = (): DrawingSlabItem[] => [{ itemId: 'item-1', itemName: 'Taj Mah
 
 function PlacementReadout() {
   const { state } = useDrawingEditor();
-  return <span data-testid="slab">{JSON.stringify(state.present.areas[0].pieces[0].slab ?? null)}</span>;
+  return (
+    <>
+      <span data-testid="slab">{JSON.stringify(state.present.areas[0].pieces[0].slab ?? null)}</span>
+      <span data-testid="profile-slab">{JSON.stringify(state.present.areas[0].pieces[0].edges[0]?.attachedProfile?.slab ?? null)}</span>
+    </>
+  );
 }
 
 // The board draws live pieces from the editor state, so a placement shows up on it.
 function BoardPiece() {
   const { state } = useDrawingEditor();
-  return <PieceShape piece={state.present.areas[0].pieces[0]} selected={false} />;
+  const piece = state.present.areas[0].pieces[0];
+  return (
+    <>
+      <PieceShape piece={piece} selected={false} />
+      <AttachedProfilePieces piece={piece} />
+    </>
+  );
 }
 
 function renderMaterial(piece: Piece = rectPiece(600, 400)) {
   render(
     <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })}>
       <DrawingEditorProvider drawing={drawingWith(piece)} materialLines={[]}>
-        <MaterialPickerProvider>
-          <div data-drawing-editor><DrawingToolbar saveStatus="idle" onSave={() => {}} orderNumber="1001" onExit={() => {}} /></div>
-          <WorkspacePanel />
-          <svg><BoardPiece /></svg>
-          <PlacementReadout />
-        </MaterialPickerProvider>
+        <AttachedProfileTypesProvider>
+          <MaterialPickerProvider>
+            <div data-drawing-editor><DrawingToolbar saveStatus="idle" onSave={() => {}} orderNumber="1001" onExit={() => {}} /></div>
+            <WorkspacePanel />
+            <svg><BoardPiece /></svg>
+            <PlacementReadout />
+          </MaterialPickerProvider>
+        </AttachedProfileTypesProvider>
       </DrawingEditorProvider>
     </QueryClientProvider>,
   );
 }
 
 const placement = () => JSON.parse(screen.getByTestId('slab').textContent ?? 'null');
+const profilePlacement = () => JSON.parse(screen.getByTestId('profile-slab').textContent ?? 'null');
 const openMaterial = () => userEvent.click(screen.getByRole('tab', { name: 'Material' }));
 
 beforeEach(() => {
   vi.clearAllMocks();
   slabs = [freeSlab(), heldSlab()];
+  vi.mocked(drawingService.getAttachedProfileTypes).mockResolvedValue([BACKSPLASH]);
   vi.mocked(drawingSlabService.listOptions).mockImplementation(() => Promise.resolve(options()));
   vi.mocked(drawingSlabService.release).mockResolvedValue(undefined);
   vi.mocked(drawingSlabService.hold).mockImplementation((_order, slabId) => {
@@ -188,7 +221,7 @@ describe('Select Pieces', () => {
 
     const armed = screen.getByRole('button', { name: /^Piece A-1/ });
     expect(armed).toHaveClass('cursor-crosshair');
-    expect(screen.getByText(/Click a piece on the drawing to lay it on slab TM5/)).toBeInTheDocument();
+    expect(screen.getByText(/Click a piece or a painted profile on the drawing to lay it on slab TM5/)).toBeInTheDocument();
     fireEvent.pointerDown(armed);
 
     await waitFor(() => expect(placement()).toEqual({ slabId: 'slab-held', x: 0, y: 0, rotationDeg: 0 }));
@@ -263,6 +296,56 @@ describe('Select Pieces', () => {
     await user.keyboard('{Delete}');
     expect(placement()).toBeNull();
     expect(screen.getByRole('status', { name: '0 of 1 slabs used' })).toBeInTheDocument();
+  });
+});
+
+describe('Select Pieces — profile pieces', () => {
+  it('lays a painted profile\'s own piece on the slab, independently of its parent', async () => {
+    renderMaterial(rectPieceWithProfile(600, 400));
+    const user = userEvent.setup();
+    await openMaterial();
+    await user.click(await screen.findByRole('button', { name: 'Select pieces for slab TM5' }));
+
+    const profileTarget = await screen.findByRole('button', { name: 'Lay A-1 Backsplash-A on slab TM5' });
+    fireEvent.pointerDown(profileTarget);
+
+    await waitFor(() => expect(profilePlacement()).toEqual({ slabId: 'slab-held', x: 0, y: 0, rotationDeg: 0 }));
+    // The parent piece itself was never placed — it is a separate item.
+    expect(placement()).toBeNull();
+    expect(screen.getByRole('button', { name: 'Piece A-1 Backsplash-A on slab TM5, fits' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Delete slab TM5' }));
+    await user.click(screen.getByRole('button', { name: 'Delete slab' }));
+    await waitFor(() => expect(profilePlacement()).toBeNull());
+  });
+
+  it('shows the slab\'s photo inside the profile piece once it is placed and fits', async () => {
+    renderMaterial(rectPieceWithProfile(600, 400));
+    const user = userEvent.setup();
+    await openMaterial();
+    await user.click(await screen.findByRole('button', { name: 'Select pieces for slab TM5' }));
+    expect(screen.queryByTestId('profile-slab-texture')).toBeNull();
+
+    fireEvent.pointerDown(await screen.findByRole('button', { name: 'Lay A-1 Backsplash-A on slab TM5' }));
+    await waitFor(() => expect(profilePlacement()).not.toBeNull());
+
+    const texture = await screen.findByTestId('profile-slab-texture');
+    const image = texture.querySelector('image');
+    expect(image).toHaveAttribute('href', 'https://r2.example/tm5.jpg');
+    // The whole slab photo, at the slab's size, clipped to the profile piece's own rectangle.
+    expect(image).toHaveAttribute('width', '3000');
+    expect(image).toHaveAttribute('height', '1500');
+  });
+
+  it('is not shown when the profile piece does not fit the slab', async () => {
+    renderMaterial(rectPieceWithProfile(5000, 400));
+    const user = userEvent.setup();
+    await openMaterial();
+    await user.click(await screen.findByRole('button', { name: 'Select pieces for slab TM5' }));
+    fireEvent.pointerDown(await screen.findByRole('button', { name: 'Lay A-1 Backsplash-A on slab TM5' }));
+    await waitFor(() => expect(profilePlacement()).not.toBeNull());
+
+    await screen.findByRole('button', { name: 'Piece A-1 Backsplash-A on slab TM5, runs off the slab' });
+    expect(screen.queryByTestId('profile-slab-texture')).toBeNull();
   });
 });
 

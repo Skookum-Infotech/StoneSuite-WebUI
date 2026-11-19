@@ -87,7 +87,7 @@ export function ViewerScene({ solids, view, photos, onCaptureReady, handOn }: Vi
       <group scale={MM_TO_SCENE}>
         {solids.cabinets.map((cabinet) => <CabinetMesh key={cabinet.id} cabinet={cabinet} />)}
         {solids.pieces.map((solid) => (
-          <PieceMesh key={solid.id} solid={solid} photo={solid.texture ? photos[solid.texture.photoUrl] ?? null : null} />
+          <PieceMesh key={solid.id} solid={solid} photo={solid.texture ? photos[solid.texture.photoUrl] ?? null : null} photos={photos} />
         ))}
       </group>
       <OrbitControls

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { Cutout, DrawingArea, Piece } from '@/types/drawing';
+import type { AttachedProfileType, Cutout, DrawingArea, Piece } from '@/types/drawing';
 import { rectOutline } from '../geometry';
 import { COUNTER_HEIGHT_MM, DEFAULT_PIECE_THICKNESS_MM } from './constants';
 import { buildAreaSolids } from './solids';
@@ -65,9 +65,15 @@ describe('buildAreaSolids', () => {
     expect(result.skipped).toBe(2);
   });
 
-  it('adds backsplash walls and cuts seams back to the stone', () => {
+  it('adds attached-profile walls and cuts seams back to the stone', () => {
+    const backsplash: AttachedProfileType = {
+      id: 'bs1', name: 'Backsplash', pricingType: 'linear', price: 0, alias: '', color: '#000000',
+      measurementPresetsMm: [100], angle: 90, finish: 'none', isSystem: false,
+    };
     const seam = { from: { x: 500, y: 100 }, to: { x: 500, y: -700 } };
-    const [solid] = buildAreaSolids(area([piece({ edges: [{ index: 0, splashHeightMm: 100 }], seams: [seam] })])).pieces;
+    const edges = [{ index: 0, attachedProfile: { profileTypeId: 'bs1', measurementMm: 100 } }];
+    const withPanel = piece({ edges, seams: [seam] });
+    const [solid] = buildAreaSolids(area([withPanel]), { allPieces: [withPanel], photos: {}, profileTypes: [backsplash] }).pieces;
     expect(solid.panels).toHaveLength(1);
     expect(solid.seams).toHaveLength(1);
     expect(solid.seams[0][0].y).toBeCloseTo(0);

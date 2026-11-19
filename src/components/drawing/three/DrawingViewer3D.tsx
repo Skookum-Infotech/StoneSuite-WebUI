@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils';
 import { downloadBlob, snapshotFileName } from '@/lib/drawing/three/snapshot';
 import { buildAreaSolids } from '@/lib/drawing/three/solids';
 import { useDrawingEditor } from '../DrawingEditorContext';
+import { useAttachedProfileTypeList } from '../AttachedProfileTypesContext';
 import { useEdgeTypeList } from '../EdgeTypesContext';
 import { useMaterialPicker } from '../MaterialPickerContext';
 import { HandToggle } from './HandToggle';
@@ -25,14 +26,18 @@ export function DrawingViewer3D() {
   const { state } = useDrawingEditor();
   const { slabTextures } = useMaterialPicker();
   const edgeTypes = useEdgeTypeList();
+  const profileTypes = useAttachedProfileTypeList();
   const { areas } = state.present;
   // Slabs are shared by every area, so a piece's fit on its slab is judged against all pieces.
   const solids = useMemo(() => buildAreaSolids(
     areas.find((a) => a.id === state.activeAreaId),
-    { allPieces: areas.flatMap((a) => a.pieces), photos: slabTextures, edgeTypes },
-  ), [areas, state.activeAreaId, slabTextures, edgeTypes]);
+    { allPieces: areas.flatMap((a) => a.pieces), photos: slabTextures, edgeTypes, profileTypes },
+  ), [areas, state.activeAreaId, slabTextures, edgeTypes, profileTypes]);
   const photoUrls = useMemo(
-    () => solids.pieces.flatMap((p) => (p.texture ? [p.texture.photoUrl] : [])),
+    () => solids.pieces.flatMap((p) => [
+      ...(p.texture ? [p.texture.photoUrl] : []),
+      ...p.panels.flatMap((panel) => (panel.texture ? [panel.texture.photoUrl] : [])),
+    ]),
     [solids],
   );
   const { textures, failed } = useSlabTextures(photoUrls);

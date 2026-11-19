@@ -1,5 +1,7 @@
 // @vitest-environment jsdom
-// Phase 4: per-side profile / overhang / backsplash / waterfall through the real inspector and reducer.
+// Phase 4: per-side profile / overhang through the real inspector and reducer.
+// Backsplash / waterfall / lamination / etc. moved to the Profiles tool
+// (see ProfilePickLayer.test.tsx) and are no longer typed in here.
 
 import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
@@ -65,24 +67,24 @@ describe('side settings', () => {
     expect(screen.getByText('BN')).toBeTruthy();
   });
 
-  it('stores a backsplash height in millimetres and clears it when set to 0', async () => {
+  it('stores an overhang in millimetres and clears it when set to 0', async () => {
     const user = await open();
     await user.click(screen.getByRole('button', { name: 'Select side A' }));
-    const field = screen.getByLabelText('Side A backsplash height');
+    const field = screen.getByLabelText('Side A overhang');
     await user.clear(field);
-    await user.type(field, '100mm');
+    await user.type(field, '25mm');
     await user.tab();
-    expect(edges()).toEqual([{ index: 0, splashHeightMm: 100 }]);
+    expect(edges()).toEqual([{ index: 0, overhangMm: 25 }]);
     await user.clear(field);
     await user.type(field, '0');
     await user.tab();
     expect(edges()).toEqual([]);
   });
 
-  it('refuses a negative waterfall height and keeps the message next to the field', async () => {
+  it('refuses a negative overhang and keeps the message next to the field', async () => {
     const user = await open();
     await user.click(screen.getByRole('button', { name: 'Select side B' }));
-    const field = screen.getByLabelText('Side B waterfall height');
+    const field = screen.getByLabelText('Side B overhang');
     await user.clear(field);
     await user.type(field, '-5');
     await user.tab();

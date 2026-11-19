@@ -8,9 +8,12 @@ describe('setEdgeSettings', () => {
   it('creates an entry, merges later patches and keeps sides sorted', () => {
     let edges: PieceEdge[] = [];
     edges = setEdgeSettings(edges, 2, { code: 'BN' });
-    edges = setEdgeSettings(edges, 0, { splashHeightMm: 100 });
+    edges = setEdgeSettings(edges, 0, { attachedProfile: { profileTypeId: 'backsplash-1', measurementMm: 100 } });
     edges = setEdgeSettings(edges, 2, { overhangMm: 25 });
-    expect(edges).toEqual([{ index: 0, splashHeightMm: 100 }, { index: 2, code: 'BN', overhangMm: 25 }]);
+    expect(edges).toEqual([
+      { index: 0, attachedProfile: { profileTypeId: 'backsplash-1', measurementMm: 100 } },
+      { index: 2, code: 'BN', overhangMm: 25 },
+    ]);
   });
   it('clears a key and drops a side left with no settings', () => {
     const edges = setEdgeSettings([{ index: 1, code: 'EE' }], 1, { code: undefined });
@@ -29,8 +32,8 @@ describe('setEdgeSettings', () => {
 describe('edgeSettingsProblem', () => {
   it.each([
     [{ overhangMm: -1 }, 'Overhang cannot be negative.'],
-    [{ splashHeightMm: Number.NaN }, 'Backsplash height cannot be negative.'],
-    [{ waterfallHeightMm: 1e9 }, 'Waterfall height is too large.'],
+    [{ attachedProfile: { profileTypeId: 'backsplash-1', measurementMm: 0 } }, 'The profile measurement must be greater than zero.'],
+    [{ attachedProfile: { profileTypeId: 'waterfall-1', measurementMm: 1e9 } }, 'The profile measurement is too large.'],
     [{ overhangMm: 0 }, null],
     [{ code: 'BN' }, null],
   ])('%j -> %s', (patch, expected) => {
@@ -39,20 +42,19 @@ describe('edgeSettingsProblem', () => {
 });
 
 describe('edgeTotals', () => {
-  it('sums finished length per code and splash / waterfall area from real side lengths', () => {
+  it('sums finished length per code and attached-profile area from real side lengths', () => {
     const t = edgeTotals({
       outline: rect,
       edges: [
-        { index: 0, code: 'EE', splashHeightMm: 100 },
-        { index: 1, code: 'EE', waterfallHeightMm: 900 },
+        { index: 0, code: 'EE', attachedProfile: { profileTypeId: 'backsplash-1', measurementMm: 100 } },
+        { index: 1, code: 'EE', attachedProfile: { profileTypeId: 'waterfall-1', measurementMm: 900 } },
         { index: 2, code: 'BN' },
       ],
     });
     expect(t.finishedByCode).toEqual({ EE: 1100, BN: 1000 });
     expect(t.finishedLengthMm).toBe(2100);
-    expect(t.splashAreaMm2).toBe(100000);
-    expect(t.waterfallAreaMm2).toBe(90000);
-    expect(t.waterfallLengthMm).toBe(100);
+    expect(t.profileAreaMm2).toBe(100000 + 90000);
+    expect(t.profileLengthMm).toBe(1100);
   });
   it('ignores entries for sides that no longer exist', () => {
     expect(edgeTotals({ outline: rect, edges: [{ index: 9, code: 'EE' }] }).finishedLengthMm).toBe(0);

@@ -8,11 +8,13 @@ import { useEffect, useRef } from 'react';
 import { ColorSwatch } from './ColorSwatch';
 import { useDrawingEditor, type EditorTool } from './DrawingEditorContext';
 import { useSelectedEdgeType } from './useSelectedEdgeType';
+import { useSelectedProfileType } from './useSelectedProfileType';
 
 const HINTS: Partial<Record<EditorTool, string>> = {
   border: 'Click on any border',
   corner: 'Click on any corner',
   edge: 'Click on a border to apply',
+  profile: 'Click on a border to apply',
 };
 
 /** Gap between the pointer and the label, in pixels. */
@@ -21,6 +23,7 @@ const POINTER_GAP_PX = 16;
 export function ToolCursorHint() {
   const { tool } = useDrawingEditor();
   const picked = useSelectedEdgeType();
+  const pickedProfile = useSelectedProfileType();
   const hint = HINTS[tool];
   const label = useRef<HTMLDivElement>(null);
 
@@ -56,6 +59,14 @@ export function ToolCursorHint() {
           <span className="flex items-center gap-1.5 font-semibold">
             <ColorSwatch color={picked.color} className="h-3 w-3" />
             {picked.name}
+          </span>
+          <span className="block font-normal text-stone-300">{hint}</span>
+        </>
+      ) : tool === 'profile' && pickedProfile ? (
+        <>
+          <span className="flex items-center gap-1.5 font-semibold">
+            <ColorSwatch color={pickedProfile.color} className="h-3 w-3" />
+            {pickedProfile.name}
           </span>
           <span className="block font-normal text-stone-300">{hint}</span>
         </>

@@ -19,6 +19,7 @@ import { useDrawingEditor } from './DrawingEditorContext';
 import { PieceShape } from './PieceShape';
 import { PieceHandles } from './PieceHandles';
 import { PieceDimensions } from './PieceDimensions';
+import { AttachedProfilePieces } from './AttachedProfilePieces';
 import { AnnotationLayer } from './AnnotationLayer';
 import { TextNoteLayer } from './TextNoteLayer';
 import { CanvasOverlays, type Marquee } from './CanvasOverlays';
@@ -26,6 +27,7 @@ import { CutoutPlacementLayer } from './CutoutPlacementLayer';
 import { BorderPickLayer } from './BorderPickLayer';
 import { CornerPickLayer } from './CornerPickLayer';
 import { EdgePickLayer } from './EdgePickLayer';
+import { ProfilePickLayer } from './ProfilePickLayer';
 import { EdgeDragLayer } from './EdgeDragLayer';
 import { ToolCursorHint } from './ToolCursorHint';
 import { useAnnotationTool } from './useAnnotationTool';
@@ -146,6 +148,10 @@ export function DrawingCanvas() {
     }
     if (e.key === 'e') {
       setTool(tool === 'edge' ? 'select' : 'edge');
+      return;
+    }
+    if (e.key === 'p') {
+      setTool(tool === 'profile' ? 'select' : 'profile');
       return;
     }
     if (selectedIds.length === 0) return;
@@ -408,6 +414,7 @@ export function DrawingCanvas() {
                 return (
                   <g key={piece.id}>
                     <PieceShape piece={piece} selected={selectedIds.includes(piece.id)} />
+                    <AttachedProfilePieces piece={piece} />
                     {dimensionsOn && (
                       <PieceDimensions
                         piece={piece}
@@ -465,6 +472,7 @@ export function DrawingCanvas() {
             {tool === 'border' && <BorderPickLayer />}
             {tool === 'corner' && <CornerPickLayer />}
             {tool === 'edge' && <EdgePickLayer />}
+            {tool === 'profile' && <ProfilePickLayer />}
             <CutoutPlacementLayer />
           </g>
         </g>

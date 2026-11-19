@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import { buildAreaExport, downloadDxf } from '@/lib/drawing/dxfDownload';
 import type { Drawing } from '@/types/drawing';
 import type { AutosaveStatus } from './useDrawingAutosave';
+import { useAttachedProfileTypeList } from './AttachedProfileTypesContext';
 import { VersionDrawer } from './VersionDrawer';
 import { useDrawingEditor } from './DrawingEditorContext';
 import { useFullscreen } from './useFullscreen';
@@ -60,6 +61,7 @@ interface DrawingToolbarProps {
 
 export function DrawingToolbar({ saveStatus, onSave, orderNumber, onExit }: DrawingToolbarProps) {
   const { state, dispatch } = useDrawingEditor();
+  const profileTypes = useAttachedProfileTypeList();
   const [showVersions, setShowVersions] = useState(false);
   const { isFullscreen, toggle: toggleFullscreen } = useFullscreen();
 
@@ -69,7 +71,7 @@ export function DrawingToolbar({ saveStatus, onSave, orderNumber, onExit }: Draw
   };
 
   const exportDxf = () => {
-    const file = buildAreaExport(state.present, state.activeAreaId, orderNumber);
+    const file = buildAreaExport(state.present, state.activeAreaId, orderNumber, profileTypes);
     if (!file) return;
     downloadDxf(file.fileName, file.content);
     toast.success(`Exported ${file.fileName}`);
