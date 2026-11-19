@@ -290,7 +290,7 @@ export function CrmRecordTable({ config }: Props) {
     const chosen = records.filter((r) => selection.selected.has(r.id));
     downloadCsv(
       buildCrmCsvFilename(config.label),
-      buildCrmRecordsCsv(chosen, statusMap, Boolean(config.showEmail), userMap),
+      buildCrmRecordsCsv(chosen, statusMap, Boolean(config.showEmail)),
     );
   }
 
