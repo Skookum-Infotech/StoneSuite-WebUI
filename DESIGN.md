@@ -188,6 +188,8 @@ A restrained two-tone system: warm stone neutrals carry the structure; one lime 
 - **ink-faint** (`#8a8580`): Icons and disabled only.
 - **danger-ink** (`#b42318`) error text · **warning-ink** (`#b45309`) · **success-ink** (`#047857`) · **link** (`#4d7c0f`, hover `#365314`).
 
+**Exception: the app header bar** (`MainLayout.tsx` header and account menu, `GlobalSearch`, `HelpMenu`, `NotificationBell`) is kept exactly as it was before this redesign, by request. Those files are exempt from the lint guardrails; don't restyle them.
+
 ### Named Rules
 **The One Lime Rule.** The lime accent appears on ≤10% of any given screen. Buttons, active nav items, focus rings — that's the full list. Do not use it for decoration, section headers, or background fills. Its scarcity is what makes it communicate "action."
 

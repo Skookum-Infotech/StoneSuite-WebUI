@@ -29,7 +29,6 @@
   --text-kpi: 1.75rem;             /* 28   — KPI figures */
 
   /* ── Letter spacing beyond Tailwind's scale ───────────────────────────── */
-  --tracking-wordmark: 0.26em;     /* brand wordmark in the app header */
   --tracking-wordmark-tight: 0.22em; /* brand wordmark on the onboarding header */
   --tracking-code: 0.4em;          /* one-time sign-in code digits */
 
@@ -43,7 +42,6 @@
   --color-success-ink: #047857;    /* success text (5.5:1) */
   --color-link: #4d7c0f;           /* links (5.0:1) */
   --color-link-hover: #365314;
-  --color-link-on-dark: #719c3b;   /* active/link text on the dark header (lime, readable on dark) */
   --color-danger-solid: #dc2626;   /* danger button fill (white text 4.8:1) */
   --color-danger-solid-hover: #b91c1c;
   --color-portal: #7b8e90;         /* decorative "Workspace portal" label */

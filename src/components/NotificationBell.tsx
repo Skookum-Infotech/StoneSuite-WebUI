@@ -115,12 +115,12 @@ export function NotificationBell() {
         aria-label={unreadCount > 0 ? `Notifications (${unreadCount} unread)` : 'Notifications'}
         aria-haspopup="menu"
         aria-expanded={open}
-        className="relative rounded-xl border border-white/10 p-2 text-ink-muted hover:bg-white/[0.06] hover:text-stone-200 transition-colors cursor-pointer"
+        className="relative rounded-xl border border-white/10 p-2 text-stone-400 hover:bg-white/[0.06] hover:text-stone-200 transition-colors cursor-pointer"
       >
         <Bell className="size-4.5" />
         {unreadCount > 0 && (
           <span
-            className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-micro font-semibold leading-none text-white"
+            className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold leading-none text-white"
             aria-hidden="true"
           >
             {unreadCount > 9 ? '9+' : unreadCount}
@@ -144,7 +144,7 @@ export function NotificationBell() {
                 type="button"
                 onClick={(e) => { e.stopPropagation(); markAllRead.mutate(); }}
                 disabled={markAllRead.isPending}
-                className="flex items-center gap-1 rounded-lg px-2 py-1 text-micro font-medium text-ink-muted hover:bg-white/[0.06] hover:text-stone-200 disabled:opacity-50 cursor-pointer"
+                className="flex items-center gap-1 rounded-lg px-2 py-1 text-2xs font-medium text-stone-400 hover:bg-white/[0.06] hover:text-stone-200 disabled:opacity-50 cursor-pointer"
               >
                 <CheckCheck className="size-3" />
                 Mark all read
@@ -154,13 +154,13 @@ export function NotificationBell() {
 
           <div className="max-h-96 overflow-y-auto">
             {listQ.isLoading && (
-              <p className="px-3 py-4 text-center type-helper">Loading…</p>
+              <p className="px-3 py-4 text-center text-2xs text-stone-400">Loading…</p>
             )}
             {listQ.isError && !listQ.data && (
-              <p className="px-3 py-4 text-center type-helper">Couldn't load notifications.</p>
+              <p className="px-3 py-4 text-center text-2xs text-stone-400">Couldn't load notifications.</p>
             )}
             {listQ.data?.length === 0 && (
-              <p className="px-3 py-4 text-center type-helper">You're all caught up.</p>
+              <p className="px-3 py-4 text-center text-2xs text-stone-400">You're all caught up.</p>
             )}
             {visible.map((n) => (
               <button
@@ -183,8 +183,8 @@ export function NotificationBell() {
                 )}
                 <span className={cn('flex-1', n.readAt && 'pl-4')}>
                   <span className="block text-xs font-semibold text-stone-200">{n.title}</span>
-                  {n.body && <span className="mt-0.5 block type-subline">{n.body}</span>}
-                  <span className="mt-1 block text-micro text-ink">{timeAgo(n.createdAt)}</span>
+                  {n.body && <span className="mt-0.5 block text-2xs text-stone-400">{n.body}</span>}
+                  <span className="mt-1 block text-2xs text-stone-600">{timeAgo(n.createdAt)}</span>
                 </span>
               </button>
             ))}
@@ -192,7 +192,7 @@ export function NotificationBell() {
               <button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); setExpanded(!expanded); }}
-                className="flex w-full items-center justify-center gap-1 rounded-xl px-3 py-2 text-micro font-medium text-ink-muted hover:bg-white/[0.06] hover:text-stone-200 cursor-pointer"
+                className="flex w-full items-center justify-center gap-1 rounded-xl px-3 py-2 text-2xs font-medium text-stone-400 hover:bg-white/[0.06] hover:text-stone-200 cursor-pointer"
               >
                 {expanded ? (
                   <>

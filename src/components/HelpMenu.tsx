@@ -90,7 +90,7 @@ export function HelpMenu() {
         aria-label={unreadCount > 0 ? `Help (${unreadCount} unread)` : 'Help'}
         aria-haspopup="menu"
         aria-expanded={menuOpen}
-        className="relative rounded-xl border border-white/10 p-2 text-ink-muted hover:bg-white/[0.06] hover:text-stone-200 transition-colors cursor-pointer"
+        className="relative rounded-xl border border-white/10 p-2 text-stone-400 hover:bg-white/[0.06] hover:text-stone-200 transition-colors cursor-pointer"
       >
         <CircleHelp className="size-4.5" />
         {unreadCount > 0 && (
@@ -126,7 +126,7 @@ export function HelpMenu() {
             </span>
             <span>
               <span className="block text-xs font-bold text-stone-200">StoneSuite Assistant</span>
-              <span className="mt-0.5 block type-subline">
+              <span className="mt-0.5 block text-2xs text-stone-400">
                 Ask about a record, workflow, or how to do something
               </span>
             </span>
@@ -151,12 +151,12 @@ export function HelpMenu() {
               <span className="flex items-center gap-1.5 text-xs font-bold text-stone-200">
                 Support
                 {unreadCount > 0 && (
-                  <span className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-micro font-semibold text-white">
+                  <span className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-white">
                     {unreadCount}
                   </span>
                 )}
               </span>
-              <span className="mt-0.5 block type-subline">
+              <span className="mt-0.5 block text-2xs text-stone-400">
                 Report a bug, request a feature, or track your tickets
               </span>
             </span>

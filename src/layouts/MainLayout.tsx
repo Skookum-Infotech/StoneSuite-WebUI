@@ -228,7 +228,7 @@ export default function MainLayout(): React.JSX.Element {
       )}
 
       {/* ── Unified header ── */}
-      <header className="fixed inset-x-0 top-0 z-30 flex h-16 items-center border-b border-white/[0.07] bg-header">
+      <header className="fixed inset-x-0 top-0 z-30 flex h-16 items-center border-b border-white/[0.07]" style={{ background: 'var(--gradient-header)' }}>
 
         {/* Left: both brand logos in one zone */}
         <div className="flex h-full w-auto shrink-0 items-center">
@@ -237,7 +237,7 @@ export default function MainLayout(): React.JSX.Element {
           <button
             onClick={() => setIsMobileSidebarOpen(true)}
             aria-label="Open menu"
-            className="ml-3 rounded-xl border border-white/10 p-2 text-ink-faint hover:bg-white/[0.06] hover:text-white lg:hidden cursor-pointer transition-colors"
+            className="ml-3 rounded-xl border border-white/10 p-2 text-stone-400 hover:bg-white/[0.06] hover:text-white lg:hidden cursor-pointer transition-colors"
           >
             <Menu className="size-5" />
           </button>
@@ -249,12 +249,12 @@ export default function MainLayout(): React.JSX.Element {
             </div>
             <div className="hidden lg:flex flex-col leading-none">
               <span
-                className="font-brand text-sm uppercase text-white/95 transition-colors group-hover:text-white tracking-wordmark"
+                className="font-brand text-sm uppercase text-white/95 transition-colors group-hover:text-white font-semibold tracking-[0.26em]"
               >
                 Stone
               </span>
               <span
-                className="font-brand text-sm uppercase text-white/95 transition-colors group-hover:text-white tracking-wordmark"
+                className="font-brand text-sm uppercase text-white/95 transition-colors group-hover:text-white font-semibold tracking-[0.26em]"
               >
                 Suite
               </span>
@@ -293,8 +293,8 @@ export default function MainLayout(): React.JSX.Element {
               className={cn(
                 'rounded-xl border p-2 transition-colors sm:hidden cursor-pointer',
                 isMobileSearchOpen
-                  ? 'border-brand bg-brand/10 text-link-on-dark'
-                  : 'border-white/10 text-ink-faint hover:bg-white/[0.06] hover:text-stone-200',
+                  ? 'border-brand bg-brand/10 text-brand-dark'
+                  : 'border-white/10 text-stone-400 hover:bg-white/[0.06] hover:text-stone-200',
               )}
             >
               {isMobileSearchOpen ? <X className="size-4" /> : <Search className="size-4" />}
@@ -312,7 +312,7 @@ export default function MainLayout(): React.JSX.Element {
                 }}
                 className="flex items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.06] p-1.5 pr-3 text-left hover:bg-white/10 transition-all cursor-pointer select-none"
               >
-                <div className="flex size-7 items-center justify-center rounded-xl bg-brand text-label font-bold text-ink-strong shadow-sm">
+                <div className="flex size-7 items-center justify-center rounded-xl bg-brand text-label font-bold text-stone-950 shadow-sm">
                   {user?.fullName
                     ? user.fullName.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2)
                     : 'SS'}
@@ -328,16 +328,16 @@ export default function MainLayout(): React.JSX.Element {
                     <h5 className="text-xs font-bold text-stone-200">
                       {user?.fullName || 'Guest User'}
                     </h5>
-                    <p className="truncate mt-0.5 type-helper text-ink-faint">
+                    <p className="truncate text-2xs text-stone-400 mt-0.5">
                       {user?.email || 'guest@stonesuite.com'}
                     </p>
                   </div>
                   <div className="py-1">
                     <button
                       onClick={() => { setOpenMenu(null); navigate('/account/settings'); }}
-                      className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-semibold text-ink-faint hover:bg-white/[0.06] hover:text-stone-200 transition-colors text-left cursor-pointer"
+                      className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-semibold text-stone-400 hover:bg-white/[0.06] hover:text-stone-200 transition-colors text-left cursor-pointer"
                     >
-                      <Settings className="size-4 text-ink-faint" />
+                      <Settings className="size-4 text-stone-400" />
                       <span>Account Settings</span>
                     </button>
                   </div>
@@ -345,16 +345,16 @@ export default function MainLayout(): React.JSX.Element {
                   <div className="py-1">
                     <button
                       onClick={() => { setOpenMenu(null); navigate('/transactions'); }}
-                      className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-semibold text-ink-faint hover:bg-white/[0.06] hover:text-stone-200 transition-colors text-left cursor-pointer"
+                      className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-semibold text-stone-400 hover:bg-white/[0.06] hover:text-stone-200 transition-colors text-left cursor-pointer"
                     >
-                      <CreditCard className="size-4 text-ink-faint" />
+                      <CreditCard className="size-4 text-stone-400" />
                       <span>My Transactions</span>
                     </button>
                   </div>
                   <div className="h-px bg-white/[0.08] my-1" />
                   {isCustomer ? (
                     <div className="py-1">
-                      <div className="px-3 py-2 type-overline text-ink-faint">
+                      <div className="px-3 py-2 text-2xs font-bold text-stone-400 uppercase tracking-wide">
                         Workspaces
                       </div>
                       {workspaces.length > 0 ? (
@@ -369,12 +369,12 @@ export default function MainLayout(): React.JSX.Element {
                                 onClick={(e) => { e.stopPropagation(); if (!isActive) switchWorkspaceMutation.mutate(w.tenantId); }}
                                 disabled={switchWorkspaceMutation.isPending || isActive}
                                 aria-pressed={isActive}
-                                className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-semibold text-ink-faint hover:bg-white/[0.06] hover:text-stone-200 transition-colors text-left cursor-pointer disabled:cursor-not-allowed disabled:hover:bg-transparent"
+                                className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-semibold text-stone-400 hover:bg-white/[0.06] hover:text-stone-200 transition-colors text-left cursor-pointer disabled:cursor-not-allowed disabled:hover:bg-transparent"
                               >
                                 {isSwitching ? (
-                                  <Loader2 className="size-4 text-ink-faint flex-shrink-0 animate-spin" />
+                                  <Loader2 className="size-4 text-stone-400 flex-shrink-0 animate-spin" />
                                 ) : (
-                                  <Building2 className="size-4 text-ink-faint flex-shrink-0" />
+                                  <Building2 className="size-4 text-stone-400 flex-shrink-0" />
                                 )}
                                 <span className="flex-1 truncate">{w.name}</span>
                                 {isActive && <Check className="size-4 text-brand flex-shrink-0" />}
@@ -383,19 +383,19 @@ export default function MainLayout(): React.JSX.Element {
                           })}
                         </div>
                       ) : (
-                        <div className="px-3 py-2 type-subline text-ink-faint">
+                        <div className="px-3 py-2 text-2xs text-stone-400">
                           No workspaces
                         </div>
                       )}
                       {switchWorkspaceMutation.isError && (
-                        <p className="px-3 pt-1 type-error text-destructive-red">
+                        <p className="px-3 pt-1 text-2xs text-destructive">
                           {apiErrorMessage(switchWorkspaceMutation.error, 'Failed to switch workspace. Try again.')}
                         </p>
                       )}
                     </div>
                   ) : (
                     <div className="py-1">
-                      <div className="px-3 py-2 type-overline text-ink-faint">
+                      <div className="px-3 py-2 text-2xs font-bold text-stone-400 uppercase tracking-wide">
                         Roles
                       </div>
                       {roles.length > 0 ? (
@@ -410,12 +410,12 @@ export default function MainLayout(): React.JSX.Element {
                                 onClick={(e) => { e.stopPropagation(); switchRoleMutation.mutate(role.id); }}
                                 disabled={switchRoleMutation.isPending || isActive}
                                 aria-pressed={isActive}
-                                className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-semibold text-ink-faint hover:bg-white/[0.06] hover:text-stone-200 transition-colors text-left cursor-pointer disabled:cursor-not-allowed disabled:hover:bg-transparent"
+                                className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-semibold text-stone-400 hover:bg-white/[0.06] hover:text-stone-200 transition-colors text-left cursor-pointer disabled:cursor-not-allowed disabled:hover:bg-transparent"
                               >
                                 {isSwitching ? (
-                                  <Loader2 className="size-4 text-ink-faint flex-shrink-0 animate-spin" />
+                                  <Loader2 className="size-4 text-stone-400 flex-shrink-0 animate-spin" />
                                 ) : (
-                                  <Shield className="size-4 text-ink-faint flex-shrink-0" />
+                                  <Shield className="size-4 text-stone-400 flex-shrink-0" />
                                 )}
                                 <span className="flex-1">{role.name}</span>
                                 {isActive && <Check className="size-4 text-brand flex-shrink-0" />}
@@ -424,12 +424,12 @@ export default function MainLayout(): React.JSX.Element {
                           })}
                         </div>
                       ) : (
-                        <div className="px-3 py-2 type-subline text-ink-faint">
+                        <div className="px-3 py-2 text-2xs text-stone-400">
                           No roles assigned
                         </div>
                       )}
                       {switchRoleMutation.isError && (
-                        <p className="px-3 pt-1 type-error text-destructive-red">
+                        <p className="px-3 pt-1 text-2xs text-destructive">
                           Failed to switch role. Try again.
                         </p>
                       )}
@@ -438,7 +438,7 @@ export default function MainLayout(): React.JSX.Element {
                   <div className="h-px bg-white/[0.08] my-1" />
                   <button
                     onClick={handleLogout}
-                    className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-bold text-destructive-red hover:bg-destructive/10 transition-colors text-left cursor-pointer"
+                    className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-bold text-destructive hover:bg-destructive/10 transition-colors text-left cursor-pointer"
                   >
                     <LogOut className="size-4" />
                     <span>Sign Out</span>
@@ -453,10 +453,10 @@ export default function MainLayout(): React.JSX.Element {
       {/* Mobile search expansion — fixed below header */}
       <div
         className={cn(
-          'fixed inset-x-0 top-16 z-20 overflow-hidden border-b border-white/[0.07] bg-header backdrop-blur-md transition-all duration-200 ease-in-out sm:hidden',
+          'fixed inset-x-0 top-16 z-20 overflow-hidden border-b border-white/[0.07] backdrop-blur-md transition-all duration-200 ease-in-out sm:hidden',
           isMobileSearchOpen ? 'max-h-24 opacity-100' : 'max-h-0 opacity-0',
         )}
-
+        style={{ background: 'linear-gradient(135deg, #001219 0%, #005f73 40%, #0a2540 75%, #050e1a 100%)' }}
       >
         <div className="px-4 py-3">
           <GlobalSearch
@@ -473,7 +473,7 @@ export default function MainLayout(): React.JSX.Element {
       />
 
       {/* ── Page Content ── */}
-      <div className="flex flex-col min-h-screen pt-16 pl-(--sidebar-offset)">
+      <div className="flex flex-col min-h-screen pt-16" style={{ paddingLeft: 'var(--sidebar-offset)' }}>
         <main className="flex-1 w-full flex flex-col min-h-0 bg-background">
 
           {/* Breadcrumb bar — contextual, scrolls with page */}

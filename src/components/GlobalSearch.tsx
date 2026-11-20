@@ -155,7 +155,7 @@ export function GlobalSearch({ className, inputClassName, autoFocus, onNavigate 
           aria-controls="global-search-results"
           autoComplete="off"
           className={cn(
-            'h-10 w-full rounded-full border border-white/[0.13] bg-white/[0.07] pl-4 pr-11 text-sm text-stone-200 placeholder:text-ink-faint pointer-coarse:text-base transition-all focus:outline-none focus:border-brand/60 focus:bg-white/[0.10]',
+            'h-10 w-full rounded-full border border-white/[0.13] bg-white/[0.07] pl-4 pr-11 text-sm text-stone-200 placeholder:text-stone-400 transition-all focus:outline-none focus:border-brand/60 focus:bg-white/[0.10]',
             inputClassName,
           )}
           onChange={(e) => {
@@ -168,9 +168,9 @@ export function GlobalSearch({ className, inputClassName, autoFocus, onNavigate 
         />
         <div className="pointer-events-none absolute right-1.5 flex h-7 w-7 items-center justify-center rounded-full bg-white/[0.10]">
           {isFetching ? (
-            <Loader2 className="size-3.5 animate-spin text-ink-faint" />
+            <Loader2 className="size-3.5 animate-spin text-stone-400" />
           ) : (
-            <Search className="size-3.5 text-ink-faint" />
+            <Search className="size-3.5 text-stone-400" />
           )}
         </div>
       </div>
@@ -185,7 +185,7 @@ export function GlobalSearch({ className, inputClassName, autoFocus, onNavigate 
             <>
               {groups.map(([type, group]) => (
                 <div key={type} className="py-1">
-                  <div className="px-4 pt-2 pb-1 type-overline">
+                  <div className="px-4 pt-2 pb-1 text-2xs font-semibold uppercase tracking-wider text-stone-500">
                     {entityLabel(type)}
                   </div>
                   <ul>
@@ -206,17 +206,17 @@ export function GlobalSearch({ className, inputClassName, autoFocus, onNavigate 
                             )}
                           >
                             <span className="min-w-0 flex-1">
-                              <span className="block truncate text-sm font-medium text-ink-strong dark:text-stone-100">
+                              <span className="block truncate text-sm font-medium text-stone-900 dark:text-stone-100">
                                 {hit.displayName || '(untitled)'}
                               </span>
                               {(hit.number || hit.subtitle) && (
-                                <span className="block truncate type-subline">
+                                <span className="block truncate text-2xs text-stone-500">
                                   {[hit.number, hit.subtitle].filter(Boolean).join(' · ')}
                                 </span>
                               )}
                             </span>
                             {idx === safeIndex && (
-                              <CornerDownLeft className="size-3.5 shrink-0 text-ink-faint" aria-hidden="true" />
+                              <CornerDownLeft className="size-3.5 shrink-0 text-stone-400" aria-hidden="true" />
                             )}
                           </button>
                         </li>
@@ -235,7 +235,7 @@ export function GlobalSearch({ className, inputClassName, autoFocus, onNavigate 
                               onMouseEnter={() => setActiveIndex(idx)}
                               onClick={() => go(`/search?q=${encodeURIComponent(debounced)}&type=${type}`)}
                               className={cn(
-                                'flex w-full items-center gap-1.5 px-4 py-1.5 text-left text-micro font-medium text-brand transition-colors',
+                                'flex w-full items-center gap-1.5 px-4 py-1.5 text-left text-2xs font-medium text-brand transition-colors',
                                 idx === safeIndex ? 'bg-accent/15' : 'hover:bg-stone-50 dark:hover:bg-stone-900',
                               )}
                             >
@@ -259,7 +259,7 @@ export function GlobalSearch({ className, inputClassName, autoFocus, onNavigate 
                     onMouseEnter={() => setActiveIndex(idx)}
                     onClick={() => go(`/search?q=${encodeURIComponent(debounced)}`)}
                     className={cn(
-                      'flex w-full items-center justify-center gap-1.5 border-t border-stone-100 px-4 py-2.5 text-xs font-semibold text-ink transition-colors dark:border-stone-800 dark:text-stone-300',
+                      'flex w-full items-center justify-center gap-1.5 border-t border-stone-100 px-4 py-2.5 text-xs font-semibold text-stone-600 transition-colors dark:border-stone-800 dark:text-stone-300',
                       idx === safeIndex ? 'bg-accent/15' : 'hover:bg-stone-50 dark:hover:bg-stone-900',
                     )}
                   >
@@ -270,9 +270,9 @@ export function GlobalSearch({ className, inputClassName, autoFocus, onNavigate 
               })()}
             </>
           ) : isFetching ? (
-            <div className="px-4 py-6 text-center text-sm text-ink-muted dark:text-stone-400">Searching…</div>
+            <div className="px-4 py-6 text-center text-sm text-stone-500 dark:text-stone-400">Searching…</div>
           ) : isError ? (
-            <div className="px-4 py-6 text-center text-sm text-danger-ink">Search is unavailable right now.</div>
+            <div className="px-4 py-6 text-center text-sm text-red-500">Search is unavailable right now.</div>
           ) : (
             <div className="px-4 py-6 text-center">
               <div className="mb-3 flex justify-center">
@@ -280,8 +280,8 @@ export function GlobalSearch({ className, inputClassName, autoFocus, onNavigate 
                   <Sparkles className="size-5 text-brand" />
                 </div>
               </div>
-              <p className="dark:text-stone-100 type-card-title">No matches for “{debounced}”</p>
-              <p className="mt-1 dark:text-stone-400 type-helper">
+              <p className="text-sm font-semibold text-stone-900 dark:text-stone-100">No matches for “{debounced}”</p>
+              <p className="mt-1 text-xs text-stone-500 dark:text-stone-400">
                 Searches everything you can access — records, documents, people.
               </p>
             </div>

@@ -83,7 +83,15 @@ export default defineConfig([
   // these rules stop the one-off values the redesign removed from coming back.
   {
     files: ['src/**/*.{ts,tsx}'],
-    ignores: ['src/**/*.test.{ts,tsx}'],
+    ignores: [
+      'src/**/*.test.{ts,tsx}',
+      // The app header bar is deliberately kept exactly as it was before the
+      // type redesign (product owner's call, Nov 2026) — don't restyle these.
+      'src/layouts/MainLayout.tsx',
+      'src/components/GlobalSearch.tsx',
+      'src/components/HelpMenu.tsx',
+      'src/components/NotificationBell.tsx',
+    ],
     rules: {
       'no-restricted-syntax': ['error',
         ...['Literal[value=/%s/]', 'TemplateElement[value.raw=/%s/]'].flatMap((sel) => [
