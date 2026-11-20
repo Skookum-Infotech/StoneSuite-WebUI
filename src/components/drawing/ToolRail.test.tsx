@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// The rail down the left of the board: the pointer, Draw, Text and Border (with
+// The rail down the left of the board: the pointer, Draw, Dimension, Seams, Text and Border (with
 // its flyout), Corner (likewise), Edges and Profiles, which both arm straight
 // away (their type is picked in the bottom bar).
 
@@ -47,11 +47,11 @@ const tool = () => screen.getByTestId('tool').textContent;
 afterEach(() => vi.restoreAllMocks());
 
 describe('ToolRail', () => {
-  it('holds the pointer, Draw, Text, Border, Corner, Edges and Profiles — no Line and no other sections', () => {
+  it('holds the pointer, Draw, Dimension, Seams, Text, Border, Corner, Edges and Profiles — no other sections', () => {
     open();
     const rail = screen.getByRole('navigation', { name: 'Drawing tools' });
     expect(within(rail).getAllByRole('button').map((b) => b.getAttribute('aria-label')))
-      .toEqual(['Select', 'Draw', 'Text', 'Border', 'Corner', 'Edges', 'Profiles']);
+      .toEqual(['Select', 'Draw', 'Dimension', 'Seams', 'Text', 'Border', 'Corner', 'Edges', 'Profiles']);
     for (const gone of ['Line', 'Shapes', 'Cutouts', 'Annotations', 'Materials']) {
       expect(screen.queryByRole('button', { name: gone })).toBeNull();
     }

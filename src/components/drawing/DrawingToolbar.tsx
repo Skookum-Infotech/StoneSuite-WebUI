@@ -5,7 +5,7 @@
 // the cutout tools in the Cutout panel. The side panel opens below this bar, never beside it.
 
 import { useState } from 'react';
-import { AlertTriangle, ArrowLeft, Check, Download, History, Loader2, Maximize2, Minimize2, Redo2, Save, Undo2 } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, Check, Download, FileText, History, Loader2, Maximize2, Minimize2, Redo2, Save, Undo2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { buildAreaExport, downloadDxf } from '@/lib/drawing/dxfDownload';
 import type { Drawing } from '@/types/drawing';
@@ -13,6 +13,7 @@ import type { AutosaveStatus } from './useDrawingAutosave';
 import { useAttachedProfileTypeList } from './AttachedProfileTypesContext';
 import { VersionDrawer } from './VersionDrawer';
 import { useDrawingEditor } from './DrawingEditorContext';
+import { useDrawingPdfExport } from './useDrawingPdfExport';
 import { useFullscreen } from './useFullscreen';
 import { WorkspaceTabs } from './WorkspaceTabs';
 
@@ -64,6 +65,7 @@ export function DrawingToolbar({ saveStatus, onSave, orderNumber, onExit }: Draw
   const profileTypes = useAttachedProfileTypeList();
   const [showVersions, setShowVersions] = useState(false);
   const { isFullscreen, toggle: toggleFullscreen } = useFullscreen();
+  const { exportPdf, isExporting: isExportingPdf } = useDrawingPdfExport(orderNumber);
 
   const restoreVersion = (restored: Drawing) => {
     dispatch({ type: 'loadDrawing', drawing: restored });
@@ -107,6 +109,16 @@ export function DrawingToolbar({ saveStatus, onSave, orderNumber, onExit }: Draw
         </button>
         <button type="button" aria-label="Export DXF" title="Export DXF" onClick={exportDxf} className={ICON_BUTTON_CLASS}>
           <Download className={ICON_CLASS} aria-hidden="true" />
+        </button>
+        <button
+          type="button"
+          aria-label="Export PDF"
+          title="Export PDF — a printable drawing"
+          disabled={isExportingPdf}
+          onClick={() => exportPdf(state.present)}
+          className={ICON_BUTTON_CLASS}
+        >
+          {isExportingPdf ? <Loader2 className={`${ICON_CLASS} animate-spin`} aria-hidden="true" /> : <FileText className={ICON_CLASS} aria-hidden="true" />}
         </button>
         <button type="button" aria-label="Version history" title="Version history" onClick={() => setShowVersions(true)} className={ICON_BUTTON_CLASS}>
           <History className={ICON_CLASS} aria-hidden="true" />

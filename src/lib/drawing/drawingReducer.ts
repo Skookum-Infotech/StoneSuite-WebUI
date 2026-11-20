@@ -26,6 +26,9 @@ export type EditorAction =
   /** Where the Material tab laid one painted Profiles side on a slab —
    *  the attached-profile-piece equivalent of updatePiece's own `slab` patch. */
   | { type: 'updateAttachedProfileSlab'; areaId: string; pieceId: string; edgeIndex: number; slab: SlabPlacement | undefined }
+  /** Lays many pieces and painted profile sides on slabs in one go — one undo step
+   *  for the Material tab's "Nest all". `edgeIndex` set means that side's profile piece. */
+  | { type: 'placeOnSlabs'; placements: Array<{ areaId: string; pieceId: string; edgeIndex?: number; slab: SlabPlacement }> }
   | { type: 'deletePiece'; areaId: string; pieceId: string }
   | { type: 'duplicatePiece'; areaId: string; pieceId: string; newId: string }
   | { type: 'movePiece'; areaId: string; pieceId: string; delta: Point }
@@ -141,6 +144,22 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
           ? { ...e, attachedProfile: { ...e.attachedProfile, slab: action.slab } }
           : e)),
       })));
+
+    case 'placeOnSlabs':
+      if (action.placements.length === 0) return state;
+      return mutateDocument(state, (drawing) => action.placements.reduce(
+        (doc, placement) => updatePieceIn(doc, placement.areaId, placement.pieceId, (p) => (
+          placement.edgeIndex === undefined
+            ? { ...p, slab: placement.slab }
+            : {
+              ...p,
+              edges: p.edges.map((e) => (e.index === placement.edgeIndex && e.attachedProfile
+                ? { ...e, attachedProfile: { ...e.attachedProfile, slab: placement.slab } }
+                : e)),
+            }
+        )),
+        drawing,
+      ));
 
     case 'deletePiece':
       return sanitizeSelection(mutateDocument(state, (drawing) => updateArea(drawing, action.areaId, (area) => ({

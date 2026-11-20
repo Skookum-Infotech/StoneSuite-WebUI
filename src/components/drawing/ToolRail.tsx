@@ -1,6 +1,7 @@
 // The tool rail down the left of the board: a slim dark pill holding the
 // tools you draw with — Select (the pointer), Draw (drops and resizes
-// pieces), Text, Border (reshapes a side into a curve or a bump), Corner
+// pieces), Dimension (measures between two points), Seams (cuts a piece with a
+// line between two points), Text, Border (reshapes a side into a curve or a bump), Corner
 // (clips, rounds, bumps or notches a corner), Edges (paints a side in one of
 // the shop's edge types) and Profiles (attaches a Backsplash/Lamination/
 // Waterfall/etc. piece to a side); Border and Corner open a flyout that picks
@@ -11,7 +12,7 @@
 // tool again hands back to Select.
 
 import type { LucideIcon } from 'lucide-react';
-import { Layers, MousePointer2, Pencil, SquareDashed, SquareRoundCorner, TriangleRight, Type } from 'lucide-react';
+import { Layers, MousePointer2, Pencil, Ruler, Scissors, SquareDashed, SquareRoundCorner, TriangleRight, Type } from 'lucide-react';
 import { BORDER_STYLES, type BorderStyle } from '@/lib/drawing/borders';
 import { CORNER_STYLES, type CornerStyle } from '@/lib/drawing/corners';
 import { useDrawingEditor, type EditorTool } from './DrawingEditorContext';
@@ -24,15 +25,20 @@ interface ToolDef {
   tool: EditorTool;
   label: string;
   Icon: LucideIcon;
+  /** The name shown on hover, with its shortcut key; defaults to `label`. */
+  hint?: string;
 }
 
 const TOOLS: ToolDef[] = [
   { tool: 'select', label: 'Select', Icon: MousePointer2 },
   { tool: 'draw', label: 'Draw', Icon: Pencil },
+  { tool: 'dimension', label: 'Dimension', hint: 'Dimension (D)', Icon: Ruler },
+  // The tool's id is still `line` — a line drawn across a piece is stored as one of its seams.
+  { tool: 'line', label: 'Seams', hint: 'Seams (S)', Icon: Scissors },
   { tool: 'text', label: 'Text', Icon: Type },
 ];
 
-/** After Border and Corner, so the rail reads Select, Draw, Text, Border, Corner, Edges, Profiles. */
+/** After Border and Corner, so the rail reads Select, Draw, Dimension, Seams, Text, Border, Corner, Edges, Profiles. */
 const EDGES_TOOL: ToolDef = { tool: 'edge', label: 'Edges', Icon: TriangleRight };
 const PROFILES_TOOL: ToolDef = { tool: 'profile', label: 'Profiles', Icon: Layers };
 
@@ -42,7 +48,7 @@ const CORNER_TOOL: RailFlyoutTool = { label: 'Corner', hint: 'Corner (C)', title
 /** A plain rail button: arms its tool, or hands back to Select if it is already armed. */
 function PlainToolButton({ def }: { def: ToolDef }) {
   const { tool, setTool } = useDrawingEditor();
-  const { tool: id, label, Icon } = def;
+  const { tool: id, label, hint, Icon } = def;
   return (
     <div className="relative">
       <button
@@ -55,7 +61,7 @@ function PlainToolButton({ def }: { def: ToolDef }) {
         <Icon className="h-5 w-5" strokeWidth={1.75} aria-hidden="true" />
       </button>
       {/* Beside the button, over the canvas — the rail is too narrow to hold names. */}
-      <span aria-hidden="true" className={RAIL_NAME_CLASS}>{label}</span>
+      <span aria-hidden="true" className={RAIL_NAME_CLASS}>{hint ?? label}</span>
     </div>
   );
 }

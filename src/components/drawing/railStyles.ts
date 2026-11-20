@@ -7,3 +7,6 @@ export const RAIL_NAME_CLASS = 'pointer-events-none absolute left-full top-1/2 z
 
 /** The corner notch that says "this opens a list". */
 export const RAIL_FLYOUT_MARK_CLASS = 'absolute bottom-1 right-1 h-0 w-0 border-b-[5px] border-l-[5px] border-b-current border-l-transparent';
+
+/** A small text button on a row of the Seams / Dimension bottom bar. */
+export const ANNOTATION_ROW_BUTTON_CLASS = 'rounded px-2 py-0.5 text-xs text-stone-200 hover:bg-stone-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand';

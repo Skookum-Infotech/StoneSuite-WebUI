@@ -23,8 +23,8 @@ const drawing: Drawing = {
   updatedAt: '', updatedBy: { id: 'u1', name: 'T' },
 };
 
-// The rail no longer carries a Line tool; the tool itself still exists, so
-// these tests arm it directly.
+// The rail's Seams button arms this same `line` tool; these tests arm it
+// directly so they stay about the drawing, not the rail.
 function ArmLine() {
   const { setTool } = useDrawingEditor();
   return <button type="button" onClick={() => setTool('line')}>Line</button>;
@@ -116,6 +116,17 @@ describe('manual dimensions', () => {
     await user.click(screen.getByRole('button', { name: 'Delete Dimension 1' }));
     expect(annotations().dimensions).toEqual([]);
   });
+
+  it('lands on a border when the second click is only near it', async () => {
+    const user = open();
+    await user.click(screen.getByRole('button', { name: 'Add dimension' }));
+    fireEvent.pointerDown(background(), { clientX: 403, clientY: 302 }); // near the corner (0, 0)
+    fireEvent.pointerDown(background(), { clientX: 800, clientY: 310 }); // world (400, -10): 10 mm under the top side
+    const [dim] = annotations().dimensions;
+    expect(dim.from).toEqual({ x: 0, y: 0 });
+    expect(dim.to.x).toBeCloseTo(400);
+    expect(dim.to.y).toBeCloseTo(0);
+  });
 });
 
 describe('line tool', () => {
@@ -140,39 +151,39 @@ describe('line tool', () => {
   it("draws a seam across the piece it is drawn on, in that piece's own coordinates", async () => {
     const user = open();
     await user.click(screen.getByRole('button', { name: 'Line' }));
-    fireEvent.pointerDown(capture(), { clientX: 450, clientY: 320 }); // world (50, -20), inside the piece
+    fireEvent.pointerDown(capture(), { clientX: 450, clientY: 350 }); // world (50, -50), inside the piece
     fireEvent.pointerDown(capture(), { clientX: 600, clientY: 400 }); // world (200, -100), inside the piece
     const [piece] = JSON.parse(screen.getByTestId('pieces').textContent ?? '[]');
-    expect(piece.seams).toEqual([{ from: { x: 50, y: -20 }, to: { x: 200, y: -100 } }]);
+    expect(piece.seams).toEqual([{ from: { x: 50, y: -50 }, to: { x: 200, y: -100 } }]);
   });
 
   it('draws in one press-drag-release, the way a line tool is normally used', async () => {
     const user = open();
     await user.click(screen.getByRole('button', { name: 'Line' }));
-    fireEvent.pointerDown(capture(), { clientX: 450, clientY: 320 }); // world (50, -20)
+    fireEvent.pointerDown(capture(), { clientX: 450, clientY: 350 }); // world (50, -50)
     fireEvent.pointerMove(capture(), { clientX: 600, clientY: 400 });
     fireEvent.pointerUp(capture(), { clientX: 600, clientY: 400 }); // world (200, -100)
     const [piece] = JSON.parse(screen.getByTestId('pieces').textContent ?? '[]');
-    expect(piece.seams).toEqual([{ from: { x: 50, y: -20 }, to: { x: 200, y: -100 } }]);
+    expect(piece.seams).toEqual([{ from: { x: 50, y: -50 }, to: { x: 200, y: -100 } }]);
     expect(screen.queryByTestId('tool-capture')).toBeNull();
   });
 
   it('treats a press and release on the same spot as the first of two clicks, not a zero-length line', async () => {
     const user = open();
     await user.click(screen.getByRole('button', { name: 'Line' }));
-    fireEvent.pointerDown(capture(), { clientX: 450, clientY: 320 });
-    fireEvent.pointerUp(capture(), { clientX: 451, clientY: 320 });
+    fireEvent.pointerDown(capture(), { clientX: 450, clientY: 350 });
+    fireEvent.pointerUp(capture(), { clientX: 451, clientY: 350 });
     expect(JSON.parse(screen.getByTestId('pieces').textContent ?? '[]')[0].seams).toEqual([]);
     // Still armed, with the first point standing — the second click lands it.
     fireEvent.pointerDown(capture(), { clientX: 600, clientY: 400 });
     expect(JSON.parse(screen.getByTestId('pieces').textContent ?? '[]')[0].seams)
-      .toEqual([{ from: { x: 50, y: -20 }, to: { x: 200, y: -100 } }]);
+      .toEqual([{ from: { x: 50, y: -50 }, to: { x: 200, y: -100 } }]);
   });
 
   it('rubber-bands from the first point to the cursor before the second click', async () => {
     const user = open();
     await user.click(screen.getByRole('button', { name: 'Line' }));
-    fireEvent.pointerDown(capture(), { clientX: 450, clientY: 320 });
+    fireEvent.pointerDown(capture(), { clientX: 450, clientY: 350 });
     fireEvent.pointerMove(capture(), { clientX: 600, clientY: 400 });
     const preview = document.querySelector('line.stroke-brand');
     expect(preview?.getAttribute('x1')).toBe('50');
@@ -182,7 +193,7 @@ describe('line tool', () => {
   it('Escape throws away a half-drawn line and disarms the tool', async () => {
     const user = open();
     await user.click(screen.getByRole('button', { name: 'Line' }));
-    fireEvent.pointerDown(capture(), { clientX: 450, clientY: 320 });
+    fireEvent.pointerDown(capture(), { clientX: 450, clientY: 350 });
     fireEvent.keyDown(screen.getByRole('application', { name: 'Drawing canvas' }), { key: 'Escape' });
     expect(screen.queryByTestId('tool-capture')).toBeNull();
     const [piece] = JSON.parse(screen.getByTestId('pieces').textContent ?? '[]');
@@ -196,5 +207,39 @@ describe('line tool', () => {
     fireEvent.pointerDown(capture(), { clientX: 150, clientY: 560 });
     const [piece] = JSON.parse(screen.getByTestId('pieces').textContent ?? '[]');
     expect(piece.seams).toEqual([]);
+  });
+
+  describe('snapping, so the far side is easy to reach', () => {
+    it('starts on the border when the first click is only near it', async () => {
+      const user = open();
+      await user.click(screen.getByRole('button', { name: 'Line' }));
+      fireEvent.pointerDown(capture(), { clientX: 450, clientY: 292 }); // world (50, 8): 8 mm off the top side
+      fireEvent.pointerDown(capture(), { clientX: 450, clientY: 500 }); // world (50, -200): straight down
+      const [piece] = JSON.parse(screen.getByTestId('pieces').textContent ?? '[]');
+      expect(piece.seams).toEqual([{ from: { x: 50, y: 0 }, to: { x: 50, y: -200 } }]);
+    });
+
+    it('runs square across to the far border when the second click is near it but off the line', async () => {
+      const user = open();
+      await user.click(screen.getByRole('button', { name: 'Line' }));
+      fireEvent.pointerDown(capture(), { clientX: 450, clientY: 298 }); // top side, at x = 50
+      // Near the bottom side (y = -500) and 8 mm to the right of straight down.
+      fireEvent.pointerDown(capture(), { clientX: 458, clientY: 790 });
+      const [piece] = JSON.parse(screen.getByTestId('pieces').textContent ?? '[]');
+      expect(piece.seams).toEqual([{ from: { x: 50, y: 0 }, to: { x: 50, y: -500 } }]);
+    });
+
+    it('shows where a click would land before the first click, and after it', async () => {
+      const user = open();
+      await user.click(screen.getByRole('button', { name: 'Line' }));
+      expect(screen.queryByTestId('snap-ring')).toBeNull();
+      fireEvent.pointerMove(capture(), { clientX: 460, clientY: 292 });
+      expect(screen.getByTestId('snap-ring').getAttribute('data-snap')).toBe('edge');
+      fireEvent.pointerMove(capture(), { clientX: 600, clientY: 400 }); // inside the piece, nothing near
+      expect(screen.queryByTestId('snap-ring')).toBeNull();
+      fireEvent.pointerDown(capture(), { clientX: 450, clientY: 298 });
+      fireEvent.pointerMove(capture(), { clientX: 458, clientY: 790 });
+      expect(screen.getByTestId('snap-ring').getAttribute('data-snap')).toBe('across');
+    });
   });
 });
