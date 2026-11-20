@@ -61,6 +61,11 @@ export const GRID_SIZE_MM = 25.4;
  *  piece's edge or corner before it snaps onto it. */
 export const SNAP_TOLERANCE_MM = 12;
 
+/** How near (in screen-scale units, divided by the zoom to get mm) the pointer must come to a
+ *  corner, a border, or the spot straight across before a seam or a dimension point pulls onto
+ *  it. Wider than a dragged piece's snap: it is a click's reach, not a nudge's. */
+export const ANNOTATION_SNAP_PX = 20;
+
 /** An edge shorter than this is treated as a degenerate (zero-length) edge. */
 export const MIN_EDGE_LENGTH_MM = 1;
 

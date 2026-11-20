@@ -6,16 +6,18 @@
 // the pointer has travelled far enough to be a drag, and otherwise leaves the
 // first point standing for a second click.
 //
-// Points snap to a nearby piece corner so a measurement or a cut line meets
-// real geometry rather than landing a fraction off it.
+// Points snap (lib/drawing/annotationSnap.ts) to a nearby piece corner, to the spot straight
+// across from the first point, or to a border, so a measurement or a cut line meets real
+// geometry — and a seam reaches the far side of a top — without the click being exact.
 //
 // A line becomes a seam on the piece it is drawn across, stored in that
 // piece's own local coordinates so it moves and rotates with the piece.
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import type { Piece, Point } from '@/types/drawing';
-import { areaVertices, dimensionProblem, newDimension, newNote, snapToVertex } from '@/lib/drawing/annotations';
-import { SNAP_TOLERANCE_MM } from '@/lib/drawing/constants';
+import { dimensionProblem, newDimension, newNote } from '@/lib/drawing/annotations';
+import { snapAnnotationPoint, snapGeometry, type Snap } from '@/lib/drawing/annotationSnap';
+import { ANNOTATION_SNAP_PX } from '@/lib/drawing/constants';
 import { distance, toLocalPoint, transformOutline } from '@/lib/drawing/geometry';
 import { newTextNote, noteHit } from '@/lib/drawing/textNotes';
 import { pointInPolygon } from '@/lib/drawing/polygon';
@@ -30,11 +32,14 @@ const DRAG_THRESHOLD_PX = 6;
 
 export function useAnnotationTool() {
   const { state, dispatch, tool, setTool, selectNote } = useDrawingEditor();
-  const [pending, setPending] = useState<{ from: Point; tool: string } | null>(null);
+  const [pending, setPending] = useState<{ from: Point; tool: string; side?: [Point, Point] } | null>(null);
   const area = state.present.areas.find((a) => a.id === state.activeAreaId);
+  const geometry = useMemo(() => (area ? snapGeometry(area) : { corners: [], outlines: [] }), [area]);
+  const active = pending && pending.tool === tool ? pending : null;
 
-  const snap = (point: Point) => (
-    area ? snapToVertex(point, areaVertices(area), SNAP_TOLERANCE_MM / state.zoom) : point
+  /** Where `point` lands: the line's second point is also drawn to the spot straight across from its first. */
+  const snap = (point: Point): Snap => snapAnnotationPoint(
+    point, geometry, ANNOTATION_SNAP_PX / state.zoom, active ? { point: active.from, side: active.side } : undefined,
   );
 
   function finish(from: Point, to: Point) {
@@ -71,17 +76,17 @@ export function useAnnotationTool() {
       return true;
     }
     if (tool !== 'note' && !TWO_POINT_TOOLS.includes(tool)) return false;
-    const at = snap(point);
+    const snapped = snap(point);
     if (tool === 'note') {
-      dispatch({ type: 'setAnnotations', areaId: area.id, notes: [...area.notes, newNote(at, crypto.randomUUID())] });
+      dispatch({ type: 'setAnnotations', areaId: area.id, notes: [...area.notes, newNote(snapped.point, crypto.randomUUID())] });
       setTool('select');
       return true;
     }
-    if (!pending || pending.tool !== tool) {
-      setPending({ from: at, tool });
+    if (!active) {
+      setPending({ from: snapped.point, tool, side: snapped.side });
       return true;
     }
-    finish(pending.from, at);
+    finish(active.from, snapped.point);
     return true;
   };
 
@@ -89,10 +94,10 @@ export function useAnnotationTool() {
    *  barely moved is the first half of a click-click instead, so it leaves
    *  the pending point alone. */
   const release = (point: Point): boolean => {
-    if (!pending || pending.tool !== tool || !TWO_POINT_TOOLS.includes(tool)) return false;
-    const at = snap(point);
-    if (distance(pending.from, at) < DRAG_THRESHOLD_PX / state.zoom) return false;
-    finish(pending.from, at);
+    if (!active || !TWO_POINT_TOOLS.includes(tool)) return false;
+    const at = snap(point).point;
+    if (distance(active.from, at) < DRAG_THRESHOLD_PX / state.zoom) return false;
+    finish(active.from, at);
     return true;
   };
 
@@ -118,8 +123,12 @@ export function useAnnotationTool() {
   const cancel = () => setPending(null);
 
   /** The first point of a two-point tool, while that tool is still active. */
-  const pendingFrom = TWO_POINT_TOOLS.includes(tool) && pending?.tool === tool ? pending.from : null;
-  return { place, release, pendingFrom, cancel };
+  const pendingFrom = TWO_POINT_TOOLS.includes(tool) ? active?.from ?? null : null;
+  /** Whether a seam or dimension is being drawn — so the board tracks the pointer to show where a click would land. */
+  const armed = TWO_POINT_TOOLS.includes(tool);
+  /** Where a click at `point` would land, for the preview ring; null outside those tools. */
+  const preview = (point: Point): Snap | null => (armed ? snap(point) : null);
+  return { place, release, pendingFrom, cancel, armed, preview };
 }
 
 function pieceAt(pieces: Piece[], point: Point): Piece | undefined {

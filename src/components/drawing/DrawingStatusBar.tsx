@@ -13,6 +13,7 @@ import { areaMetrics, mm2ToSqFt } from '@/lib/drawing/metrics';
 import { AreaSidebar } from './AreaSidebar';
 import { AreaSummary } from './AreaSummary';
 import { useDrawingEditor } from './DrawingEditorContext';
+import { SlabsRequiredBadge } from './SlabsRequiredBadge';
 
 const SQ_FT_DECIMALS = 3;
 const PERCENT = 100;
@@ -47,6 +48,7 @@ export function DrawingStatusBar() {
       </button>
 
       <div className="flex items-center gap-2">
+        <SlabsRequiredBadge className="flex h-7 items-center gap-1.5 px-2.5 text-sm font-medium text-stone-200" />
         <div className="relative">
           {detailsOpen && (
             <div className="absolute bottom-full right-0 z-30 mb-1">

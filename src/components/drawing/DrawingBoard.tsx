@@ -7,7 +7,9 @@ import { cn } from '@/lib/utils';
 import { BorderModeBar } from './BorderModeBar';
 import { CornerModeBar } from './CornerModeBar';
 import { DrawingCanvas } from './DrawingCanvas';
+import { DimensionModeBar } from './DimensionModeBar';
 import { DrawModeBar } from './DrawModeBar';
+import { SeamModeBar } from './SeamModeBar';
 import { EdgeModeBar } from './EdgeModeBar';
 import { ProfileModeBar } from './ProfileModeBar';
 import { InspectorPanel } from './InspectorPanel';
@@ -34,6 +36,8 @@ export function DrawingBoard() {
         <CornerModeBar />
         <EdgeModeBar />
         <ProfileModeBar />
+        <SeamModeBar />
+        <DimensionModeBar />
         <TextControls />
         <MiniMap />
         <InspectorPanel />

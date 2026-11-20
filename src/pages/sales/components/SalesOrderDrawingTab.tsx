@@ -6,20 +6,22 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { PencilRuler } from 'lucide-react';
+import { FileText, PencilRuler } from 'lucide-react';
 import { attachmentService } from '@/services/attachmentService';
 import { drawingService } from '@/services/drawingService';
 import { DrawingPreview } from '@/components/drawing/DrawingPreview';
 import { DxfFilePanel } from '@/components/drawing/DxfFilePanel';
 import { DxfUploadButton } from '@/components/drawing/DxfUploadButton';
+import { useDrawingPdfExport } from '@/components/drawing/useDrawingPdfExport';
 import { TAB_LIST_CLASS, tabClass } from '@/components/ui/tabStyles';
 import { useDxfUpload } from '@/hooks/useDxfUpload';
 import { dxfTabLabels, isDxfFileName } from '@/lib/drawing/dxfFiles';
 
 const DRAWN_TAB = 'drawn';
 
-export function SalesOrderDrawingTab({ orderId, canEdit }: { orderId: string; canEdit: boolean }) {
+export function SalesOrderDrawingTab({ orderId, orderNumber, canEdit }: { orderId: string; orderNumber: string; canEdit: boolean }) {
   const navigate = useNavigate();
+  const { exportPdf, isExporting } = useDrawingPdfExport(orderNumber);
   const [selected, setSelected] = useState<string | null>(null);
   const { upload, isUploading } = useDxfUpload(orderId, (attachment) => setSelected(attachment.id));
 
@@ -108,6 +110,17 @@ export function SalesOrderDrawingTab({ orderId, canEdit }: { orderId: string; ca
           </div>
         </div>
         {canEdit && <DxfUploadButton onFiles={upload} busy={isUploading} />}
+        {drawing && active === DRAWN_TAB && (
+          <button
+            type="button"
+            aria-label="Export PDF"
+            disabled={isExporting}
+            onClick={() => exportPdf(drawing)}
+            className="inline-flex items-center gap-1.5 rounded-md border border-stone-200 px-3 py-1.5 text-xs font-medium text-stone-700 hover:bg-stone-50 disabled:opacity-50"
+          >
+            <FileText className="size-3.5" aria-hidden="true" /> {isExporting ? 'Exporting…' : 'Export PDF'}
+          </button>
+        )}
       </div>
       {filesQuery.isError && <p className="text-xs text-destructive">Failed to load the uploaded files.</p>}
       {activeFile
