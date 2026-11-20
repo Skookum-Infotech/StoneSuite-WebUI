@@ -145,16 +145,26 @@ export function othersOnSlab(items: SlabItem[], slabId: string, exceptId: string
  *  there. When nothing fits it goes to the top-left as drawn, so it shows
  *  red where the user can see it and drag it. */
 export function autoPlace(item: Placeable, slabId: string, slab: SlabSize, others: Point[][]): SlabPlacement {
+  return firstFitPlacement(item, slabId, slab, others) ?? { slabId, x: 0, y: 0, rotationDeg: 0 };
+}
+
+/** The first spot, scanning left to right and top to bottom, as drawn and then on
+ *  its side, where the item fits wholly on the slab clear of `others`; null when
+ *  there is none. `stepMm` is how far apart the positions tried are — a coarser
+ *  step is quicker and is what a whole-drawing estimate uses. */
+export function firstFitPlacement(
+  item: Placeable, slabId: string, slab: SlabSize, others: Point[][], stepMm: number = SLAB_SCAN_STEP_MM,
+): SlabPlacement | null {
   for (const rotationDeg of SCAN_ROTATIONS_DEG) {
     const { width, height } = placedSize(item, rotationDeg);
-    for (let y = 0; y + height <= slab.widthMm + EDGE_TOLERANCE_MM; y += SLAB_SCAN_STEP_MM) {
-      for (let x = 0; x + width <= slab.lengthMm + EDGE_TOLERANCE_MM; x += SLAB_SCAN_STEP_MM) {
+    for (let y = 0; y + height <= slab.widthMm + EDGE_TOLERANCE_MM; y += stepMm) {
+      for (let x = 0; x + width <= slab.lengthMm + EDGE_TOLERANCE_MM; x += stepMm) {
         const placement = { slabId, x, y, rotationDeg };
         if (slabFit(placedOutline(item, placement), slab, others) === 'fits') return placement;
       }
     }
   }
-  return { slabId, x: 0, y: 0, rotationDeg: 0 };
+  return null;
 }
 
 /** The same placement turned a quarter clockwise, its top-left held where it was. */

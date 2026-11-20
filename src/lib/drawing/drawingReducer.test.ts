@@ -88,6 +88,32 @@ describe('editorReducer — document-mutating actions', () => {
     expect(s1.present.areas[0].pieces[0].edges[0].attachedProfile?.slab).toBeUndefined();
   });
 
+  it('placeOnSlabs lays pieces and painted profile sides on slabs together, undone in one step', () => {
+    const s0 = withPiece('area-1', makePiece('p1', 'A-1', {
+      edges: [{ index: 0, attachedProfile: { profileTypeId: 't1', measurementMm: 100 } }],
+    }));
+    const piece = { slabId: 's1', x: 0, y: 0, rotationDeg: 0 };
+    const side = { slabId: 's2', x: 5, y: 6, rotationDeg: 90 };
+    const s1 = editorReducer(s0, {
+      type: 'placeOnSlabs',
+      placements: [
+        { areaId: 'area-1', pieceId: 'p1', slab: piece },
+        { areaId: 'area-1', pieceId: 'p1', edgeIndex: 0, slab: side },
+      ],
+    });
+    expect(s1.present.areas[0].pieces[0].slab).toEqual(piece);
+    expect(s1.present.areas[0].pieces[0].edges[0].attachedProfile?.slab).toEqual(side);
+    expect(s1.past).toHaveLength(s0.past.length + 1);
+    const undone = editorReducer(s1, { type: 'undo' });
+    expect(undone.present.areas[0].pieces[0].slab).toBeUndefined();
+    expect(undone.present.areas[0].pieces[0].edges[0].attachedProfile?.slab).toBeUndefined();
+  });
+
+  it('placeOnSlabs with nothing to place changes nothing and adds no undo step', () => {
+    const s0 = withPiece('area-1', makePiece('p1', 'A-1'));
+    expect(editorReducer(s0, { type: 'placeOnSlabs', placements: [] })).toBe(s0);
+  });
+
   it('deletePiece removes it and clears selection if it was selected', () => {
     const s0 = { ...withPiece('area-1', makePiece('p1', 'A-1')), selectedPieceId: 'p1' };
     const s1 = editorReducer(s0, { type: 'deletePiece', areaId: 'area-1', pieceId: 'p1' });

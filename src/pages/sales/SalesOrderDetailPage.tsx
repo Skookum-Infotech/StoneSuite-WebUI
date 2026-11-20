@@ -431,7 +431,7 @@ export default function SalesOrderDetailPage() {
             <SalesOrderSchedulingTab orderId={id} installDate={order.scheduledInstallDate} canEdit={canEdit} />
           )}
           {activeTab === 'communication' && <RecordCommunicationTab recordId={id} audience="customer" canReply={canEdit} />}
-          {activeTab === 'drawing' && <SalesOrderDrawingTab orderId={id} canEdit={canEdit} />}
+          {activeTab === 'drawing' && <SalesOrderDrawingTab orderId={id} orderNumber={order.salesOrderNumber} canEdit={canEdit} />}
           {activeTab === 'audit' && <SalesOrderAuditTab orderId={id} />}
           {activeTab === 'files' && <FilesContent ref={null} recordId={id} readOnly={!canEdit} />}
 

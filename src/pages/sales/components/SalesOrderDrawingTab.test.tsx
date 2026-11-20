@@ -9,8 +9,13 @@ import type { DxfScene } from '@/lib/drawing/dxfSceneTypes';
 import { DxfTooComplexError, DxfUnreadableError } from '@/lib/drawing/dxfSceneTypes';
 
 vi.mock('@/services/drawingService', () => ({
-  drawingService: { getDrawing: vi.fn() },
+  drawingService: {
+    getDrawing: vi.fn(),
+    getEdgeTypes: vi.fn().mockResolvedValue([]),
+    getAttachedProfileTypes: vi.fn().mockResolvedValue([]),
+  },
 }));
+vi.mock('@/lib/drawingPdfExport', () => ({ exportDrawingToPdf: vi.fn().mockResolvedValue(undefined) }));
 vi.mock('@/services/attachmentService', () => ({
   attachmentService: {
     listAttachments: vi.fn(),
@@ -27,6 +32,7 @@ import { toast } from 'sonner';
 import { drawingService } from '@/services/drawingService';
 import { attachmentService } from '@/services/attachmentService';
 import { parseDxfScene } from '@/lib/drawing/dxfParseClient';
+import { exportDrawingToPdf } from '@/lib/drawingPdfExport';
 import { SalesOrderDrawingTab } from './SalesOrderDrawingTab';
 
 function drawing(): Drawing {
@@ -59,7 +65,7 @@ function renderTab(canEdit: boolean) {
   const { container } = render(
     <QueryClientProvider client={queryClient}>
       <MemoryRouter>
-        <SalesOrderDrawingTab orderId="so-1" canEdit={canEdit} />
+        <SalesOrderDrawingTab orderId="so-1" orderNumber="SO-1" canEdit={canEdit} />
       </MemoryRouter>
     </QueryClientProvider>,
   );
@@ -372,5 +378,26 @@ describe('SalesOrderDrawingTab removing a file', () => {
     await waitFor(() => expect(attachmentService.downloadAttachment).toHaveBeenCalledWith('so-1', 'att-1'));
     await waitFor(() => expect(click).toHaveBeenCalled());
     click.mockRestore();
+  });
+});
+
+describe('SalesOrderDrawingTab exporting the drawn drawing', () => {
+  it('offers Export PDF on the Drawn tab only, and hands the drawing to the exporter', async () => {
+    vi.mocked(drawingService.getDrawing).mockResolvedValue(drawing());
+    vi.mocked(attachmentService.listAttachments).mockResolvedValue([attachment()]);
+    renderTab(false);
+
+    // The uploaded DXF is the first tab, and a DXF has no PDF of its own.
+    await screen.findByRole('img', { name: 'Kitchen.dxf' });
+    expect(screen.queryByRole('button', { name: 'Export PDF' })).toBeNull();
+
+    await userEvent.click(screen.getByRole('tab', { name: 'Drawn' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Export PDF' }));
+
+    await waitFor(() => expect(exportDrawingToPdf).toHaveBeenCalledTimes(1));
+    expect(vi.mocked(exportDrawingToPdf).mock.calls[0][0]).toMatchObject({
+      orderNumber: 'SO-1',
+      drawing: { salesOrderId: 'so-1' },
+    });
   });
 });

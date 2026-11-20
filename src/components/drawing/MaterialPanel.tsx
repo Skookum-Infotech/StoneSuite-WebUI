@@ -4,7 +4,7 @@
 // stone to see how the slab would be used.
 
 import { useState } from 'react';
-import { Boxes } from 'lucide-react';
+import { Boxes, LayoutGrid } from 'lucide-react';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { usedSlabIds } from '@/lib/drawing/slabs';
 import { slabPlaceables } from '@/lib/drawing/slabPlaceables';
@@ -13,6 +13,8 @@ import { useDrawingEditor } from './DrawingEditorContext';
 import { useMaterialPicker } from './MaterialPickerContext';
 import { SlabCard } from './SlabCard';
 import { SlabInventoryDialog } from './SlabInventoryDialog';
+import { SlabsRequiredBadge } from './SlabsRequiredBadge';
+import { useNestAll } from './useNestAll';
 import { useOrderSlabs } from './useOrderSlabs';
 
 export function MaterialPanel() {
@@ -21,6 +23,7 @@ export function MaterialPanel() {
   const { onDrawing, isLoading, error } = useOrderSlabs(state.present.salesOrderId);
   const profileTypes = useAttachedProfileTypeList();
   const [dialogOpen, setDialogOpen] = useState(false);
+  const { nestAll, unplacedCount } = useNestAll(onDrawing);
 
   const used = usedSlabIds(slabPlaceables(state.present.areas, profileTypes));
   const usedCount = onDrawing.filter((slab) => used.has(slab.id)).length;
@@ -43,6 +46,20 @@ export function MaterialPanel() {
         >
           Slabs: {usedCount} / {onDrawing.length}
         </span>
+      </div>
+
+      <div className="flex items-center justify-between gap-2 border-b border-stone-200 px-3 py-2">
+        <button
+          type="button"
+          aria-label="Nest all"
+          title="Lay every piece that is not on a slab yet onto these slabs. Pieces already placed stay where they are."
+          disabled={onDrawing.length === 0 || unplacedCount === 0}
+          onClick={nestAll}
+          className="inline-flex items-center gap-1.5 rounded border border-stone-300 bg-white px-3 py-1.5 text-xs font-semibold text-stone-800 hover:bg-stone-50 disabled:opacity-40 disabled:hover:bg-white"
+        >
+          <LayoutGrid className="size-4" aria-hidden="true" /> Nest all
+        </button>
+        <SlabsRequiredBadge className="inline-flex items-center gap-1.5 rounded bg-brand/20 px-2.5 py-1 text-xs font-semibold text-stone-800" />
       </div>
 
       {pickingSlab && (

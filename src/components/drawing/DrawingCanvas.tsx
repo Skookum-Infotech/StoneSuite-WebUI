@@ -15,7 +15,7 @@ import {
 } from '@/lib/drawing/constants';
 import { pixelDeltaToViewboxUnits, screenPointToMm } from '@/lib/drawing/viewport';
 import { DragPreviewContext, type DragPreview } from './DragPreviewContext';
-import { useDrawingEditor } from './DrawingEditorContext';
+import { useDrawingEditor, type EditorTool } from './DrawingEditorContext';
 import { PieceShape } from './PieceShape';
 import { PieceHandles } from './PieceHandles';
 import { PieceDimensions } from './PieceDimensions';
@@ -48,6 +48,16 @@ const DUPLICATE_POINT_TOLERANCE_MM = 5;
 const CLICK_SLOP_PX = 5;
 
 const PRIMARY_MOUSE_BUTTON = 0;
+
+/** The single key that arms (or, pressed again, puts away) a rail tool. */
+const TOOL_HOTKEYS = new Map<string, EditorTool>([
+  ['b', 'border'],
+  ['c', 'corner'],
+  ['e', 'edge'],
+  ['p', 'profile'],
+  ['s', 'line'],
+  ['d', 'dimension'],
+]);
 
 export function DrawingCanvas() {
   const {
@@ -138,20 +148,9 @@ export function DrawingCanvas() {
       toggleMap();
       return;
     }
-    if (e.key === 'b') {
-      setTool(tool === 'border' ? 'select' : 'border');
-      return;
-    }
-    if (e.key === 'c') {
-      setTool(tool === 'corner' ? 'select' : 'corner');
-      return;
-    }
-    if (e.key === 'e') {
-      setTool(tool === 'edge' ? 'select' : 'edge');
-      return;
-    }
-    if (e.key === 'p') {
-      setTool(tool === 'profile' ? 'select' : 'profile');
+    const hotkeyTool = TOOL_HOTKEYS.get(e.key);
+    if (hotkeyTool) {
+      setTool(tool === hotkeyTool ? 'select' : hotkeyTool);
       return;
     }
     if (selectedIds.length === 0) return;
@@ -248,8 +247,9 @@ export function DrawingCanvas() {
   const onBackgroundPointerMove = (e: React.PointerEvent<SVGRectElement>) => {
     // The second point of a two-click tool, and the Points tool's own next
     // point, both follow the cursor, so the user can see what they are about
-    // to draw before they commit to it.
-    if (annotate.pendingFrom || (tool === 'polygon' && draftPoints.length > 0)) setHoverPoint(pointerMm(e));
+    // to draw before they commit to it. A seam or dimension tool follows it
+    // from the start, to show the spot a first click would snap to.
+    if (annotate.armed || annotate.pendingFrom || (tool === 'polygon' && draftPoints.length > 0)) setHoverPoint(pointerMm(e));
     else if (hoverPoint) setHoverPoint(null);
     if (marquee) {
       const point = pointerMm(e);
@@ -444,7 +444,7 @@ export function DrawingCanvas() {
               displayUnit={state.present.displayUnit}
               fractionDenominator={state.present.fractionDenominator}
             />
-            <AnnotationLayer pendingFrom={annotate.pendingFrom} hoverPoint={hoverPoint} />
+            <AnnotationLayer pendingFrom={annotate.pendingFrom} snap={hoverPoint ? annotate.preview(hoverPoint) : null} />
             <TextNoteLayer />
             {/* While a drawing tool is armed, every click belongs to that
                 tool — including clicks over a piece, which is where a seam
