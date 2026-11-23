@@ -162,3 +162,32 @@ describe('PermissionGuard', () => {
     expect(screen.getByText('Form Disabled')).toBeInTheDocument();
   });
 });
+
+describe('PermissionGuard — misconfiguration and load failure', () => {
+  it('denies a half-specified check instead of allowing everyone', () => {
+    mockHooks();
+    render(<PermissionGuard resource="invoice">content</PermissionGuard>);
+
+    expect(screen.queryByText('content')).not.toBeInTheDocument();
+    expect(screen.getByText('Access Denied')).toBeInTheDocument();
+  });
+
+  it('offers a retry, not "Access Denied", when grants failed to load', () => {
+    mockHooks();
+    const refetch = vi.fn();
+    vi.mocked(useUserPermissions).mockReturnValue({
+      grants: [],
+      isLoading: false,
+      isError: true,
+      refetch,
+      activeRoleId: '',
+      hasPermission: () => false,
+    } as unknown as ReturnType<typeof useUserPermissions>);
+
+    render(<PermissionGuard resource="invoice" action="read">content</PermissionGuard>);
+
+    expect(screen.queryByText('Access Denied')).not.toBeInTheDocument();
+    screen.getByRole('button', { name: 'Retry loading permissions' }).click();
+    expect(refetch).toHaveBeenCalledTimes(1);
+  });
+});

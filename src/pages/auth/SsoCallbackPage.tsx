@@ -5,6 +5,7 @@ import { Loader2, AlertTriangle } from 'lucide-react'
 import { samlAuthService } from '@/services/samlAuthService'
 import { useAuthStore } from '@/store/useAuthStore'
 import { apiErrorMessage } from '@/api/tenantClient'
+import { isSafeReturnPath } from '@/lib/safeReturnPath'
 import { SAML_PENDING_PROVIDER_KEY, SAML_ACTIVE_PROVIDER_KEY } from '@/lib/samlSession'
 import { activeSessionPrompt } from '@/lib/singleSession'
 import { TakeoverPrompt } from './components/TakeoverPrompt'
@@ -35,7 +36,7 @@ export default function SsoCallbackPage() {
       sessionStorage.removeItem(SAML_PENDING_PROVIDER_KEY)
     }
 
-    navigate(returnTo && returnTo.startsWith('/') ? returnTo : '/dashboard', { replace: true })
+    navigate(isSafeReturnPath(returnTo) ? returnTo : '/dashboard', { replace: true })
   }
 
   const exchange = useMutation({
