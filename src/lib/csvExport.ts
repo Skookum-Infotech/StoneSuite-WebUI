@@ -34,7 +34,14 @@ export function buildCsvFilename(label: string): string {
 
 /** Triggers a browser download of the given CSV text under the given filename. */
 export function downloadCsv(filename: string, csvContent: string): void {
-  const blob = new Blob(["﻿", csvContent], { type: "text/csv;charset=utf-8;" });
+  downloadCsvBlob(filename, new Blob([csvContent]));
+}
+
+/** Triggers a browser download of a CSV the server already built. A UTF-8 byte
+ *  order mark is put in front so Excel reads accented names correctly, the same
+ *  as every client-built export. */
+export function downloadCsvBlob(filename: string, csv: Blob): void {
+  const blob = new Blob(["﻿", csv], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;

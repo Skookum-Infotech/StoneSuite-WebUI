@@ -12,6 +12,7 @@ export const vendorTransactionsKeys = {
   list: (id: string, filters: VendorTransactionFilters, limit: number) =>
     ['vendor-transactions', id, 'list', filters, limit] as const,
   summary: (id: string) => ['vendor-transactions', id, 'summary'] as const,
+  aging: (id: string) => ['vendor-transactions', id, 'aging'] as const,
 };
 
 /** One page of the vendor's transactions; keeps the old rows while the next loads. */
@@ -34,6 +35,16 @@ export function useVendorTransactionsSummary(vendorId: string | undefined) {
   return useQuery({
     queryKey: vendorTransactionsKeys.summary(vendorId ?? ''),
     queryFn: () => vendorTransactionsService.summary(vendorId ?? ''),
+    enabled: Boolean(vendorId),
+    staleTime: STALE_MS,
+  });
+}
+
+/** The vendor's open bills aged into days-past-due buckets — independent of filters and page. */
+export function useVendorAging(vendorId: string | undefined) {
+  return useQuery({
+    queryKey: vendorTransactionsKeys.aging(vendorId ?? ''),
+    queryFn: () => vendorTransactionsService.aging(vendorId ?? ''),
     enabled: Boolean(vendorId),
     staleTime: STALE_MS,
   });

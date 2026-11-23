@@ -1,22 +1,24 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, useLocation } from 'react-router-dom';
 import { AxiosError } from 'axios';
 
 vi.mock('@/services/vendorTransactionsService', () => ({
-  vendorTransactionsService: { list: vi.fn(), summary: vi.fn() },
+  vendorTransactionsService: { list: vi.fn(), summary: vi.fn(), aging: vi.fn(), exportCsv: vi.fn() },
 }));
 
 import { VendorTransactionsTab } from './VendorTransactionsTab';
 import { vendorTransactionsService } from '@/services/vendorTransactionsService';
 import type {
-  VendorTransactionRow, VendorTransactionsOverview, VendorTransactionsPage,
+  VendorAging, VendorTransactionRow, VendorTransactionsOverview, VendorTransactionsPage,
 } from '@/types/vendorTransactions';
 
 const list = vi.mocked(vendorTransactionsService.list);
 const summary = vi.mocked(vendorTransactionsService.summary);
+const aging = vi.mocked(vendorTransactionsService.aging);
+const exportCsv = vi.mocked(vendorTransactionsService.exportCsv);
 
 function makeRow(o: Partial<VendorTransactionRow> = {}): VendorTransactionRow {
   return {
@@ -43,6 +45,18 @@ function makeOverview(o: Partial<VendorTransactionsOverview> = {}): VendorTransa
       { type: 'purchase_order', label: 'Purchase Order', domain: 'purchases', module: 'purchase_order' },
     ],
     ...o,
+  };
+}
+
+function makeAging(o: Partial<VendorAging> = {}): VendorAging {
+  return {
+    buckets: [
+      { label: 'current', amount: 100, count: 1 },
+      { label: '1-30', amount: 300, count: 2 },
+      { label: '31-60', amount: 0, count: 0 },
+      { label: '61+', amount: 0, count: 0 },
+    ],
+    total: 400, scopeLimited: false, ...o,
   };
 }
 
@@ -85,6 +99,9 @@ describe('VendorTransactionsTab', () => {
   beforeEach(() => {
     list.mockReset();
     summary.mockReset();
+    aging.mockReset();
+    exportCsv.mockReset();
+    aging.mockResolvedValue(makeAging());
     setViewport(true);
     summary.mockResolvedValue(makeOverview());
     serve([makeRow()]);
@@ -185,6 +202,40 @@ describe('VendorTransactionsTab', () => {
     renderTab();
     expect(await screen.findByRole('link', { name: 'View Vendor Bill BILL-1001' })).toBeInTheDocument();
     expect(screen.queryByRole('table')).not.toBeInTheDocument();
+  });
+
+  it('shows the aging card with the server buckets next to the list', async () => {
+    renderTab();
+    const card = await screen.findByRole('region', { name: 'Open bills by age' });
+    expect(within(card).getByRole('listitem', { name: /^Current: .*100.*1 bill$/ })).toBeInTheDocument();
+    expect(within(card).getByRole('listitem', { name: /^1–30 days: .*300.*2 bills$/ })).toBeInTheDocument();
+    expect(await screen.findByText('BILL-1001')).toBeInTheDocument();
+    expect(aging).toHaveBeenCalledWith('v-1');
+  });
+
+  it('a failing aging request shows its own error and leaves the list working', async () => {
+    aging.mockRejectedValue(new Error('aging down'));
+    renderTab();
+    expect(await screen.findByText('BILL-1001')).toBeInTheDocument();
+    const card = await screen.findByRole('region', { name: 'Open bills by age' });
+    expect(within(card).getByRole('alert')).toHaveTextContent('aging down');
+    expect(within(card).getByRole('button', { name: 'Retry' })).toBeInTheDocument();
+  });
+
+  it('exports with the filters on screen but not the page cursor', async () => {
+    exportCsv.mockResolvedValue(new Blob(['a,b']));
+    renderTab('?tab=transactions&type=vendor_bill&open=1&cursor=abc');
+    await screen.findByText('BILL-1001');
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Export CSV of filtered transactions' }));
+    await waitFor(() => expect(exportCsv).toHaveBeenCalledTimes(1));
+    expect(exportCsv).toHaveBeenCalledWith('v-1', expect.objectContaining({ type: 'vendor_bill', open: true }));
+  });
+
+  it('offers no export when there is nothing to export', async () => {
+    serve([]);
+    renderTab();
+    await screen.findByText('No transactions for this vendor yet');
+    expect(screen.queryByRole('button', { name: /export .*csv/i })).toBeNull();
   });
 
   it('says so when the caller can read no transaction types', async () => {

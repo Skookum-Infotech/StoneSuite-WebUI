@@ -1,5 +1,8 @@
+import { AxiosError } from 'axios';
 import { tenantClient } from '@/api/tenantClient';
 import type {
+  VendorAging,
+  VendorAgingBucket,
   VendorTransactionCount,
   VendorTransactionRow,
   VendorTransactionSummary,
@@ -28,8 +31,36 @@ interface OverviewWire {
   types: VendorTransactionType[] | null;
 }
 
+interface AgingWire {
+  success: boolean;
+  scopeLimited: boolean;
+  buckets: VendorAgingBucket[] | null;
+  total: number;
+}
+
 const basePath = (vendorId: string): string =>
   `/tenant/vendors/${encodeURIComponent(vendorId)}/transactions`;
+
+/**
+ * A blob download's error body arrives as a Blob too, which would hide the
+ * backend's message (413 "narrow the filters", 429 "wait a moment"). Reads it
+ * back as JSON so apiErrorMessage can show it; any other error passes through.
+ */
+async function readBlobError(err: unknown): Promise<never> {
+  if (err instanceof AxiosError && err.response?.data instanceof Blob) {
+    try {
+      err.response.data = JSON.parse(await err.response.data.text());
+    } catch {
+      err.response.data = {};
+    }
+  }
+  throw err;
+}
+
+/** The filters alone: the export is everything that matches, so paging is dropped. */
+export function toExportParams(query: VendorTransactionsQuery): Record<string, string | number> {
+  return toParams({ ...query, cursor: '', limit: undefined });
+}
 
 /** Drops blank/default params so the request carries only real filters. */
 export function toParams(query: VendorTransactionsQuery): Record<string, string | number> {
@@ -66,4 +97,20 @@ export const vendorTransactionsService = {
         types: r.data.types ?? [],
         scopeLimited: r.data.scopeLimited ?? false,
       })),
+
+  aging: (vendorId: string): Promise<VendorAging> =>
+    tenantClient
+      .get<AgingWire>(`${basePath(vendorId)}/aging`)
+      .then((r) => ({
+        buckets: r.data.buckets ?? null,
+        total: r.data.total ?? 0,
+        scopeLimited: r.data.scopeLimited ?? false,
+      })),
+
+  /** The server-built CSV of every transaction matching the filters. */
+  exportCsv: (vendorId: string, query: VendorTransactionsQuery): Promise<Blob> =>
+    tenantClient
+      .get<Blob>(`${basePath(vendorId)}/export.csv`, { params: toExportParams(query), responseType: 'blob' })
+      .then((r) => r.data)
+      .catch(readBlobError),
 };
