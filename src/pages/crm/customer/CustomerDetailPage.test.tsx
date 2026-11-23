@@ -25,6 +25,11 @@ vi.mock('@/components/crm/ActivityLogPanel', () => ({ ActivityLogPanel: () => nu
 vi.mock('@/pages/crm/customer/components/PortalAccessPanel', () => ({ PortalAccessPanel: () => null }));
 vi.mock('@/pages/crm/customer/components/PortalAccessStatusCard', () => ({ PortalAccessStatusCard: () => null }));
 vi.mock('@/pages/crm/customer/components/CustomerDeleteButton', () => ({ CustomerDeleteButton: () => null }));
+vi.mock('@/components/tenant/RecordCommunicationTab', () => ({
+  RecordCommunicationTab: ({ recordId, audience, canReply }: { recordId: string; audience: string; canReply: boolean }) => (
+    <div>Communication body for {recordId} ({audience}, reply {String(canReply)})</div>
+  ),
+}));
 vi.mock('@/pages/crm/customer/components/transactions/CustomerTransactionsTab', () => ({
   CustomerTransactionsTab: ({ customerId }: { customerId: string }) => <div>Transactions body for {customerId}</div>,
 }));
@@ -84,6 +89,21 @@ describe('CustomerDetailPage tabs', () => {
   it('opens the Transactions tab from ?tab=transactions', async () => {
     renderPage('/crm/customer/cust-1?tab=transactions');
     expect(await screen.findByText('Transactions body for cust-1')).toBeInTheDocument();
+  });
+
+  it('opens the Communication tab from ?tab=communication as a team-notes timeline', async () => {
+    renderPage('/crm/customer/cust-1?tab=communication');
+    expect(await screen.findByText('Communication body for cust-1 (internal, reply true)')).toBeInTheDocument();
+  });
+
+  it('lists Communication in the tab bar and opens it on click', async () => {
+    renderPage('/crm/customer/cust-1');
+    await screen.findByText('Overview body');
+
+    await userEvent.click(screen.getByRole('button', { name: 'Communication' }));
+
+    expect(await screen.findByText(/Communication body for cust-1/)).toBeInTheDocument();
+    expect(screen.getByTestId('location').textContent).toContain('tab=communication');
   });
 
   it('writes the clicked tab to the URL and keeps other params', async () => {

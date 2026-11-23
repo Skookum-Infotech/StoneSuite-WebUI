@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
@@ -14,10 +14,16 @@ import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { InvoiceStatusControl } from './InvoiceStatusControl';
 import { ReadOnlyStatusPill } from './ReadOnlyStatusPill';
 import { INVOICE_STATUS_COLORS } from '@/lib/invoiceForm';
-import { exportPagedCsv, fmtCsvDate } from '@/lib/csvExport';
+import { buildCsvFilename, buildCsvText, downloadCsv, exportPagedCsv } from '@/lib/csvExport';
+import { INVOICE_CSV_HEADERS, invoiceCsvRow } from '@/lib/invoiceCsv';
+import { useIdSelection } from '@/hooks/useIdSelection';
+import { BulkSelectionBar } from '@/components/tenant/BulkSelectionBar';
+import { SelectAllCheckbox, SelectRowCheckbox } from '@/components/tenant/SelectionCheckboxes';
 import type { InvoiceSearchRequest } from '@/types/invoice';
 import { formatDateValue, LIST_DATE_OPTIONS } from '@/lib/dateUtils';
 import { CustomerLink } from '@/components/crm/CustomerLink';
+import { InvoiceSavedViews } from './InvoiceSavedViews';
+import type { InvoiceViewState } from '@/lib/invoiceSavedViews';
 
 const EXPORT_PAGE_SIZE = 200;
 
@@ -105,6 +111,11 @@ export function InvoiceTable() {
   });
 
   const records = data?.records ?? [];
+  // Ticked rows. Ids that leave the page (a re-sort can swap them out) stop
+  // counting but return with their row, so a selection survives sorting; a
+  // change of search clears it (see changeSearch / clearFilters).
+  const pageIds = useMemo(() => (data?.records ?? []).map((inv) => inv.id), [data?.records]);
+  const selection = useIdSelection(pageIds);
   const hasMore = data?.hasMore ?? false;
   const hasPrev = prevCursors.length > 0;
   const pageNum = prevCursors.length + 1;
@@ -133,6 +144,32 @@ export function InvoiceTable() {
     setTerm('');
     setCursor('');
     setPrevCursors([]);
+    selection.clear();
+  }
+
+  function changeSearch(value: string) {
+    setTerm(value);
+    selection.clear();
+  }
+
+  function toggleAllOnPage() {
+    if (selection.selected.size === pageIds.length) selection.clear();
+    else selection.setAll(pageIds);
+  }
+
+  // Only the ticked rows, from the page on screen: nothing is fetched.
+  function handleExportSelected() {
+    const rows = records.filter((inv) => selection.selected.has(inv.id));
+    downloadCsv(buildCsvFilename('Invoice'), buildCsvText(INVOICE_CSV_HEADERS, rows.map(invoiceCsvRow)));
+  }
+
+  // A saved view is the same as typing the search and picking the sort by hand.
+  function applyView(view: InvoiceViewState) {
+    setTerm(view.term);
+    setSortBy(view.sortBy);
+    setSortDir(view.sortDir);
+    setCursor('');
+    setPrevCursors([]);
   }
 
   function handleSort(field: SortField) {
@@ -157,15 +194,8 @@ export function InvoiceTable() {
     try {
       await exportPagedCsv(
         (exportCursor) => invoiceService.searchInvoices({ ...req, limit: EXPORT_PAGE_SIZE, cursor: exportCursor }),
-        ['Invoice #', 'Customer', 'Status', 'Invoice Date', 'Amount', 'Balance Due'],
-        (inv) => [
-          inv.invoiceNumber ?? '',
-          inv.customer?.name ?? '',
-          inv.status ?? '',
-          fmtCsvDate(inv.invoiceDate),
-          String(inv.grandTotal ?? 0),
-          String(inv.balanceDue ?? 0),
-        ],
+        INVOICE_CSV_HEADERS,
+        invoiceCsvRow,
         'Invoice',
       );
     } catch (err) {
@@ -185,7 +215,7 @@ export function InvoiceTable() {
             type="text"
             placeholder="Search invoice #, customer, PO…"
             value={term}
-            onChange={(e) => setTerm(e.target.value)}
+            onChange={(e) => changeSearch(e.target.value)}
             className="h-8 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-3 text-xs text-stone-900 placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150"
           />
         </div>
@@ -210,6 +240,8 @@ export function InvoiceTable() {
             </button>
           ))}
         </div>
+
+        <InvoiceSavedViews current={{ term, sortBy, sortDir }} onApply={applyView} />
 
         {hasFilters && (
           <button
@@ -248,6 +280,9 @@ export function InvoiceTable() {
           <table className="w-full sm:min-w-[680px] text-left text-xs">
             <thead className="border-b border-stone-200 bg-table-header">
               <tr>
+                <th className="w-10 px-4 max-sm:px-2 py-3">
+                  <SelectAllCheckbox selectedCount={selection.selected.size} pageCount={pageIds.length} onToggle={toggleAllOnPage} />
+                </th>
                 <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Invoice #</th>
                 <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Customer</th>
                 <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Status</th>
@@ -263,6 +298,7 @@ export function InvoiceTable() {
               {isLoading ? (
                 Array.from({ length: 5 }, (_, i) => (
                   <tr key={i}>
+                    <td className="w-10 px-4 max-sm:px-2 py-3" />
                     <td className="px-4 max-sm:px-2 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-20" /></td>
                     <td className="px-4 max-sm:px-2 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-36" /></td>
                     <td className="px-4 max-sm:px-2 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-20" /></td>
@@ -276,6 +312,13 @@ export function InvoiceTable() {
                 records.map((inv) => {
                   return (
                     <tr key={inv.id} className="group hover:bg-accent/10 transition-colors duration-150">
+                      <td className="w-10 px-4 max-sm:px-2 py-3.5">
+                        <SelectRowCheckbox
+                          checked={selection.selected.has(inv.id)}
+                          label={`Select invoice ${inv.invoiceNumber || inv.id}`}
+                          onToggle={() => selection.toggle(inv.id)}
+                        />
+                      </td>
                       <td className="px-4 max-sm:px-2 py-3.5">
                         <Link
                           to={`/sales/invoice/${inv.id}`}
@@ -327,7 +370,7 @@ export function InvoiceTable() {
                 })
               ) : (
                 <tr>
-                  <td colSpan={6 + (canEdit ? 1 : 0)} className="py-16 text-center">
+                  <td colSpan={7 + (canEdit ? 1 : 0)} className="py-16 text-center">
                     {!hasFilters ? (
                       <div className="flex flex-col items-center gap-3">
                         <div className="rounded-2xl bg-stone-100 p-4">
@@ -380,6 +423,14 @@ export function InvoiceTable() {
           </div>
         )}
       </div>
+
+      {selection.selected.size > 0 && (
+        <BulkSelectionBar
+          count={selection.selected.size}
+          onExport={handleExportSelected}
+          onClear={selection.clear}
+        />
+      )}
     </div>
   );
 }
