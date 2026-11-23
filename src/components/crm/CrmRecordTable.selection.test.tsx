@@ -39,6 +39,11 @@ import { downloadCsv } from '@/lib/crmCsvExport';
 // keep each wait shorter than the test, so a real failure still names its cause.
 vi.setConfig({ testTimeout: 20_000 });
 const SETTLE = { timeout: 10_000 };
+// The table's search box debounces by 300ms and, once after it first appears,
+// resets paging to page 1 even though nothing was typed. Let that pass before
+// paging, or on a slow shard the reset lands after the click and undoes it.
+const DEBOUNCE_SETTLE_MS = 400;
+const afterSearchDebounce = () => new Promise<void>((resolve) => setTimeout(resolve, DEBOUNCE_SETTLE_MS));
 const STATUS: StatusInfo = {
   stateId: 'cust-active', stateKey: 'CACT', statusLabel: 'Active', workflowKey: 'customer', workflowName: 'Customer',
   isInitial: true, isTerminal: false, sortOrder: 1, color: '',
@@ -119,6 +124,7 @@ describe('Customers list selection', () => {
   it('select-all ticks only this page; the next page starts empty', async () => {
     renderTable(CustomerTable);
     await screen.findByText('Alpha Builders', {}, SETTLE);
+    await afterSearchDebounce();
     const user = userEvent.setup();
     await user.click(selectAll());
     expect(within(bar() as HTMLElement).getByRole('status')).toHaveTextContent('3 selected');
