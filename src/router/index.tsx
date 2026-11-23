@@ -115,9 +115,6 @@ const EntraSamlSetupPage = lazyWithRetry(
 const CustomSamlSetupPage = lazyWithRetry(
   () => import("@/pages/config/saml-setup/CustomSamlSetupPage"),
 );
-const WorkflowPlaceholderPage = lazyWithRetry(
-  () => import("@/pages/common/WorkflowPlaceholderPage"),
-);
 const AccountSettingsPage = lazyWithRetry(
   () => import("@/pages/account/AccountSettingsPage"),
 );
@@ -461,6 +458,11 @@ export const router = createBrowserRouter([
       { path: "", element: <Navigate to="/dashboard" replace /> },
       { path: "dashboard", element: lazy_(<DashboardPage />) },
       { path: "search", element: lazy_(<SearchResultsPage />) },
+      // The backend's portal emails (welcome, note receipt, and every PDF email
+      // sent before document links went direct) link to <app>/portal. It is not a
+      // page of its own: signed-out visitors are sent to sign in by MainLayout,
+      // and a customer lands on the first document list the portal offers.
+      { path: "portal", element: <Navigate to="/sales/sales_order" replace /> },
       { path: "account/settings", element: lazy_(<AccountSettingsPage />) },
       { path: "transactions", element: lazy_(<TransactionsPage />) },
       // Open to every signed-in user, customer-portal sessions included (see
@@ -1697,20 +1699,6 @@ export const router = createBrowserRouter([
             <CountDetailPage />
           </PermissionGuard>,
         ),
-      },
-
-      // Sales, Purchases & Inventory modules (placeholder pages — full functionality coming soon)
-      {
-        path: "sales/:moduleKey",
-        element: lazy_(<WorkflowPlaceholderPage />),
-      },
-      {
-        path: "purchases/:moduleKey",
-        element: lazy_(<WorkflowPlaceholderPage />),
-      },
-      {
-        path: "inventory/:moduleKey",
-        element: lazy_(<WorkflowPlaceholderPage />),
       },
 
       // Configuration hub
