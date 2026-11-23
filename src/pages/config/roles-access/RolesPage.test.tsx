@@ -21,7 +21,12 @@ import RolesPage from './RolesPage';
 import { rbacService, userService } from '@/services/tenantServices';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 
-const SETTLE = { timeout: 5_000 };
+// Each test renders a table and clicks through it. A busy CI shard has stalled
+// such tests past Vitest's default 5s limit, which was also the length of every
+// wait below, so the test timed out before a wait could say what it was waiting
+// for. Give the file room and keep each wait shorter than the test.
+vi.setConfig({ testTimeout: 20_000 });
+const SETTLE = { timeout: 10_000 };
 
 const ADMIN: Role = {
   id: 'r-admin', key: 'admin', name: 'Administrator', description: 'Full control of the workspace.',
