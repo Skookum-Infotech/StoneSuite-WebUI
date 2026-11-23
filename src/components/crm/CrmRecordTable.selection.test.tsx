@@ -32,7 +32,13 @@ import { userService } from '@/services/tenantServices';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { downloadCsv } from '@/lib/crmCsvExport';
 
-const SETTLE = { timeout: 5_000 };
+// These tests render a whole table and click through it. They take well under a
+// second locally, but a busy CI shard once stalled one past Vitest's default 5s
+// test limit, which was also the length of every wait below, so the test timed
+// out before a wait could report what it was waiting for. Give the file room and
+// keep each wait shorter than the test, so a real failure still names its cause.
+vi.setConfig({ testTimeout: 20_000 });
+const SETTLE = { timeout: 10_000 };
 const STATUS: StatusInfo = {
   stateId: 'cust-active', stateKey: 'CACT', statusLabel: 'Active', workflowKey: 'customer', workflowName: 'Customer',
   isInitial: true, isTerminal: false, sortOrder: 1, color: '',
