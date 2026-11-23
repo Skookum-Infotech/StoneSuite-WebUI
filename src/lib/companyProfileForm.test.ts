@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { companyProfileSchema, MAX_FIELD_LENGTH } from './companyProfileForm';
+import { companyProfileSchema, MAX_FABRICATION_PERCENT, MAX_FIELD_LENGTH, MAX_WORDING_LENGTH } from './companyProfileForm';
+import { DEFAULT_FABRICATION_PERCENT } from '@/types/companyProfile';
 
 describe('companyProfileSchema', () => {
   const address = {
@@ -119,5 +120,65 @@ describe('companyProfileSchema', () => {
   it.each(['bankName', 'accountNumber', 'routingNumber'] as const)('rejects a %s over the max length', (field) => {
     const paymentDetails = { ...payment, [field]: 'a'.repeat(MAX_FIELD_LENGTH + 1) };
     expect(companyProfileSchema.safeParse({ ...valid, paymentDetails }).success).toBe(false);
+  });
+});
+
+describe('companyProfileSchema fabrication percent', () => {
+  it('defaults to 20 when omitted', () => {
+    const result = companyProfileSchema.safeParse({ companyName: 'Acme' });
+    expect(result.success).toBe(true);
+    if (result.success) expect(result.data.fabricationPercent).toBe(DEFAULT_FABRICATION_PERCENT);
+  });
+
+  it('keeps the value it is given', () => {
+    const result = companyProfileSchema.safeParse({ companyName: 'Acme', fabricationPercent: 17.5 });
+    expect(result.success).toBe(true);
+    if (result.success) expect(result.data.fabricationPercent).toBe(17.5);
+  });
+
+  it('accepts 0', () => {
+    expect(companyProfileSchema.safeParse({ companyName: 'Acme', fabricationPercent: 0 }).success).toBe(true);
+  });
+
+  it('accepts the max', () => {
+    const result = companyProfileSchema.safeParse({ companyName: 'Acme', fabricationPercent: MAX_FABRICATION_PERCENT });
+    expect(result.success).toBe(true);
+  });
+
+  it('rejects a negative value', () => {
+    expect(companyProfileSchema.safeParse({ companyName: 'Acme', fabricationPercent: -1 }).success).toBe(false);
+  });
+
+  it('rejects a value over the max', () => {
+    const result = companyProfileSchema.safeParse({ companyName: 'Acme', fabricationPercent: MAX_FABRICATION_PERCENT + 1 });
+    expect(result.success).toBe(false);
+  });
+});
+
+describe('companyProfileSchema document defaults', () => {
+  it('defaults every document type to empty terms and notes when omitted', () => {
+    const result = companyProfileSchema.safeParse({ companyName: 'Acme' });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.documentDefaults.invoice).toEqual({ terms: '', notes: '' });
+      expect(result.data.documentDefaults.sales_order).toEqual({ terms: '', notes: '' });
+    }
+  });
+
+  it('keeps the wording it is given', () => {
+    const result = companyProfileSchema.safeParse({
+      companyName: 'Acme',
+      documentDefaults: { invoice: { terms: 'Net 30', notes: 'Thanks' } },
+    });
+    expect(result.success).toBe(true);
+    if (result.success) expect(result.data.documentDefaults.invoice).toEqual({ terms: 'Net 30', notes: 'Thanks' });
+  });
+
+  it.each(['terms', 'notes'])('rejects %s over the max length', (field) => {
+    const result = companyProfileSchema.safeParse({
+      companyName: 'Acme',
+      documentDefaults: { quote: { [field]: 'a'.repeat(MAX_WORDING_LENGTH + 1) } },
+    });
+    expect(result.success).toBe(false);
   });
 });

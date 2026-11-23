@@ -1,7 +1,9 @@
 import { Fragment, useState } from 'react';
 import { ChevronDown, ChevronRight, Inbox } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { actorLabel, isRawActorId, formatAuditTime, formatDetails, resourceLabel, actionLabel } from '@/lib/auditLog';
+import { actorLabel, isRawActorId, formatAuditTime, resourceLabel, actionLabel } from '@/lib/auditLog';
+import { extractSnapshots } from '@/lib/auditDiff';
+import { AuditChanges } from '@/components/tenant/AuditChanges';
 import type { AuditEntry } from '@/types/audit';
 
 const COLUMN_COUNT = 6;
@@ -52,7 +54,7 @@ export function AuditTable({ entries, names, isLoading }: Props) {
                       <Inbox className="size-6 text-stone-400" />
                     </div>
                     <p className="text-sm font-semibold text-stone-700">No audit entries match.</p>
-                    <p className="text-xs text-stone-400">Try adjusting the filters above.</p>
+                    <p className="text-xs text-stone-500">Try adjusting the filters above.</p>
                   </div>
                 </td>
               </tr>
@@ -76,12 +78,12 @@ function AuditRow({
   onToggle: () => void;
 }) {
   const rawActor = isRawActorId(entry, names);
-  const details = formatDetails(entry.details);
+  const snapshots = extractSnapshots(entry.details);
 
   return (
     <Fragment>
       <tr className="hover:bg-stone-50/60 transition-colors duration-150">
-        <td className="px-4 py-3 text-stone-400">
+        <td className="px-4 py-3 text-stone-500">
           <button
             type="button"
             aria-label={
@@ -106,25 +108,19 @@ function AuditRow({
         <td
           className={cn(
             'px-4 py-3 whitespace-nowrap',
-            rawActor ? 'font-mono text-2xs text-stone-400' : 'text-stone-700',
+            rawActor ? 'font-mono text-2xs text-stone-500' : 'text-stone-700',
           )}
         >
           {actorLabel(entry, names)}
         </td>
-        <td className="px-4 py-3 font-mono text-2xs text-stone-400 truncate max-w-[160px]">
+        <td className="px-4 py-3 font-mono text-2xs text-stone-500 truncate max-w-[160px]">
           {entry.resourceId || '—'}
         </td>
       </tr>
       {expanded && (
         <tr className="bg-stone-50/60">
           <td colSpan={COLUMN_COUNT} className="px-4 py-3">
-            {details ? (
-              <pre className="max-h-64 overflow-auto rounded-lg bg-stone-900 px-3 py-2 text-2xs text-stone-100 whitespace-pre-wrap">
-                {details}
-              </pre>
-            ) : (
-              <p className="text-2xs text-stone-400">No additional details.</p>
-            )}
+            <AuditChanges oldValue={snapshots.old} newValue={snapshots.new} />
           </td>
         </tr>
       )}

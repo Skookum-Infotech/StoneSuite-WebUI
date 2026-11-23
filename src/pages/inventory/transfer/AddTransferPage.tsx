@@ -12,11 +12,14 @@ import { WarehouseSelect } from '@/components/inventory/WarehouseSelect';
 import { toNumericWarehouseId } from '@/lib/inventoryWarehouse';
 import { BinPicker } from '@/components/inventory/BinPicker';
 import { useInventoryLookups } from '@/hooks/useInventoryLookups';
+import { useDefaultLocation } from '@/hooks/useDefaultLocation';
 import { useScrollToError } from '@/hooks/useScrollToError';
 import { useQuery } from '@tanstack/react-query';
 import { inventoryBinService } from '@/services/inventoryBinService';
 import { TRACKING_SERIALIZED } from '@/types/inventory';
 import type { TransferLineInput } from '@/types/inventory';
+import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
+import { UnsavedChangesPrompt } from '@/components/UnsavedChangesPrompt';
 import { TransferLinesEditor } from './components/TransferLinesEditor';
 import { emptyTransferLine, type TransferDraftLine } from '@/lib/inventoryTransferLines';
 
@@ -37,7 +40,7 @@ export default function AddTransferPage() {
   const queryClient = useQueryClient();
   const { lookups } = useInventoryLookups();
 
-  const [fromWarehouseId, setFromWarehouseId] = useState('');
+  const [fromWarehouseId, setFromWarehouseId] = useDefaultLocation(lookups?.warehouses ?? []);
   const [toWarehouseId, setToWarehouseId] = useState('');
   const [toBinId, setToBinId] = useState('');
 
@@ -59,6 +62,13 @@ export default function AddTransferPage() {
   const [lines, setLines] = useState<TransferDraftLine[]>([emptyTransferLine()]);
   const [fieldError, setFieldError] = useState<string | null>(null);
 
+  // The default location is derived once the lookups arrive, so the snapshot
+  // waits for them rather than baselining on an empty location.
+  const guard = useUnsavedChangesGuard(
+    { fromWarehouseId, toWarehouseId, toBinId, date, expectedDate, carrier, trackingNumber, notes, lines },
+    Boolean(lookups),
+  );
+
   const { mutate: save, isPending, error: saveError } = useMutation({
     mutationFn: () => {
       const lineInputs = lines.map(toLineInput).filter((l): l is TransferLineInput => l !== null);
@@ -74,6 +84,7 @@ export default function AddTransferPage() {
     onSuccess: () => {
       toast.success('Transfer saved.');
       queryClient.invalidateQueries({ queryKey: ['inventory-transfers'] });
+      guard.markClean();
       navigate('/inventory/transfer');
     },
   });
@@ -81,7 +92,7 @@ export default function AddTransferPage() {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!fromWarehouseId || !toWarehouseId) { setFieldError('Source and destination warehouses are required.'); return; }
+    if (!fromWarehouseId || !toWarehouseId) { setFieldError('Source and destination locations are required.'); return; }
     if (fromWarehouseId === toWarehouseId) { setFieldError('Source and destination must differ.'); return; }
     const lineInputs = lines.map(toLineInput).filter(Boolean);
     if (lineInputs.length === 0) { setFieldError('At least one complete line is required.'); return; }
@@ -91,6 +102,7 @@ export default function AddTransferPage() {
 
   return (
     <div className="flex flex-col flex-1 min-h-0 bg-stone-50">
+      <UnsavedChangesPrompt guard={guard} />
       <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
         <CrmPageHeader
           backLabel="Transfers"
@@ -122,10 +134,10 @@ export default function AddTransferPage() {
           <div className="px-4 py-3 pb-24 space-y-2 3xl:px-10 3xl:py-5 4xl:px-16 4xl:py-8">
             <ModernSection title="Header" index={0}>
               <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
-                <ModernFieldShell label="From Warehouse" required>
+                <ModernFieldShell label="From Location" required>
                   <WarehouseSelect warehouses={lookups?.warehouses ?? []} value={fromWarehouseId} onChange={setFromWarehouseId} required />
                 </ModernFieldShell>
-                <ModernFieldShell label="To Warehouse" required>
+                <ModernFieldShell label="To Location" required>
                   <WarehouseSelect warehouses={lookups?.warehouses ?? []} value={toWarehouseId} onChange={handleToWarehouseChange} required />
                 </ModernFieldShell>
                 <ModernFieldShell label="To Bin">

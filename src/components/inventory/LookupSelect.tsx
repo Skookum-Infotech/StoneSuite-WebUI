@@ -1,3 +1,4 @@
+import { Select } from '@/components/ui/select';
 import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useMutation } from '@tanstack/react-query';
@@ -8,7 +9,7 @@ import { inventoryLookupService } from '@/services/inventoryLookupService';
 import { WRITABLE_LOOKUP_KINDS, type LookupItem, type LookupKind } from '@/types/inventory';
 import { cn } from '@/lib/utils';
 
-// Generic vocabulary <select> shared by every inventory form (item, unit,
+// Generic vocabulary <Select> shared by every inventory form (item, unit,
 // bin, bundle, adjustment/transfer/count lines). `units` and `tax-rates`
 // render read-only server-side vocabularies — no inline add is offered for
 // them even if a caller passes allowInlineAdd, since the server 400s the
@@ -60,7 +61,7 @@ export function LookupSelect({
             type="button"
             onClick={() => setAdding(false)}
             aria-label={`Cancel adding ${label}`}
-            className="rounded p-0.5 text-stone-400 hover:bg-stone-100 hover:text-stone-600 transition-colors"
+            className="rounded p-0.5 text-stone-500 hover:bg-stone-100 hover:text-stone-600 transition-colors"
           >
             <X className="size-3.5" />
           </button>
@@ -97,18 +98,20 @@ export function LookupSelect({
 
   return (
     <div className="flex items-center gap-1.5">
-      <select
+      <Select
         value={value}
         onChange={(e) => onChange(e.target.value)}
         required={required}
         aria-label={label}
         className={cn(fieldCls, className)}
       >
-        <option value="">{placeholder ?? `— Select ${label} —`}</option>
+        <option value="">
+          {items.length === 0 && canInlineAdd ? `No ${kind.replace('-', ' ')} yet — click + to add` : (placeholder ?? `— Select ${label} —`)}
+        </option>
         {items.map((it) => (
           <option key={it.id} value={it.id}>{it.name}{it.code ? ` (${it.code})` : ''}</option>
         ))}
-      </select>
+      </Select>
       {canInlineAdd && (
         <button
           type="button"

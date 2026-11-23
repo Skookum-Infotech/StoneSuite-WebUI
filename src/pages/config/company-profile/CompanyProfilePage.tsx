@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import { Building2 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { TAB_LIST_CLASS, tabClass } from '@/components/ui/tabStyles';
 import { CompanyProfileTab } from './components/CompanyProfileTab';
 import { LocationsTab } from './components/LocationsTab';
+import { CompanyPreferencesTab } from './components/CompanyPreferencesTab';
 
 const TABS = [
   { key: 'profile', label: 'Company Profile' },
   { key: 'locations', label: 'Locations' },
+  { key: 'preferences', label: 'Company Preferences' },
 ] as const;
 
 type TabKey = (typeof TABS)[number]['key'];
@@ -43,26 +45,23 @@ export default function CompanyProfilePage() {
         </div>
       </div>
 
-      <div role="tablist" aria-label="Company Info" className="flex items-center shrink-0 overflow-x-auto overflow-y-hidden border-b border-stone-200 bg-white px-4 sm:px-5 modal-scrollbar">
-        {TABS.map((tab) => (
-          <button
-            key={tab.key}
-            type="button"
-            role="tab"
-            id={`company-info-tab-${tab.key}`}
-            aria-selected={activeTab === tab.key}
-            aria-controls={`company-info-tabpanel-${tab.key}`}
-            onClick={() => setActiveTab(tab.key)}
-            className={cn(
-              'px-4 py-3 text-sm font-semibold border-b-2 -mb-px transition-colors duration-150 whitespace-nowrap shrink-0',
-              activeTab === tab.key
-                ? 'border-brand text-stone-950'
-                : 'border-transparent text-stone-500 hover:text-stone-700 hover:border-stone-200',
-            )}
-          >
-            {tab.label}
-          </button>
-        ))}
+      <div className="flex shrink-0 overflow-x-auto overflow-y-hidden border-b border-stone-200 bg-white px-4 sm:px-5 modal-scrollbar py-2.5">
+        <div role="tablist" aria-label="Company Info" className={TAB_LIST_CLASS}>
+          {TABS.map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              role="tab"
+              id={`company-info-tab-${tab.key}`}
+              aria-selected={activeTab === tab.key}
+              aria-controls={`company-info-tabpanel-${tab.key}`}
+              onClick={() => setActiveTab(tab.key)}
+              className={tabClass(activeTab === tab.key)}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Body — same centered, responsively-capped wrapper as the other
@@ -78,6 +77,11 @@ export default function CompanyProfilePage() {
           {activeTab === 'locations' && (
             <div id="company-info-tabpanel-locations" role="tabpanel" aria-labelledby="company-info-tab-locations">
               <LocationsTab actionsSlot={actionsSlot} />
+            </div>
+          )}
+          {activeTab === 'preferences' && (
+            <div id="company-info-tabpanel-preferences" role="tabpanel" aria-labelledby="company-info-tab-preferences">
+              <CompanyPreferencesTab actionsSlot={actionsSlot} />
             </div>
           )}
         </div>

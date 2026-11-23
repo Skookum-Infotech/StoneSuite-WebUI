@@ -185,7 +185,7 @@ export function GlobalSearch({ className, inputClassName, autoFocus, onNavigate 
             <>
               {groups.map(([type, group]) => (
                 <div key={type} className="py-1">
-                  <div className="px-4 pt-2 pb-1 text-2xs font-semibold uppercase tracking-wider text-stone-400">
+                  <div className="px-4 pt-2 pb-1 text-2xs font-semibold uppercase tracking-wider text-stone-500">
                     {entityLabel(type)}
                   </div>
                   <ul>
@@ -210,7 +210,7 @@ export function GlobalSearch({ className, inputClassName, autoFocus, onNavigate 
                                 {hit.displayName || '(untitled)'}
                               </span>
                               {(hit.number || hit.subtitle) && (
-                                <span className="block truncate text-2xs text-stone-400">
+                                <span className="block truncate text-2xs text-stone-500">
                                   {[hit.number, hit.subtitle].filter(Boolean).join(' · ')}
                                 </span>
                               )}

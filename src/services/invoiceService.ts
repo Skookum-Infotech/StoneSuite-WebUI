@@ -1,4 +1,6 @@
+import type { WorkflowBlock } from '@/types/workflow';
 import { tenantClient } from '@/api/tenantClient';
+import type { ApprovalRejection } from '@/types/tenant';
 import { isPortalSession } from '@/store/useAuthStore';
 import type { AuditEntry } from '@/services/crmService';
 import type {
@@ -52,15 +54,16 @@ export const invoiceService = {
     }
     return tenantClient
       .get<{
-        success: boolean; invoice: Invoice; approval?: {
+        success: boolean; workflow?: WorkflowBlock; invoice: Invoice; approval?: {
           gated?: boolean; approvers?: Invoice['approvers']; requiredApprovals?: number; approvedCount?: number;
-          canApprove?: boolean; isOverride?: boolean; callerAlreadyApproved?: boolean;
+          canApprove?: boolean; isOverride?: boolean; callerAlreadyApproved?: boolean; canReject?: boolean; rejection?: ApprovalRejection;
         };
       }>(`${BASE}/${uuid}`)
       .then((r) => {
         const a = r.data.approval;
         return {
           ...r.data.invoice,
+          workflow: r.data.workflow ?? r.data.invoice.workflow,
           gated: a?.gated ?? false,
           approvers: a?.approvers ?? [],
           requiredApprovals: a?.requiredApprovals ?? 0,
@@ -68,6 +71,8 @@ export const invoiceService = {
           canApprove: a?.canApprove ?? false,
           isOverride: a?.isOverride ?? false,
           callerAlreadyApproved: a?.callerAlreadyApproved ?? false,
+          canReject: a?.canReject ?? false,
+          rejection: a?.rejection,
         };
       });
   },
@@ -79,6 +84,16 @@ export const invoiceService = {
   approve: (uuid: string): Promise<Invoice> =>
     tenantClient
       .post<{ success: boolean; invoice: Invoice }>(`${BASE}/${uuid}/approve`, {})
+      .then((r) => r.data.invoice),
+
+  // An approver's veto: rejects the invoice while it awaits approval (a reason
+  // is required) and sends it back to Draft. Rejected with 403 if the caller isn't a
+  // configured approver (and isn't a super admin), 409 if it isn't awaiting
+  // approval, 400 without a reason. The POST response has no approval overlay, so
+  // callers invalidate the record's query to pick up the rejection banner.
+  reject: (uuid: string, reason: string): Promise<Invoice> =>
+    tenantClient
+      .post<{ success: boolean; invoice: Invoice }>(`${BASE}/${uuid}/reject`, { reason })
       .then((r) => r.data.invoice),
 
   createInvoice: (payload: InvoiceCreatePayload): Promise<Invoice> =>
@@ -101,17 +116,6 @@ export const invoiceService = {
       .post<{ success: boolean; invoice: Invoice }>(
         `${BASE}/${uuid}/transition`,
         { toStatusCode },
-      )
-      .then((r) => r.data.invoice),
-
-  // Only accepts a positive `amount` — the backend has no date/method fields
-  // for a recorded payment (spec §12). Rejected with 409 unless the invoice
-  // is currently SENT/PART/ODUE, and rejected if it would overpay.
-  recordPayment: (uuid: string, amount: number): Promise<Invoice> =>
-    tenantClient
-      .post<{ success: boolean; invoice: Invoice }>(
-        `${BASE}/${uuid}/payment`,
-        { amount },
       )
       .then((r) => r.data.invoice),
 

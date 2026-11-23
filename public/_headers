@@ -1,0 +1,14 @@
+/*
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()
+  Content-Security-Policy: frame-ancestors 'none'; base-uri 'self'; object-src 'none'; form-action 'self'
+
+# Token links (set-password, reset-password, accept-invite) must not leak the
+# token in a Referer header to any third-party request the page makes.
+/auth/*
+  Referrer-Policy: no-referrer
+/onboarding/*
+  Referrer-Policy: no-referrer
+/accept-invite
+  Referrer-Policy: no-referrer

@@ -1,4 +1,5 @@
-import { useForm } from 'react-hook-form'
+import { Select } from '@/components/ui/select';
+import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Mail } from 'lucide-react'
 import { contactSalesSchema, COMPANY_SIZE_OPTIONS, type ContactSalesFormValues } from '@/lib/subscriptionForm'
@@ -14,7 +15,7 @@ export function ContactSalesDialog({
   onClose: () => void
   onSubmit: (data: ContactSalesFormValues) => void
 }) {
-  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<ContactSalesFormValues>({
+  const { register, handleSubmit, control, formState: { errors, isSubmitting } } = useForm<ContactSalesFormValues>({
     resolver: zodResolver(contactSalesSchema),
     defaultValues: { name: defaultValues.name ?? '', workEmail: defaultValues.workEmail ?? '', message: '' },
   })
@@ -62,19 +63,26 @@ export function ContactSalesDialog({
 
         <div>
           <label htmlFor="contact-sales-company-size" className={dialogLabelCls}>Company size</label>
-          <select
-            id="contact-sales-company-size"
-            aria-invalid={Boolean(errors.companySize)}
-            aria-label="Company size"
-            className={errors.companySize ? dialogFieldErrorCls : dialogFieldCls}
-            defaultValue=""
-            {...register('companySize')}
-          >
-            <option value="" disabled>Select company size</option>
-            {COMPANY_SIZE_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>{opt.label}</option>
-            ))}
-          </select>
+          <Controller
+            control={control}
+            name="companySize"
+            render={({ field }) => (
+              <Select
+                id="contact-sales-company-size"
+                aria-invalid={Boolean(errors.companySize)}
+                aria-label="Company size"
+                className={errors.companySize ? dialogFieldErrorCls : dialogFieldCls}
+                name={field.name}
+                value={field.value ?? ''}
+                onChange={(e) => field.onChange(e.target.value)}
+              >
+                <option value="" disabled>Select company size</option>
+                {COMPANY_SIZE_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </Select>
+            )}
+          />
           {errors.companySize && <p className="text-xs text-red-600 mt-1">{errors.companySize.message}</p>}
         </div>
 

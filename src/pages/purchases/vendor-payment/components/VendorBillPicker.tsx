@@ -5,6 +5,8 @@ import { vendorBillService } from '@/services/vendorBillService';
 import { cn } from '@/lib/utils';
 import { fieldCls } from '@/components/crm/formUtils';
 import { VP_PAYABLE_BILL_STATUSES } from '@/lib/vendorPaymentForm';
+import { formatMoney, currencyCodeFor } from '@/lib/formatMoney';
+import { lookupService } from '@/services/lookupService';
 
 const RESULT_LIMIT = 50;
 
@@ -12,6 +14,8 @@ export interface VendorBillRef {
   id: string;
   number: string;
   balanceDue: number;
+  /** Lookup currency id of the bill, so callers can format its amounts. */
+  currencyId?: number | null;
 }
 
 // Vendor bill picker for applying a payment's balance — scoped to one vendor
@@ -36,6 +40,7 @@ export function VendorBillPicker({
   excludeIds?: string[];
   disabled?: boolean;
 }) {
+  const { data: lookups } = useQuery({ queryKey: ['crm-lookups'], queryFn: lookupService.getCrmLookups, staleTime: 10 * 60 * 1000 });
   const [term, setTerm] = useState('');
   const [debounced, setDebounced] = useState('');
   const [open, setOpen] = useState(false);
@@ -64,7 +69,7 @@ export function VendorBillPicker({
     queryFn: async (): Promise<VendorBillRef[]> => {
       const page = await vendorBillService.searchVendorBills({
         search: vendor!.name,
-        sort: [{ field: 'bill_date', dir: 'desc' }],
+        sort: [{ field: 'created_at', dir: 'desc' }],
         limit: RESULT_LIMIT,
       });
       const scoped = page.records.filter(
@@ -73,7 +78,9 @@ export function VendorBillPicker({
       const narrowed = debounced
         ? scoped.filter((r) => r.vendorBillNumber.toLowerCase().includes(debounced.toLowerCase()))
         : scoped;
-      return narrowed.map((r) => ({ id: r.id, number: r.vendorBillNumber, balanceDue: r.balanceDue }));
+      return narrowed.map((r) => ({
+        id: r.id, number: r.vendorBillNumber, balanceDue: r.balanceDue, currencyId: r.currencyId,
+      }));
     },
   });
 
@@ -91,14 +98,14 @@ export function VendorBillPicker({
       <div className="flex items-center gap-2 rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm">
         <FileCheck className="size-3.5 shrink-0 text-stone-400" aria-hidden="true" />
         <span className="flex-1 truncate font-medium text-stone-800">{value.number}</span>
-        <span className="shrink-0 text-xs text-stone-400 tabular-nums">
-          {value.balanceDue.toLocaleString(undefined, { style: 'currency', currency: 'USD' })} due
+        <span className="shrink-0 text-xs text-stone-500 tabular-nums">
+          {formatMoney(value.balanceDue, currencyCodeFor(lookups, value.currencyId))} due
         </span>
         <button
           type="button"
           onClick={() => onChange(null)}
           aria-label="Change vendor bill"
-          className="shrink-0 rounded p-0.5 text-stone-400 hover:bg-stone-100 hover:text-stone-600 transition-colors"
+          className="shrink-0 rounded p-0.5 text-stone-500 hover:bg-stone-100 hover:text-stone-600 transition-colors"
         >
           <X className="size-3.5" />
         </button>
@@ -128,7 +135,7 @@ export function VendorBillPicker({
       {open && enabled && (
         <div className="absolute z-20 mt-1 w-full rounded-lg border border-stone-200 bg-white py-1 shadow-lg max-h-64 overflow-y-auto modal-scrollbar">
           {filtered.length === 0 && !isFetching && (
-            <p className="px-3 py-2 text-xs text-stone-400">
+            <p className="px-3 py-2 text-xs text-stone-500">
               {debounced
                 ? 'No matching approved bills with a balance due.'
                 : 'No approved bills with a balance due for this vendor.'}
@@ -145,8 +152,8 @@ export function VendorBillPicker({
                 <FileCheck className="size-3.5 shrink-0 text-stone-400" aria-hidden="true" />
                 <span className="truncate">{bill.number}</span>
               </span>
-              <span className="shrink-0 tabular-nums text-stone-400">
-                {bill.balanceDue.toLocaleString(undefined, { style: 'currency', currency: 'USD' })}
+              <span className="shrink-0 tabular-nums text-stone-500">
+                {formatMoney(bill.balanceDue, currencyCodeFor(lookups, bill.currencyId))}
               </span>
             </button>
           ))}

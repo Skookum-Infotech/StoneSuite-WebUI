@@ -10,23 +10,32 @@ vi.mock('@/services/authService', () => ({
 
 import { PasswordStep } from './PasswordStep'
 import { authService } from '@/services/authService'
-import type { AuthResponse } from '@/types/auth'
+import type { AuthResponse, MfaChallenge } from '@/types/auth'
 
 function renderStep(
   overrides: Partial<{
     email: string
     onSuccess: (response: AuthResponse) => void
+    onMfaRequired: (challenge: MfaChallenge) => void
     onBack: () => void
   }> = {},
 ) {
   const onSuccess = overrides.onSuccess ?? vi.fn()
+  const onMfaRequired = overrides.onMfaRequired ?? vi.fn()
   const onBack = overrides.onBack ?? vi.fn()
+  const onActiveSession = vi.fn()
   render(
     <MemoryRouter>
-      <PasswordStep email={overrides.email ?? 'jane@acme.com'} onSuccess={onSuccess} onBack={onBack} />
+      <PasswordStep
+        email={overrides.email ?? 'jane@acme.com'}
+        onSuccess={onSuccess}
+        onMfaRequired={onMfaRequired}
+        onActiveSession={onActiveSession}
+        onBack={onBack}
+      />
     </MemoryRouter>,
   )
-  return { onSuccess, onBack }
+  return { onSuccess, onMfaRequired, onBack, onActiveSession }
 }
 
 const successResponse: AuthResponse = {
@@ -39,6 +48,26 @@ const successResponse: AuthResponse = {
 describe('PasswordStep', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+  })
+
+  it('hands an "already signed in elsewhere" answer to onActiveSession', async () => {
+    const user = userEvent.setup()
+    vi.mocked(authService.login).mockRejectedValue(
+      new AxiosError('conflict', undefined, undefined, undefined, {
+        status: 409,
+        data: { success: false, code: 'active_session', activeSession: { deviceLabel: 'Chrome on Windows', lastSeenAt: 1 } },
+      } as never),
+    )
+    const { onActiveSession, onSuccess } = renderStep()
+
+    await user.type(screen.getByLabelText('Password'), 'hunter2')
+    await user.click(screen.getByRole('button', { name: 'Sign in' }))
+
+    await vi.waitFor(() =>
+      expect(onActiveSession).toHaveBeenCalledWith({ deviceLabel: 'Chrome on Windows', lastSeenAt: 1 }),
+    )
+    expect(onSuccess).not.toHaveBeenCalled()
+    expect(screen.queryByText(/error occurred/i)).not.toBeInTheDocument()
   })
 
   it('shows the resolved email as read-only context', () => {
@@ -73,6 +102,35 @@ describe('PasswordStep', () => {
     })
   })
 
+  it('moves to the code step, not the app, when the account asks for an emailed code', async () => {
+    const user = userEvent.setup()
+    vi.mocked(authService.login).mockResolvedValue({
+      success: true,
+      mfaRequired: true,
+      challengeToken: 'chal-1',
+      maskedEmail: 'j•••@acme.com',
+      codeLength: 6,
+      expiresInSeconds: 600,
+      resendAfterSeconds: 60,
+    })
+    const { onSuccess, onMfaRequired } = renderStep()
+
+    await user.type(screen.getByLabelText('Password'), 'hunter2')
+    await user.click(screen.getByRole('button', { name: 'Sign in' }))
+
+    await vi.waitFor(() =>
+      expect(onMfaRequired).toHaveBeenCalledWith({
+        success: true,
+        challengeToken: 'chal-1',
+        maskedEmail: 'j•••@acme.com',
+        codeLength: 6,
+        expiresInSeconds: 600,
+        resendAfterSeconds: 60,
+      }),
+    )
+    expect(onSuccess).not.toHaveBeenCalled()
+  })
+
   it('shows the server message when login reports failure without a token', async () => {
     const user = userEvent.setup()
     vi.mocked(authService.login).mockResolvedValue({ success: false, message: 'Invalid email or password.' })
@@ -98,6 +156,23 @@ describe('PasswordStep', () => {
     await user.click(screen.getByRole('button', { name: 'Sign in' }))
 
     expect(await screen.findByText('Something broke upstream.')).toBeInTheDocument()
+    expect(onSuccess).not.toHaveBeenCalled()
+  })
+
+  it('tells a user of a suspended workspace why they cannot sign in', async () => {
+    const user = userEvent.setup()
+    const message = 'This workspace is suspended. Please contact your account administrator.'
+    const err = new AxiosError('fail', undefined, undefined, undefined, {
+      status: 403,
+      data: { success: false, code: 'workspace_suspended', message },
+    } as never)
+    vi.mocked(authService.login).mockRejectedValue(err)
+    const { onSuccess } = renderStep()
+
+    await user.type(screen.getByLabelText('Password'), 'hunter2')
+    await user.click(screen.getByRole('button', { name: 'Sign in' }))
+
+    expect(await screen.findByText(message)).toBeInTheDocument()
     expect(onSuccess).not.toHaveBeenCalled()
   })
 

@@ -1,13 +1,23 @@
 import { Link } from 'react-router-dom';
-import { Workflow, ShieldCheck, ArrowRight, UsersRound, ScrollText, Upload, Building2 } from 'lucide-react';
+import { Workflow, ShieldCheck, ArrowRight, UsersRound, ScrollText, Upload, Building2, Sparkles, Timer } from 'lucide-react';
 import { PageHeader } from '@/components/tenant/ui';
+import { useUserPermissions } from '@/hooks/useUserPermissions';
 
 /**
  * Configuration hub — the place to build/configure the platform, kept
  * separate from the daily workspace. Extensible: add cards here as new
  * builders come online.
  */
-const sections = [
+interface ConfigSection {
+  to: string;
+  icon: typeof Workflow;
+  title: string;
+  description: string;
+  /** When set, the card is hidden from users without this resource:action grant. */
+  requires?: { resource: string; action: string };
+}
+
+const sections: ConfigSection[] = [
   {
     to: '/config/company-profile',
     icon: Building2,
@@ -44,9 +54,24 @@ const sections = [
     title: 'Import Data',
     description: 'Bulk-create records from a CSV, XLSX, DOCX, or PDF file — stage, review, and commit.',
   },
+  {
+    to: '/config/ai-assistant',
+    icon: Sparkles,
+    title: 'StoneSuite Assistant',
+    description: 'Turn the AI assistant on or off for your organization.',
+  },
+  {
+    to: '/config/automation',
+    icon: Timer,
+    title: 'Automation',
+    description: 'Payment reminders, expiry and approval reminders, and the workspace pause switch.',
+    requires: { resource: 'automation', action: 'read' },
+  },
 ];
 
 export default function ConfigHomePage() {
+  const { hasPermission } = useUserPermissions();
+  const visible = sections.filter((s) => !s.requires || hasPermission(s.requires.resource, s.requires.action));
   return (
     <div className="p-6 3xl:p-10 4xl:p-14">
       <PageHeader
@@ -54,7 +79,7 @@ export default function ConfigHomePage() {
         subtitle="Build and configure your workspace. Changes here drive the dynamic UI everywhere else."
       />
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        {sections.map((s) => {
+        {visible.map((s) => {
           const Icon = s.icon;
           return (
             <Link

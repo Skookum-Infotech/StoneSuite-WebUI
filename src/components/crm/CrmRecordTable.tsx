@@ -1,17 +1,24 @@
+import { Select } from '@/components/ui/select';
 import { useState, useMemo, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Search, ArrowUp, ArrowDown, ArrowUpDown, X, Inbox, Pencil,
   ChevronLeft, ChevronRight, Download, Loader2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { crmService } from '@/services/crmService';
+import { LIST_DATE_OPTIONS } from '@/lib/dateUtils';
+import { crmService, CRM_WORKFLOW_KEYS } from '@/services/crmService';
 import { userService } from '@/services/tenantServices';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { StatusDropdown } from '@/components/crm/StatusDropdown';
+import { Badge } from '@/components/tenant/ui';
+import { resolveStatusColor } from '@/components/crm/formUtils';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { buildCrmCsvFilename, buildCrmRecordsCsv, downloadCsv } from '@/lib/crmCsvExport';
+import { useIdSelection } from '@/hooks/useIdSelection';
+import { BulkSelectionBar } from '@/components/tenant/BulkSelectionBar';
+import { SelectAllCheckbox, SelectRowCheckbox } from '@/components/tenant/SelectionCheckboxes';
 import { CRM_WORKFLOW_ROUTES } from '@/components/crm/crmWorkflowRoutes';
 import {
   recordApprovalState,
@@ -52,6 +59,8 @@ export type CrmTableConfig = {
   editPath:   (id: string) => string;
   queryKey:   readonly [string, string];
   showEmail?: boolean;
+  /** Adds a checkbox column and an "Export selected (CSV)" bar. */
+  selectable?: boolean;
 };
 
 // ── Internal types ─────────────────────────────────────────────────────────────
@@ -85,18 +94,27 @@ export function CrmRecordTable({ config }: Props) {
 
   // Show the Edit action while permissions are still loading (avoids a flash
   // of a hidden button), then hide it once we know the user lacks update rights.
-  const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
+  const { hasPermission, isSuperAdmin, isLoading: permissionsLoading } = useUserPermissions();
   const canEdit = permissionsLoading || hasPermission(config.workflowKey, 'update');
 
-  // Inline status change from the list row's status pill. Mirrors the Edit
-  // page's transition mutation (see EditLeadPage.tsx) — persists the moment a
-  // status is picked, no separate save. A converting transition (e.g. Lead ->
-  // Prospect) navigates to the new record, same as the Edit page does today.
+  // The list row's status is a dropdown only for a super admin; everyone else
+  // sees a plain badge and moves a lead or prospect from its Detail or Edit
+  // page. A customer's status is changed with the Quick Action buttons on its
+  // detail page, never from a dropdown, so its row is a badge for everyone.
+  const canChangeStatusInList = isSuperAdmin && config.workflowKey !== CRM_WORKFLOW_KEYS.CUSTOMER;
+
+  // Inline status change from the list row's status pill (see
+  // canChangeStatusInList). Mirrors the Edit page's transition mutation (see
+  // EditLeadPage.tsx) — persists the moment a status is picked, no separate
+  // save. A converting transition (e.g. Lead -> Prospect) navigates to the new
+  // record, same as the Edit page does today.
   const transition = useMutation({
     mutationFn: (vars: { id: string; toStateId: string }) =>
       crmService.transitionRecord(vars.id, vars.toStateId, config.workflowKey),
     onSuccess: (updated) => {
       queryClient.invalidateQueries({ queryKey: ['crm-record', updated.id] });
+      // The dropdown's legal next moves depend on the status just set.
+      queryClient.invalidateQueries({ queryKey: ['crm-transitions', updated.id] });
       queryClient.invalidateQueries({ queryKey: ['crm-records', config.workflowKey] });
       const newType = updated.workflowId?.toLowerCase();
       if (newType && newType !== config.workflowKey && CRM_WORKFLOW_ROUTES[newType]) {
@@ -170,6 +188,12 @@ export function CrmRecordTable({ config }: Props) {
   });
 
   const records  = data?.records  ?? [];
+  // Ticked rows (only used when config.selectable). Ids that leave the page (a
+  // re-sort can swap them out) stop counting but return with their row, so a
+  // selection survives sorting; a change of search or status clears it.
+  const pageIds   = useMemo(() => (data?.records ?? []).map((r) => r.id), [data?.records]);
+  const selection = useIdSelection(pageIds);
+  const selectable = Boolean(config.selectable);
   const hasMore  = data?.hasMore  ?? false;
   const hasPrev  = prevCursors.length > 0;
   const pageNum  = prevCursors.length + 1;
@@ -197,6 +221,7 @@ export function CrmRecordTable({ config }: Props) {
   const hasFilters = Boolean(nameFilter || statusFilter);
 
   function clearFilters() {
+    selection.clear();
     setNameFilter('');
     setStatusFilter('');
     setCursor('');
@@ -246,13 +271,27 @@ export function CrmRecordTable({ config }: Props) {
 
       downloadCsv(
         buildCrmCsvFilename(config.label),
-        buildCrmRecordsCsv(allRecords, statusMap, Boolean(config.showEmail)),
+        buildCrmRecordsCsv(allRecords, statusMap, Boolean(config.showEmail), userMap),
       );
     } catch (err) {
       setExportError(apiErrorMessage(err));
     } finally {
       setIsExporting(false);
     }
+  }
+
+  function toggleAllOnPage() {
+    if (selection.selected.size === pageIds.length) selection.clear();
+    else selection.setAll(pageIds);
+  }
+
+  // Only the ticked rows, from the page on screen: nothing is fetched.
+  function handleExportSelected() {
+    const chosen = records.filter((r) => selection.selected.has(r.id));
+    downloadCsv(
+      buildCrmCsvFilename(config.label),
+      buildCrmRecordsCsv(chosen, statusMap, Boolean(config.showEmail)),
+    );
   }
 
   const lowerLabel = config.label.toLowerCase();
@@ -270,19 +309,19 @@ export function CrmRecordTable({ config }: Props) {
             type="text"
             placeholder={`Search ${lowerLabel}s…`}
             value={nameFilter}
-            onChange={(e) => setNameFilter(e.target.value)}
-            className="h-8 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-3 text-xs text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150"
+            onChange={(e) => { setNameFilter(e.target.value); selection.clear(); }}
+            className="h-8 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-3 text-xs text-stone-900 placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150"
           />
         </div>
 
         {/* Status filter */}
         <div className="relative w-full sm:w-auto">
-          <select
+          <Select
             value={statusFilter}
-            onChange={(e) => { setStatusFilter(e.target.value); setCursor(''); setPrevCursors([]); }}
+            onChange={(e) => { setStatusFilter(e.target.value); setCursor(''); setPrevCursors([]); selection.clear(); }}
             className={cn(
               'h-8 w-full rounded-lg border border-stone-200 bg-white pl-3 pr-7 text-xs focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150 appearance-none',
-              statusFilter === '' ? 'text-stone-400' : 'text-stone-900',
+              statusFilter === '' ? 'text-stone-500' : 'text-stone-900',
             )}
             aria-label="Filter by status"
           >
@@ -290,7 +329,7 @@ export function CrmRecordTable({ config }: Props) {
             {statuses.map((s) => (
               <option key={s.stateId} value={s.stateId}>{s.statusLabel}</option>
             ))}
-          </select>
+          </Select>
           <ChevronRight className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 size-3 text-stone-400 rotate-90" />
         </div>
 
@@ -299,7 +338,7 @@ export function CrmRecordTable({ config }: Props) {
 
         {/* Sort chips */}
         <div className="flex items-center gap-1.5">
-          <span className="text-2xs font-semibold uppercase tracking-wider text-stone-400 pr-0.5">Sort:</span>
+          <span className="text-2xs font-semibold uppercase tracking-wider text-stone-500 pr-0.5">Sort:</span>
           {(Object.entries(SORT_LABELS) as [SortField, string][]).map(([field, label]) => (
             <button
               key={field}
@@ -360,6 +399,11 @@ export function CrmRecordTable({ config }: Props) {
           <table className="w-full min-w-[520px] text-left text-xs">
             <thead className="border-b border-stone-200 bg-table-header">
               <tr>
+                {selectable && (
+                  <th className="w-10 px-4 py-3">
+                    <SelectAllCheckbox selectedCount={selection.selected.size} pageCount={pageIds.length} onToggle={toggleAllOnPage} />
+                  </th>
+                )}
                 <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Company</th>
                 <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Status</th>
                 <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Owner</th>
@@ -376,6 +420,7 @@ export function CrmRecordTable({ config }: Props) {
               {isLoading ? (
                 Array.from({ length: 5 }, (_, i) => (
                   <tr key={i}>
+                    {selectable && <td className="w-10 px-4 py-3" />}
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
                         <div className="animate-pulse size-8 rounded-full bg-stone-100 shrink-0" />
@@ -400,6 +445,15 @@ export function CrmRecordTable({ config }: Props) {
                   const gated      = approvalState === 'pending' || approvalState === 'rejected';
                   return (
                     <tr key={record.id} className="group hover:bg-accent/10 transition-colors duration-150">
+                      {selectable && (
+                        <td className="w-10 px-4 py-3.5">
+                          <SelectRowCheckbox
+                            checked={selection.selected.has(record.id)}
+                            label={`Select ${company}`}
+                            onToggle={() => selection.toggle(record.id)}
+                          />
+                        </td>
+                      )}
                       <td className="px-4 py-3.5">
                         <div className="flex items-center gap-3">
                           <span
@@ -410,24 +464,24 @@ export function CrmRecordTable({ config }: Props) {
                             {companyInitials(company)}
                           </span>
                           <div className="min-w-0">
-                            <button
-                              type="button"
-                              onClick={() => navigate(config.detailPath(record.id))}
+                            <Link
+                              to={config.detailPath(record.id)}
                               className="text-left text-xs font-semibold text-stone-900 hover:text-accent-foreground transition-colors truncate max-w-[200px] block"
                             >
                               {company}
-                            </button>
+                            </Link>
                             {record.recordNumber && (
-                              <p className="font-mono text-2xs text-stone-400 mt-0.5">{record.recordNumber}</p>
+                              <p className="font-mono text-2xs text-stone-500 mt-0.5">{record.recordNumber}</p>
                             )}
                           </div>
                         </div>
                       </td>
                       <td className="px-4 py-3.5">
-                        {statusInfo ? (
+                        {statusInfo && !canChangeStatusInList ? (
+                          <Badge color={resolveStatusColor(statusInfo.stateKey, statusInfo.color)}>{statusInfo.statusLabel}</Badge>
+                        ) : statusInfo ? (
                           <StatusDropdown
                             workflowKey={config.workflowKey}
-                            mode="transitions"
                             recordId={record.id}
                             value={record.currentStateId}
                             onChange={(toStateId) => transition.mutate({ id: record.id, toStateId })}
@@ -437,32 +491,29 @@ export function CrmRecordTable({ config }: Props) {
                             gated={gated}
                           />
                         ) : (
-                          <span className="text-xs text-stone-400">—</span>
+                          <span className="text-xs text-stone-500">—</span>
                         )}
                       </td>
                       <td className="px-4 py-3.5 text-xs text-stone-600 truncate max-w-[160px]">
                         {(record.ownerUserId && userMap.get(record.ownerUserId)) || (
-                          <span className="text-stone-400">—</span>
+                          <span className="text-stone-500">—</span>
                         )}
                       </td>
                       {config.showEmail && (
                         <td className="px-4 py-3.5 text-xs text-stone-500 truncate max-w-[180px]">{email}</td>
                       )}
-                      <td className="px-4 py-3.5 text-xs text-stone-400 tabular-nums whitespace-nowrap">
-                        {new Date(record.createdAt).toLocaleDateString(undefined, {
-                          year: '2-digit', month: 'short', day: 'numeric',
-                        })}
+                      <td className="px-4 py-3.5 text-xs text-stone-500 tabular-nums whitespace-nowrap">
+                        {new Date(record.createdAt).toLocaleDateString(undefined, LIST_DATE_OPTIONS)}
                       </td>
                       {canEdit && (
                         <td className="px-4 py-3.5 text-right">
-                          <button
-                            type="button"
-                            onClick={() => navigate(config.editPath(record.id))}
+                          <Link
+                            to={config.editPath(record.id)}
                             aria-label={`Edit ${label}`}
                             className="inline-flex items-center justify-center rounded-lg border border-stone-200 bg-white p-2 text-stone-500 transition-colors hover:bg-accent hover:border-accent hover:text-accent-foreground cursor-pointer"
                           >
                             <Pencil className="size-4" />
-                          </button>
+                          </Link>
                         </td>
                       )}
                     </tr>
@@ -470,14 +521,14 @@ export function CrmRecordTable({ config }: Props) {
                 })
               ) : (
                 <tr>
-                  <td colSpan={4 + (config.showEmail ? 1 : 0) + (canEdit ? 1 : 0)} className="py-16 text-center">
+                  <td colSpan={4 + (selectable ? 1 : 0) + (config.showEmail ? 1 : 0) + (canEdit ? 1 : 0)} className="py-16 text-center">
                     {!hasFilters ? (
                       <div className="flex flex-col items-center gap-3">
                         <div className="rounded-2xl bg-stone-100 p-4">
                           <Inbox className="size-6 text-stone-400" />
                         </div>
                         <p className="text-sm font-semibold text-stone-700">No {lowerLabel}s added yet.</p>
-                        <p className="text-xs text-stone-400">Create your first {lowerLabel} to get started.</p>
+                        <p className="text-xs text-stone-500">Create your first {lowerLabel} to get started.</p>
                       </div>
                     ) : (
                       <div className="flex flex-col items-center gap-3">
@@ -485,7 +536,7 @@ export function CrmRecordTable({ config }: Props) {
                           <Search className="size-6 text-stone-400" />
                         </div>
                         <p className="text-sm font-semibold text-stone-700">No {lowerLabel}s match the current filters.</p>
-                        <p className="text-xs text-stone-400">Try adjusting your search or status filter.</p>
+                        <p className="text-xs text-stone-500">Try adjusting your search or status filter.</p>
                       </div>
                     )}
                   </td>
@@ -524,6 +575,14 @@ export function CrmRecordTable({ config }: Props) {
           </div>
         )}
       </div>
+
+      {selectable && selection.selected.size > 0 && (
+        <BulkSelectionBar
+          count={selection.selected.size}
+          onExport={handleExportSelected}
+          onClear={selection.clear}
+        />
+      )}
     </div>
   );
 }

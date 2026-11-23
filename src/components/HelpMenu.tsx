@@ -1,38 +1,68 @@
-import { useEffect, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { Suspense, useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { CircleHelp, LifeBuoy, Sparkles } from 'lucide-react';
-import { feedbackService } from '@/services/feedbackService';
-import { AssistantPanel } from '@/components/ai/AssistantPanel';
-import { FeedbackPanel } from '@/components/feedback/FeedbackPanel';
+import { useAssistantConversation } from '@/components/ai/useAssistantConversation';
+import { useAIStatus } from '@/hooks/useAIStatus';
+import { useFeedbackUnreadCount } from '@/hooks/useFeedbackUnreadCount';
+import { supportPath } from '@/lib/feedback';
+import { warmAssistant } from '@/services/aiService';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useHeaderMenuStore } from '@/store/useHeaderMenuStore';
 import { cn } from '@/lib/utils';
+import { lazyWithRetry } from '@/lib/lazyWithRetry';
 
-// Poll interval for the unread-reply badge — cheap enough to run continuously
-// while a session is open, and gives an admin's reply a reasonably prompt
-// notification without a websocket.
-const UNREAD_POLL_MS = 60_000;
+// The panel pulls in the markdown renderer (react-markdown + remark-gfm), which
+// would otherwise sit in the entry bundle of every page since HelpMenu is in
+// the header. Warmed on menu hover/focus so opening it still feels instant.
+const loadAssistantPanel = () =>
+  import('@/components/ai/AssistantPanel').then((m) => ({ default: m.AssistantPanel }));
+const AssistantPanel = lazyWithRetry(loadAssistantPanel);
+
+/** Minimum gap between warmAssistant() calls. Module-level (not a ref) so it
+ *  also guards against React StrictMode's deliberate double-invoke of
+ *  effects in dev, which would otherwise fire it twice on the same open. */
+const WARM_ASSISTANT_MIN_INTERVAL_MS = 5 * 60 * 1000;
+let lastWarmAssistantAt = 0;
+
+function warmAssistantThrottled(): void {
+  const now = Date.now();
+  if (now - lastWarmAssistantAt < WARM_ASSISTANT_MIN_INTERVAL_MS) return;
+  lastWarmAssistantAt = now;
+  void warmAssistant().catch(() => {});
+}
 
 // Single "Help" entry point in the header (replaces the separate floating AI
 // assistant button and the standalone feedback icon): opens a small dropdown
-// with "StoneSuite Assistant" and "Support", each opening its own panel.
-// Rendered for both tenant staff and customer-portal sessions, same as the
-// two things it replaces were.
+// with "StoneSuite Assistant" (a floating panel) and "Support" (a shortcut to
+// the Support page, which also has its own sidebar entry). Rendered for both
+// tenant staff and customer-portal sessions; the Assistant item is staff-only,
+// since the assistant lives under /api/tenant/*, which a portal token can't reach.
+//
+// The conversation (and its typed-but-unsent draft) live here, not in
+// AssistantPanel: HelpMenu stays mounted for the whole session (it's in
+// MainLayout's header), so closing the panel doesn't abort an in-flight
+// stream or lose what was being typed — only Stop does that.
 export function HelpMenu() {
   const menuOpen = useHeaderMenuStore((s) => s.openMenu === 'help');
   const setOpenMenu = useHeaderMenuStore((s) => s.setOpenMenu);
+  const isPortal = useAuthStore((s) => s.kind === 'portal');
   const [assistantOpen, setAssistantOpen] = useState(false);
-  const [feedbackOpen, setFeedbackOpen] = useState(false);
-  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const conversation = useAssistantConversation();
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const navigate = useNavigate();
+  const unreadCount = useFeedbackUnreadCount();
+  // undefined while loading (or for a portal session, which never fetches
+  // this) intentionally reads as "not available" — hide the entry rather
+  // than flash it on and then off once the platform/tenant switch is known.
+  const assistantAvailable = useAIStatus().data?.available === true;
 
-  const unreadQ = useQuery({
-    queryKey: ['feedback-unread-count'],
-    queryFn: feedbackService.unreadCount,
-    enabled: isAuthenticated,
-    refetchInterval: UNREAD_POLL_MS,
-    staleTime: UNREAD_POLL_MS,
-  });
-  const unreadCount = unreadQ.data ?? 0;
+  // Gets the model loaded in the background as soon as the menu is opened
+  // (not only once the panel itself is opened), so the first real question
+  // pays less of Ollama's cold-start cost. Errors (assistant off, model
+  // unreachable) surface soon enough from the ask itself.
+  useEffect(() => {
+    if (menuOpen && assistantAvailable) warmAssistantThrottled();
+  }, [menuOpen, assistantAvailable]);
 
   // Same click-outside-closes convention as MainLayout's own profile menu.
   useEffect(() => {
@@ -54,6 +84,7 @@ export function HelpMenu() {
   return (
     <div className="relative">
       <button
+        ref={triggerRef}
         type="button"
         onClick={(e) => { e.stopPropagation(); setOpenMenu(menuOpen ? null : 'help'); }}
         aria-label={unreadCount > 0 ? `Help (${unreadCount} unread)` : 'Help'}
@@ -81,9 +112,12 @@ export function HelpMenu() {
             'sm:absolute sm:inset-x-auto sm:top-auto sm:right-0 sm:mt-2.5 sm:w-72 sm:origin-top-right',
           )}
         >
+          {!isPortal && assistantAvailable && (
           <button
             type="button"
             role="menuitem"
+            onMouseEnter={() => { void loadAssistantPanel(); }}
+            onFocus={() => { void loadAssistantPanel(); }}
             onClick={(e) => { e.stopPropagation(); setOpenMenu(null); setAssistantOpen(true); }}
             className="flex w-full items-start gap-3 rounded-xl px-3 py-2.5 text-left transition-colors hover:bg-white/[0.06] cursor-pointer"
           >
@@ -92,16 +126,22 @@ export function HelpMenu() {
             </span>
             <span>
               <span className="block text-xs font-bold text-stone-200">StoneSuite Assistant</span>
-              <span className="mt-0.5 block text-2xs text-stone-500">
+              <span className="mt-0.5 block text-2xs text-stone-400">
                 Ask about a record, workflow, or how to do something
               </span>
             </span>
           </button>
+          )}
 
           <button
             type="button"
             role="menuitem"
-            onClick={(e) => { e.stopPropagation(); setOpenMenu(null); setFeedbackOpen(true); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              setOpenMenu(null);
+              // The header dot announces an unread reply, so land where it is.
+              navigate(supportPath(unreadCount > 0 ? 'tickets' : 'new'));
+            }}
             className="flex w-full items-start gap-3 rounded-xl px-3 py-2.5 text-left transition-colors hover:bg-white/[0.06] cursor-pointer"
           >
             <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-teal-500/15 text-teal-400">
@@ -116,7 +156,7 @@ export function HelpMenu() {
                   </span>
                 )}
               </span>
-              <span className="mt-0.5 block text-2xs text-stone-500">
+              <span className="mt-0.5 block text-2xs text-stone-400">
                 Report a bug, request a feature, or track your tickets
               </span>
             </span>
@@ -124,8 +164,18 @@ export function HelpMenu() {
         </div>
       )}
 
-      {assistantOpen && <AssistantPanel onClose={() => setAssistantOpen(false)} />}
-      {feedbackOpen && <FeedbackPanel onClose={() => setFeedbackOpen(false)} />}
+      {assistantOpen && (
+        <Suspense fallback={null}>
+          <AssistantPanel
+            conversation={conversation}
+            draft={{ value: conversation.draft, onChange: conversation.setDraft }}
+            onClose={() => {
+              setAssistantOpen(false);
+              triggerRef.current?.focus();
+            }}
+          />
+        </Suspense>
+      )}
     </div>
   );
 }

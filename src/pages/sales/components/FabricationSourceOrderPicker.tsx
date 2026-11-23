@@ -67,12 +67,13 @@ export function FabricationSourceOrderPicker({ value, onChange, disabled }: {
     queryFn: async (): Promise<FabricationSourceOrder[]> => {
       const page = await salesOrderService.searchOrders({
         search: debounced || undefined,
+        // Filter server-side: filtering the page client-side hid eligible
+        // orders whenever the newest RESULT_LIMIT orders were ineligible.
+        filters: [{ field: 'status_code', op: 'in', value: [...SO_CONVERTIBLE_STATUSES] }],
         sort: [{ field: 'created_at', dir: 'desc' }],
         limit: RESULT_LIMIT,
       });
-      return page.records
-        .filter((r) => !r.statusCode || SO_CONVERTIBLE_STATUSES.has(r.statusCode))
-        .map((r) => ({ id: r.id, number: r.salesOrderNumber, customerName: r.customer?.name ?? '' }));
+      return page.records.map((r) => ({ id: r.id, number: r.salesOrderNumber, customerName: r.customer?.name ?? '' }));
     },
   });
 
@@ -89,13 +90,13 @@ export function FabricationSourceOrderPicker({ value, onChange, disabled }: {
         <ShoppingCart className="size-3.5 shrink-0 text-stone-400" aria-hidden="true" />
         <span className="flex-1 truncate font-medium text-stone-800">
           {value.number}
-          {value.customerName && <span className="ml-1.5 font-normal text-stone-400">· {value.customerName}</span>}
+          {value.customerName && <span className="ml-1.5 font-normal text-stone-500">· {value.customerName}</span>}
         </span>
         <button
           type="button"
           onClick={() => onChange(null)}
           aria-label="Change sales order"
-          className="shrink-0 rounded p-0.5 text-stone-400 hover:bg-stone-100 hover:text-stone-600 transition-colors"
+          className="shrink-0 rounded p-0.5 text-stone-500 hover:bg-stone-100 hover:text-stone-600 transition-colors"
         >
           <X className="size-3.5" />
         </button>
@@ -135,7 +136,7 @@ export function FabricationSourceOrderPicker({ value, onChange, disabled }: {
           className="absolute z-20 mt-1 w-full rounded-lg border border-stone-200 bg-white py-1 shadow-lg max-h-64 overflow-y-auto modal-scrollbar"
         >
           {results.length === 0 && !isFetching && (
-            <p className="px-3 py-2 text-xs text-stone-400">
+            <p className="px-3 py-2 text-xs text-stone-500">
               {debounced ? 'No matching sales orders.' : 'Start typing to search sales orders.'}
             </p>
           )}
@@ -150,7 +151,7 @@ export function FabricationSourceOrderPicker({ value, onChange, disabled }: {
             >
               <ShoppingCart className="size-3.5 shrink-0 text-stone-400" aria-hidden="true" />
               <span className="truncate">{so.number}</span>
-              {so.customerName && <span className="truncate text-stone-400">· {so.customerName}</span>}
+              {so.customerName && <span className="truncate text-stone-500">· {so.customerName}</span>}
             </button>
           ))}
         </div>

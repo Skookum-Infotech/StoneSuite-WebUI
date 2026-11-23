@@ -4,6 +4,8 @@
 // assembled into the wire payload only at submit time via toCreatePayload.
 
 import type { CrmLookups } from '@/services/lookupService';
+import { isInvalidPhoneValue } from './phoneValidation';
+import { isValidEmail } from './emailValidation';
 import type {
   AcceptedPaymentMethod, Vendor, VendorCreatePayload, VendorType,
 } from '@/types/vendor';
@@ -29,7 +31,7 @@ export const GENDER_OPTIONS = ['Male', 'Female', 'Non-binary', 'Prefer not to sa
 // ── Shared fields (always visible) ───────────────────────────────────────────
 
 export const VENDOR_CONTACT_FIELDS: VendorFormField[] = [
-  { key: 'email', label: 'Email Address', type: 'email', placeholder: 'vendor@company.com' },
+  { key: 'email', label: 'Email Address', type: 'email', required: true, placeholder: 'vendor@company.com' },
   { key: 'fax_number', label: 'Fax Number', type: 'tel', placeholder: '+1 (555) 000-0000' },
   {
     key: 'physical_address', label: 'Physical Address', type: 'textarea', rows: 3,
@@ -128,7 +130,36 @@ export function validateVendorForm(data: Record<string, unknown>): VendorFieldEr
   } else {
     if (!String(data.legal_name ?? '').trim()) errors.push({ key: 'legal_name', label: 'Legal Business Name' });
   }
+
+  const email = String(data.email ?? '').trim();
+  if (!email || !isValidEmail(email)) errors.push({ key: 'email', label: 'Email Address' });
+  const contactEmail = String(data.contact_point_email ?? '').trim();
+  if (contactEmail && !isValidEmail(contactEmail)) {
+    errors.push({ key: 'contact_point_email', label: 'Contact Email' });
+  }
+
+  if (isInvalidPhoneValue(String(data.fax_number ?? ''))) {
+    errors.push({ key: 'fax_number', label: 'Fax Number' });
+  }
+  if (isInvalidPhoneValue(String(data.contact_point_telephone ?? ''))) {
+    errors.push({ key: 'contact_point_telephone', label: 'Contact Telephone' });
+  }
   return errors;
+}
+
+/** The name AddVendorPage's duplicate-name check searches/matches against —
+ *  there's no client-side displayName like Vendor.displayName until the
+ *  record exists, so this derives the same value from the in-progress form:
+ *  legal name for an Organization, "first last" for a Person. */
+export function vendorNameForDuplicateCheck(data: Record<string, unknown>): string {
+  const vendorType = (data.vendor_type as VendorType) ?? 'Organization';
+  if (vendorType === 'Person') {
+    return [data.given_name, data.family_name]
+      .map((v) => String(v ?? '').trim())
+      .filter(Boolean)
+      .join(' ');
+  }
+  return String(data.legal_name ?? '').trim();
 }
 
 // ── Payload mapping (UI form state -> create contract) ───────────────────────

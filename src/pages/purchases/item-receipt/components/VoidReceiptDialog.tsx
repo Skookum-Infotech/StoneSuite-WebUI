@@ -5,6 +5,7 @@ import { useMutation } from '@tanstack/react-query';
 import { itemReceiptService } from '@/services/itemReceiptService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import type { ItemReceipt } from '@/types/itemReceipt';
+import { DangerZoneAction } from '@/components/tenant/DangerZoneCard';
 
 // Voiding reverses a posted receipt's stock/qty_received effects (or just
 // closes out an unposted one) — terminal, and requires a non-empty reason
@@ -54,16 +55,13 @@ export function VoidReceiptDialog({ itemReceiptId, statusCode, onVoided }: {
 
   return (
     <>
-      <button
+      <DangerZoneAction
         ref={triggerRef}
-        type="button"
+        description="Void this item receipt."
+        buttonLabel="Void receipt"
+        icon={Undo2}
         onClick={() => setOpen(true)}
-        aria-label="Void item receipt"
-        className="flex items-center gap-2.5 hover:bg-destructive/5 rounded-lg px-3 py-2 cursor-pointer text-xs text-destructive w-full transition-colors text-left"
-      >
-        <Undo2 className="size-4 shrink-0" />
-        Void receipt
-      </button>
+      />
 
       {open && createPortal(
         <div
@@ -82,7 +80,7 @@ export function VoidReceiptDialog({ itemReceiptId, statusCode, onVoided }: {
                 <h3 id="void-receipt-dialog-title" className="text-sm font-bold text-stone-900">
                   Void this item receipt?
                 </h3>
-                <p className="text-xs text-stone-400 mt-0.5">This action cannot be undone.</p>
+                <p className="text-xs text-stone-500 mt-0.5">This action cannot be undone.</p>
               </div>
             </div>
 

@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { CreditCard, Upload, Pencil, DollarSign, Unlink, FileDown, Loader2 } from 'lucide-react';
+import { CreditCard, Upload, Pencil, DollarSign, Unlink, FileDown, FileMinus, Loader2, Landmark, Ban } from 'lucide-react';
 import { toast } from 'sonner';
 import { paymentService } from '@/services/paymentService';
 import { lookupService } from '@/services/lookupService';
@@ -12,19 +12,31 @@ import { ModernSection } from '@/components/crm/FormPrimitives';
 import { readonlyCls, fieldLabelCls, fieldCls } from '@/components/crm/formUtils';
 import { FilesContent } from '@/components/crm/CrmSubTabsPanel';
 import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
-import { ApprovalBanner } from '@/components/tenant/ApprovalBanner';
+import { RecordApprovalBanner } from '@/components/tenant/RecordApprovalBanner';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
+import { useWorkflows } from '@/hooks/useWorkflows';
 import { cn } from '@/lib/utils';
-import { PAYMENT_STATUS_COLORS, PAYMENT_STATUS_CODES, PAYMENT_BLOCKS_APPLY } from '@/lib/paymentForm';
+import { TAB_LIST_CLASS, tabClass } from '@/components/ui/tabStyles';
+import {
+  PAYMENT_STATUS_COLORS, PAYMENT_STATUS_CODES, PAYMENT_BLOCKS_APPLY, PAYMENT_DEPOSITED_CODE, PAYMENT_VOID_CODE,
+  paymentHeaderTransitions, type PaymentHeaderCode,
+} from '@/lib/paymentForm';
+import { CREDIT_MEMO_FROM_PAYMENT_STATE, creditMemoHandoffFromPayment } from '@/lib/creditMemoHandoff';
 import { statusToastLabel } from '@/lib/statusToast';
 import { PaymentAuditTab } from './components/PaymentAuditTab';
 import { DeletePaymentDialog } from './components/DeletePaymentDialog';
+import { DangerZoneCard } from '@/components/tenant/DangerZoneCard';
 import { InvoicePicker } from './components/InvoicePicker';
 import type { InvoiceRef } from './components/InvoicePicker';
+import { WorkflowCard } from '@/components/tenant/WorkflowCard';
 import { SalesDetailSidebar } from './components/SalesDetailSidebar';
+import { AmountsStrip } from './components/AmountsStrip';
 import { PaymentStatusControl } from './components/PaymentStatusControl';
+import { ConfirmPaymentStatusDialog } from './components/ConfirmPaymentStatusDialog';
 import type { PaymentApplication } from '@/types/payment';
+import { formatDateValue } from '@/lib/dateUtils';
+import { CustomerLink } from '@/components/crm/CustomerLink';
 
 const TABS = [
   { key: 'overview', label: 'Overview' },
@@ -39,9 +51,13 @@ const TABS = [
 const DETAIL_POLL_MS = 60_000;
 type Tab = (typeof TABS)[number]['key'];
 
+// Used for the credit memo handoff when the payment's currency is not in the
+// loaded lookups — the same fallback the New Payment page uses.
+const FALLBACK_CURRENCY_CODE = 'USD';
+
 function fmtDate(iso?: string): string {
   if (!iso) return '—';
-  return new Date(iso).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+  return formatDateValue(iso, undefined, { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
 function currency(n: number | undefined): string {
@@ -56,10 +72,20 @@ export default function PaymentDetailPage() {
   const [applyOpen, setApplyOpen] = useState(false);
   const [exportingPdf, setExportingPdf] = useState(false);
   const [exportPdfError, setExportPdfError] = useState<string>();
+  // The final move (Deposited / Void) awaiting confirmation, if any.
+  const [confirmCode, setConfirmCode] = useState<PaymentHeaderCode | null>(null);
+  // Stable so the dialog's focus effect doesn't re-run on every page render.
+  const cancelConfirm = useCallback(() => setConfirmCode(null), []);
 
   const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
   const canEdit = permissionsLoading || hasPermission('payment', 'update');
+  const canTransition = !permissionsLoading && hasPermission('payment', 'transition');
   const canDelete = permissionsLoading || hasPermission('payment', 'delete');
+  const { isWorkflowEnabled, isLoading: workflowsLoading } = useWorkflows();
+  const canCreateCreditMemo = !permissionsLoading
+    && !workflowsLoading
+    && hasPermission('credit_memo', 'create')
+    && isWorkflowEnabled('credit_memo');
 
   const { data: payment, isLoading, error } = useQuery({
     queryKey: ['payment', id],
@@ -107,12 +133,40 @@ export default function PaymentDetailPage() {
     },
   });
 
+  // An approver rejected it. The POST response carries no approval overlay, so refetch
+  // to show the rejection banner and drop it from the list's pending view.
+  const handleRejected = () => {
+    queryClient.invalidateQueries({ queryKey: ['payment', id] });
+    queryClient.invalidateQueries({ queryKey: ['payments'] });
+    toast.success('Rejected — edit it to resubmit for approval.');
+  };
+
   if (isLoading) return <div className="p-6"><Spinner label="Loading payment…" /></div>;
   if (!payment)
     return <div className="p-6"><ErrorNote>{apiErrorMessage(error, 'Failed to load payment.')}</ErrorNote></div>;
 
   const color = PAYMENT_STATUS_COLORS[payment.status] ?? '#a8a29e';
+  // Deposited and Void as header buttons, like the other records' status
+  // buttons; the sidebar Status pill still offers every legal move.
+  const headerCodes = canTransition ? paymentHeaderTransitions(payment) : [];
+  const runConfirmed = () => {
+    if (!confirmCode) return;
+    // Close on either outcome: a failure shows under the header.
+    transition.mutate(confirmCode, { onSettled: () => setConfirmCode(null) });
+  };
   const applyBlocked = PAYMENT_BLOCKS_APPLY.has(payment.statusCode);
+  // Overpayment already turned into credit memos is not free to apply any more.
+  const creditedTotal = payment.creditedTotal ?? 0;
+  const availableToApply = Math.max(0, payment.unappliedAmount - creditedTotal);
+  // An excess whose credit memo was never saved (or was cancelled) is still
+  // sitting unapplied here — this raises that memo again, prefilled and linked
+  // to the payment exactly as the New Payment page does after confirming it.
+  const creditMemoHandoff = canCreateCreditMemo && !applyBlocked
+    ? creditMemoHandoffFromPayment(
+      payment,
+      lookups?.currencies.find((c) => c.id === payment.currencyId)?.code ?? FALLBACK_CURRENCY_CODE,
+    )
+    : null;
 
   async function handleExportPdf() {
     if (!payment) return;
@@ -126,19 +180,10 @@ export default function PaymentDetailPage() {
         recordNumber: payment.paymentNumber,
         statusLabel: payment.status,
         customerName: payment.customer.name,
-        createdAt: payment.createdAt,
-        updatedAt: payment.updatedAt,
+        issueDate: fmtDate(payment.paymentDate),
+        keyAmount: { label: 'Unapplied', value: currency(payment.unappliedAmount) },
+        notesText: payment.memo || undefined,
         sections: [
-          {
-            title: 'Primary Information',
-            rows: [
-              ['Payment Method', payment.method || ''],
-              ['Reference #', payment.referenceNumber || ''],
-              ['Payment Date', fmtDate(payment.paymentDate)],
-              ['Memo', payment.memo || ''],
-              ['Internal Notes', payment.internalNotes || ''],
-            ],
-          },
           {
             title: 'Applications',
             rows: payment.applications.map((app) => [`Invoice ${app.invoiceNumber || '—'}`, currency(app.amount)]),
@@ -147,7 +192,7 @@ export default function PaymentDetailPage() {
         totals: [
           { label: 'Amount', value: currency(payment.amount), bold: true },
           { label: 'Applied', value: currency(payment.appliedTotal) },
-          { label: 'Unapplied', value: currency(payment.unappliedAmount), bold: true },
+          ...(creditedTotal > 0 ? [{ label: 'Credited to credit memos', value: currency(creditedTotal) }] : []),
         ],
       });
     } catch (err) {
@@ -167,45 +212,68 @@ export default function PaymentDetailPage() {
         subtitle={payment.customer.name}
         recordNumber={payment.paymentNumber}
         statusBadge={<Badge color={color}>{payment.status}</Badge>}
+        actions={headerCodes.length > 0 && (
+          <>
+            {headerCodes.includes(PAYMENT_DEPOSITED_CODE) && (
+              <button
+                type="button"
+                onClick={() => setConfirmCode(PAYMENT_DEPOSITED_CODE)}
+                disabled={transition.isPending}
+                aria-label={`Mark payment ${payment.paymentNumber} as deposited`}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-stone-300 bg-white px-3 py-1.5 text-xs font-semibold text-stone-700 shadow-sm transition-colors hover:bg-stone-50 disabled:opacity-50"
+              >
+                <Landmark className="size-3.5" aria-hidden="true" />
+                Mark Deposited
+              </button>
+            )}
+            {headerCodes.includes(PAYMENT_VOID_CODE) && (
+              <button
+                type="button"
+                onClick={() => setConfirmCode(PAYMENT_VOID_CODE)}
+                disabled={transition.isPending}
+                aria-label={`Void payment ${payment.paymentNumber}`}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-destructive/30 bg-white px-3 py-1.5 text-xs font-semibold text-destructive shadow-sm transition-colors hover:bg-destructive/5 disabled:opacity-50"
+              >
+                <Ban className="size-3.5" aria-hidden="true" />
+                Void
+              </button>
+            )}
+          </>
+        )}
       />
 
-      {payment.gated && (
-        <>
-          <ApprovalBanner
-            approverNames={payment.approvers.filter((a) => !a.approved).map((a) => a.name)}
-            canApprove={payment.canApprove}
-            isOverride={payment.isOverride}
-            requiredApprovals={payment.requiredApprovals}
-            approvedCount={payment.approvedCount}
-            callerAlreadyApproved={payment.callerAlreadyApproved}
-            onApprove={() => approve.mutate()}
-            approving={approve.isPending}
-          />
-          {approve.isError && (
-            <p role="alert" className="px-5 py-1.5 text-2xs text-destructive 3xl:px-12 4xl:px-16">
-              {apiErrorMessage(approve.error, 'Failed to approve payment.')}
-            </p>
-          )}
-        </>
+      {transition.isError && (
+        <p role="alert" className="border-b border-stone-200 bg-white px-5 py-2 text-2xs text-destructive 3xl:px-12 4xl:px-16">
+          {apiErrorMessage(transition.error, 'Failed to change the payment status.')}
+        </p>
+      )}
+
+      <RecordApprovalBanner
+        record={payment}
+        onApprove={() => approve.mutate()}
+        approving={approve.isPending}
+        reject={{ noun: 'payment', run: (reason) => paymentService.reject(id, reason), onRejected: handleRejected }}
+      />
+      {payment.gated && approve.isError && (
+        <p role="alert" className="px-5 py-1.5 text-2xs text-destructive 3xl:px-12 4xl:px-16">
+          {apiErrorMessage(approve.error, 'Failed to approve payment.')}
+        </p>
       )}
 
       {/* Tab bar */}
-      <div className="flex shrink-0 overflow-x-auto overflow-y-hidden border-b border-stone-200 bg-white px-5 3xl:px-12 4xl:px-16 modal-scrollbar">
-        {TABS.map((tab) => (
-          <button
-            key={tab.key}
-            type="button"
-            onClick={() => setActiveTab(tab.key)}
-            className={cn(
-              'px-4 py-3 text-sm font-semibold border-b-2 -mb-px transition-colors duration-150 whitespace-nowrap shrink-0',
-              activeTab === tab.key
-                ? 'border-brand text-stone-950'
-                : 'border-transparent text-stone-500 hover:text-stone-700 hover:border-stone-200',
-            )}
-          >
-            {tab.label}
-          </button>
-        ))}
+      <div className="flex shrink-0 overflow-x-auto overflow-y-hidden border-b border-stone-200 bg-white px-5 3xl:px-12 4xl:px-16 modal-scrollbar py-2.5">
+        <div role="tablist" className={TAB_LIST_CLASS}>
+          {TABS.map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setActiveTab(tab.key)}
+              className={tabClass(activeTab === tab.key)}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="flex flex-col lg:flex-row gap-6 px-4 py-4 sm:px-5 sm:py-5 3xl:px-12 3xl:py-8 3xl:gap-10 4xl:px-16 4xl:py-10 4xl:gap-14">
@@ -213,6 +281,19 @@ export default function PaymentDetailPage() {
         <div className="flex-1 space-y-3 min-w-0">
           {activeTab === 'overview' && (
             <>
+              <AmountsStrip
+                items={[
+                  { label: 'Amount', value: payment.amount, emphasis: 'strong' },
+                  { label: 'Applied', value: payment.appliedTotal },
+                  // Once part of the payment has moved to credit memos, what is
+                  // left to apply is the figure to read; Unapplied steps back.
+                  { label: 'Unapplied', value: payment.unappliedAmount, emphasis: creditedTotal > 0 ? 'strong' : 'key' },
+                  ...(creditedTotal > 0 ? [
+                    { label: 'Credited to credit memos', value: creditedTotal },
+                    { label: 'Available to apply', value: availableToApply, emphasis: 'key' as const },
+                  ] : []),
+                ]}
+              />
               <ModernSection title="Primary Information" index={0}>
                 <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
                   <ReadonlyField label="Payment Method" value={payment.method} />
@@ -228,13 +309,6 @@ export default function PaymentDetailPage() {
                   {payment.internalNotes && <ReadonlyField label="Internal Notes" value={payment.internalNotes} full />}
                 </div>
               </ModernSection>
-              <div className="rounded-lg border border-stone-200 bg-white p-4">
-                <div className="grid grid-cols-3 gap-3">
-                  <Total label="Amount" value={payment.amount} bold />
-                  <Total label="Applied" value={payment.appliedTotal} />
-                  <Total label="Unapplied" value={payment.unappliedAmount} bold />
-                </div>
-              </div>
             </>
           )}
 
@@ -245,8 +319,8 @@ export default function PaymentDetailPage() {
                   <button
                     type="button"
                     onClick={() => setApplyOpen(true)}
-                    disabled={applyBlocked || payment.unappliedAmount <= 0}
-                    title={applyBlocked ? 'A voided payment cannot be applied.' : payment.unappliedAmount <= 0 ? 'No unapplied balance remaining.' : undefined}
+                    disabled={applyBlocked || availableToApply <= 0}
+                    title={applyBlocked ? 'A voided payment cannot be applied.' : availableToApply <= 0 ? 'No unapplied balance remaining.' : undefined}
                     className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-stone-900 hover:bg-brand-hover disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                   >
                     <DollarSign className="size-3.5" />
@@ -273,7 +347,7 @@ export default function PaymentDetailPage() {
                           </button>
                         </td>
                         <td className="px-3 py-2.5 tabular-nums text-stone-700">{currency(app.amount)}</td>
-                        <td className="px-3 py-2.5 tabular-nums text-stone-400">{fmtDate(app.createdAt)}</td>
+                        <td className="px-3 py-2.5 tabular-nums text-stone-500">{fmtDate(app.createdAt)}</td>
                         <td className="px-3 py-2.5 text-right">
                           {canEdit && (
                             <button
@@ -291,7 +365,7 @@ export default function PaymentDetailPage() {
                       </tr>
                     ))}
                     {payment.applications.length === 0 && (
-                      <tr><td colSpan={4} className="py-8 text-center text-stone-400">Not applied to any invoices yet.</td></tr>
+                      <tr><td colSpan={4} className="py-8 text-center text-stone-500">Not applied to any invoices yet.</td></tr>
                     )}
                   </tbody>
                 </table>
@@ -310,8 +384,9 @@ export default function PaymentDetailPage() {
 
         {/* Right sidebar */}
         <SalesDetailSidebar label="Payment Details">
+          <WorkflowCard module="payment" statusCode={payment.statusCode} statusLabel={payment.status} workflow={payment.workflow} links={{ invoiceId: payment.applications[0]?.invoiceId }} />
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-            <p className="text-xs font-semibold text-stone-400">Quick Actions</p>
+            <p className="text-xs font-semibold text-stone-500">Quick Actions</p>
             <div className="space-y-0.5">
               {canEdit && (
                 <button
@@ -333,6 +408,19 @@ export default function PaymentDetailPage() {
                   Edit payment
                 </button>
               )}
+              {creditMemoHandoff && (
+                <button
+                  type="button"
+                  onClick={() => navigate('/sales/credit_memo/new', {
+                    state: { [CREDIT_MEMO_FROM_PAYMENT_STATE]: creditMemoHandoff },
+                  })}
+                  aria-label="Create credit memo"
+                  className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs text-stone-700 w-full transition-colors text-left"
+                >
+                  <FileMinus className="size-4 text-stone-400 shrink-0" />
+                  Create credit memo
+                </button>
+              )}
               <button
                 type="button"
                 onClick={handleExportPdf}
@@ -350,7 +438,7 @@ export default function PaymentDetailPage() {
           </div>
 
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-            <p className="text-xs font-semibold text-stone-400">Status</p>
+            <p className="text-xs font-semibold text-stone-500">Status</p>
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
               <span className="text-stone-500">Status</span>
               <PaymentStatusControl
@@ -362,7 +450,7 @@ export default function PaymentDetailPage() {
             </div>
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
               <span className="text-stone-500">Customer</span>
-              <span className="text-stone-700 truncate max-w-[140px]">{payment.customer.name}</span>
+              <CustomerLink id={payment.customer.id} name={payment.customer.name} className="text-stone-700 truncate max-w-[140px] hover:text-accent-foreground hover:underline" />
             </div>
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
               <span className="text-stone-500">Created</span>
@@ -375,8 +463,7 @@ export default function PaymentDetailPage() {
           </div>
 
           {canDelete && (
-            <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-              <p className="text-xs font-semibold text-red-400">Danger Zone</p>
+            <DangerZoneCard>
               <DeletePaymentDialog
                 paymentId={id}
                 label={`Payment ${payment.paymentNumber}`}
@@ -385,16 +472,26 @@ export default function PaymentDetailPage() {
                   navigate('/sales/payment');
                 }}
               />
-            </div>
+            </DangerZoneCard>
           )}
         </SalesDetailSidebar>
       </div>
+
+      {confirmCode && (
+        <ConfirmPaymentStatusDialog
+          target={confirmCode}
+          paymentNumber={payment.paymentNumber}
+          pending={transition.isPending}
+          onConfirm={runConfirmed}
+          onCancel={cancelConfirm}
+        />
+      )}
 
       {applyOpen && (
         <ApplyDialog
           paymentId={id}
           customer={payment.customer}
-          unappliedAmount={payment.unappliedAmount}
+          unappliedAmount={availableToApply}
           excludeIds={payment.applications.map((a) => a.invoiceId)}
           onClose={() => setApplyOpen(false)}
           onApplied={() => {
@@ -443,7 +540,7 @@ function ApplyDialog({ paymentId, customer, unappliedAmount, excludeIds, onClose
             <h3 id="apply-payment-dialog-title" className="text-sm font-bold text-stone-900">
               Apply to invoice
             </h3>
-            <p className="text-xs text-stone-400 mt-0.5">
+            <p className="text-xs text-stone-500 mt-0.5">
               Unapplied balance: {currency(unappliedAmount)}
             </p>
           </div>
@@ -506,18 +603,7 @@ function ReadonlyField({ label, value, full }: { label: string; value?: string; 
   return (
     <div className={cn('space-y-1', full && 'col-span-full')}>
       <label className={fieldLabelCls}>{label}</label>
-      <div className={readonlyCls}>{value || <span className="text-stone-400">—</span>}</div>
-    </div>
-  );
-}
-
-function Total({ label, value, bold }: { label: string; value: number; bold?: boolean }) {
-  return (
-    <div>
-      <p className="text-2xs font-semibold uppercase tracking-wide text-stone-400">{label}</p>
-      <p className={cn('tabular-nums', bold ? 'text-sm font-bold text-stone-900' : 'text-xs font-semibold text-stone-600')}>
-        {currency(value)}
-      </p>
+      <div className={readonlyCls}>{value || <span className="text-stone-500">—</span>}</div>
     </div>
   );
 }

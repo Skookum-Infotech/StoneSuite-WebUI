@@ -1,3 +1,4 @@
+import type { WorkflowBlock } from '@/types/workflow';
 import { tenantClient } from '@/api/tenantClient';
 import type {
   FabricationJob,
@@ -9,6 +10,7 @@ import type {
   FabricationJobPieceInput,
   FabricationJobStep,
   FabricationSlab,
+  FabricationMaterial,
   CreateSlabInput,
   SlabDispositionInput,
 } from '@/types/fabrication';
@@ -46,7 +48,7 @@ export const fabricationService = {
   getJob: (uuid: string): Promise<FabricationJob> =>
     tenantClient
       .get<{
-        success: boolean; fabricationJob: FabricationJob; approval?: {
+        success: boolean; workflow?: WorkflowBlock; fabricationJob: FabricationJob; approval?: {
           gated?: boolean; approvers?: FabricationJob['approvers']; requiredApprovals?: number; approvedCount?: number;
           canApprove?: boolean; isOverride?: boolean; callerAlreadyApproved?: boolean;
         };
@@ -55,6 +57,7 @@ export const fabricationService = {
         const a = r.data.approval;
         return {
           ...r.data.fabricationJob,
+          workflow: r.data.workflow ?? r.data.fabricationJob.workflow,
           gated: a?.gated ?? false,
           approvers: a?.approvers ?? [],
           requiredApprovals: a?.requiredApprovals ?? 0,
@@ -67,6 +70,8 @@ export const fabricationService = {
 
   // A job always originates from a sales order — this create path takes an
   // explicit salesOrderUuid in the payload (used by the standalone Add page).
+  // Send `requestId` (see useIdempotencyKey) so a retry after a timeout returns
+  // the job already created rather than a second one.
   createJob: (payload: FabricationJobCreatePayload): Promise<FabricationJob> =>
     tenantClient
       .post<{ success: boolean; fabricationJob: FabricationJob }>(BASE, payload)
@@ -74,12 +79,17 @@ export const fabricationService = {
 
   // Spawn a job directly from a Sales Order's own "Create Fabrication Job"
   // action (POST /sales-orders/{uuid}/fabricate) — the path segment fixes
-  // the sales order, so the body needs no salesOrderUuid.
-  fabricateFromOrder: (salesOrderUuid: string, fields?: Partial<FabricationJobUpdatePayload>): Promise<FabricationJob> =>
+  // the sales order, so the body needs no salesOrderUuid. `requestId` makes a
+  // retry idempotent, as for createJob.
+  fabricateFromOrder: (
+    salesOrderUuid: string,
+    fields?: Partial<FabricationJobUpdatePayload>,
+    requestId?: string,
+  ): Promise<FabricationJob> =>
     tenantClient
       .post<{ success: boolean; fabricationJob: FabricationJob }>(
         `/tenant/sales-orders/${salesOrderUuid}/fabricate`,
-        fields ?? {},
+        { ...(fields ?? {}), ...(requestId ? { requestId } : {}) },
       )
       .then((r) => r.data.fabricationJob),
 
@@ -156,12 +166,13 @@ export const fabricationService = {
       .get<{ success: boolean; steps: FabricationJobStep[] }>(`${BASE}/${uuid}/steps`)
       .then((r) => r.data.steps ?? []),
 
-  // Updates every step row sharing this code (piece-grain steps have one row
-  // per piece, all patched together — there is no per-piece target yet).
+  // Updates one step row. Piece-grain steps have one row per piece, so send
+  // `pieceUuid` (from the row) to say which; omit it for a whole-job step. The
+  // server rejects (400) an update to a multi-piece step that names no piece.
   updateStep: (
     uuid: string,
     stepCode: string,
-    body: { status: string; notes?: string; payload?: Record<string, unknown> },
+    body: { status: string; notes?: string; payload?: Record<string, unknown>; pieceUuid?: string },
   ): Promise<FabricationJobStep> =>
     tenantClient
       .patch<{ success: boolean; step: FabricationJobStep }>(`${BASE}/${uuid}/steps/${stepCode}`, body)
@@ -173,6 +184,13 @@ export const fabricationService = {
     tenantClient
       .get<{ success: boolean; slabs: FabricationSlab[] }>(`${BASE}/${uuid}/slabs`)
       .then((r) => r.data.slabs ?? []),
+
+  // What each slab material on the job needs against what is allocated. Needs
+  // installation:read AND inventory_item:read, like the slab list.
+  getJobMaterials: (uuid: string): Promise<FabricationMaterial[]> =>
+    tenantClient
+      .get<{ success: boolean; materials: FabricationMaterial[] }>(`${BASE}/${uuid}/materials`)
+      .then((r) => r.data.materials ?? []),
 
   // Reserves an existing slab (by uuid) against the job. Legal from MALC
   // onward, including after CUTG (replacing a broken slab on a live job).

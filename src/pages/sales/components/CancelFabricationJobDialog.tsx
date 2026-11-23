@@ -1,9 +1,12 @@
+import { Select } from '@/components/ui/select';
 import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { AxiosError } from 'axios';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AlertTriangle, Ban, Loader2, CheckCircle2 } from 'lucide-react';
 import { fabricationService } from '@/services/fabricationService';
+import { inventoryBinService } from '@/services/inventoryBinService';
+import { BinPicker } from '@/components/inventory/BinPicker';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { fieldCls } from '@/components/crm/formUtils';
 import { cn } from '@/lib/utils';
@@ -20,9 +23,22 @@ interface RowDraft {
   lengthMm: string;
   widthMm: string;
   thicknessMm: string;
+  binId: string;
 }
 
-const EMPTY_ROW: RowDraft = { disposition: '', recoveredArea: '', lengthMm: '', widthMm: '', thicknessMm: '' };
+const EMPTY_ROW: RowDraft = { disposition: '', recoveredArea: '', lengthMm: '', widthMm: '', thicknessMm: '', binId: '' };
+
+// A recovered offcut becomes real stock, so the server needs its true size and
+// where it is put away — it no longer fills in placeholder dimensions. Returns
+// the first problem with a recovered row, or null when it is complete.
+function recoveredRowError(draft: RowDraft): string | null {
+  if (!(parseFloat(draft.recoveredArea) > 0)) return 'Recovered area must be greater than 0.';
+  if (!(parseFloat(draft.lengthMm) > 0) || !(parseFloat(draft.widthMm) > 0) || !(parseFloat(draft.thicknessMm) > 0)) {
+    return 'Enter the offcut\u2019s length, width and thickness.';
+  }
+  if (!draft.binId) return 'Choose the bin the offcut is put away in.';
+  return null;
+}
 
 // Cancel-after-cutting is a multi-step flow, not one button (spec §4.4): the
 // server 409s on the plain cancel transition until every already-consumed
@@ -56,6 +72,15 @@ export function CancelFabricationJobDialog({ job, disabled, onCancelled }: {
     enabled: open && step === 'disposition',
   });
 
+  // Recovered offcuts are put away in a bin. The tree spans every location and
+  // the server checks the bin is in the slab's own location, so each bin is
+  // shown with its location name and a wrong pick comes back as a row error.
+  const { data: bins = [] } = useQuery({
+    queryKey: ['inventory-bins-tree', 'all'],
+    queryFn: () => inventoryBinService.getTree(),
+    enabled: open && step === 'disposition',
+  });
+
   const pending = slabs.filter((s) => s.status === 'consumed' && !doneIds.has(s.id));
 
   const cancelMutation = useMutation({
@@ -79,9 +104,10 @@ export function CancelFabricationJobDialog({ job, disabled, onCancelled }: {
       fabricationService.recordDisposition(job.id, slabId, {
         disposition: input.disposition as SlabDisposition,
         recoveredArea: input.disposition === 'recovered' ? parseFloat(input.recoveredArea) || 0 : undefined,
-        lengthMm: input.lengthMm ? parseFloat(input.lengthMm) : undefined,
-        widthMm: input.widthMm ? parseFloat(input.widthMm) : undefined,
-        thicknessMm: input.thicknessMm ? parseFloat(input.thicknessMm) : undefined,
+        lengthMm: input.disposition === 'recovered' ? parseFloat(input.lengthMm) : undefined,
+        widthMm: input.disposition === 'recovered' ? parseFloat(input.widthMm) : undefined,
+        thicknessMm: input.disposition === 'recovered' ? parseFloat(input.thicknessMm) : undefined,
+        destinationBinUuid: input.disposition === 'recovered' ? input.binId : undefined,
       }),
     onSuccess: (_void, { slabId }) => {
       setDoneIds((prev) => new Set(prev).add(slabId));
@@ -110,9 +136,12 @@ export function CancelFabricationJobDialog({ job, disabled, onCancelled }: {
   function submitRow(slab: FabricationSlab) {
     const draft = drafts[slab.id] ?? EMPTY_ROW;
     if (!draft.disposition) return;
-    if (draft.disposition === 'recovered' && !(parseFloat(draft.recoveredArea) > 0)) {
-      setRowErrors((prev) => ({ ...prev, [slab.id]: 'Recovered area must be greater than 0.' }));
-      return;
+    if (draft.disposition === 'recovered') {
+      const problem = recoveredRowError(draft);
+      if (problem) {
+        setRowErrors((prev) => ({ ...prev, [slab.id]: problem }));
+        return;
+      }
     }
     dispositionMutation.mutate({ slabId: slab.id, input: draft });
   }
@@ -177,7 +206,7 @@ export function CancelFabricationJobDialog({ job, disabled, onCancelled }: {
                 <h3 id="cancel-fj-dialog-title" className="text-sm font-bold text-stone-900">
                   {step === 'confirm' ? 'Cancel this fabrication job?' : 'Declare the fate of cut material'}
                 </h3>
-                <p className="text-xs text-stone-400 mt-0.5">
+                <p className="text-xs text-stone-500 mt-0.5">
                   {step === 'confirm'
                     ? 'Any reserved slabs will be released. This cannot be undone.'
                     : 'Every already-cut slab needs a disposition before the job can be cancelled.'}
@@ -209,7 +238,7 @@ export function CancelFabricationJobDialog({ job, disabled, onCancelled }: {
             {step === 'disposition' && (
               <>
                 {isFetching && pending.length === 0 && (
-                  <p className="py-4 text-center text-xs text-stone-400">Loading slabs…</p>
+                  <p className="py-4 text-center text-xs text-stone-500">Loading slabs…</p>
                 )}
 
                 {!isFetching && pending.length === 0 && (
@@ -226,10 +255,10 @@ export function CancelFabricationJobDialog({ job, disabled, onCancelled }: {
                       <div key={slab.id} className="rounded-lg border border-stone-200 p-3 space-y-2">
                         <div className="flex items-center justify-between">
                           <span className="font-mono text-xs font-semibold text-stone-800">{slab.serial}</span>
-                          <span className="text-2xs text-stone-400 tabular-nums">{slab.area} sq. area</span>
+                          <span className="text-2xs text-stone-500 tabular-nums">{slab.area} sq. area</span>
                         </div>
                         <div className="flex flex-wrap items-center gap-2">
-                          <select
+                          <Select
                             value={draft.disposition}
                             onChange={(e) => updateDraft(slab.id, { disposition: e.target.value as SlabDisposition })}
                             className={cn(fieldCls, 'h-8 py-1 w-48')}
@@ -239,7 +268,7 @@ export function CancelFabricationJobDialog({ job, disabled, onCancelled }: {
                             {DISPOSITION_OPTIONS.map((opt) => (
                               <option key={opt} value={opt}>{DISPOSITION_LABELS[opt]}</option>
                             ))}
-                          </select>
+                          </Select>
                           {draft.disposition === 'recovered' && (
                             <input
                               type="number"
@@ -264,6 +293,38 @@ export function CancelFabricationJobDialog({ job, disabled, onCancelled }: {
                             Record
                           </button>
                         </div>
+                        {draft.disposition === 'recovered' && (
+                          <div className="space-y-2">
+                            <div className="flex flex-wrap items-center gap-2">
+                              {([
+                                ['lengthMm', 'Length (mm) *', 'Length'],
+                                ['widthMm', 'Width (mm) *', 'Width'],
+                                ['thicknessMm', 'Thickness (mm) *', 'Thickness'],
+                              ] as const).map(([field, placeholder, name]) => (
+                                <input
+                                  key={field}
+                                  type="number"
+                                  min="0"
+                                  step="0.01"
+                                  value={draft[field]}
+                                  onChange={(e) => updateDraft(slab.id, { [field]: e.target.value })}
+                                  placeholder={placeholder}
+                                  className={cn(fieldCls, 'h-8 py-1 w-32')}
+                                  aria-label={`${name} of the offcut from slab ${slab.serial}`}
+                                />
+                              ))}
+                            </div>
+                            <BinPicker
+                              bins={bins}
+                              value={draft.binId}
+                              onChange={(binId) => updateDraft(slab.id, { binId })}
+                              label={`Put-away bin for the offcut from slab ${slab.serial}`}
+                              allowEmpty={false}
+                              showWarehouse
+                            />
+                            <p className="text-2xs text-stone-500">The bin must be in the same location as the slab.</p>
+                          </div>
+                        )}
                         {rowErrors[slab.id] && (
                           <p className="text-2xs text-destructive">{rowErrors[slab.id]}</p>
                         )}

@@ -2,18 +2,21 @@ import type { Ref } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { Package } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { TAB_LIST_CLASS, tabClass } from '@/components/ui/tabStyles';
 import { ModernSection } from '@/components/crm/FormPrimitives';
 import { EditableFilesPanel, type EditableFilesPanelHandle } from '@/components/crm/CrmSubTabsPanel';
 import { DynamicFieldInput } from '@/components/tenant/DynamicFieldInput';
 import { workflowService } from '@/services/tenantServices';
+import { itemReceiptService } from '@/services/itemReceiptService';
 import { activeCustomFields } from '@/lib/customFields';
+import { previewSerials } from '@/lib/itemReceiptSlabs';
 import { ItemReceiptSectionGrid } from './ItemReceiptFormFields';
 import { ReceiptLinesTable } from './ReceiptLinesTable';
 import { ItemReceiptAuditTab } from './ItemReceiptAuditTab';
 import type { CrmLookups } from '@/services/lookupService';
 import {
-  RECEIPT_HEADER_FIELDS, PAGE_TABS, type PageTab, type ItemReceiptDraftLine, type ReceiptLineError,
+  RECEIPT_HEADER_FIELDS, PAGE_TABS, isSerializedLine,
+  type PageTab, type ItemReceiptDraftLine, type ReceiptLineError,
 } from '@/lib/itemReceiptForm';
 
 // Shared tab bar + tab content for both the Receive and Edit Item Receipt
@@ -53,25 +56,45 @@ export function ItemReceiptFormBody({
   });
   const customFieldDefs = activeCustomFields(irDef);
 
+  // Slab serials are previewed before saving so the receiver can see (and label
+  // the physical slabs with) what each will be called. The server assigns the
+  // real ones at post, so this is only asked for when a slab line exists.
+  const { data: slabSequence } = useQuery({
+    queryKey: ['slab-sequence', sourcePurchaseOrder.id],
+    queryFn: () => itemReceiptService.nextSlabSerial(sourcePurchaseOrder.id),
+    enabled: lines.some(isSerializedLine),
+    staleTime: 0,
+  });
+  const serials = previewSerials(lines, slabSequence);
+  const warehouseId = typeof data.warehouse_id === 'string' ? data.warehouse_id : '';
+
+  // A bin belongs to exactly one warehouse, so choosing a different warehouse
+  // clears every slab's bin rather than leaving it pointing across warehouses.
+  function handleSet(key: string, value: unknown) {
+    if (key === 'warehouse_id' && value !== data.warehouse_id) {
+      setLines(lines.map((l) => (
+        l.slabs.length > 0 ? { ...l, slabs: l.slabs.map((s) => ({ ...s, binId: '' })) } : l
+      )));
+    }
+    set(key, value);
+  }
+
   return (
     <>
       {/* Page-level tab bar */}
-      <div className="flex shrink-0 overflow-x-auto overflow-y-hidden border-b border-stone-200 bg-white px-5 3xl:px-10 4xl:px-16 modal-scrollbar">
-        {PAGE_TABS.map((tab) => (
-          <button
-            key={tab.key}
-            type="button"
-            onClick={() => setActiveTab(tab.key)}
-            className={cn(
-              'flex shrink-0 items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 -mb-px transition-colors whitespace-nowrap',
-              activeTab === tab.key
-                ? 'border-stone-800 text-stone-900'
-                : 'border-transparent text-stone-400 hover:text-stone-600 hover:border-stone-300',
-            )}
-          >
-            {tab.label}
-          </button>
-        ))}
+      <div className="flex shrink-0 overflow-x-auto overflow-y-hidden border-b border-stone-200 bg-white px-5 3xl:px-10 4xl:px-16 modal-scrollbar py-2.5">
+        <div role="tablist" className={TAB_LIST_CLASS}>
+          {PAGE_TABS.map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setActiveTab(tab.key)}
+              className={tabClass(activeTab === tab.key)}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Scrollable content */}
@@ -86,7 +109,7 @@ export function ItemReceiptFormBody({
                     <Package className="size-4 shrink-0 text-stone-400" aria-hidden="true" />
                     <div className="min-w-0">
                       <p className="truncate text-sm font-semibold text-stone-800">{sourcePurchaseOrder.number || '—'}</p>
-                      <p className="truncate text-xs text-stone-400">{sourcePurchaseOrder.vendorName}</p>
+                      <p className="truncate text-xs text-stone-500">{sourcePurchaseOrder.vendorName}</p>
                     </div>
                   </div>
                   <button
@@ -101,8 +124,8 @@ export function ItemReceiptFormBody({
 
               <ModernSection title="Receipt Information" index={1}>
                 <ItemReceiptSectionGrid
-                  fields={RECEIPT_HEADER_FIELDS.filter((f) => Boolean(itemReceiptId) || (f.key !== 'ir_doc_num' && f.key !== 'warehouse_name'))}
-                  data={data} set={set} lookups={lookups}
+                  fields={RECEIPT_HEADER_FIELDS.filter((f) => Boolean(itemReceiptId) || f.key !== 'ir_doc_num')}
+                  data={data} set={handleSet} lookups={lookups}
                 />
               </ModernSection>
 
@@ -122,7 +145,10 @@ export function ItemReceiptFormBody({
               )}
 
               <ModernSection title="Lines" index={3}>
-                <ReceiptLinesTable lines={lines} onChange={setLines} lineErrors={lineErrors} />
+                <ReceiptLinesTable
+                  lines={lines} onChange={setLines} lineErrors={lineErrors}
+                  serials={serials} warehouseId={warehouseId}
+                />
               </ModernSection>
             </>
           )}

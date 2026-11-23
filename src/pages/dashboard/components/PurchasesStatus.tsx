@@ -47,7 +47,7 @@ export function PurchasesStatus({
         <div className="rounded-xl bg-stone-50 p-2 sm:p-2.5 lg:p-3">
           <div className="truncate text-[10px] font-semibold uppercase tracking-[.09em] text-stone-500">Pending</div>
           <div className="mt-1 text-sm font-bold tabular-nums text-stone-950 sm:text-base lg:text-lg">
-            {data.pending ? data.pending.count : <span className="text-stone-300">—</span>}
+            {data.pending ? data.pending.count : <span className="text-stone-500">—</span>}
           </div>
           {data.pending && <div className="truncate text-2xs text-stone-500 tabular-nums">{currency(data.pending.value)}</div>}
         </div>
@@ -68,7 +68,7 @@ export function PurchasesStatus({
       </div>
 
       {data.attention.length === 0 ? (
-        <p className="mt-4 text-xs text-stone-400">Nothing needs attention right now.</p>
+        <p className="mt-4 text-xs text-stone-500">Nothing needs attention right now.</p>
       ) : (
         <>
           <div className="mt-4 flex flex-col divide-y divide-stone-100">

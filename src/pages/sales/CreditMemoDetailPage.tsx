@@ -1,7 +1,10 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { AddressGeoLine } from '@/components/tenant/AddressGeoLine';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { FileMinus, Upload, Pencil, DollarSign, Unlink, Loader2, FileDown } from 'lucide-react';
+import { lookupService } from '@/services/lookupService';
+import { currencyCodeFor } from '@/lib/formatMoney';
+import { FileMinus, Upload, Pencil, DollarSign, Unlink, Loader2, FileDown, CreditCard } from 'lucide-react';
 import { toast } from 'sonner';
 import { creditMemoService } from '@/services/creditMemoService';
 import { apiErrorMessage } from '@/api/tenantClient';
@@ -10,17 +13,22 @@ import { ModernSection } from '@/components/crm/FormPrimitives';
 import { readonlyCls, fieldLabelCls } from '@/components/crm/formUtils';
 import { FilesContent } from '@/components/crm/CrmSubTabsPanel';
 import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
-import { ApprovalBanner } from '@/components/tenant/ApprovalBanner';
+import { RecordApprovalBanner } from '@/components/tenant/RecordApprovalBanner';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { cn } from '@/lib/utils';
+import { TAB_LIST_CLASS, tabClass } from '@/components/ui/tabStyles';
 import { CREDIT_MEMO_STATUS_COLORS, CREDIT_MEMO_READONLY_STATUSES, CREDIT_MEMO_DRAFT_STATUS } from '@/lib/creditMemoForm';
 import { CreditMemoAuditTab } from './components/CreditMemoAuditTab';
 import { DeleteCreditMemoDialog } from './components/DeleteCreditMemoDialog';
+import { DangerZoneCard } from '@/components/tenant/DangerZoneCard';
 import { VoidCreditMemoDialog } from './components/VoidCreditMemoDialog';
 import { ApplyCreditMemoDialog } from './components/ApplyCreditMemoDialog';
 import { SalesDetailSidebar } from './components/SalesDetailSidebar';
+import { AmountsStrip } from './components/AmountsStrip';
 import type { CreditMemoApplication } from '@/types/creditMemo';
+import { formatDateValue } from '@/lib/dateUtils';
+import { CustomerLink } from '@/components/crm/CustomerLink';
 
 const TABS = [
   { key: 'overview', label: 'Overview' },
@@ -38,7 +46,7 @@ type Tab = (typeof TABS)[number]['key'];
 
 function fmtDate(iso?: string): string {
   if (!iso) return '—';
-  return new Date(iso).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+  return formatDateValue(iso, undefined, { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
 function currency(n: number | undefined): string {
@@ -66,6 +74,12 @@ export default function CreditMemoDetailPage() {
     refetchInterval: DETAIL_POLL_MS,
   });
 
+  const { data: lookups } = useQuery({
+    queryKey: ['crm-lookups'],
+    queryFn: lookupService.getCrmLookups,
+    staleTime: 10 * 60 * 1000,
+  });
+
   const setLabel = useBreadcrumbStore((s) => s.setLabel);
   const clearLabel = useBreadcrumbStore((s) => s.clearLabel);
   useEffect(() => {
@@ -88,6 +102,14 @@ export default function CreditMemoDetailPage() {
     },
   });
 
+  // An approver rejected it. The POST response carries no approval overlay, so refetch
+  // to show the rejection banner and drop it from the list's pending view.
+  const handleRejected = () => {
+    queryClient.invalidateQueries({ queryKey: ['creditMemo', id] });
+    queryClient.invalidateQueries({ queryKey: ['creditMemos'] });
+    toast.success('Rejected — edit it to resubmit for approval.');
+  };
+
   const unapply = useMutation({
     mutationFn: (invoiceId: string) => creditMemoService.unapply(id, invoiceId),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['creditMemo', id] }),
@@ -102,6 +124,9 @@ export default function CreditMemoDetailPage() {
   const isReadOnly = CREDIT_MEMO_READONLY_STATUSES.has(creditMemo.statusCode);
   const canVoid = canTransition && (isDraft || creditMemo.statusCode === 'APPV');
   const canApply = canUpdate && creditMemo.statusCode === 'APPV';
+  // A credit memo is one Amount, so it has no line items to show. Memos entered
+  // before that (which do have lines) keep a read-only Items tab.
+  const visibleTabs = TABS.filter((tab) => tab.key !== 'items' || creditMemo.lines.length > 0);
 
   async function handleExportPdf() {
     if (!creditMemo) return;
@@ -115,26 +140,12 @@ export default function CreditMemoDetailPage() {
         recordNumber: creditMemo.creditMemoNumber,
         statusLabel: creditMemo.status,
         customerName: creditMemo.customer.name,
-        createdAt: creditMemo.createdAt,
-        updatedAt: creditMemo.updatedAt,
-        sections: [
-          {
-            title: 'Primary Information',
-            rows: [
-              ['Credit Memo Date', fmtDate(creditMemo.creditMemoDate)],
-              ['Reference #', creditMemo.referenceNumber || ''],
-              ['Reason', creditMemo.reason || ''],
-              ['Invoice', creditMemo.invoice?.number || ''],
-              ['Sales Order', creditMemo.salesOrder?.number || ''],
-              ['Sales Tax %', `${creditMemo.salesTaxPercent}%`],
-              ['Memo', creditMemo.memo || ''],
-              ['Notes', creditMemo.notes || ''],
-              ['Internal Notes', creditMemo.internalNotes || ''],
-            ],
-          },
-          { title: 'Billing Address', rows: addressRows(creditMemo.billing ?? {}) },
-        ],
-        itemsTable: {
+        issueDate: fmtDate(creditMemo.creditMemoDate),
+        keyAmount: { label: 'Unapplied Amount', value: currency(creditMemo.unappliedAmount) },
+        billTo: creditMemo.billing,
+        notesText: creditMemo.notes || undefined,
+        sections: [],
+        itemsTable: creditMemo.lines.length > 0 ? {
           head: ['#', 'Item', 'SKU', 'Qty', 'Unit Price', 'Disc %', 'Tax %', 'Total'],
           rows: creditMemo.lines.map((line) => [
             String(line.lineNumber),
@@ -146,16 +157,16 @@ export default function CreditMemoDetailPage() {
             `${line.taxPercent}%`,
             currency(line.lineTotal),
           ]),
+          descriptions: creditMemo.lines.map((line) => line.description || undefined),
           numericFrom: 3,
-        },
+        } : undefined,
         totals: [
           { label: 'Subtotal', value: currency(creditMemo.subtotal) },
-          { label: 'Discount', value: currency(creditMemo.discountTotal) },
+          ...(creditMemo.discountTotal > 0 ? [{ label: 'Discount', value: currency(creditMemo.discountTotal) }] : []),
           { label: 'Tax', value: currency(creditMemo.taxTotal) },
           { label: 'Adjustment', value: currency(creditMemo.adjustment) },
           { label: 'Grand Total', value: currency(creditMemo.grandTotal), bold: true },
           { label: 'Applied Total', value: currency(creditMemo.appliedTotal) },
-          { label: 'Unapplied Amount', value: currency(creditMemo.unappliedAmount), bold: true },
         ],
       });
     } catch (err) {
@@ -177,43 +188,32 @@ export default function CreditMemoDetailPage() {
         statusBadge={<Badge color={color}>{creditMemo.status}</Badge>}
       />
 
-      {creditMemo.gated && (
-        <>
-          <ApprovalBanner
-            approverNames={creditMemo.approvers.filter((a) => !a.approved).map((a) => a.name)}
-            canApprove={creditMemo.canApprove}
-            isOverride={creditMemo.isOverride}
-            requiredApprovals={creditMemo.requiredApprovals}
-            approvedCount={creditMemo.approvedCount}
-            callerAlreadyApproved={creditMemo.callerAlreadyApproved}
-            onApprove={() => approve.mutate()}
-            approving={approve.isPending}
-          />
-          {approve.isError && (
-            <p role="alert" className="px-5 py-1.5 text-2xs text-destructive 3xl:px-12 4xl:px-16">
-              {apiErrorMessage(approve.error, 'Failed to approve credit memo.')}
-            </p>
-          )}
-        </>
+      <RecordApprovalBanner
+        record={creditMemo}
+        onApprove={() => approve.mutate()}
+        approving={approve.isPending}
+        reject={{ noun: 'credit memo', run: (reason) => creditMemoService.reject(id, reason), onRejected: handleRejected }}
+      />
+      {creditMemo.gated && approve.isError && (
+        <p role="alert" className="px-5 py-1.5 text-2xs text-destructive 3xl:px-12 4xl:px-16">
+          {apiErrorMessage(approve.error, 'Failed to approve credit memo.')}
+        </p>
       )}
 
       {/* Tab bar */}
-      <div className="flex shrink-0 overflow-x-auto overflow-y-hidden border-b border-stone-200 bg-white px-5 3xl:px-12 4xl:px-16 modal-scrollbar">
-        {TABS.map((tab) => (
-          <button
-            key={tab.key}
-            type="button"
-            onClick={() => setActiveTab(tab.key)}
-            className={cn(
-              'px-4 py-3 text-sm font-semibold border-b-2 -mb-px transition-colors duration-150 whitespace-nowrap shrink-0',
-              activeTab === tab.key
-                ? 'border-brand text-stone-950'
-                : 'border-transparent text-stone-500 hover:text-stone-700 hover:border-stone-200',
-            )}
-          >
-            {tab.label}
-          </button>
-        ))}
+      <div className="flex shrink-0 overflow-x-auto overflow-y-hidden border-b border-stone-200 bg-white px-5 3xl:px-12 4xl:px-16 modal-scrollbar py-2.5">
+        <div role="tablist" className={TAB_LIST_CLASS}>
+          {visibleTabs.map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setActiveTab(tab.key)}
+              className={tabClass(activeTab === tab.key)}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="flex flex-col lg:flex-row gap-6 px-4 py-4 sm:px-5 sm:py-5 3xl:px-12 3xl:py-8 3xl:gap-10 4xl:px-16 4xl:py-10 4xl:gap-14">
@@ -221,6 +221,17 @@ export default function CreditMemoDetailPage() {
         <div className="flex-1 space-y-3 min-w-0">
           {activeTab === 'overview' && (
             <>
+              <AmountsStrip
+                items={[
+                  { label: 'Subtotal', value: creditMemo.subtotal },
+                  ...(creditMemo.discountTotal > 0 ? [{ label: 'Discount', value: creditMemo.discountTotal }] : []),
+                  { label: 'Tax', value: creditMemo.taxTotal },
+                  { label: 'Adjustment', value: creditMemo.adjustment },
+                  { label: 'Grand Total', value: creditMemo.grandTotal, emphasis: 'strong' },
+                  { label: 'Applied Total', value: creditMemo.appliedTotal },
+                  { label: 'Unapplied Amount', value: creditMemo.unappliedAmount, emphasis: 'key' },
+                ]}
+              />
               <ModernSection title="Primary Information" index={0}>
                 <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
                   <ReadonlyField label="Credit Memo Date" value={fmtDate(creditMemo.creditMemoDate)} />
@@ -228,6 +239,19 @@ export default function CreditMemoDetailPage() {
                   <ReadonlyField label="Reason" value={creditMemo.reason} />
                   <ReadonlyField label="Invoice" value={creditMemo.invoice?.number} />
                   <ReadonlyField label="Sales Order" value={creditMemo.salesOrder?.number} />
+                  {creditMemo.sourcePayment && (
+                    <div className="space-y-1">
+                      <label className={fieldLabelCls}>Source Payment</label>
+                      <Link
+                        to={`/sales/payment/${creditMemo.sourcePayment.id}`}
+                        aria-label={`View payment ${creditMemo.sourcePayment.number}`}
+                        className="inline-flex items-center gap-1.5 rounded-[10px] border border-stone-300 bg-stone-50 px-3.5 py-2.5 text-xs font-semibold text-accent-foreground hover:bg-stone-100 transition-colors"
+                      >
+                        <CreditCard className="size-3.5" />
+                        {creditMemo.sourcePayment.number}
+                      </Link>
+                    </div>
+                  )}
                   <ReadonlyField label="Sales Tax %" value={`${creditMemo.salesTaxPercent}%`} />
                   {creditMemo.memo && <ReadonlyField label="Memo" value={creditMemo.memo} full />}
                   {creditMemo.notes && <ReadonlyField label="Notes" value={creditMemo.notes} full />}
@@ -237,17 +261,6 @@ export default function CreditMemoDetailPage() {
               <ModernSection title="Billing Address" index={1}>
                 <AddressBlock addr={creditMemo.billing ?? {}} />
               </ModernSection>
-              <div className="rounded-lg border border-stone-200 bg-white p-4">
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-                  <Total label="Subtotal" value={creditMemo.subtotal} />
-                  <Total label="Discount" value={creditMemo.discountTotal} />
-                  <Total label="Tax" value={creditMemo.taxTotal} />
-                  <Total label="Adjustment" value={creditMemo.adjustment} />
-                  <Total label="Grand Total" value={creditMemo.grandTotal} bold />
-                  <Total label="Applied Total" value={creditMemo.appliedTotal} />
-                  <Total label="Unapplied Amount" value={creditMemo.unappliedAmount} bold />
-                </div>
-              </div>
             </>
           )}
 
@@ -273,9 +286,9 @@ export default function CreditMemoDetailPage() {
                 <tbody className="divide-y divide-stone-100">
                   {creditMemo.lines.map((line) => (
                     <tr key={line.id} className="hover:bg-stone-50/50 divide-x divide-stone-100">
-                      <td className="px-3 py-2.5 text-stone-400 tabular-nums">{line.lineNumber}</td>
+                      <td className="px-3 py-2.5 text-stone-500 tabular-nums">{line.lineNumber}</td>
                       <td className="px-3 py-2.5 font-medium text-stone-800">
-                        {line.itemName || line.description || <span className="text-stone-300">—</span>}
+                        {line.itemName || line.description || <span className="text-stone-500">—</span>}
                       </td>
                       <td className="px-3 py-2.5 font-mono text-2xs text-stone-500">{line.sku || '—'}</td>
                       <td className="px-3 py-2.5 tabular-nums text-right text-stone-600">{line.quantity}</td>
@@ -286,7 +299,7 @@ export default function CreditMemoDetailPage() {
                     </tr>
                   ))}
                   {creditMemo.lines.length === 0 && (
-                    <tr><td colSpan={8} className="py-8 text-center text-stone-400">No line items.</td></tr>
+                    <tr><td colSpan={8} className="py-8 text-center text-stone-500">No line items.</td></tr>
                   )}
                 </tbody>
               </table>
@@ -328,7 +341,7 @@ export default function CreditMemoDetailPage() {
                           </button>
                         </td>
                         <td className="px-3 py-2.5 tabular-nums text-stone-700">{currency(app.amount)}</td>
-                        <td className="px-3 py-2.5 tabular-nums text-stone-400">{fmtDate(app.createdAt)}</td>
+                        <td className="px-3 py-2.5 tabular-nums text-stone-500">{fmtDate(app.createdAt)}</td>
                         <td className="px-3 py-2.5 text-right">
                           {canApply && (
                             <button
@@ -346,7 +359,7 @@ export default function CreditMemoDetailPage() {
                       </tr>
                     ))}
                     {creditMemo.applications.length === 0 && (
-                      <tr><td colSpan={4} className="py-8 text-center text-stone-400">Not applied to any invoices yet.</td></tr>
+                      <tr><td colSpan={4} className="py-8 text-center text-stone-500">Not applied to any invoices yet.</td></tr>
                     )}
                   </tbody>
                 </table>
@@ -367,7 +380,7 @@ export default function CreditMemoDetailPage() {
         <SalesDetailSidebar label="Credit Memo Details">
           {!isReadOnly && (
             <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-              <p className="text-xs font-semibold text-stone-400">Quick Actions</p>
+              <p className="text-xs font-semibold text-stone-500">Quick Actions</p>
               <div className="space-y-0.5">
                 <button
                   type="button"
@@ -424,14 +437,14 @@ export default function CreditMemoDetailPage() {
           )}
 
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-            <p className="text-xs font-semibold text-stone-400">Status</p>
+            <p className="text-xs font-semibold text-stone-500">Status</p>
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
               <span className="text-stone-500">Status</span>
               <Badge color={color}>{creditMemo.status}</Badge>
             </div>
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
               <span className="text-stone-500">Customer</span>
-              <span className="text-stone-700 truncate max-w-[140px]">{creditMemo.customer.name}</span>
+              <CustomerLink id={creditMemo.customer.id} name={creditMemo.customer.name} className="text-stone-700 truncate max-w-[140px] hover:text-accent-foreground hover:underline" />
             </div>
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
               <span className="text-stone-500">Created</span>
@@ -444,8 +457,7 @@ export default function CreditMemoDetailPage() {
           </div>
 
           {isDraft && canDelete && (
-            <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-              <p className="text-xs font-semibold text-red-400">Danger Zone</p>
+            <DangerZoneCard>
               <DeleteCreditMemoDialog
                 creditMemoId={id}
                 label={`Credit Memo ${creditMemo.creditMemoNumber}`}
@@ -454,7 +466,7 @@ export default function CreditMemoDetailPage() {
                   navigate('/sales/credit_memo');
                 }}
               />
-            </div>
+            </DangerZoneCard>
           )}
         </SalesDetailSidebar>
       </div>
@@ -465,6 +477,7 @@ export default function CreditMemoDetailPage() {
           customer={creditMemo.customer}
           unappliedAmount={creditMemo.unappliedAmount}
           excludeIds={creditMemo.applications.map((a) => a.invoiceId)}
+          currencyCode={currencyCodeFor(lookups, creditMemo.currencyId)}
           onClose={() => setApplyOpen(false)}
           onApplied={() => {
             setApplyOpen(false);
@@ -480,23 +493,12 @@ function ReadonlyField({ label, value, full }: { label: string; value?: string; 
   return (
     <div className={cn('space-y-1', full && 'col-span-full')}>
       <label className={fieldLabelCls}>{label}</label>
-      <div className={readonlyCls}>{value || <span className="text-stone-400">—</span>}</div>
+      <div className={readonlyCls}>{value || <span className="text-stone-500">—</span>}</div>
     </div>
   );
 }
 
-function addressRows(addr: { customerName?: string; attention?: string; addrLine1?: string; addrLine2?: string; suiteUnit?: string; city?: string; zip?: string; phone?: string; fax?: string; email?: string }): Array<[string, string]> {
-  return [
-    ['Name', addr.customerName || ''],
-    ['Attention', addr.attention || ''],
-    ['Address', [addr.addrLine1, addr.addrLine2].filter(Boolean).join(', ')],
-    ['City/Zip', [addr.suiteUnit, addr.city, addr.zip].filter(Boolean).join(', ')],
-    ['Phone', addr.phone || ''],
-    ['Email', addr.email || ''],
-  ];
-}
-
-function AddressBlock({ addr }: { addr: { customerName?: string; attention?: string; addrLine1?: string; addrLine2?: string; suiteUnit?: string; city?: string; zip?: string; phone?: string; fax?: string; email?: string } }) {
+function AddressBlock({ addr }: { addr: { customerName?: string; attention?: string; addrLine1?: string; addrLine2?: string; suiteUnit?: string; city?: string; stateId?: number | null; countryId?: number | null; zip?: string; phone?: string; fax?: string; email?: string } }) {
   const lines = [
     addr.attention,
     [addr.addrLine1, addr.addrLine2].filter(Boolean).join(', '),
@@ -505,24 +507,14 @@ function AddressBlock({ addr }: { addr: { customerName?: string; attention?: str
     addr.email && `Email: ${addr.email}`,
   ].filter(Boolean);
 
-  if (lines.length === 0) {
-    return <p className="text-xs text-stone-400 italic">No address on file.</p>;
+  if (lines.length === 0 && !addr.stateId && !addr.countryId) {
+    return <p className="text-xs text-stone-500 italic">No address on file.</p>;
   }
   return (
     <div className="space-y-1 text-xs text-stone-700">
       {addr.customerName && <p className="font-semibold text-stone-900">{addr.customerName}</p>}
       {lines.map((line, i) => <p key={i} className="text-stone-600">{line}</p>)}
-    </div>
-  );
-}
-
-function Total({ label, value, bold }: { label: string; value: number; bold?: boolean }) {
-  return (
-    <div>
-      <p className="text-2xs font-semibold uppercase tracking-wide text-stone-400">{label}</p>
-      <p className={cn('tabular-nums', bold ? 'text-sm font-bold text-stone-900' : 'text-xs font-semibold text-stone-600')}>
-        {currency(value)}
-      </p>
+      <AddressGeoLine stateId={addr.stateId} countryId={addr.countryId} />
     </div>
   );
 }

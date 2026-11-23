@@ -7,6 +7,7 @@ import { apiErrorMessage } from '@/api/tenantClient';
 import { VP_BLOCKS_APPLY } from '@/lib/vendorPaymentForm';
 import { ApplyToBillDialog } from './ApplyToBillDialog';
 import type { VendorPayment } from '@/types/vendorPayment';
+import { formatDateValue } from '@/lib/dateUtils';
 
 function currency(n: number | undefined): string {
   return (n ?? 0).toLocaleString(undefined, { style: 'currency', currency: 'USD' });
@@ -14,7 +15,7 @@ function currency(n: number | undefined): string {
 
 function fmtDate(iso?: string): string {
   if (!iso) return '—';
-  return new Date(iso).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+  return formatDateValue(iso, undefined, { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
 // The payment's application ledger — which vendor bills this money settled and
@@ -88,7 +89,7 @@ export function VendorPaymentApplicationsTab({ payment, canEdit, onChanged }: {
                   </button>
                 </td>
                 <td className="px-3 py-2.5 tabular-nums text-stone-700">{currency(app.amount)}</td>
-                <td className="px-3 py-2.5 tabular-nums text-stone-400">{fmtDate(app.createdAt)}</td>
+                <td className="px-3 py-2.5 tabular-nums text-stone-500">{fmtDate(app.createdAt)}</td>
                 <td className="px-3 py-2.5 text-right">
                   {canEdit && (
                     <button
@@ -107,7 +108,7 @@ export function VendorPaymentApplicationsTab({ payment, canEdit, onChanged }: {
             ))}
             {payment.applications.length === 0 && (
               <tr>
-                <td colSpan={4} className="py-8 text-center text-stone-400">
+                <td colSpan={4} className="py-8 text-center text-stone-500">
                   Not applied to any vendor bills yet.
                 </td>
               </tr>

@@ -15,7 +15,7 @@ interface Props {
 }
 
 const inputClass =
-  'h-8 w-full rounded-lg border border-stone-200 bg-white px-3 text-xs text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150';
+  'h-8 w-full rounded-lg border border-stone-200 bg-white px-3 text-xs text-stone-900 placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150';
 
 // All filters are server-side (resource/action/actor/from/to on GET
 // /api/tenant/audit) — there is no client-side narrowing here. Resource,
@@ -102,7 +102,7 @@ function Field({
     <div className="flex flex-col gap-1">
       <label
         htmlFor={htmlFor}
-        className="text-2xs font-semibold uppercase tracking-wider text-stone-400"
+        className="text-2xs font-semibold uppercase tracking-wider text-stone-500"
       >
         {label}
       </label>

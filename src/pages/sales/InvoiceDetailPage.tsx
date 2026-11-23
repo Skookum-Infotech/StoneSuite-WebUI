@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { AddressGeoLine } from '@/components/tenant/AddressGeoLine';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
-import { Receipt, Upload, Pencil, FileDown, Loader2, Send } from 'lucide-react';
+import { Receipt, Upload, Pencil, FileDown, Loader2, Send, ShoppingCart, DollarSign } from 'lucide-react';
 import { toast } from 'sonner';
 import { invoiceService } from '@/services/invoiceService';
 import { lookupService } from '@/services/lookupService';
@@ -11,22 +12,35 @@ import { ModernSection } from '@/components/crm/FormPrimitives';
 import { readonlyCls, fieldLabelCls } from '@/components/crm/formUtils';
 import { FilesContent } from '@/components/crm/CrmSubTabsPanel';
 import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
-import { ApprovalBanner } from '@/components/tenant/ApprovalBanner';
+import { RecordApprovalBanner } from '@/components/tenant/RecordApprovalBanner';
+import { RecordCommunicationTab } from '@/components/tenant/RecordCommunicationTab';
 import { SendToCustomerDialog } from '@/components/tenant/SendToCustomerDialog';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { cn } from '@/lib/utils';
-import { INVOICE_STATUS_COLORS, INVOICE_STATUS_CODES, validateForSend } from '@/lib/invoiceForm';
+import { TAB_LIST_CLASS, tabClass } from '@/components/ui/tabStyles';
+import { KitLineRows } from '@/components/inventory/KitLineRows';
+import { unitLabel } from '@/lib/unitLabels';
+import { LineSizeViewCells } from '@/components/inventory/LineSizeCells';
+import { SALES_SIZE_COLS } from '@/lib/lineThickness';
+import { INVOICE_ALLOWED_TRANSITIONS, INVOICE_PAYABLE_STATUSES, INVOICE_STATUS_COLORS, INVOICE_STATUS_CODES, validateForSend } from '@/lib/invoiceForm';
 import { statusToastLabel } from '@/lib/statusToast';
 import { InvoiceAuditTab } from './components/InvoiceAuditTab';
 import { DeleteInvoiceDialog } from './components/DeleteInvoiceDialog';
-import { RecordPaymentDialog } from './components/RecordPaymentDialog';
+import { DangerZoneCard } from '@/components/tenant/DangerZoneCard';
+import { DocumentSendHistory } from '@/components/tenant/DocumentSendHistory';
+import { WorkflowCard } from '@/components/tenant/WorkflowCard';
 import { SalesDetailSidebar } from './components/SalesDetailSidebar';
+import { AmountsStrip } from './components/AmountsStrip';
 import { InvoiceStatusControl } from './components/InvoiceStatusControl';
+import { formatDateValue } from '@/lib/dateUtils';
+import { formatMoney, currencyCodeFor } from '@/lib/formatMoney';
+import { CustomerLink } from '@/components/crm/CustomerLink';
 
 const TABS = [
   { key: 'overview', label: 'Overview' },
   { key: 'items', label: 'Items' },
+  { key: 'communication', label: 'Communication' },
   { key: 'audit', label: 'Audit' },
   { key: 'files', label: 'Files' },
 ] as const;
@@ -39,12 +53,10 @@ const DETAIL_POLL_MS = 60_000;
 
 function fmtDate(iso?: string): string {
   if (!iso) return '—';
-  return new Date(iso).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+  return formatDateValue(iso, undefined, { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
-function currency(n: number | undefined): string {
-  return (n ?? 0).toLocaleString(undefined, { style: 'currency', currency: 'USD' });
-}
+const SENT_STATUS_CODE = 'SENT';
 
 export default function InvoiceDetailPage() {
   const { id = '' } = useParams();
@@ -60,6 +72,9 @@ export default function InvoiceDetailPage() {
   const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
   const canEdit = permissionsLoading || hasPermission('invoice', 'update');
   const canDelete = permissionsLoading || hasPermission('invoice', 'delete');
+  const canRecordPayment = !permissionsLoading
+    && hasPermission('invoice', 'update')
+    && hasPermission('payment', 'create');
 
   const { data: invoice, isLoading, error } = useQuery({
     queryKey: ['invoice', id],
@@ -72,6 +87,9 @@ export default function InvoiceDetailPage() {
     queryKey: ['crm-lookups'],
     queryFn: lookupService.getCrmLookups,
   });
+
+  const currencyCode = currencyCodeFor(lookups, invoice?.currencyId);
+  const currency = (n: number | undefined) => formatMoney(n, currencyCode);
 
   const setLabel = useBreadcrumbStore((s) => s.setLabel);
   const clearLabel = useBreadcrumbStore((s) => s.clearLabel);
@@ -105,6 +123,14 @@ export default function InvoiceDetailPage() {
     },
   });
 
+  // An approver rejected it. The POST response carries no approval overlay, so refetch
+  // to show the rejection banner and drop it from the list's pending view.
+  const handleRejected = () => {
+    queryClient.invalidateQueries({ queryKey: ['invoice', id] });
+    queryClient.invalidateQueries({ queryKey: ['invoices'] });
+    toast.success('Rejected — sent back to Draft.');
+  };
+
   if (isLoading) return <div className="p-6"><Spinner label="Loading invoice…" /></div>;
   if (!invoice)
     return <div className="p-6"><ErrorNote>{apiErrorMessage(error, 'Failed to load invoice.')}</ErrorNote></div>;
@@ -116,53 +142,8 @@ export default function InvoiceDetailPage() {
     setExportPdfError(undefined);
     setExportingPdf(true);
     try {
-      const { exportSalesDocToPdf } = await import('@/lib/salesPdfExport');
-      await exportSalesDocToPdf({
-        docType: 'invoice',
-        title: invoice.invoiceNumber || 'Invoice',
-        recordNumber: invoice.invoiceNumber,
-        statusLabel: invoice.status,
-        customerName: invoice.customer.name,
-        createdAt: invoice.createdAt,
-        updatedAt: invoice.updatedAt,
-        sections: [
-          {
-            title: 'Primary Information',
-            rows: [
-              ['Invoice Date', fmtDate(invoice.invoiceDate)],
-              ['Due Date', invoice.dueDate ? fmtDate(invoice.dueDate) : ''],
-              ['PO Number', invoice.poNumber || ''],
-              ['Reference #', invoice.referenceNumber || ''],
-              ['Sales Tax %', `${invoice.salesTaxPercent}%`],
-              ['Memo', invoice.memo || ''],
-            ],
-          },
-          { title: 'Bill To', rows: addressRows(invoice.billing) },
-          { title: 'Ship To', rows: addressRows(invoice.shipping) },
-        ],
-        itemsTable: {
-          head: ['#', 'Item', 'SKU', 'Qty', 'Unit Price', 'Disc %', 'Tax %', 'Total'],
-          rows: invoice.items.map((line) => [
-            String(line.lineNumber),
-            line.itemName || line.description || '—',
-            line.sku || '—',
-            String(line.quantity),
-            currency(line.unitPrice),
-            `${line.discountPercent}%`,
-            `${line.taxPercent}%`,
-            currency(line.lineTotal),
-          ]),
-          numericFrom: 3,
-        },
-        totals: [
-          { label: 'Subtotal', value: currency(invoice.subtotal) },
-          { label: 'Discount', value: currency(invoice.discountTotal) },
-          { label: 'Tax', value: currency(invoice.taxTotal) },
-          { label: 'Grand Total', value: currency(invoice.grandTotal), bold: true },
-          { label: 'Amount Paid', value: currency(invoice.amountPaid) },
-          { label: 'Balance Due', value: currency(invoice.balanceDue), bold: true },
-        ],
-      });
+      const { downloadServerDocPdf } = await import('@/lib/serverDocPdf');
+      await downloadServerDocPdf({ recordId: id, docType: 'invoice', recordNumber: invoice.invoiceNumber });
     } catch (err) {
       setExportPdfError(apiErrorMessage(err, 'Failed to export PDF.'));
     } finally {
@@ -192,52 +173,92 @@ export default function InvoiceDetailPage() {
         subtitle={invoice.customer.name}
         recordNumber={invoice.invoiceNumber}
         statusBadge={<Badge color={color}>{invoice.status}</Badge>}
+        actions={(
+          <>
+            {canEdit && (
+              <button
+                type="button"
+                onClick={handleSendClick}
+                aria-label="Send invoice to customer"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-stone-300 bg-white px-3 py-1.5 text-xs font-semibold text-stone-700 shadow-sm transition-colors hover:bg-stone-50"
+              >
+                <Send className="size-3.5" />
+                Send to Customer
+              </button>
+            )}
+            {canRecordPayment && INVOICE_PAYABLE_STATUSES.has(invoice.statusCode) && (
+              <button
+                type="button"
+                onClick={() => navigate(`/sales/payment/new?fromInvoice=${encodeURIComponent(id)}`)}
+                aria-label={`Record payment for invoice ${invoice.invoiceNumber}`}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-stone-300 bg-white px-3 py-1.5 text-xs font-semibold text-stone-700 shadow-sm transition-colors hover:bg-stone-50"
+              >
+                <DollarSign className="size-3.5" />
+                Record payment
+              </button>
+            )}
+          </>
+        )}
       />
 
-      {invoice.gated && (
-        <>
-          <ApprovalBanner
-            approverNames={invoice.approvers.filter((a) => !a.approved).map((a) => a.name)}
-            canApprove={invoice.canApprove}
-            isOverride={invoice.isOverride}
-            requiredApprovals={invoice.requiredApprovals}
-            approvedCount={invoice.approvedCount}
-            callerAlreadyApproved={invoice.callerAlreadyApproved}
-            onApprove={() => approve.mutate()}
-            approving={approve.isPending}
-          />
-          {approve.isError && (
-            <p role="alert" className="px-5 py-1.5 text-2xs text-destructive 3xl:px-12 4xl:px-16">
-              {apiErrorMessage(approve.error, 'Failed to approve invoice.')}
-            </p>
-          )}
-        </>
+      {sendErrors.length > 0 && (
+        <div role="alert" className="space-y-0.5 border-b border-stone-200 bg-white px-5 py-2 3xl:px-12 4xl:px-16">
+          {sendErrors.map((e) => (
+            <p key={e} className="text-2xs text-destructive">{e}</p>
+          ))}
+        </div>
+      )}
+      {sendSuccess && (
+        <p role="status" className="border-b border-stone-200 bg-white px-5 py-2 text-2xs text-emerald-600 3xl:px-12 4xl:px-16">{sendSuccess}</p>
+      )}
+
+      <RecordApprovalBanner
+        record={invoice}
+        onApprove={() => approve.mutate()}
+        approving={approve.isPending}
+        reject={{ noun: 'invoice', run: (reason) => invoiceService.reject(id, reason), onRejected: handleRejected }}
+        resubmitVia="submit"
+      />
+      {invoice.gated && approve.isError && (
+        <p role="alert" className="px-5 py-1.5 text-2xs text-destructive 3xl:px-12 4xl:px-16">
+          {apiErrorMessage(approve.error, 'Failed to approve invoice.')}
+        </p>
       )}
 
       {/* Tab bar */}
-      <div className="flex shrink-0 overflow-x-auto overflow-y-hidden border-b border-stone-200 bg-white px-5 3xl:px-12 4xl:px-16 modal-scrollbar">
-        {TABS.map((tab) => (
-          <button
-            key={tab.key}
-            type="button"
-            onClick={() => setActiveTab(tab.key)}
-            className={cn(
-              'px-4 py-3 text-sm font-semibold border-b-2 -mb-px transition-colors duration-150 whitespace-nowrap shrink-0',
-              activeTab === tab.key
-                ? 'border-brand text-stone-950'
-                : 'border-transparent text-stone-500 hover:text-stone-700 hover:border-stone-200',
-            )}
-          >
-            {tab.label}
-          </button>
-        ))}
+      <div className="flex shrink-0 overflow-x-auto overflow-y-hidden border-b border-stone-200 bg-white px-5 3xl:px-12 4xl:px-16 modal-scrollbar py-2.5">
+        <div role="tablist" className={TAB_LIST_CLASS}>
+          {TABS.map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setActiveTab(tab.key)}
+              className={tabClass(activeTab === tab.key)}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-6 px-4 py-4 sm:px-5 sm:py-5 3xl:px-12 3xl:py-8 3xl:gap-10 4xl:px-16 4xl:py-10 4xl:gap-14">
+      <div className="flex flex-1 flex-col lg:flex-row gap-6 px-4 py-4 sm:px-5 sm:py-5 3xl:px-12 3xl:py-8 3xl:gap-10 4xl:px-16 4xl:py-10 4xl:gap-14">
         {/* Left column */}
-        <div className="flex-1 space-y-3 min-w-0">
+        {/* The Communication tab fills the column, so its reply box can sit at the
+            bottom of the screen even when the conversation is empty. */}
+        <div className={cn('flex-1 space-y-3 min-w-0', activeTab === 'communication' && 'flex flex-col')}>
           {activeTab === 'overview' && (
             <>
+              <AmountsStrip
+                currencyCode={currencyCode}
+                items={[
+                  { label: 'Subtotal', value: invoice.subtotal },
+                  { label: 'Discount', value: invoice.discountTotal },
+                  { label: 'Tax', value: invoice.taxTotal },
+                  { label: 'Grand Total', value: invoice.grandTotal, emphasis: 'strong' },
+                  { label: 'Amount Paid', value: invoice.amountPaid },
+                  { label: 'Balance Due', value: invoice.balanceDue, emphasis: 'key' },
+                ]}
+              />
               <ModernSection title="Primary Information" index={0}>
                 <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
                   <ReadonlyField label="Invoice Date" value={fmtDate(invoice.invoiceDate)} />
@@ -254,6 +275,19 @@ export default function InvoiceDetailPage() {
                   {invoice.priceLevelId && (
                     <ReadonlyField label="Price Level" value={lookups?.priceLevels.find((p) => p.id === invoice.priceLevelId)?.name ?? '—'} />
                   )}
+                  {invoice.salesOrder && (
+                    <div className="space-y-1">
+                      <label className={fieldLabelCls}>Source Sales Order</label>
+                      <Link
+                        to={`/sales/sales_order/${invoice.salesOrder.id}`}
+                        aria-label={`View sales order ${invoice.salesOrder.number}`}
+                        className="inline-flex items-center gap-1.5 rounded-[10px] border border-stone-300 bg-stone-50 px-3.5 py-2.5 text-xs font-semibold text-accent-foreground hover:bg-stone-100 transition-colors"
+                      >
+                        <ShoppingCart className="size-3.5" />
+                        {invoice.salesOrder.number}
+                      </Link>
+                    </div>
+                  )}
                   {invoice.memo && <ReadonlyField label="Memo" value={invoice.memo} full />}
                 </div>
               </ModernSection>
@@ -263,16 +297,6 @@ export default function InvoiceDetailPage() {
               <ModernSection title="Ship To" index={2}>
                 <AddressBlock addr={invoice.shipping} />
               </ModernSection>
-              <div className="rounded-lg border border-stone-200 bg-white p-4">
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-                  <Total label="Subtotal" value={invoice.subtotal} />
-                  <Total label="Discount" value={invoice.discountTotal} />
-                  <Total label="Tax" value={invoice.taxTotal} />
-                  <Total label="Grand Total" value={invoice.grandTotal} bold />
-                  <Total label="Amount Paid" value={invoice.amountPaid} />
-                  <Total label="Balance Due" value={invoice.balanceDue} bold />
-                </div>
-              </div>
             </>
           )}
 
@@ -285,6 +309,8 @@ export default function InvoiceDetailPage() {
                       { label: '#' },
                       { label: 'Item' },
                       { label: 'SKU' },
+                      ...SALES_SIZE_COLS,
+                      { label: 'Unit' },
                       { label: 'Qty', right: true },
                       { label: 'Unit Price', right: true },
                       { label: 'Disc %', right: true },
@@ -296,28 +322,33 @@ export default function InvoiceDetailPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-stone-100">
-                  {invoice.items.map((line) => (
-                    <tr key={line.id} className="hover:bg-stone-50/50 divide-x divide-stone-100">
-                      <td className="px-3 py-2.5 text-stone-400 tabular-nums">{line.lineNumber}</td>
+                  <KitLineRows lines={invoice.items} colSpan={13} renderRow={(line, kitCls) => (
+                    <tr className={cn('hover:bg-stone-50/50 divide-x divide-stone-100', kitCls)}>
+                      <td className="px-3 py-2.5 text-stone-500 tabular-nums">{line.lineNumber}</td>
                       <td className="px-3 py-2.5 font-medium text-stone-800">
-                        {line.itemName || line.description || <span className="text-stone-300">—</span>}
+                        {line.itemName || line.description || <span className="text-stone-500">—</span>}
                       </td>
                       <td className="px-3 py-2.5 font-mono text-2xs text-stone-500">{line.sku || '—'}</td>
+                      <LineSizeViewCells size={line} unit={line.dimensionUnit} units={line.unitCode} />
+                      <td className="px-3 py-2.5 text-stone-500 whitespace-nowrap" title={line.unitCode || undefined}>
+                        {unitLabel(line.unitCode) || <span className="text-stone-500">—</span>}
+                      </td>
                       <td className="px-3 py-2.5 tabular-nums text-right text-stone-600">{line.quantity}</td>
                       <td className="px-3 py-2.5 tabular-nums text-right text-stone-600">{currency(line.unitPrice)}</td>
                       <td className="px-3 py-2.5 tabular-nums text-right text-stone-500">{line.discountPercent}%</td>
                       <td className="px-3 py-2.5 tabular-nums text-right text-stone-500">{line.taxPercent}%</td>
                       <td className="px-3 py-2.5 tabular-nums text-right text-stone-800 font-semibold">{currency(line.lineTotal)}</td>
                     </tr>
-                  ))}
+                  )} />
                   {invoice.items.length === 0 && (
-                    <tr><td colSpan={8} className="py-8 text-center text-stone-400">No line items.</td></tr>
+                    <tr><td colSpan={13} className="py-8 text-center text-stone-500">No line items.</td></tr>
                   )}
                 </tbody>
               </table>
             </div>
           )}
 
+          {activeTab === 'communication' && <RecordCommunicationTab recordId={id} audience="customer" canReply={canEdit} />}
           {activeTab === 'audit' && <InvoiceAuditTab invoiceId={id} />}
           {activeTab === 'files' && <FilesContent ref={null} recordId={id} readOnly={!canEdit} />}
 
@@ -326,8 +357,9 @@ export default function InvoiceDetailPage() {
 
         {/* Right sidebar */}
         <SalesDetailSidebar label="Invoice Details">
+          <WorkflowCard module="invoice" statusCode={invoice.statusCode} statusLabel={invoice.status} workflow={invoice.workflow} links={{ salesOrderId: invoice.salesOrder?.id }} />
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-            <p className="text-xs font-semibold text-stone-400">Quick Actions</p>
+            <p className="text-xs font-semibold text-stone-500">Quick Actions</p>
             <div className="space-y-0.5">
               {canEdit && (
                 <button
@@ -354,19 +386,11 @@ export default function InvoiceDetailPage() {
                   type="button"
                   onClick={handleSendClick}
                   className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs text-stone-700 w-full transition-colors text-left"
-                  aria-label="Send invoice to customer"
+                  aria-label="Resend invoice email to customer"
                 >
                   <Send className="size-4 text-stone-400 shrink-0" />
-                  Send to Customer
+                  Resend to Customer
                 </button>
-              )}
-              {canEdit && (
-                <RecordPaymentDialog
-                  invoiceId={id}
-                  statusCode={invoice.statusCode}
-                  balanceDue={invoice.balanceDue}
-                  onRecorded={() => queryClient.invalidateQueries({ queryKey: ['invoice', id] })}
-                />
               )}
               <button
                 type="button"
@@ -382,20 +406,10 @@ export default function InvoiceDetailPage() {
             {exportPdfError && (
               <p role="alert" className="text-2xs text-destructive">{exportPdfError}</p>
             )}
-            {sendErrors.length > 0 && (
-              <div role="alert" className="space-y-0.5">
-                {sendErrors.map((e) => (
-                  <p key={e} className="text-2xs text-destructive">{e}</p>
-                ))}
-              </div>
-            )}
-            {sendSuccess && (
-              <p role="status" className="text-2xs text-emerald-600">{sendSuccess}</p>
-            )}
           </div>
 
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-            <p className="text-xs font-semibold text-stone-400">Status</p>
+            <p className="text-xs font-semibold text-stone-500">Status</p>
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
               <span className="text-stone-500">Status</span>
               <InvoiceStatusControl
@@ -407,7 +421,7 @@ export default function InvoiceDetailPage() {
             </div>
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
               <span className="text-stone-500">Customer</span>
-              <span className="text-stone-700 truncate max-w-[140px]">{invoice.customer.name}</span>
+              <CustomerLink id={invoice.customer.id} name={invoice.customer.name} className="text-stone-700 truncate max-w-[140px] hover:text-accent-foreground hover:underline" />
             </div>
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
               <span className="text-stone-500">Created</span>
@@ -419,9 +433,10 @@ export default function InvoiceDetailPage() {
             </div>
           </div>
 
+          <DocumentSendHistory recordId={id} />
+
           {canDelete && (
-            <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-              <p className="text-xs font-semibold text-red-400">Danger Zone</p>
+            <DangerZoneCard>
               <DeleteInvoiceDialog
                 invoiceId={id}
                 label={`Invoice ${invoice.invoiceNumber}`}
@@ -430,7 +445,7 @@ export default function InvoiceDetailPage() {
                   navigate('/sales/invoice');
                 }}
               />
-            </div>
+            </DangerZoneCard>
           )}
         </SalesDetailSidebar>
       </div>
@@ -441,11 +456,14 @@ export default function InvoiceDetailPage() {
         onOpenChange={setSendDialogOpen}
         recipientEmail={invoice.billing.email ?? ''}
         label={`Invoice ${invoice.invoiceNumber}`}
-        onSent={(result) =>
+        onSent={(result) => {
           setSendSuccess(
             result.sentTo.length ? `Sent to ${result.sentTo.join(', ')}.` : 'Send completed, but no recipients were found.',
-          )
-        }
+          );
+          // Sending is what makes the invoice "Sent": move it there when that is a legal next step.
+          const next = invoice.nextStatusCodes ?? INVOICE_ALLOWED_TRANSITIONS[invoice.statusCode] ?? [];
+          if (next.includes(SENT_STATUS_CODE)) transition.mutate(SENT_STATUS_CODE);
+        }}
       />
     </div>
   );
@@ -455,23 +473,12 @@ function ReadonlyField({ label, value, full }: { label: string; value?: string; 
   return (
     <div className={cn('space-y-1', full && 'col-span-full')}>
       <label className={fieldLabelCls}>{label}</label>
-      <div className={readonlyCls}>{value || <span className="text-stone-400">—</span>}</div>
+      <div className={readonlyCls}>{value || <span className="text-stone-500">—</span>}</div>
     </div>
   );
 }
 
-function addressRows(addr: { customerName?: string; attention?: string; addrLine1?: string; addrLine2?: string; suiteUnit?: string; city?: string; zip?: string; phone?: string; fax?: string; email?: string }): Array<[string, string]> {
-  return [
-    ['Name', addr.customerName || ''],
-    ['Attention', addr.attention || ''],
-    ['Address', [addr.addrLine1, addr.addrLine2].filter(Boolean).join(', ')],
-    ['City/Zip', [addr.suiteUnit, addr.city, addr.zip].filter(Boolean).join(', ')],
-    ['Phone', addr.phone || ''],
-    ['Email', addr.email || ''],
-  ];
-}
-
-function AddressBlock({ addr }: { addr: { customerName?: string; attention?: string; addrLine1?: string; addrLine2?: string; suiteUnit?: string; city?: string; zip?: string; phone?: string; fax?: string; email?: string } }) {
+function AddressBlock({ addr }: { addr: { customerName?: string; attention?: string; addrLine1?: string; addrLine2?: string; suiteUnit?: string; city?: string; stateId?: number | null; countryId?: number | null; zip?: string; phone?: string; fax?: string; email?: string } }) {
   const lines = [
     addr.attention,
     [addr.addrLine1, addr.addrLine2].filter(Boolean).join(', '),
@@ -480,24 +487,14 @@ function AddressBlock({ addr }: { addr: { customerName?: string; attention?: str
     addr.email && `Email: ${addr.email}`,
   ].filter(Boolean);
 
-  if (lines.length === 0) {
-    return <p className="text-xs text-stone-400 italic">No address on file.</p>;
+  if (lines.length === 0 && !addr.stateId && !addr.countryId) {
+    return <p className="text-xs text-stone-500 italic">No address on file.</p>;
   }
   return (
     <div className="space-y-1 text-xs text-stone-700">
       {addr.customerName && <p className="font-semibold text-stone-900">{addr.customerName}</p>}
       {lines.map((line, i) => <p key={i} className="text-stone-600">{line}</p>)}
-    </div>
-  );
-}
-
-function Total({ label, value, bold }: { label: string; value: number; bold?: boolean }) {
-  return (
-    <div>
-      <p className="text-2xs font-semibold uppercase tracking-wide text-stone-400">{label}</p>
-      <p className={cn('tabular-nums', bold ? 'text-sm font-bold text-stone-900' : 'text-xs font-semibold text-stone-600')}>
-        {currency(value)}
-      </p>
+      <AddressGeoLine stateId={addr.stateId} countryId={addr.countryId} />
     </div>
   );
 }

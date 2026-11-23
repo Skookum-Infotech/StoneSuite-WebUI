@@ -7,9 +7,16 @@
 // field. toItemPayload always builds the whole object — never a partial —
 // so an edit save can never silently clear an attribute the form didn't
 // touch.
-import type { InventoryItem, InventoryItemInput, TrackingMode, Warehouse } from '@/types/inventory';
+import type { InventoryItem, InventoryItemInput, KitRef, TrackingMode, Warehouse } from '@/types/inventory';
 import { TRACKING_QUANTITY, TRACKING_SERIALIZED } from '@/types/inventory';
 import { toNumericWarehouseId } from './inventoryWarehouse';
+import { itemPrice } from './itemPrice';
+import {
+  DEFAULT_DIMENSION_UNIT, dimensionToMm, itemDimensionUnit, mmToDimension, normalizeUnit,
+} from './lineDimensions';
+
+/** Thickness is entered in millimetres until the user picks another unit. */
+export const DEFAULT_THICKNESS_UNIT = 'mm';
 
 export const PAGE_TABS = [
   { key: 'details', label: 'Details' },
@@ -65,13 +72,35 @@ function warehouseUuidOrEmpty(warehouses: Warehouse[], id: number | null | undef
   return w?.id ?? '';
 }
 
+const FORM_DECIMALS = 10 ** 6;
+
+/** A stored millimetre size as the text the form holds, in `unit`. Finer than
+ *  mmToDimension's display rounding so an unedited save round-trips the same
+ *  millimetres (3000 mm -> 118.110236 in -> 3000 mm). */
+export function mmToFormText(mm: number, unit: string): string {
+  return String(Math.round((mm / dimensionToMm(1, unit)) * FORM_DECIMALS) / FORM_DECIMALS);
+}
+
+/** The unit an item's thickness is shown and entered in; millimetres unless set. */
+export function thicknessUnitOf(item: { thicknessUnit?: string | null }): string {
+  return normalizeUnit(item.thicknessUnit || DEFAULT_THICKNESS_UNIT);
+}
+
+/** A stored millimetre size as the item's own unit, e.g. "118.11 in"; '' when not stated. */
+export function sizeText(mm: number | null | undefined, unit: string): string {
+  return mm && mm > 0 ? `${mmToDimension(mm, unit)} ${unit}` : '';
+}
+
 export function itemDefaults(): Record<string, unknown> {
   return {
     sku: '',
     name: '',
     description: '',
     unit_id: '',
-    unit_price: '0',
+    // Both prices are required and start blank — a pre-filled 0 would let an
+    // item be saved without anyone having decided what it sells or costs.
+    unit_price: '',
+    purchase_unit_price: '',
     currency_id: '',
     tax_rate_id: '',
     is_active: true,
@@ -79,11 +108,26 @@ export function itemDefaults(): Record<string, unknown> {
     material_id: '',
     color_id: '',
     finish_id: '',
-    thickness_mm: '0',
+    // Length / width are typed in dimension_unit, thickness in thickness_unit;
+    // all three are stored as millimetres (see toItemPayload).
+    length: '0',
+    width: '0',
+    thickness: '0',
+    thickness_unit: DEFAULT_THICKNESS_UNIT,
+    dimension_unit: DEFAULT_DIMENSION_UNIT,
     origin_country_id: '',
     default_warehouse_id: '',
     barcode: '',
+    track_stock: true,
+    kits: [],
   };
+}
+
+/** The kits chosen on the form. Form state holds {id, name} so the chips can be
+ *  drawn without a lookup; only the ids are sent. */
+function kitsOf(data: Record<string, unknown>): KitRef[] {
+  if (!Array.isArray(data.kits)) return [];
+  return (data.kits as KitRef[]).filter((k) => k && typeof k.id === 'string');
 }
 
 /** Maps the item form state to the whole-object write contract. */
@@ -94,6 +138,7 @@ export function toItemPayload(data: Record<string, unknown>, warehouses: Warehou
     description: toStr(data.description),
     unitId: toIntOrNull(data.unit_id) ?? 0,
     unitPrice: toNum(data.unit_price),
+    purchaseUnitPrice: toNum(data.purchase_unit_price),
     currencyId: toIntOrNull(data.currency_id),
     taxRateId: toIntOrNull(data.tax_rate_id),
     customFields: {},
@@ -101,10 +146,21 @@ export function toItemPayload(data: Record<string, unknown>, warehouses: Warehou
     materialId: toIntOrNull(data.material_id),
     colorId: toIntOrNull(data.color_id),
     finishId: toIntOrNull(data.finish_id),
-    thicknessMm: toNum(data.thickness_mm),
+    thicknessMm: dimensionToMm(toNum(data.thickness), toStr(data.thickness_unit)),
+    thicknessUnit: normalizeUnit(toStr(data.thickness_unit) || DEFAULT_THICKNESS_UNIT),
+    lengthMm: dimensionToMm(toNum(data.length), toStr(data.dimension_unit)),
+    widthMm: dimensionToMm(toNum(data.width), toStr(data.dimension_unit)),
+    // Always sent, like every field of this whole-object write.
+    dimensionUnit: normalizeUnit(toStr(data.dimension_unit)),
     originCountryId: toIntOrNull(data.origin_country_id),
     barcode: toStr(data.barcode).trim(),
     defaultWarehouseId: warehouseIdOrNull(warehouses, data.default_warehouse_id),
+    // Always sent: PATCH overwrites every field. A slab item is always tracked,
+    // and a form that never set it (older state) reads as tracked.
+    trackStock: data.tracking === TRACKING_SERIALIZED ? true : data.track_stock !== false,
+    // Always sent: the server leaves an item's kits alone only when this is
+    // omitted, so the form's own list (possibly empty) is the truth on a save.
+    kitIds: kitsOf(data).map((k) => k.id),
   };
 }
 
@@ -116,6 +172,7 @@ export function fromItem(item: InventoryItem, warehouses: Warehouse[] = []): Rec
     description: item.description ?? '',
     unit_id: idOrEmpty(item.unitId),
     unit_price: String(item.unitPrice ?? 0),
+    purchase_unit_price: String(itemPrice(item, 'purchasing') ?? 0),
     currency_id: idOrEmpty(item.currencyId),
     tax_rate_id: idOrEmpty(item.taxRateId),
     is_active: item.isActive,
@@ -123,10 +180,16 @@ export function fromItem(item: InventoryItem, warehouses: Warehouse[] = []): Rec
     material_id: idOrEmpty(item.materialId),
     color_id: idOrEmpty(item.colorId),
     finish_id: idOrEmpty(item.finishId),
-    thickness_mm: String(item.thicknessMm ?? 0),
+    length: mmToFormText(item.lengthMm ?? 0, itemDimensionUnit(item)),
+    width: mmToFormText(item.widthMm ?? 0, itemDimensionUnit(item)),
+    thickness: mmToFormText(item.thicknessMm ?? 0, thicknessUnitOf(item)),
+    thickness_unit: thicknessUnitOf(item),
+    dimension_unit: itemDimensionUnit(item),
     origin_country_id: idOrEmpty(item.originCountryId),
     default_warehouse_id: warehouseUuidOrEmpty(warehouses, item.defaultWarehouseId),
     barcode: item.barcode ?? '',
+    track_stock: item.trackStock ?? true,
+    kits: (item.kits ?? []).map((k) => ({ id: k.id, name: k.name })),
   };
 }
 
@@ -135,13 +198,26 @@ export interface ItemFieldError {
   label: string;
 }
 
-/** Required-field check the backend also enforces (sku/name/unitId) —
- *  catches the common miss before a round trip, not a substitute for
+/** A required price: filled in, and a number that is not negative. 0 is a valid
+ *  price (a service or labour item); a blank field is not. */
+function isValidPrice(v: unknown): boolean {
+  const s = toStr(v).trim();
+  if (!s) return false;
+  const n = Number(s);
+  return Number.isFinite(n) && n >= 0;
+}
+
+/** Required-field check the backend also enforces (sku/name/unitId and both
+ *  prices) — catches the common miss before a round trip, not a substitute for
  *  server-side validation. */
 export function validateItem(data: Record<string, unknown>): ItemFieldError[] {
   const errors: ItemFieldError[] = [];
   if (!toStr(data.sku).trim()) errors.push({ key: 'sku', label: 'SKU' });
   if (!toStr(data.name).trim()) errors.push({ key: 'name', label: 'Item Name' });
   if (!toIntOrNull(data.unit_id)) errors.push({ key: 'unit_id', label: 'Unit' });
+  if (!isValidPrice(data.unit_price)) errors.push({ key: 'unit_price', label: 'Selling Unit Price' });
+  if (!isValidPrice(data.purchase_unit_price)) {
+    errors.push({ key: 'purchase_unit_price', label: 'Purchasing Unit Price' });
+  }
   return errors;
 }

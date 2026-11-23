@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type ReactNode } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { ClipboardList, Upload, Pencil, ArrowRightLeft, FileDown, Loader2, ExternalLink } from 'lucide-react';
+import { CopyQuickAction } from '@/components/tenant/CopyQuickAction';
 import { toast } from 'sonner';
 import { requisitionService } from '@/services/requisitionService';
 import { lookupService } from '@/services/lookupService';
@@ -11,24 +12,35 @@ import { ModernSection } from '@/components/crm/FormPrimitives';
 import { readonlyCls, fieldLabelCls } from '@/components/crm/formUtils';
 import { FilesContent } from '@/components/crm/CrmSubTabsPanel';
 import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
-import { ApprovalBanner } from '@/components/tenant/ApprovalBanner';
+import { RecordApprovalBanner } from '@/components/tenant/RecordApprovalBanner';
+import { RecordCommunicationTab } from '@/components/tenant/RecordCommunicationTab';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { cn } from '@/lib/utils';
+import { TAB_LIST_CLASS, tabClass } from '@/components/ui/tabStyles';
 import {
   REQUISITION_STATUS_COLORS, REQUISITION_STATUS_CODES, REQN_DELETABLE_STATUSES, REQUISITION_ALLOWED_TRANSITIONS,
   PRIORITY_COLORS, priorityLabel, canConvertToPurchaseOrder,
 } from '@/lib/requisitionForm';
 import { statusToastLabel } from '@/lib/statusToast';
+import { LineSizeViewCells } from '@/components/inventory/LineSizeCells';
+import { KitLineRows } from '@/components/inventory/KitLineRows';
+import { PDF_DIMENSION_HEAD, anyDimensions, dimensionCells } from '@/lib/lineDimensions';
+import { PDF_THICKNESS_HEAD, SALES_SIZE_COLS, anyThickness, thicknessPdfCell } from '@/lib/lineThickness';
 import { RequisitionAuditTab } from './components/RequisitionAuditTab';
 import { DeleteRequisitionDialog } from './components/DeleteRequisitionDialog';
+import { DangerZoneCard } from '@/components/tenant/DangerZoneCard';
 import { RequisitionStatusControl } from './components/RequisitionStatusControl';
 import { ConvertToPurchaseOrderDialog } from './components/ConvertToPurchaseOrderDialog';
+import { WorkflowCard } from '@/components/tenant/WorkflowCard';
 import { SalesDetailSidebar } from '@/pages/sales/components/SalesDetailSidebar';
+import { formatDateValue } from '@/lib/dateUtils';
+import { VendorLink } from '@/pages/purchases/vendor/components/VendorLink';
 
 const TABS = [
   { key: 'overview', label: 'Overview' },
   { key: 'items', label: 'Items' },
+  { key: 'communication', label: 'Communication' },
   { key: 'audit', label: 'Audit' },
   { key: 'files', label: 'Files' },
 ] as const;
@@ -38,10 +50,12 @@ type Tab = (typeof TABS)[number]['key'];
 // tab show up without a manual reload — same cadence as NotificationBell's
 // unread poll.
 const DETAIL_POLL_MS = 60_000;
+/** Columns in the Items table — a kit heading and the empty row span them all. */
+const REQN_ITEM_COLUMNS = 12;
 
 function fmtDate(iso?: string): string {
   if (!iso) return '—';
-  return new Date(iso).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+  return formatDateValue(iso, undefined, { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
 function currency(n: number | undefined): string {
@@ -60,6 +74,7 @@ export default function RequisitionDetailPage() {
   const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
   const canEdit = permissionsLoading || hasPermission('requisition', 'update');
   const canDelete = permissionsLoading || hasPermission('requisition', 'delete');
+  const canCopy = permissionsLoading || hasPermission('requisition', 'create');
   const canTransition = permissionsLoading || hasPermission('requisition', 'transition');
   // Converting spawns a purchase order, so the server checks
   // purchase_order:create on top of requisition:read — mirror that here rather
@@ -111,6 +126,14 @@ export default function RequisitionDetailPage() {
     },
   });
 
+  // An approver rejected it. The POST response carries no approval overlay, so refetch
+  // to show the rejection banner and drop it from the list's pending view.
+  const handleRejected = () => {
+    queryClient.invalidateQueries({ queryKey: ['requisition', id] });
+    queryClient.invalidateQueries({ queryKey: ['requisitions'] });
+    toast.success('Rejected — sent back to Draft.');
+  };
+
   if (isLoading) return <div className="p-6"><Spinner label="Loading requisition…" /></div>;
   // A 404 here can mean "exists but is out of your scope" as well as "no such
   // record", so the copy stays non-committal about whether it exists.
@@ -140,38 +163,44 @@ export default function RequisitionDetailPage() {
     setExportingPdf(true);
     try {
       const { exportPurchasesRecordToPdf } = await import('@/lib/purchasesPdfExport');
+      // The size columns only appear when some line states a size (or a thickness).
+      const thick = anyThickness(reqn.items);
+      const sized = anyDimensions(reqn.items) || thick;
       await exportPurchasesRecordToPdf({
         recordType: 'requisition',
         title: reqn.requisitionNumber || 'Requisition',
         recordNumber: reqn.requisitionNumber,
         statusLabel: reqn.status,
+        issueDate: fmtDate(reqn.createdAt),
+        dueDate: reqn.neededByDate ? fmtDate(reqn.neededByDate) : undefined,
+        dueDateLabel: 'Needed By',
         counterpartyLabel: 'Suggested Vendor',
         counterpartyName: reqn.vendor?.name,
-        createdAt: reqn.createdAt,
-        updatedAt: reqn.updatedAt,
+        notesText: reqn.memo || undefined,
         sections: [
           {
             title: 'Primary Information',
             rows: [
               ['Requested By', requesterName ?? ''],
               ['Department', reqn.department || ''],
-              ['Needed By', reqn.neededByDate ? fmtDate(reqn.neededByDate) : ''],
               ['Priority', priorityLabel(reqn.priority)],
               ['Sales Tax %', `${reqn.salesTaxPercent}%`],
-              ['Memo', reqn.memo || ''],
             ],
           },
         ],
         itemsTable: {
-          head: ['#', 'Item', 'SKU', 'Qty', 'Est. Unit Price', 'Amount'],
+          head: ['#', 'Item', 'SKU', ...(sized ? PDF_DIMENSION_HEAD : []), ...(thick ? [PDF_THICKNESS_HEAD] : []), 'Qty', 'Est. Unit Price', 'Amount'],
           rows: reqn.items.map((line) => [
             String(line.lineNumber),
             line.itemName || line.description || '—',
             line.sku || '—',
+            ...(sized ? dimensionCells(line) : []),
+            ...(thick ? [thicknessPdfCell(line)] : []),
             String(line.quantity),
             currency(line.estimatedUnitPrice),
             currency(line.estimatedAmount),
           ]),
+          descriptions: reqn.items.map((line) => line.description || undefined),
           numericFrom: 3,
         },
         totals: [
@@ -197,51 +226,54 @@ export default function RequisitionDetailPage() {
         subtitle={reqn.department || undefined}
         recordNumber={reqn.requisitionNumber}
         statusBadge={<Badge color={color}>{reqn.status}</Badge>}
+        actions={showConvert && (
+          <button
+            type="button"
+            onClick={() => setConvertOpen(true)}
+            aria-label="Convert this requisition to a purchase order"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3.5 py-1.5 text-xs font-semibold text-stone-900 shadow-sm transition-colors hover:bg-brand-hover"
+          >
+            <ArrowRightLeft className="size-3.5" aria-hidden="true" />
+            Convert to Purchase Order
+          </button>
+        )}
       />
 
-      {reqn.gated && (
-        <>
-          <ApprovalBanner
-            approverNames={reqn.approvers.filter((a) => !a.approved).map((a) => a.name)}
-            canApprove={reqn.canApprove}
-            isOverride={reqn.isOverride}
-            requiredApprovals={reqn.requiredApprovals}
-            approvedCount={reqn.approvedCount}
-            callerAlreadyApproved={reqn.callerAlreadyApproved}
-            onApprove={() => approve.mutate()}
-            approving={approve.isPending}
-          />
-          {approve.isError && (
-            <p role="alert" className="px-5 py-1.5 text-2xs text-destructive 3xl:px-12 4xl:px-16">
-              {apiErrorMessage(approve.error, 'Failed to approve requisition.')}
-            </p>
-          )}
-        </>
+      <RecordApprovalBanner
+        record={reqn}
+        onApprove={() => approve.mutate()}
+        approving={approve.isPending}
+        reject={{ noun: 'requisition', run: (reason) => requisitionService.reject(id, reason), onRejected: handleRejected }}
+        resubmitVia="submit"
+      />
+      {reqn.gated && approve.isError && (
+        <p role="alert" className="px-5 py-1.5 text-2xs text-destructive 3xl:px-12 4xl:px-16">
+          {apiErrorMessage(approve.error, 'Failed to approve requisition.')}
+        </p>
       )}
 
       {/* Tab bar */}
-      <div className="flex shrink-0 overflow-x-auto overflow-y-hidden border-b border-stone-200 bg-white px-5 3xl:px-12 4xl:px-16 modal-scrollbar">
-        {TABS.map((tab) => (
-          <button
-            key={tab.key}
-            type="button"
-            onClick={() => setActiveTab(tab.key)}
-            aria-label={`${tab.label} tab`}
-            className={cn(
-              'px-4 py-3 text-sm font-semibold border-b-2 -mb-px transition-colors duration-150 whitespace-nowrap shrink-0',
-              activeTab === tab.key
-                ? 'border-brand text-stone-950'
-                : 'border-transparent text-stone-500 hover:text-stone-700 hover:border-stone-200',
-            )}
-          >
-            {tab.label}
-          </button>
-        ))}
+      <div className="flex shrink-0 overflow-x-auto overflow-y-hidden border-b border-stone-200 bg-white px-5 3xl:px-12 4xl:px-16 modal-scrollbar py-2.5">
+        <div role="tablist" className={TAB_LIST_CLASS}>
+          {TABS.map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setActiveTab(tab.key)}
+              aria-label={`${tab.label} tab`}
+              className={tabClass(activeTab === tab.key)}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-6 px-4 py-4 sm:px-5 sm:py-5 3xl:px-12 3xl:py-8 3xl:gap-10 4xl:px-16 4xl:py-10 4xl:gap-14">
+      <div className="flex flex-1 flex-col lg:flex-row gap-6 px-4 py-4 sm:px-5 sm:py-5 3xl:px-12 3xl:py-8 3xl:gap-10 4xl:px-16 4xl:py-10 4xl:gap-14">
         {/* Left column */}
-        <div className="flex-1 space-y-3 min-w-0">
+        {/* The Communication tab fills the column, so its reply box can sit at the
+            bottom of the screen even when the conversation is empty. */}
+        <div className={cn('flex-1 space-y-3 min-w-0', activeTab === 'communication' && 'flex flex-col')}>
           {activeTab === 'overview' && (
             <>
               <ModernSection title="Primary Information" index={0}>
@@ -250,7 +282,7 @@ export default function RequisitionDetailPage() {
                   <ReadonlyField label="Department" value={reqn.department} />
                   <ReadonlyField label="Needed By" value={reqn.neededByDate ? fmtDate(reqn.neededByDate) : undefined} />
                   <ReadonlyField label="Priority" value={priorityLabel(reqn.priority)} />
-                  <ReadonlyField label="Suggested Vendor" value={reqn.vendor?.name} />
+                  <ReadonlyField label="Suggested Vendor" value={reqn.vendor ? <VendorLink vendor={reqn.vendor} /> : undefined} />
                   <ReadonlyField label="Sales Tax %" value={`${reqn.salesTaxPercent}%`} />
                   {reqn.memo && <ReadonlyField label="Memo" value={reqn.memo} full />}
                 </div>
@@ -275,6 +307,7 @@ export default function RequisitionDetailPage() {
                       { label: 'Item' },
                       { label: 'Description' },
                       { label: 'SKU' },
+                      ...SALES_SIZE_COLS,
                       { label: 'Units' },
                       { label: 'Qty', right: true },
                       { label: 'Est. Unit Price', right: true },
@@ -285,28 +318,31 @@ export default function RequisitionDetailPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-stone-100">
-                  {reqn.items.map((line) => (
-                    <tr key={line.id} className="hover:bg-stone-50/50 divide-x divide-stone-100">
-                      <td className="px-3 py-2.5 text-stone-400 tabular-nums">{line.lineNumber}</td>
+                  {/* Lines added from a kit sit under the kit's heading, as in Sales. */}
+                  <KitLineRows lines={reqn.items} colSpan={REQN_ITEM_COLUMNS} renderRow={(line, kitCls) => (
+                    <tr className={cn('hover:bg-stone-50/50 divide-x divide-stone-100', kitCls)}>
+                      <td className="px-3 py-2.5 text-stone-500 tabular-nums">{line.lineNumber}</td>
                       <td className="px-3 py-2.5 font-medium text-stone-800">
-                        {line.itemName || line.description || <span className="text-stone-300">—</span>}
+                        {line.itemName || line.description || <span className="text-stone-500">—</span>}
                       </td>
                       <td className="px-3 py-2.5 text-stone-500 max-w-[200px] truncate">{line.description || '—'}</td>
                       <td className="px-3 py-2.5 font-mono text-2xs text-stone-500">{line.sku || '—'}</td>
+                      <LineSizeViewCells size={line} unit={line.dimensionUnit} units={line.unitCode} />
                       <td className="px-3 py-2.5 text-stone-500">{line.unitCode || '—'}</td>
                       <td className="px-3 py-2.5 tabular-nums text-right text-stone-600">{line.quantity}</td>
                       <td className="px-3 py-2.5 tabular-nums text-right text-stone-600">{currency(line.estimatedUnitPrice)}</td>
                       <td className="px-3 py-2.5 tabular-nums text-right text-stone-800 font-semibold">{currency(line.estimatedAmount)}</td>
                     </tr>
-                  ))}
+                  )} />
                   {reqn.items.length === 0 && (
-                    <tr><td colSpan={8} className="py-8 text-center text-stone-400">No line items.</td></tr>
+                    <tr><td colSpan={REQN_ITEM_COLUMNS} className="py-8 text-center text-stone-500">No line items.</td></tr>
                   )}
                 </tbody>
               </table>
             </div>
           )}
 
+          {activeTab === 'communication' && <RecordCommunicationTab recordId={id} audience="internal" canReply={canEdit} />}
           {activeTab === 'audit' && <RequisitionAuditTab requisitionId={id} />}
           {activeTab === 'files' && <FilesContent ref={null} recordId={id} readOnly={false} />}
 
@@ -315,8 +351,9 @@ export default function RequisitionDetailPage() {
 
         {/* Right sidebar */}
         <SalesDetailSidebar label="Requisition Details">
+          <WorkflowCard module="requisition" statusCode={reqn.statusCode} statusLabel={reqn.status} workflow={reqn.workflow} links={{ purchaseOrderId: reqn.convertedPurchaseOrderId }} />
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-            <p className="text-xs font-semibold text-stone-400">Quick Actions</p>
+            <p className="text-xs font-semibold text-stone-500">Quick Actions</p>
             <div className="space-y-0.5">
               <button
                 type="button"
@@ -327,17 +364,6 @@ export default function RequisitionDetailPage() {
                 <Upload className="size-4 text-stone-400 shrink-0" />
                 Upload file
               </button>
-              {showConvert && (
-                <button
-                  type="button"
-                  onClick={() => setConvertOpen(true)}
-                  aria-label="Convert this requisition to a purchase order"
-                  className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs text-stone-700 w-full transition-colors text-left"
-                >
-                  <ArrowRightLeft className="size-4 text-stone-400 shrink-0" />
-                  Convert to Purchase Order
-                </button>
-              )}
               {canEdit && reqn.statusCode === 'DRFT' && (
                 <button
                   type="button"
@@ -348,6 +374,9 @@ export default function RequisitionDetailPage() {
                   <Pencil className="size-4 text-stone-400 shrink-0" />
                   Edit requisition
                 </button>
+              )}
+              {canCopy && (
+                <CopyQuickAction recordLabel="requisition" addPath="/purchases/requisition/new" sourceId={id} />
               )}
               <button
                 type="button"
@@ -367,7 +396,7 @@ export default function RequisitionDetailPage() {
 
           {showActions && (
             <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-              <p className="text-xs font-semibold text-stone-400">Actions</p>
+              <p className="text-xs font-semibold text-stone-500">Actions</p>
               <RequisitionStatusControl
                 order={{ statusCode: reqn.statusCode, approvalStatus: reqn.approvalStatus, gated: reqn.gated, nextStatusCodes: reqn.nextStatusCodes }}
                 onChange={(toCode) => transition.mutate(toCode)}
@@ -381,7 +410,7 @@ export default function RequisitionDetailPage() {
           )}
 
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-            <p className="text-xs font-semibold text-stone-400">Status</p>
+            <p className="text-xs font-semibold text-stone-500">Status</p>
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
               <span className="text-stone-500">Status</span>
               <Badge color={color}>{reqn.status}</Badge>
@@ -428,8 +457,7 @@ export default function RequisitionDetailPage() {
           </div>
 
           {canDeleteHere && (
-            <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-              <p className="text-xs font-semibold text-red-400">Danger Zone</p>
+            <DangerZoneCard>
               <DeleteRequisitionDialog
                 requisitionId={id}
                 label={`Requisition ${reqn.requisitionNumber}`}
@@ -438,7 +466,7 @@ export default function RequisitionDetailPage() {
                   navigate('/purchases/requisition');
                 }}
               />
-            </div>
+            </DangerZoneCard>
           )}
         </SalesDetailSidebar>
       </div>
@@ -465,11 +493,11 @@ export default function RequisitionDetailPage() {
   );
 }
 
-function ReadonlyField({ label, value, full }: { label: string; value?: string; full?: boolean }) {
+function ReadonlyField({ label, value, full }: { label: string; value?: ReactNode; full?: boolean }) {
   return (
     <div className={cn('space-y-1', full && 'col-span-full')}>
       <label className={fieldLabelCls}>{label}</label>
-      <div className={readonlyCls}>{value || <span className="text-stone-400">—</span>}</div>
+      <div className={readonlyCls}>{value || <span className="text-stone-500">—</span>}</div>
     </div>
   );
 }
@@ -477,7 +505,7 @@ function ReadonlyField({ label, value, full }: { label: string; value?: string; 
 function Total({ label, value, bold }: { label: string; value: number; bold?: boolean }) {
   return (
     <div>
-      <p className="text-2xs font-semibold uppercase tracking-wide text-stone-400">{label}</p>
+      <p className="text-2xs font-semibold uppercase tracking-wide text-stone-500">{label}</p>
       <p className={cn('tabular-nums', bold ? 'text-sm font-bold text-stone-900' : 'text-xs font-semibold text-stone-600')}>
         {currency(value)}
       </p>

@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
-import { ClipboardEdit, Pencil, Trash2 } from 'lucide-react';
+import { ClipboardEdit, Pencil } from 'lucide-react';
 import { inventoryAdjustmentService } from '@/services/inventoryAdjustmentService';
+import { DangerZoneCard, DangerZoneAction } from '@/components/tenant/DangerZoneCard';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { Spinner, ErrorNote, Badge } from '@/components/tenant/ui';
 import { ModernSection } from '@/components/crm/FormPrimitives';
@@ -74,7 +75,7 @@ export default function AdjustmentDetailPage() {
           <ModernSection title="Header" index={0}>
             <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
               <ReadonlyField label="Date" value={a.date} />
-              <ReadonlyField label="Warehouse" value={a.warehouseName} />
+              <ReadonlyField label="Location" value={a.warehouseName} />
               <ReadonlyField label="Document Reason" value={a.reasonName} />
               <ReadonlyField label="Net Delta" value={a.netDelta.toFixed(2)} />
               {a.notes && <ReadonlyField label="Notes" value={a.notes} />}
@@ -130,12 +131,13 @@ export default function AdjustmentDetailPage() {
           )}
 
           {canDelete && isDraft && (
-            <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-0.5 mb-4">
-              <p className="text-xs font-semibold text-red-400 mb-2">Danger Zone</p>
-              <button type="button" onClick={() => remove()} className="flex items-center gap-2.5 hover:bg-destructive/5 rounded-lg px-3 py-2 text-xs text-destructive w-full transition-colors text-left">
-                <Trash2 className="size-4 shrink-0" /> Delete adjustment
-              </button>
-            </div>
+            <DangerZoneCard>
+              <DangerZoneAction
+                description="Delete this adjustment permanently."
+                buttonLabel="Delete adjustment"
+                onClick={() => remove()}
+              />
+            </DangerZoneCard>
           )}
         </SalesDetailSidebar>
       </div>
@@ -147,7 +149,7 @@ function ReadonlyField({ label, value }: { label: string; value?: string }) {
   return (
     <div className="space-y-1">
       <label className={fieldLabelCls}>{label}</label>
-      <div className={readonlyCls}>{value || <span className="text-stone-400">—</span>}</div>
+      <div className={readonlyCls}>{value || <span className="text-stone-500">—</span>}</div>
     </div>
   );
 }

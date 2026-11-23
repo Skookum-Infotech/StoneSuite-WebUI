@@ -1,4 +1,6 @@
+import type { WorkflowBlock } from '@/types/workflow';
 import { tenantClient } from '@/api/tenantClient';
+import type { ApprovalRejection } from '@/types/tenant';
 import type { AuditEntry } from '@/services/crmService';
 import type {
   Quote,
@@ -7,7 +9,7 @@ import type {
   QuoteSearchRequest,
   QuotePage,
 } from '@/types/quote';
-import type { SalesOrder } from '@/types/salesOrder';
+import type { SalesOrder, StockShortage } from '@/types/salesOrder';
 
 // Quote API wrapper. Talks to the dedicated relational module under
 // `/api/tenant/quotes*` (NOT the generic `/api/tenant/crm/*` JSONB router).
@@ -34,16 +36,17 @@ export const quoteService = {
   getQuote: (uuid: string): Promise<Quote> =>
     tenantClient
       .get<{
-        success: boolean; quote: Quote;
+        success: boolean; workflow?: WorkflowBlock; quote: Quote;
         approval?: {
           gated?: boolean; approvers?: Quote['approvers']; requiredApprovals?: number; approvedCount?: number;
-          canApprove?: boolean; isOverride?: boolean; callerAlreadyApproved?: boolean;
+          canApprove?: boolean; isOverride?: boolean; callerAlreadyApproved?: boolean; canReject?: boolean; rejection?: ApprovalRejection;
         };
       }>(`${BASE}/${uuid}`)
       .then((r) => {
         const a = r.data.approval;
         return {
           ...r.data.quote,
+          workflow: r.data.workflow ?? r.data.quote.workflow,
           gated: a?.gated ?? false,
           approvers: a?.approvers ?? [],
           requiredApprovals: a?.requiredApprovals ?? 0,
@@ -51,6 +54,8 @@ export const quoteService = {
           canApprove: a?.canApprove ?? false,
           isOverride: a?.isOverride ?? false,
           callerAlreadyApproved: a?.callerAlreadyApproved ?? false,
+          canReject: a?.canReject ?? false,
+          rejection: a?.rejection,
         };
       }),
 
@@ -85,6 +90,16 @@ export const quoteService = {
       .post<{ success: boolean; quote: Quote }>(`${BASE}/${uuid}/approve`, {})
       .then((r) => r.data.quote),
 
+  // An approver's veto: rejects the quote while it awaits approval (a reason
+  // is required) and sends it back to Draft. Rejected with 403 if the caller isn't a
+  // configured approver (and isn't a super admin), 409 if it isn't awaiting
+  // approval, 400 without a reason. The POST response has no approval overlay, so
+  // callers invalidate the record's query to pick up the rejection banner.
+  reject: (uuid: string, reason: string): Promise<Quote> =>
+    tenantClient
+      .post<{ success: boolean; quote: Quote }>(`${BASE}/${uuid}/reject`, { reason })
+      .then((r) => r.data.quote),
+
   getAudit: (uuid: string): Promise<AuditEntry[]> =>
     tenantClient
       .get<{ success: boolean; recordId: string; audit: AuditEntry[] }>(`${BASE}/${uuid}/audit`)
@@ -93,8 +108,10 @@ export const quoteService = {
   // Snapshot-copies this quote into a new Sales Order (idempotent — replaying
   // against an already-converted quote returns the existing Sales Order with
   // created: false rather than erroring).
-  convertToSalesOrder: (uuid: string): Promise<{ salesOrder: SalesOrder; created: boolean }> =>
+  // Short stock never stops the conversion: the order is created and
+  // stockShortages lists what inventory cannot cover yet (empty when none).
+  convertToSalesOrder: (uuid: string): Promise<{ salesOrder: SalesOrder; created: boolean; stockShortages: StockShortage[] }> =>
     tenantClient
-      .post<{ success: boolean; salesOrder: SalesOrder; created: boolean }>(`${BASE}/${uuid}/convert`, {})
-      .then((r) => ({ salesOrder: r.data.salesOrder, created: r.data.created })),
+      .post<{ success: boolean; salesOrder: SalesOrder; created: boolean; stockShortages?: StockShortage[] | null }>(`${BASE}/${uuid}/convert`, {})
+      .then((r) => ({ salesOrder: r.data.salesOrder, created: r.data.created, stockShortages: r.data.stockShortages ?? [] })),
 };

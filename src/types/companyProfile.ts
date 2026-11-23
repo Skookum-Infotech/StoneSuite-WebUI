@@ -21,6 +21,22 @@ export interface PaymentDetails {
   routingNumber: string; // wire routing number
 }
 
+// Document types a tenant can set default Terms & Notes for; the keys match
+// the backend's companyprofile.DocKind* constants.
+export const DOCUMENT_DEFAULT_KINDS = ['estimate', 'quote', 'sales_order', 'invoice'] as const;
+export type DocumentDefaultKind = (typeof DOCUMENT_DEFAULT_KINDS)[number];
+
+// Terms & Conditions and Notes printed on a PDF whose record leaves them blank.
+export interface DocumentWording {
+  terms: string;
+  notes: string;
+}
+
+// Starting fabrication markup (Configuration -> Company Info -> Company
+// Preferences) when a tenant has never set its own — a safe guess, not a
+// measured number. Mirrors the backend's companyprofile.DefaultFabricationPercent.
+export const DEFAULT_FABRICATION_PERCENT = 20;
+
 // The tenant's own company name/address (Configuration -> Company Info) — as
 // opposed to a CRM Lead/Prospect/Customer's address, or a vendor's. One
 // singleton record per tenant, backed by GET/PUT /api/tenant/company-profile.
@@ -33,12 +49,19 @@ export interface CompanyProfile {
   currency: string;
   timezone: string;
   taxId: string;
+  // Company Preferences tab: fabrication sq ft = countertop sq ft * (1 +
+  // fabricationPercent / 100), shown in the SO drawing editor's sq ft
+  // breakdown (components/drawing/AreaSummary.tsx).
+  fabricationPercent: number;
   billingAddress: Address;
   shippingAddress: Address;
   returnAddress: Address;
   // Absent from a backend that predates payment details. On update, leaving it
   // out keeps the stored values; sending it replaces them.
   paymentDetails?: PaymentDetails;
+  // Default Terms/Notes per document type. Same keep-on-omit semantics as
+  // paymentDetails; a type with no entry prints no Terms/Notes by default.
+  documentDefaults?: Partial<Record<DocumentDefaultKind, DocumentWording>>;
 }
 
 // A physical address a tenant operates from (office, warehouse, showroom) —

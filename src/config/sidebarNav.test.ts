@@ -1,5 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { sidebarNav } from './sidebarNav';
+import { CUSTOMER_ALLOWED_PATH_PREFIXES, isCustomerAllowedPath } from './customerPortal';
+import { CREATED_ORDERS_PATH, NEW_CREATED_ORDER_PATH } from '@/lib/createdOrderRoutes';
+import { SUPPORT_PATH } from '@/lib/feedback';
 import type { NavEntry, NavLink } from './sidebarNav';
 
 /** Every leaf link in the tree, with a readable trail for failure messages. */
@@ -49,6 +52,38 @@ describe('sidebarNav access declarations', () => {
     expect(both, `Contradictory declarations:\n  ${both.join('\n  ')}`).toEqual([]);
   });
 
+  // `customerVisible` opts an ungated link into customer-portal sessions. A
+  // permission-gated link reaches a customer only through PORTAL_GRANTS, so the
+  // flag next to a `permission` (or without alwaysVisible) would be dead config
+  // that reads as if it works.
+  it('customerVisible is only set on ungated alwaysVisible links', () => {
+    const misuse = allLinks()
+      .filter(({ link }) => link.customerVisible && (!link.alwaysVisible || link.permission))
+      .map(({ trail }) => trail);
+
+    expect(misuse, `customerVisible without alwaysVisible, or beside a permission:\n  ${misuse.join('\n  ')}`).toEqual([]);
+  });
+
+  // MainLayout redirects a customer session away from any path outside its
+  // allowlist, so a link shown to customers must land inside it — otherwise
+  // clicking it silently bounces them to Sales Orders.
+  it('every customerVisible link points at a path customers may reach', () => {
+    const unreachable = allLinks()
+      .filter(({ link }) => link.customerVisible)
+      .filter(({ link }) => !CUSTOMER_ALLOWED_PATH_PREFIXES.some((prefix) => link.path.startsWith(prefix)))
+      .map(({ trail }) => trail);
+
+    expect(unreachable, `customerVisible links outside the customer allowlist:\n  ${unreachable.join('\n  ')}`).toEqual([]);
+  });
+
+  // The nav literal, the router entry and the Help menu shortcut all name the
+  // Support page; this catches the nav copy drifting from the shared constant.
+  it('My Tickets points at the Support page route', () => {
+    const entry = allLinks().find(({ link }) => link.id === 'my-tickets');
+
+    expect(entry?.link.path).toBe(SUPPORT_PATH);
+  });
+
   it('ids are unique so React keys and open-state tracking stay stable', () => {
     const ids = allLinks().map(({ link }) => link.id);
     expect(ids).toHaveLength(new Set(ids).size);
@@ -64,6 +99,24 @@ describe('sidebarNav access declarations', () => {
     }
   });
 
+  // buildPermModules keeps the first link to name a resource, so the Calendar
+  // group has to come after Sales or the role editor would list Sales Orders
+  // under Calendar.
+  it('puts the Calendar group after Sales', () => {
+    const entries = sidebarNav.sections.flatMap((s) => s.entries).filter((e) => e.type === 'group');
+    const ids = entries.map((e) => e.id);
+
+    expect(ids).toContain('calendar');
+    expect(ids.indexOf('calendar')).toBeGreaterThan(ids.indexOf('sales'));
+  });
+
+  it('points the Activity Planner at its route', () => {
+    const entry = allLinks().find(({ link }) => link.id === 'activity-planner');
+
+    expect(entry?.link.path).toBe('/calendar/activity-planner');
+    expect(entry?.link.permission).toEqual({ resource: 'sales_order', action: 'read' });
+  });
+
   it('CRM and Sales links declare the workflow that backs their form', () => {
     const expected: Record<string, string> = {
       leads: 'lead',
@@ -73,6 +126,7 @@ describe('sidebarNav access declarations', () => {
       quotes: 'quote',
       'sales-orders': 'sales_order',
       installation: 'installation',
+      'activity-planner': 'sales_order',
       invoices: 'invoice',
       payments: 'payment',
       'credit-memos': 'credit_memo',
@@ -90,5 +144,47 @@ describe('sidebarNav access declarations', () => {
     for (const [id, workflowKey] of Object.entries(expected)) {
       expect(byId.get(id)?.workflowKey, `${id} workflowKey`).toBe(workflowKey);
     }
+  });
+});
+
+describe('portal-only links', () => {
+  it('customerOnly links are also alwaysVisible and customerVisible', () => {
+    const misuse = allLinks()
+      .filter(({ link }) => link.customerOnly && !(link.alwaysVisible && link.customerVisible))
+      .map(({ trail }) => trail);
+
+    expect(misuse, `customerOnly without alwaysVisible + customerVisible:\n  ${misuse.join('\n  ')}`).toEqual([]);
+  });
+
+  it('Created Orders points at the shared route and is portal-only', () => {
+    const entry = allLinks().find(({ link }) => link.id === 'created-orders');
+
+    expect(entry?.link.path).toBe(CREATED_ORDERS_PATH);
+    expect(entry?.link.customerOnly).toBe(true);
+    expect(entry?.link.permission).toBeUndefined();
+  });
+
+  it('lets a customer session reach the Created Orders pages', () => {
+    expect(isCustomerAllowedPath(CREATED_ORDERS_PATH)).toBe(true);
+    expect(isCustomerAllowedPath(NEW_CREATED_ORDER_PATH)).toBe(true);
+  });
+});
+
+describe('Install Schedule nav entry', () => {
+  it('links to the route and is gated by install_appointment:read', () => {
+    const entry = allLinks().find(({ link }) => link.id === 'install-schedule');
+    expect(entry?.link.path).toBe('/calendar/install-schedule');
+    expect(entry?.link.permission).toEqual({ resource: 'install_appointment', action: 'read' });
+    expect(entry?.trail).toContain('Calendar');
+  });
+});
+
+describe('Approvals nav entry', () => {
+  it('points at /approvals, shows a badge, and is staff-only', () => {
+    const entry = allLinks().find(({ link }) => link.id === 'approvals');
+    expect(entry?.link.path).toBe('/approvals');
+    expect(entry?.link.badge).toBe('approvals-pending');
+    expect(entry?.link.customerVisible).toBeUndefined();
+    expect(isCustomerAllowedPath('/approvals')).toBe(false);
   });
 });

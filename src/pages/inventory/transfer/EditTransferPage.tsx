@@ -13,6 +13,8 @@ import { toNumericWarehouseId } from '@/lib/inventoryWarehouse';
 import { BinPicker } from '@/components/inventory/BinPicker';
 import { useInventoryLookups } from '@/hooks/useInventoryLookups';
 import { useScrollToError } from '@/hooks/useScrollToError';
+import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
+import { UnsavedChangesPrompt } from '@/components/UnsavedChangesPrompt';
 import { inventoryBinService } from '@/services/inventoryBinService';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { TRACKING_QUANTITY, TRACKING_SERIALIZED } from '@/types/inventory';
@@ -126,6 +128,11 @@ export default function EditTransferPage() {
   const setNotes = (v: string) => setLocal((p) => ({ ...p, notes: v }));
   const setLines = (v: TransferDraftLine[]) => setLocal((p) => ({ ...p, lines: v }));
 
+  const guard = useUnsavedChangesGuard(
+    { fromWarehouseId, toWarehouseId, toBinId, date, expectedDate, carrier, trackingNumber, notes, lines },
+    Boolean(mapped),
+  );
+
   const setLabel = useBreadcrumbStore((s) => s.setLabel);
   const clearLabel = useBreadcrumbStore((s) => s.clearLabel);
   useEffect(() => {
@@ -149,6 +156,7 @@ export default function EditTransferPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['inventory-transfers'] });
       queryClient.invalidateQueries({ queryKey: ['inventory-transfer', id] });
+      guard.markClean();
       navigate(`/inventory/transfer/${id}`);
     },
   });
@@ -168,6 +176,7 @@ export default function EditTransferPage() {
 
   return (
     <div className="flex flex-col flex-1 min-h-0 bg-stone-50">
+      <UnsavedChangesPrompt guard={guard} />
       <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
         <CrmPageHeader
           backLabel="Transfers"
@@ -198,10 +207,10 @@ export default function EditTransferPage() {
           <div className="px-4 py-3 pb-24 space-y-2 3xl:px-10 3xl:py-5 4xl:px-16 4xl:py-8">
             <ModernSection title="Header" index={0}>
               <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
-                <ModernFieldShell label="From Warehouse" required>
+                <ModernFieldShell label="From Location" required>
                   <WarehouseSelect warehouses={lookups?.warehouses ?? []} value={fromWarehouseId} onChange={setFromWarehouseId} required />
                 </ModernFieldShell>
-                <ModernFieldShell label="To Warehouse" required>
+                <ModernFieldShell label="To Location" required>
                   <WarehouseSelect warehouses={lookups?.warehouses ?? []} value={toWarehouseId} onChange={setToWarehouseId} required />
                 </ModernFieldShell>
                 <ModernFieldShell label="To Bin">

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Search, ArrowUp, ArrowDown, ArrowUpDown, X, FilePlus, Pencil, Filter,
@@ -10,14 +10,20 @@ import { apiErrorMessage } from '@/api/tenantClient';
 import { vendorCreditService } from '@/services/vendorCreditService';
 import { lookupService } from '@/services/lookupService';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
-import { VC_EDITABLE_STATUSES } from '@/lib/vendorCreditForm';
+import { VC_EDITABLE_STATUSES, VC_STATUS_COLORS } from '@/lib/vendorCreditForm';
 import { exportPagedCsv, fmtCsvDate } from '@/lib/csvExport';
 import {
   EMPTY_FILTER_STATE, hasActiveFilters, toFilterClauses, type VendorCreditFilterState,
 } from '@/lib/vendorCreditFilters';
 import { VendorCreditFilterDrawer } from './VendorCreditFilterDrawer';
 import { VendorCreditStatusControl } from './VendorCreditStatusControl';
+import { ReadOnlyStatusPill } from '@/pages/sales/components/ReadOnlyStatusPill';
 import type { VendorCreditSearchRequest } from '@/types/vendorCredit';
+import { formatDateValue, LIST_DATE_OPTIONS } from '@/lib/dateUtils';
+import { VendorLink } from '@/pages/purchases/vendor/components/VendorLink';
+
+// Columns still shown below the sm breakpoint (indexes into the header row); the rest return from sm up.
+const PHONE_COLUMNS = new Set([0, 1, 2, 6]);
 
 const EXPORT_PAGE_SIZE = 200;
 const PAGE_SIZE = 25;
@@ -56,7 +62,7 @@ function currency(n: number | undefined): string {
 
 function fmtDate(iso?: string | null): string {
   if (!iso) return '—';
-  return new Date(iso).toLocaleDateString(undefined, { year: '2-digit', month: 'short', day: 'numeric' });
+  return formatDateValue(iso, undefined, LIST_DATE_OPTIONS);
 }
 
 export function VendorCreditTable() {
@@ -74,12 +80,12 @@ export function VendorCreditTable() {
     },
   });
 
-  const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
+  const { hasPermission, isSuperAdmin, isLoading: permissionsLoading } = useUserPermissions();
   const canEdit = permissionsLoading || hasPermission('vendor_credit', 'update');
 
   const [term, setTerm] = useState('');
   const [debounced, setDebounced] = useState('');
-  const [sortBy, setSortBy] = useState<SortField>('creditDate');
+  const [sortBy, setSortBy] = useState<SortField>('recordNumber');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
   const [filters, setFilters] = useState<VendorCreditFilterState>(EMPTY_FILTER_STATE);
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -215,7 +221,7 @@ export function VendorCreditTable() {
             value={term}
             onChange={(e) => setTerm(e.target.value)}
             aria-label="Search vendor credits"
-            className="h-8 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-3 text-xs text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150"
+            className="h-8 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-3 text-xs text-stone-900 placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150"
           />
         </div>
 
@@ -236,7 +242,7 @@ export function VendorCreditTable() {
         <div className="h-5 w-px bg-stone-200" aria-hidden="true" />
 
         <div className="flex items-center gap-1.5">
-          <span className="text-2xs font-semibold uppercase tracking-wider text-stone-400 pr-0.5">Sort:</span>
+          <span className="text-2xs font-semibold uppercase tracking-wider text-stone-500 pr-0.5">Sort:</span>
           {(Object.entries(SORT_LABELS) as [SortField, string][]).map(([field, label]) => (
             <button
               key={field}
@@ -292,19 +298,19 @@ export function VendorCreditTable() {
       {/* Table */}
       <div className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm">
         <div className="overflow-x-auto modal-scrollbar">
-          <table className="w-full min-w-[980px] text-left text-xs">
+          <table className="w-full sm:min-w-[980px] text-left text-xs">
             <thead className="border-b border-stone-200 bg-table-header">
               <tr>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Credit #</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Vendor</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Status</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Reason</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Credit Date</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Owner</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right">Amount</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right">Unapplied</th>
+                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Credit #</th>
+                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Vendor</th>
+                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Status</th>
+                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 max-sm:hidden">Reason</th>
+                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 max-sm:hidden">Credit Date</th>
+                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 max-sm:hidden">Owner</th>
+                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right">Amount</th>
+                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right max-sm:hidden">Unapplied</th>
                 {canEdit && (
-                  <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right">Actions</th>
+                  <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right max-sm:hidden">Actions</th>
                 )}
               </tr>
             </thead>
@@ -313,7 +319,7 @@ export function VendorCreditTable() {
                 Array.from({ length: 5 }, (_, i) => (
                   <tr key={i}>
                     {Array.from({ length: canEdit ? 9 : 8 }, (_, j) => (
-                      <td key={j} className="px-4 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-16" /></td>
+                      <td key={j} className={cn('px-4 max-sm:px-2 py-3', !PHONE_COLUMNS.has(j) && 'max-sm:hidden')}><div className="animate-pulse h-3 rounded bg-stone-100 w-16" /></td>
                     ))}
                   </tr>
                 ))
@@ -322,43 +328,46 @@ export function VendorCreditTable() {
                   const ownerName = credit.ownerEmployeeId ? employeeNames.get(String(credit.ownerEmployeeId)) : undefined;
                   return (
                     <tr key={credit.id} className="group hover:bg-accent/10 transition-colors duration-150">
-                      <td className="px-4 py-3.5">
-                        <button
-                          type="button"
-                          onClick={() => navigate(`/purchases/vendor_credit/${credit.id}`)}
-                          className="font-mono text-xs font-semibold text-stone-900 hover:text-accent-foreground transition-colors"
+                      <td className="px-4 max-sm:px-2 py-3.5">
+                        <Link
+                          to={`/purchases/vendor_credit/${credit.id}`}
+                          className="font-mono text-xs font-semibold whitespace-nowrap text-stone-900 hover:text-accent-foreground transition-colors"
                         >
                           {credit.vendorCreditNumber || '—'}
-                        </button>
+                        </Link>
                       </td>
-                      <td className="px-4 py-3.5 text-xs text-stone-700 truncate max-w-[200px]">
-                        {credit.vendor?.name ?? '—'}
+                      <td className="px-4 max-sm:px-2 py-3.5 text-xs text-stone-700 truncate max-w-[200px]">
+                        <VendorLink vendor={credit.vendor} />
                       </td>
-                      <td className="px-4 py-3.5">
-                        <VendorCreditStatusControl
-                          order={{ statusCode: credit.statusCode }}
-                          onChange={(code) => transition.mutate({ id: credit.id, toStatusCode: code })}
-                          disabled={transition.isPending && transition.variables?.id === credit.id}
-                          variant="pill"
-                        />
+                      <td className="px-4 max-sm:px-2 py-3.5">
+                        {isSuperAdmin ? (
+                          <VendorCreditStatusControl
+                            order={{ statusCode: credit.statusCode }}
+                            onChange={(code) => transition.mutate({ id: credit.id, toStatusCode: code })}
+                            disabled={transition.isPending && transition.variables?.id === credit.id}
+                            variant="pill"
+                          />
+                        ) : (
+                          <ReadOnlyStatusPill label={credit.status} color={VC_STATUS_COLORS[credit.statusCode]} />
+                        )}
                       </td>
-                      <td className="px-4 py-3.5 text-xs text-stone-500 truncate max-w-[200px]">
+                      <td className="px-4 max-sm:px-2 py-3.5 text-xs text-stone-500 truncate max-w-[200px] max-sm:hidden">
                         {credit.reason || '—'}
                       </td>
-                      <td className="px-4 py-3.5 text-xs text-stone-400 tabular-nums whitespace-nowrap">
+                      <td className="px-4 max-sm:px-2 py-3.5 text-xs text-stone-500 tabular-nums whitespace-nowrap max-sm:hidden">
                         {fmtDate(credit.creditDate)}
                       </td>
-                      <td className="px-4 py-3.5 text-xs text-stone-500 truncate max-w-[140px]">
+                      <td className="px-4 max-sm:px-2 py-3.5 text-xs text-stone-500 truncate max-w-[140px] max-sm:hidden">
                         {ownerName ?? '—'}
                       </td>
-                      <td className="px-4 py-3.5 text-xs font-semibold text-stone-900 tabular-nums text-right whitespace-nowrap">
+                      <td className="px-4 max-sm:px-2 py-3.5 text-xs font-semibold text-stone-900 tabular-nums text-right whitespace-nowrap">
                         {currency(credit.grandTotal)}
                       </td>
-                      <td className="px-4 py-3.5 text-xs font-semibold text-stone-900 tabular-nums text-right whitespace-nowrap">
+                      <td className="px-4 max-sm:px-2 py-3.5 text-xs font-semibold text-stone-900 tabular-nums text-right whitespace-nowrap max-sm:hidden">
                         {currency(credit.unappliedAmount)}
                       </td>
                       {canEdit && (
-                        <td className="px-4 py-3.5 text-right">
+                        <td className="px-4 max-sm:px-2 py-3.5 text-right max-sm:hidden">
                           {VC_EDITABLE_STATUSES.has(credit.statusCode) ? (
                             <button
                               type="button"
@@ -369,7 +378,7 @@ export function VendorCreditTable() {
                               <Pencil className="size-4" />
                             </button>
                           ) : (
-                            <span className="text-2xs text-stone-300">—</span>
+                            <span className="text-2xs text-stone-500">—</span>
                           )}
                         </td>
                       )}
@@ -385,7 +394,7 @@ export function VendorCreditTable() {
                           <FilePlus className="size-6 text-stone-400" />
                         </div>
                         <p className="text-sm font-semibold text-stone-700">No vendor credits recorded yet.</p>
-                        <p className="text-xs text-stone-400">Record your first vendor credit to get started.</p>
+                        <p className="text-xs text-stone-500">Record your first vendor credit to get started.</p>
                       </div>
                     ) : (
                       <div className="flex flex-col items-center gap-3">
@@ -393,7 +402,7 @@ export function VendorCreditTable() {
                           <Search className="size-6 text-stone-400" />
                         </div>
                         <p className="text-sm font-semibold text-stone-700">No vendor credits match the current search.</p>
-                        <p className="text-xs text-stone-400">Try adjusting your search or filters.</p>
+                        <p className="text-xs text-stone-500">Try adjusting your search or filters.</p>
                       </div>
                     )}
                   </td>

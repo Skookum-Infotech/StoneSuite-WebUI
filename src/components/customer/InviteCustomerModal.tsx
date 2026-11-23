@@ -10,7 +10,7 @@ import type { CreateTenantResult } from '@/types/tenant';
 
 const inviteSchema = z.object({
   companyName: z.string().min(1, 'Company name is required'),
-  recipientName: z.string().optional(),
+  recipientName: z.string().trim().min(1, 'Recipient name is required'),
   contactEmail: z.string().min(1, 'Email is required').email('Enter a valid email'),
 });
 type InviteFields = z.infer<typeof inviteSchema>;
@@ -35,7 +35,7 @@ export function InviteCustomerModal({ onClose }: { onClose: () => void }) {
     mutationFn: (vars: InviteFields) =>
       platformService.inviteCustomer({
         companyName: vars.companyName,
-        recipientName: vars.recipientName ?? '',
+        recipientName: vars.recipientName,
         contactEmail: vars.contactEmail,
       }),
     onSuccess: (res) => {
@@ -67,7 +67,7 @@ export function InviteCustomerModal({ onClose }: { onClose: () => void }) {
             </div>
             <h2 className="text-sm font-bold text-stone-800">Invite Customer</h2>
           </div>
-          <button type="button" onClick={onClose} aria-label="Close" className="rounded p-1 text-stone-400 hover:bg-stone-100 hover:text-stone-600">
+          <button type="button" onClick={onClose} aria-label="Close" className="rounded p-1 text-stone-500 hover:bg-stone-100 hover:text-stone-600">
             <X className="size-4" />
           </button>
         </div>
@@ -76,7 +76,7 @@ export function InviteCustomerModal({ onClose }: { onClose: () => void }) {
           <div className="space-y-4 px-5 py-5">
             <p className="text-xs text-stone-500">
               Invite created{result.emailSent ? ' and emailed' : ''}. Share this link so the customer can complete
-              their onboarding{result.emailSent ? '' : ' (email not configured — copy it)'}:
+              their onboarding{result.emailSent ? '' : ' (the email could not be sent — copy it)'}:
             </p>
             <div className="flex items-center gap-2 rounded-lg border border-stone-200 bg-stone-50 p-2">
               <code className="flex-1 truncate px-2 text-label text-stone-700">{result.inviteLink}</code>
@@ -96,8 +96,8 @@ export function InviteCustomerModal({ onClose }: { onClose: () => void }) {
             <Field label="Company Name" required error={errors.companyName?.message}>
               <input {...register('companyName')} autoFocus placeholder="Acme Corp" className={inputClass} aria-invalid={Boolean(errors.companyName)} />
             </Field>
-            <Field label="Recipient Name">
-              <input {...register('recipientName')} placeholder="Jane Doe" className={inputClass} />
+            <Field label="Recipient Name" required error={errors.recipientName?.message}>
+              <input {...register('recipientName')} placeholder="Jane Doe" className={inputClass} aria-invalid={Boolean(errors.recipientName)} />
             </Field>
             <Field label="Recipient Email" required error={errors.contactEmail?.message}>
               <input {...register('contactEmail')} type="email" placeholder="jane@acme.com" className={inputClass} aria-invalid={Boolean(errors.contactEmail)} />

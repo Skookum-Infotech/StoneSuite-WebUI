@@ -41,8 +41,8 @@ notifyClient.interceptors.response.use(
     if (error.response?.status === 401 && originalRequest && !originalRequest._retried) {
       originalRequest._retried = true;
 
-      const refreshed = await attemptRefresh();
-      if (refreshed && useAuthStore.getState().token) {
+      const outcome = await attemptRefresh();
+      if (outcome === 'ok' && useAuthStore.getState().token) {
         return notifyClient(originalRequest);
       }
     }

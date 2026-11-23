@@ -21,16 +21,32 @@ export function ApproverPicker({
   onAdd,
   onRemove,
   disabled,
+  autoFocus,
 }: {
   users: ApproverCandidate[];
   selected: string[];
   onAdd: (userId: string) => void;
   onRemove: (userId: string) => void;
   disabled?: boolean;
+  // autoFocus is for the caller to request focus the instant this picker
+  // first mounts (e.g. a gate that was just switched from disabled to
+  // enabled) -- not a plain HTML autofocus, which would also steal focus
+  // on an ordinary page load where the gate already had approvers.
+  autoFocus?: boolean;
 }) {
   const [query, setQuery] = useState('');
-  const [open, setOpen] = useState(false);
+  // Starts open when autoFocus is requested -- set from the initial value
+  // directly (not via a setState-on-mount effect) since autoFocus never
+  // changes for the lifetime of a given mount.
+  const [open, setOpen] = useState(Boolean(autoFocus));
   const containerRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (autoFocus) inputRef.current?.focus();
+    // Only ever fires once, right after this picker mounts.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const byId = useMemo(() => new Map(users.map((u) => [u.id, u])), [users]);
   const atLimit = selected.length >= MAX_APPROVERS;
@@ -84,12 +100,13 @@ export function ApproverPicker({
       )}
 
       {atLimit ? (
-        <p className="text-xs text-stone-400">
+        <p className="text-xs text-stone-500">
           Maximum of {MAX_APPROVERS} approvers selected. Remove one to add another.
         </p>
       ) : (
         <div ref={containerRef} className="relative">
           <input
+            ref={inputRef}
             type="text"
             value={query}
             onChange={(e) => {
@@ -105,7 +122,7 @@ export function ApproverPicker({
           {open && (
             <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-xl border border-stone-200 bg-white shadow-md dark:border-stone-700 dark:bg-stone-900">
               {results.length === 0 ? (
-                <p className="px-3.5 py-2.5 text-xs text-stone-400">
+                <p className="px-3.5 py-2.5 text-xs text-stone-500">
                   {users.length === 0 ? 'No active users available.' : 'No matching users.'}
                 </p>
               ) : (
@@ -121,7 +138,7 @@ export function ApproverPicker({
                     className="flex w-full flex-col items-start px-3.5 py-2 text-left text-xs transition hover:bg-stone-50 dark:hover:bg-stone-800"
                   >
                     <span className="font-semibold text-stone-700 dark:text-stone-200">{u.fullName || u.email}</span>
-                    <span className="text-stone-400">{u.email}</span>
+                    <span className="text-stone-500">{u.email}</span>
                   </button>
                 ))
               )}
@@ -131,7 +148,7 @@ export function ApproverPicker({
       )}
 
       {selected.length === 0 && !atLimit && (
-        <p className="text-2xs text-stone-400">No approver selected — records won't require sign-off.</p>
+        <p className="text-2xs text-stone-500">No approver selected — records won't require sign-off.</p>
       )}
     </div>
   );

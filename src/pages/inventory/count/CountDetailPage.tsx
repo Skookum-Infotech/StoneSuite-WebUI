@@ -99,8 +99,8 @@ export default function CountDetailPage() {
 
           <ModernSection title="Header" index={1}>
             <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
-              <ReadonlyField label="Warehouse" value={c.warehouseName} />
-              <ReadonlyField label="Bin Scope" value={c.binPath || 'Whole warehouse'} />
+              <ReadonlyField label="Location" value={c.warehouseName} />
+              <ReadonlyField label="Bin Scope" value={c.binPath || 'Whole location'} />
               <ReadonlyField label="Date" value={c.date} />
               <ReadonlyField label="Frozen" value={c.frozenAt ? new Date(c.frozenAt).toLocaleString() : undefined} />
               {c.notes && <ReadonlyField label="Notes" value={c.notes} />}
@@ -131,7 +131,7 @@ export default function CountDetailPage() {
           {canTransition && !isDraft && (
             <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 mb-4">
               {isCounting && remaining > 0 && (
-                <p className="mb-2 text-2xs text-stone-400">{remaining} line(s) have not been counted yet.</p>
+                <p className="mb-2 text-2xs text-stone-500">{remaining} line(s) have not been counted yet.</p>
               )}
               <DocumentStatusBar
                 statusCode={c.statusCode}
@@ -154,7 +154,7 @@ export default function CountDetailPage() {
 function ProgressStat({ label, value, highlight, warn, decimal }: { label: string; value: number; highlight?: boolean; warn?: boolean; decimal?: boolean }) {
   return (
     <div className="rounded-lg border border-stone-200 bg-white p-3">
-      <p className="text-2xs font-semibold uppercase tracking-wide text-stone-400">{label}</p>
+      <p className="text-2xs font-semibold uppercase tracking-wide text-stone-500">{label}</p>
       <p className={`mt-1 text-lg font-bold tabular-nums ${warn ? 'text-amber-600' : highlight ? 'text-emerald-600' : 'text-stone-900'}`}>
         {decimal ? value.toFixed(2) : value}
       </p>
@@ -166,7 +166,7 @@ function ReadonlyField({ label, value }: { label: string; value?: string }) {
   return (
     <div className="space-y-1">
       <label className={fieldLabelCls}>{label}</label>
-      <div className={readonlyCls}>{value || <span className="text-stone-400">—</span>}</div>
+      <div className={readonlyCls}>{value || <span className="text-stone-500">—</span>}</div>
     </div>
   );
 }

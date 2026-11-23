@@ -19,6 +19,10 @@ import {
 } from '@/lib/vendorBillForm';
 import { InventoryItemReturnContext, useInventoryItemReturn } from '@/hooks/useInventoryItemReturn';
 import { useScrollToError } from '@/hooks/useScrollToError';
+import { duplicateFrom, type DuplicateConflict } from '@/lib/salesOrderDuplicate';
+import { DuplicateCreateDialog } from '@/components/tenant/documentReview/DuplicateCreateDialog';
+
+const DUPLICATE_MESSAGE = 'A bill with this vendor invoice number already exists for this vendor.';
 
 // Stable reference so `lineItems`'s fallback doesn't create a new array
 // identity every render (which would defeat the totals useMemo below).
@@ -104,8 +108,15 @@ export default function EditVendorBillPage() {
     [lineItems, headerTaxPercent, adjustment],
   );
 
+  // Changing the invoice number to one another bill of this vendor has answers
+  // 409; "Save anyway" resends with allowDuplicate.
+  const [duplicate, setDuplicate] = useState<DuplicateConflict | null>(null);
   const save = useMutation({
-    mutationFn: () => vendorBillService.updateVendorBill(id, toCreatePayload(data, lineItems, customFieldValues)),
+    mutationFn: (opts?: { allowDuplicate?: boolean }) => vendorBillService.updateVendorBill(id, {
+      ...toCreatePayload(data, lineItems, customFieldValues),
+      ...(opts?.allowDuplicate ? { allowDuplicate: true } : {}),
+    }),
+    onError: (err) => { setDuplicate(duplicateFrom(err, DUPLICATE_MESSAGE)); },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['vendor-bill', id] });
       queryClient.invalidateQueries({ queryKey: ['vendor-bills'] });
@@ -130,11 +141,11 @@ export default function EditVendorBillPage() {
           subtitle={bill.vendor.name}
         />
         <div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 text-center">
-          <Lock className="size-8 text-stone-300" aria-hidden="true" />
+          <Lock className="size-8 text-stone-400" aria-hidden="true" />
           <p className="text-sm font-semibold text-stone-700">
             This vendor bill is {bill.status} and can no longer be edited.
           </p>
-          <p className="text-xs text-stone-400">Recall it to Draft from the detail page to make changes.</p>
+          <p className="text-xs text-stone-500">Recall it to Draft from the detail page to make changes.</p>
           <button
             type="button"
             onClick={() => navigate(`/purchases/vendor_bill/${id}`)}
@@ -151,7 +162,7 @@ export default function EditVendorBillPage() {
     <div className="flex flex-col flex-1 min-h-0 bg-stone-50">
       <UnsavedChangesPrompt guard={guard} />
       <form
-        onSubmit={(e) => { e.preventDefault(); save.mutate(); }}
+        onSubmit={(e) => { e.preventDefault(); save.mutate({}); }}
         className="flex flex-col flex-1 min-h-0"
       >
         <CrmPageHeader
@@ -169,7 +180,7 @@ export default function EditVendorBillPage() {
           )}
         />
 
-        {save.error && (
+        {save.error && !duplicate && (
           <div
             ref={errorRef}
             tabIndex={-1}
@@ -200,6 +211,7 @@ export default function EditVendorBillPage() {
             vendor={vendor}
             setVendor={setLocalVendor}
             vendorLocked
+            purchaseOrder={mapped?.purchaseOrder ?? null}
             customFieldValues={customFieldValues}
             setCustomField={setCustomField}
             lookups={lookups}
@@ -215,6 +227,16 @@ export default function EditVendorBillPage() {
           onCancel={() => navigate(`/purchases/vendor_bill/${id}`)}
           isPending={save.isPending}
         />
+        {duplicate && (
+          <DuplicateCreateDialog
+            conflict={duplicate}
+            docType="vendor_bill"
+            anywayLabel="Save anyway"
+            onOpenExisting={(uuid) => { setDuplicate(null); guard.markClean(); navigate(`/purchases/vendor_bill/${uuid}`); }}
+            onCreateAnyway={() => { setDuplicate(null); save.mutate({ allowDuplicate: true }); }}
+            onCancel={() => setDuplicate(null)}
+          />
+        )}
       </form>
     </div>
   );

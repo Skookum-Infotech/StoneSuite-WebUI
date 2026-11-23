@@ -27,7 +27,6 @@ describe('hasActiveFilters', () => {
       { unappliedMax: '5' },
       { approvalStatus: 'pending' },
       { methodId: '3' },
-      { ownerId: '7' },
       { customFields: { po_ref: 'PO-1' } },
     ];
     for (const overrides of populated) {
@@ -66,11 +65,10 @@ describe('toFilterClauses', () => {
       scheduledDateFrom: '2026-09-01',
       approvalStatus: 'approved',
       methodId: '3',
-      ownerId: '7',
     }));
     const allowed = new Set([
       'record_number', 'reference_number', 'payment_date', 'scheduled_date',
-      'amount', 'unapplied_amount', 'approval_status', 'method_id', 'owner_id',
+      'amount', 'unapplied_amount', 'approval_status', 'method_id',
     ]);
     expect(clauses.length).toBeGreaterThan(0);
     for (const clause of clauses) {

@@ -1,15 +1,29 @@
 import * as React from 'react';
-import { useState, useEffect, useCallback, startTransition } from 'react';
-import { Outlet, Navigate, NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { useState, useEffect, useCallback, useContext, startTransition } from 'react';
+import {
+  Outlet,
+  Navigate,
+  NavLink,
+  UNSAFE_DataRouterContext,
+  useLocation,
+  useNavigate,
+} from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useHeaderMenuStore } from '@/store/useHeaderMenuStore';
 import { useSessionTimer } from '@/hooks/useSessionTimer';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
+import { useCurrentUserRoles } from '@/hooks/useCurrentUserRoles';
 import { useExitConfirmation } from '@/hooks/useExitConfirmation';
-import { formatBreadcrumbSegment } from '@/lib/breadcrumb';
+import { useTrackLastAppPath } from '@/hooks/useTrackLastAppPath';
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
+import { isCustomerAllowedPath } from '@/config/customerPortal';
+import { Breadcrumbs } from '@/layouts/Breadcrumbs';
+import { hidesBreadcrumbs } from '@/layouts/breadcrumbVisibility';
 import { SessionExpiryModal } from '@/components/SessionExpiryModal';
+import { SessionReplacedOverlay } from '@/components/SessionReplacedOverlay';
+import { useSessionWatch } from '@/hooks/useSessionWatch';
 import { ConfirmLeaveDialog } from '@/components/ConfirmLeaveDialog';
 import { apiClient } from '@/api/client';
 import { rbacService } from '@/services/tenantServices';
@@ -22,9 +36,9 @@ import Sidebar from '@/components/Sidebar';
 import { GlobalSearch } from '@/components/GlobalSearch';
 import { HelpMenu } from '@/components/HelpMenu';
 import { NotificationBell } from '@/components/NotificationBell';
+import { TenantLogoMark } from '@/components/TenantLogoMark';
 import {
   Menu,
-  ChevronRight,
   LogOut,
   Settings,
   Search,
@@ -37,16 +51,6 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-// See the isCustomer guard below for why this exists as an explicit allowlist
-// rather than per-route PermissionGuard coverage alone.
-const CUSTOMER_ALLOWED_PATH_PREFIXES = [
-  '/sales/sales_order',
-  '/sales/invoice',
-  '/sales/payment',
-  '/sales/refund',
-  '/account/settings',
-];
-
 export default function MainLayout(): React.JSX.Element {
   const { isAuthenticated, user, setAuth, logout } = useAuthStore();
   const isCustomer = useAuthStore((s) => s.kind === 'portal');
@@ -55,15 +59,30 @@ export default function MainLayout(): React.JSX.Element {
   const applyWorkspaceSwitch = useAuthStore((s) => s.applyWorkspaceSwitch);
   const breadcrumbLabels = useBreadcrumbStore((s) => s.labels);
   const { activeRoleId } = useUserPermissions();
+  const roles = useCurrentUserRoles();
   const queryClient = useQueryClient();
   const location = useLocation();
+  useDocumentTitle(location.pathname, breadcrumbLabels);
   const navigate = useNavigate();
+  // The route table of the router this layout is mounted in. The router module
+  // imports this layout, so it cannot be imported back here (circular); and
+  // react-router has no public hook for it. If it ever stops being readable the
+  // breadcrumb degrades to plain text rather than linking to a possible 404 —
+  // the "page exists" test in MainLayout.test.tsx will flag that.
+  const routes = useContext(UNSAFE_DataRouterContext)?.router.routes ?? [];
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const isProfileOpen = useHeaderMenuStore((s) => s.openMenu === 'profile');
   const setOpenMenu = useHeaderMenuStore((s) => s.setOpenMenu);
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
 
   const { showWarning, secondsRemaining, onStay, onLogout, isExtending } = useSessionTimer();
+  // Signed in on another computer: the countdown overlay replaces everything.
+  useSessionWatch();
+  const replacedSession = useAuthStore((s) => s.replacedSession);
+
+  // Tickets are filed from /support; remember the page the user was on before
+  // that so the ticket can still say where the problem happened.
+  useTrackLastAppPath();
 
   // Same switch-role round-trip as the Account Settings > Roles & Access tab —
   // re-signs the JWT server-side so the active-role claim actually narrows
@@ -173,24 +192,24 @@ export default function MainLayout(): React.JSX.Element {
   const exitConfirmation = useExitConfirmation(isAuthenticated);
 
   if (!isAuthenticated) {
-    return <Navigate to="/auth/login" replace />;
+    // Carry the requested page so sign-in can bring the user back to it.
+    const requested = `${location.pathname}${location.search}`;
+    const loginPath = requested === '/' || requested === '/dashboard'
+      ? '/auth/login'
+      : `/auth/login?return_to=${encodeURIComponent(requested)}`;
+    return <Navigate to={loginPath} replace />;
   }
 
-  // A customer-portal session may only reach its four document types (List
-  // and Detail — Add/Edit already render "Access Denied" via PermissionGuard,
-  // so there is no need to redirect away from those specifically) plus its
-  // own account settings. Everything else under this shell is staff-only.
-  // This is a single allowlisted choke point rather than relying on every
-  // route remembering its own PermissionGuard — /dashboard, /transactions and
-  // /subscription, for instance, declare none at all.
-  if (isCustomer && !CUSTOMER_ALLOWED_PATH_PREFIXES.some((p) => location.pathname.startsWith(p))) {
+  // A customer-portal session may only reach the paths in
+  // CUSTOMER_ALLOWED_PATH_PREFIXES (its document types, account settings and
+  // Support). Everything else under this shell is staff-only. See that list
+  // for why this is one allowlisted choke point rather than relying on every
+  // route remembering its own PermissionGuard.
+  if (isCustomer && !isCustomerAllowedPath(location.pathname)) {
     return <Navigate to="/sales/sales_order" replace />;
   }
 
   const pathSegments = location.pathname.split('/').filter(Boolean);
-
-  // Segments that are namespace prefixes with no real index page — non-navigable in breadcrumb.
-  const nonNavigableSegments = new Set(['crm', 'sales', 'purchases', 'customer', 'onboarding']);
 
   return (
     <div className="min-h-screen bg-stone-50/50 dark:bg-stone-900/10">
@@ -203,7 +222,9 @@ export default function MainLayout(): React.JSX.Element {
         />
       )}
 
-      {showWarning && (
+      {replacedSession && <SessionReplacedOverlay info={replacedSession} />}
+
+      {showWarning && !replacedSession && (
         <SessionExpiryModal
           secondsRemaining={secondsRemaining}
           onStay={onStay}
@@ -246,26 +267,9 @@ export default function MainLayout(): React.JSX.Element {
             </div>
           </NavLink>
 
-          {/* Divider between the two logos */}
-          <div className="hidden lg:block h-7 w-px bg-white/12 mx-1" />
-
-          {/* Elevation Stone — pill logo on desktop */}
-          <div className="hidden lg:flex items-center px-3">
-            <img
-              src="/elevation-stone-logo.svg"
-              alt="Elevation Stone"
-              className="h-45 w-auto object-contain"
-            />
-          </div>
-
-          {/* Elevation Stone — circular badge on mobile */}
-          <div className="flex lg:hidden items-center pl-2">
-            <img
-              src="/elevation-stone-badge.svg"
-              alt="Elevation Stone"
-              className="h-9 w-9 object-contain"
-            />
-          </div>
+          {/* Tenant's own uploaded logo — divider + pill (desktop) or badge
+              (mobile), or nothing at all when the tenant has no logo set. */}
+          <TenantLogoMark />
         </div>
 
         {/* GlobalSearch — flex-centered between logos and actions on lg+ */}
@@ -330,7 +334,7 @@ export default function MainLayout(): React.JSX.Element {
                     <h5 className="text-xs font-bold text-stone-200">
                       {user?.fullName || 'Guest User'}
                     </h5>
-                    <p className="truncate text-2xs text-stone-500 mt-0.5">
+                    <p className="truncate text-2xs text-stone-400 mt-0.5">
                       {user?.email || 'guest@stonesuite.com'}
                     </p>
                   </div>
@@ -339,7 +343,7 @@ export default function MainLayout(): React.JSX.Element {
                       onClick={() => { setOpenMenu(null); navigate('/account/settings'); }}
                       className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-semibold text-stone-400 hover:bg-white/[0.06] hover:text-stone-200 transition-colors text-left cursor-pointer"
                     >
-                      <Settings className="size-4 text-stone-500" />
+                      <Settings className="size-4 text-stone-400" />
                       <span>Account Settings</span>
                     </button>
                   </div>
@@ -349,14 +353,14 @@ export default function MainLayout(): React.JSX.Element {
                       onClick={() => { setOpenMenu(null); navigate('/transactions'); }}
                       className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-semibold text-stone-400 hover:bg-white/[0.06] hover:text-stone-200 transition-colors text-left cursor-pointer"
                     >
-                      <CreditCard className="size-4 text-stone-500" />
+                      <CreditCard className="size-4 text-stone-400" />
                       <span>My Transactions</span>
                     </button>
                   </div>
                   <div className="h-px bg-white/[0.08] my-1" />
                   {isCustomer ? (
                     <div className="py-1">
-                      <div className="px-3 py-2 text-2xs font-bold text-stone-500 uppercase tracking-wide">
+                      <div className="px-3 py-2 text-2xs font-bold text-stone-400 uppercase tracking-wide">
                         Workspaces
                       </div>
                       {workspaces.length > 0 ? (
@@ -374,9 +378,9 @@ export default function MainLayout(): React.JSX.Element {
                                 className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-semibold text-stone-400 hover:bg-white/[0.06] hover:text-stone-200 transition-colors text-left cursor-pointer disabled:cursor-not-allowed disabled:hover:bg-transparent"
                               >
                                 {isSwitching ? (
-                                  <Loader2 className="size-4 text-stone-500 flex-shrink-0 animate-spin" />
+                                  <Loader2 className="size-4 text-stone-400 flex-shrink-0 animate-spin" />
                                 ) : (
-                                  <Building2 className="size-4 text-stone-500 flex-shrink-0" />
+                                  <Building2 className="size-4 text-stone-400 flex-shrink-0" />
                                 )}
                                 <span className="flex-1 truncate">{w.name}</span>
                                 {isActive && <Check className="size-4 text-brand flex-shrink-0" />}
@@ -385,7 +389,7 @@ export default function MainLayout(): React.JSX.Element {
                           })}
                         </div>
                       ) : (
-                        <div className="px-3 py-2 text-2xs text-stone-500">
+                        <div className="px-3 py-2 text-2xs text-stone-400">
                           No workspaces
                         </div>
                       )}
@@ -397,13 +401,13 @@ export default function MainLayout(): React.JSX.Element {
                     </div>
                   ) : (
                     <div className="py-1">
-                      <div className="px-3 py-2 text-2xs font-bold text-stone-500 uppercase tracking-wide">
+                      <div className="px-3 py-2 text-2xs font-bold text-stone-400 uppercase tracking-wide">
                         Roles
                       </div>
-                      {user?.roles && user.roles.length > 0 ? (
+                      {roles.length > 0 ? (
                         <div className="space-y-0.5">
-                          {user.roles.map((role) => {
-                            const isActive = role.id === (activeRoleId || user.selectedRoleId);
+                          {roles.map((role) => {
+                            const isActive = role.id === (activeRoleId || user?.selectedRoleId);
                             const isSwitching = switchRoleMutation.isPending && switchRoleMutation.variables === role.id;
                             return (
                               <button
@@ -415,9 +419,9 @@ export default function MainLayout(): React.JSX.Element {
                                 className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-semibold text-stone-400 hover:bg-white/[0.06] hover:text-stone-200 transition-colors text-left cursor-pointer disabled:cursor-not-allowed disabled:hover:bg-transparent"
                               >
                                 {isSwitching ? (
-                                  <Loader2 className="size-4 text-stone-500 flex-shrink-0 animate-spin" />
+                                  <Loader2 className="size-4 text-stone-400 flex-shrink-0 animate-spin" />
                                 ) : (
-                                  <Shield className="size-4 text-stone-500 flex-shrink-0" />
+                                  <Shield className="size-4 text-stone-400 flex-shrink-0" />
                                 )}
                                 <span className="flex-1">{role.name}</span>
                                 {isActive && <Check className="size-4 text-brand flex-shrink-0" />}
@@ -426,7 +430,7 @@ export default function MainLayout(): React.JSX.Element {
                           })}
                         </div>
                       ) : (
-                        <div className="px-3 py-2 text-2xs text-stone-500">
+                        <div className="px-3 py-2 text-2xs text-stone-400">
                           No roles assigned
                         </div>
                       )}
@@ -479,41 +483,8 @@ export default function MainLayout(): React.JSX.Element {
         <main className="flex-1 w-full flex flex-col min-h-0 bg-background">
 
           {/* Breadcrumb bar — contextual, scrolls with page */}
-          {pathSegments.length > 0 && (
-            <nav
-              aria-label="Breadcrumb"
-              className="flex flex-wrap items-center gap-1.5 px-4 pt-3 pb-1 sm:px-6 sm:pt-4 3xl:px-12 3xl:pt-5 4xl:px-16 text-2xs xl:text-xs font-semibold text-stone-400"
-            >
-              <span
-                className="cursor-pointer hover:text-stone-600 dark:hover:text-stone-200 transition-colors"
-                onClick={() => navigate('/')}
-              >
-                Home
-              </span>
-              {pathSegments.map((segment, index) => {
-                const url = `/${pathSegments.slice(0, index + 1).join('/')}`;
-                const isLast = index === pathSegments.length - 1;
-                const isClickable = !isLast && !nonNavigableSegments.has(segment);
-                return (
-                  <React.Fragment key={segment}>
-                    <ChevronRight className="size-3 xl:size-3.5 text-stone-300 shrink-0" />
-                    <span
-                      onClick={() => { if (isClickable) navigate(url); }}
-                      className={cn(
-                        'transition-colors',
-                        isLast
-                          ? 'text-stone-600 dark:text-stone-300 font-bold'
-                          : isClickable
-                            ? 'cursor-pointer hover:text-stone-600 dark:hover:text-stone-200'
-                            : 'text-stone-400',
-                      )}
-                    >
-                      {breadcrumbLabels[segment] ?? formatBreadcrumbSegment(segment)}
-                    </span>
-                  </React.Fragment>
-                );
-              })}
-            </nav>
+          {pathSegments.length > 0 && !hidesBreadcrumbs(location.pathname) && (
+            <Breadcrumbs segments={pathSegments} labels={breadcrumbLabels} routes={routes} />
           )}
 
           <Outlet />

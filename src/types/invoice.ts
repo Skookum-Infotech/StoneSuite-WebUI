@@ -6,7 +6,8 @@
 // v1 JSONB CRM router — Invoices are a relational sibling of `sales_order` with
 // ordered line items, snapshots, and stored money totals (incl. amountPaid/
 // balanceDue), served from `/api/tenant/invoices*`.
-import type { FilterClause, RecordApprover, SortKey } from '@/types/tenant';
+import type { WorkflowBlock } from '@/types/workflow';
+import type { FilterClause, RecordApprover, SortKey, ApprovalRejection } from '@/types/tenant';
 
 // ── Create / update inputs (client → server) ─────────────────────────────────
 
@@ -44,6 +45,21 @@ export interface InvoiceLineInput {
   unitPrice: number;
   discountPercent?: number;
   taxRateId?: number | null;
+  /** Set on a line added from a kit: the kit's id and the name it had then.
+   *  A label only — the server stores it and returns it as kitId / kitName. */
+  kitUuid?: string;
+  kitName?: string;
+  /** Size of one slab and how many slabs the line covers. With length and
+   *  width both set the server derives the quantity from them (length x width x
+   *  slabs, in the item's area unit), so the quantity sent is then ignored. */
+  length?: number;
+  width?: number;
+  /** The one unit length and width are measured in: mm, cm, in, ft or m. Blank takes
+   *  the item's unit, then cm. */
+  dimensionUnit?: string;
+  slabs?: number;
+  /** Thickness of one slab, in `dimensionUnit`. Descriptive only: it never enters the quantity. */
+  thickness?: number;
 }
 
 export interface InvoiceCreatePayload {
@@ -108,6 +124,19 @@ export interface InvoiceLine {
   lineDiscount: number;
   lineTax: number;
   lineTotal: number;
+  /** Set on a line added from a kit (see lib/kitLines.ts): the kit's id and the
+   *  name it had when the line was added. */
+  kitId?: string;
+  kitName?: string;
+  /** The slab size and count the line was priced from, when entered that
+   *  way; quantity is then their area. */
+  length?: number | null;
+  width?: number | null;
+  /** The unit length and width were measured in. */
+  dimensionUnit?: string | null;
+  slabs?: number | null;
+  /** Thickness of one slab, in `dimensionUnit`. */
+  thickness?: number | null;
 }
 
 // Full detail response (GET/Create/Update/Transition/RecordPayment). Every
@@ -115,6 +144,8 @@ export interface InvoiceLine {
 // Edit page can reload an invoice and re-save it without silently blanking
 // billing/shipping or any header field.
 export interface Invoice {
+  /** End-to-end flow this record belongs to; see BACKEND_SPEC_workflow_links.md. */
+  workflow?: WorkflowBlock;
   id: string;
   invoiceNumber: string;
   status: string;              // human label, e.g. "Draft"
@@ -128,6 +159,8 @@ export interface Invoice {
   canApprove: boolean;
   isOverride: boolean;
   callerAlreadyApproved: boolean;
+  canReject?: boolean;            // whether the requesting user can reject it right now (configured approver OR super admin, while it awaits approval)
+  rejection?: ApprovalRejection;  // who rejected it and why -- present while it still sits in the status the rejection left it in
   customer: InvoiceCustomerRef;
   salesOrder?: InvoiceSalesOrderRef | null;
   ownerEmployeeId?: number | null;
@@ -168,8 +201,8 @@ export interface Invoice {
  *  subset the table actually renders. */
 export type InvoiceSummary = Pick<
   Invoice,
-  'id' | 'invoiceNumber' | 'status' | 'statusCode' | 'approvalStatus' | 'nextStatusCodes' | 'customer' | 'invoiceDate' | 'grandTotal' | 'balanceDue' | 'createdAt' | 'updatedAt'
->;
+  'id' | 'invoiceNumber' | 'status' | 'statusCode' | 'approvalStatus' | 'nextStatusCodes' | 'customer' | 'invoiceDate' | 'dueDate' | 'salesOrder' | 'grandTotal' | 'balanceDue' | 'createdAt' | 'updatedAt'
+> & { currencyId?: number | null };
 
 /** Search request = the shared `query.Request` plus the optional global-search
  *  term the invoice resolver supports (SearchPredicate over invoice #/PO/memo/

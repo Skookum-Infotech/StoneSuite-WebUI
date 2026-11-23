@@ -16,6 +16,8 @@ interface DatePickerProps {
   label: string
   disabled?: boolean
   required?: boolean
+  /** ISO `yyyy-mm-dd`. Days before it can't be picked. */
+  minDate?: string
 }
 
 // Field-level date input: a button trigger (styled like the app's other form
@@ -23,9 +25,10 @@ interface DatePickerProps {
 // the native `<input type="date">` fallback every `*FormFields.tsx` renderer
 // used for `type: 'date'` fields — that native control renders inconsistently
 // across browsers/OS locales and isn't a real click-to-pick affordance.
-export function DatePicker({ value, onChange, label, disabled, required }: DatePickerProps) {
+export function DatePicker({ value, onChange, label, disabled, required, minDate }: DatePickerProps) {
   const [open, setOpen] = React.useState(false)
   const selected = fromISODate(value) ?? undefined
+  const earliest = (minDate && fromISODate(minDate)) || undefined
 
   return (
     <Popover open={open} onOpenChange={(next) => !disabled && setOpen(next)}>
@@ -38,7 +41,7 @@ export function DatePicker({ value, onChange, label, disabled, required }: DateP
             "flex h-8 w-full items-center gap-2 rounded-lg border border-stone-200 bg-white px-2.5 text-left text-sm text-stone-900 transition-colors outline-none",
             "focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
             "disabled:cursor-not-allowed disabled:opacity-50",
-            !value && "text-stone-400"
+            !value && "text-stone-500"
           )}
         >
           <CalendarIcon className="size-3.5 shrink-0 text-stone-400" aria-hidden="true" />
@@ -49,7 +52,8 @@ export function DatePicker({ value, onChange, label, disabled, required }: DateP
         <Calendar
           mode="single"
           selected={selected}
-          defaultMonth={selected}
+          defaultMonth={selected ?? earliest}
+          disabled={earliest ? { before: earliest } : undefined}
           onSelect={(day) => {
             if (!day) return
             onChange(toISODate(day))

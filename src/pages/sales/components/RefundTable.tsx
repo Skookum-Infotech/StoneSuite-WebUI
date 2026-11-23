@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Search, ArrowUp, ArrowDown, ArrowUpDown, X, Inbox, Pencil,
@@ -10,8 +10,12 @@ import { refundService } from '@/services/refundService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { RefundStatusControl } from './RefundStatusControl';
+import { ReadOnlyStatusPill } from './ReadOnlyStatusPill';
+import { REFUND_STATUS_COLORS } from '@/lib/refundForm';
 import { exportPagedCsv, fmtCsvDate } from '@/lib/csvExport';
 import type { RefundSearchRequest } from '@/types/refund';
+import { formatDateValue, LIST_DATE_OPTIONS } from '@/lib/dateUtils';
+import { CustomerLink } from '@/components/crm/CustomerLink';
 
 const EXPORT_PAGE_SIZE = 200;
 
@@ -20,9 +24,11 @@ const EXPORT_PAGE_SIZE = 200;
 // (/api/tenant/refunds*) directly rather than reusing CrmRecordTable/
 // crmService. Mirrors PaymentTable's search/sort/cursor-pagination UX.
 
-// Keys must match refund/resolver.go's sortFields whitelist — a key outside it
-// is a 400, not a silently ignored sort.
-type SortField = 'refund_date' | 'amount' | 'unapplied_amount';
+// Keys must match refund/resolver.go's sortFields whitelist, plus the engine's
+// universal created_at/updated_at/record_number trio (always sortable — see
+// query.sortableFields) — a key outside both is a 400, not a silently ignored
+// sort.
+type SortField = 'refund_date' | 'amount' | 'unapplied_amount' | 'created_at';
 type SortDir = 'asc' | 'desc';
 
 const PAGE_SIZE = 25;
@@ -31,6 +37,7 @@ const SORT_LABELS: Record<SortField, string> = {
   refund_date: 'Refund Date',
   amount: 'Amount',
   unapplied_amount: 'Unapplied',
+  created_at: 'Refund Created',
 };
 
 function currency(n: number | undefined): string {
@@ -42,11 +49,12 @@ export function RefundTable() {
   const queryClient = useQueryClient();
   const topRef = useRef<HTMLDivElement>(null);
 
-  const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
+  const { hasPermission, isSuperAdmin, isLoading: permissionsLoading } = useUserPermissions();
   const canEdit = permissionsLoading || hasPermission('refund', 'update');
 
-  // Inline status change from the list row's status pill — mirrors the Edit
-  // page's transition mutation.
+  // Inline status change from the list row's status pill, super admin only —
+  // everyone else sees a read-only pill and moves a refund from its Detail
+  // page. Mirrors the Edit page's transition mutation.
   const transition = useMutation({
     mutationFn: (vars: { id: string; toStatusCode: string }) => refundService.transition(vars.id, vars.toStatusCode),
     onSuccess: (updated) => {
@@ -57,7 +65,7 @@ export function RefundTable() {
 
   const [term, setTerm] = useState('');
   const [debounced, setDebounced] = useState('');
-  const [sortBy, setSortBy] = useState<SortField>('refund_date');
+  const [sortBy, setSortBy] = useState<SortField>('created_at');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
 
   const [cursor, setCursor] = useState('');
@@ -173,14 +181,14 @@ export function RefundTable() {
             value={term}
             onChange={(e) => setTerm(e.target.value)}
             aria-label="Search refunds"
-            className="h-8 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-3 text-xs text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150"
+            className="h-8 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-3 text-xs text-stone-900 placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150"
           />
         </div>
 
         <div className="h-5 w-px bg-stone-200" aria-hidden="true" />
 
         <div className="flex items-center gap-1.5">
-          <span className="text-2xs font-semibold uppercase tracking-wider text-stone-400 pr-0.5">Sort:</span>
+          <span className="text-2xs font-semibold uppercase tracking-wider text-stone-500 pr-0.5">Sort:</span>
           {(Object.entries(SORT_LABELS) as [SortField, string][]).map(([field, label]) => (
             <button
               key={field}
@@ -240,17 +248,17 @@ export function RefundTable() {
       {/* Table */}
       <div className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm">
         <div className="overflow-x-auto modal-scrollbar">
-          <table className="w-full min-w-[680px] text-left text-xs">
+          <table className="w-full sm:min-w-[680px] text-left text-xs">
             <thead className="border-b border-stone-200 bg-table-header">
               <tr>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Refund #</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Customer</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Status</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Refund Date</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right">Amount</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right">Unapplied</th>
+                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Refund #</th>
+                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Customer</th>
+                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Status</th>
+                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 max-sm:hidden">Refund Date</th>
+                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right">Amount</th>
+                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right max-sm:hidden">Unapplied</th>
                 {canEdit && (
-                  <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right">Actions</th>
+                  <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right max-sm:hidden">Actions</th>
                 )}
               </tr>
             </thead>
@@ -258,52 +266,55 @@ export function RefundTable() {
               {isLoading ? (
                 Array.from({ length: 5 }, (_, i) => (
                   <tr key={i}>
-                    <td className="px-4 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-20" /></td>
-                    <td className="px-4 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-36" /></td>
-                    <td className="px-4 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-20" /></td>
-                    <td className="px-4 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-16" /></td>
-                    <td className="px-4 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-16 ml-auto" /></td>
-                    <td className="px-4 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-16 ml-auto" /></td>
-                    {canEdit && <td className="px-4 py-3" />}
+                    <td className="px-4 max-sm:px-2 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-20" /></td>
+                    <td className="px-4 max-sm:px-2 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-36" /></td>
+                    <td className="px-4 max-sm:px-2 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-20" /></td>
+                    <td className="px-4 max-sm:px-2 py-3 max-sm:hidden"><div className="animate-pulse h-3 rounded bg-stone-100 w-16" /></td>
+                    <td className="px-4 max-sm:px-2 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-16 ml-auto" /></td>
+                    <td className="px-4 max-sm:px-2 py-3 max-sm:hidden"><div className="animate-pulse h-3 rounded bg-stone-100 w-16 ml-auto" /></td>
+                    {canEdit && <td className="px-4 max-sm:px-2 py-3 max-sm:hidden" />}
                   </tr>
                 ))
               ) : records.length > 0 ? (
                 records.map((r) => {
                   return (
                     <tr key={r.id} className="group hover:bg-accent/10 transition-colors duration-150">
-                      <td className="px-4 py-3.5">
-                        <button
-                          type="button"
-                          onClick={() => navigate(`/sales/refund/${r.id}`)}
-                          className="font-mono text-xs font-semibold text-stone-900 hover:text-accent-foreground transition-colors"
+                      <td className="px-4 max-sm:px-2 py-3.5">
+                        <Link
+                          to={`/sales/refund/${r.id}`}
+                          className="font-mono text-xs font-semibold whitespace-nowrap text-stone-900 hover:text-accent-foreground transition-colors"
                         >
                           {r.refundNumber || '—'}
-                        </button>
+                        </Link>
                       </td>
-                      <td className="px-4 py-3.5 text-xs text-stone-700 truncate max-w-[200px]">
-                        {r.customer?.name ?? '—'}
+                      <td className="px-4 max-sm:px-2 py-3.5 text-xs text-stone-700 truncate max-w-[200px]">
+                        {r.customer?.name ? <CustomerLink id={r.customer.id} name={r.customer.name} className="hover:text-accent-foreground hover:underline" /> : '—'}
                       </td>
-                      <td className="px-4 py-3.5">
-                        <RefundStatusControl
-                          refund={{ statusCode: r.statusCode, approvalStatus: r.approvalStatus ?? 'none' }}
-                          onChange={(code) => transition.mutate({ id: r.id, toStatusCode: code })}
-                          disabled={transition.isPending && transition.variables?.id === r.id}
-                          variant="pill"
-                        />
+                      <td className="px-4 max-sm:px-2 py-3.5">
+                        {isSuperAdmin ? (
+                          <RefundStatusControl
+                            refund={{ statusCode: r.statusCode, approvalStatus: r.approvalStatus ?? 'none' }}
+                            onChange={(code) => transition.mutate({ id: r.id, toStatusCode: code })}
+                            disabled={transition.isPending && transition.variables?.id === r.id}
+                            variant="pill"
+                          />
+                        ) : (
+                          <ReadOnlyStatusPill label={r.status} color={REFUND_STATUS_COLORS[r.status]} />
+                        )}
                       </td>
-                      <td className="px-4 py-3.5 text-xs text-stone-400 tabular-nums whitespace-nowrap">
+                      <td className="px-4 max-sm:px-2 py-3.5 text-xs text-stone-500 tabular-nums whitespace-nowrap max-sm:hidden">
                         {r.refundDate
-                          ? new Date(r.refundDate).toLocaleDateString(undefined, { year: '2-digit', month: 'short', day: 'numeric' })
+                          ? formatDateValue(r.refundDate, undefined, LIST_DATE_OPTIONS)
                           : '—'}
                       </td>
-                      <td className="px-4 py-3.5 text-xs font-semibold text-stone-900 tabular-nums text-right whitespace-nowrap">
+                      <td className="px-4 max-sm:px-2 py-3.5 text-xs font-semibold text-stone-900 tabular-nums text-right whitespace-nowrap">
                         {currency(r.amount)}
                       </td>
-                      <td className="px-4 py-3.5 text-xs font-medium text-stone-600 tabular-nums text-right whitespace-nowrap">
+                      <td className="px-4 max-sm:px-2 py-3.5 text-xs font-medium text-stone-600 tabular-nums text-right whitespace-nowrap max-sm:hidden">
                         {currency(r.unappliedAmount)}
                       </td>
                       {canEdit && (
-                        <td className="px-4 py-3.5 text-right">
+                        <td className="px-4 max-sm:px-2 py-3.5 text-right max-sm:hidden">
                           <button
                             type="button"
                             onClick={() => navigate(`/sales/refund/${r.id}/edit`)}
@@ -326,7 +337,7 @@ export function RefundTable() {
                           <Inbox className="size-6 text-stone-400" aria-hidden="true" />
                         </div>
                         <p className="text-sm font-semibold text-stone-700">No refunds recorded yet.</p>
-                        <p className="text-xs text-stone-400">Record your first refund to get started.</p>
+                        <p className="text-xs text-stone-500">Record your first refund to get started.</p>
                       </div>
                     ) : (
                       <div className="flex flex-col items-center gap-3">
@@ -334,7 +345,7 @@ export function RefundTable() {
                           <Search className="size-6 text-stone-400" aria-hidden="true" />
                         </div>
                         <p className="text-sm font-semibold text-stone-700">No refunds match the current search.</p>
-                        <p className="text-xs text-stone-400">Try adjusting your search terms.</p>
+                        <p className="text-xs text-stone-500">Try adjusting your search terms.</p>
                       </div>
                     )}
                   </td>

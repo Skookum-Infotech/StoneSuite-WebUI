@@ -2,6 +2,7 @@ import {
   LayoutDashboard,
   Building2,
   Sparkles,
+  Timer,
   Users,
   SlidersHorizontal,
   Workflow as WorkflowIcon,
@@ -37,14 +38,21 @@ import {
   ClipboardEdit,
   Repeat,
   ClipboardCheck,
+  ClipboardPlus,
   Layers,
   Boxes,
   ArrowLeftRight,
+  CalendarDays,
   CalendarClock,
+  CalendarRange,
   LayoutGrid,
   KeyRound,
+  LifeBuoy,
   MessageSquareText,
   Upload,
+  ShieldAlert,
+  PackagePlus,
+  BarChart3,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -52,6 +60,10 @@ export interface NavPermission {
   resource: string;
   action: string;
 }
+
+/** Live counters a link can show beside its label. The config only names the
+ *  counter; Sidebar resolves the number, which keeps this file static data. */
+export type NavBadge = "support-unread" | "approvals-pending";
 
 export interface NavLink {
   type: "link";
@@ -63,11 +75,26 @@ export interface NavLink {
   iconColor: string;
   permission?: NavPermission;
   platformAdminOnly?: boolean;
-  /** Opt out of permission gating for links every signed-in user may see.
-   *  Required: a link with neither `permission` nor `alwaysVisible` is hidden,
-   *  so forgetting to declare a permission fails closed rather than exposing
-   *  a module the API will refuse. */
+  /** Opt out of permission gating for links every signed-in STAFF user may
+   *  see. Required: a link with neither `permission` nor `alwaysVisible` is
+   *  hidden, so forgetting to declare a permission fails closed rather than
+   *  exposing a module the API will refuse. */
   alwaysVisible?: boolean;
+  /** Also show an `alwaysVisible` link to customer-portal sessions, which
+   *  otherwise never see one (a permission-gated link reaches customers through
+   *  useUserPermissions' portal allowlist instead). The path must also be in
+   *  CUSTOMER_ALLOWED_PATH_PREFIXES or MainLayout bounces the customer away. */
+  customerVisible?: boolean;
+  /** Show the link to customer-portal sessions ONLY — staff never see it, not
+   *  even for the moment permissions are still loading. For a page that exists
+   *  purely for the portal (Created Orders) and has no staff-side module. Must
+   *  be paired with `alwaysVisible` + `customerVisible`. */
+  customerOnly?: boolean;
+  /** Live counter shown as a pill beside the label. */
+  badge?: NavBadge;
+  /** Hide the link while its `badge` count is 0 and the user is not an approver
+   *  of any module (Approvals: nothing to show, nothing they could be asked for). */
+  hideWhenIdle?: boolean;
   /** Workflow key (Configuration > Workflows) backing this link's form, e.g.
    *  "lead". When set, the link is hidden for every user — independent of
    *  permission — while that workflow is disabled. Omit for links with no
@@ -124,6 +151,32 @@ export const sidebarNav: SidebarNavConfig = {
       // resource and each widget gates its own data server-side.
       alwaysVisible: true,
     },
+    {
+      type: "link",
+      id: "approvals",
+      label: "Approvals",
+      path: "/approvals",
+      icon: ClipboardCheck,
+      iconColor: "text-amber-600 dark:text-amber-400",
+      // Staff only: no `customerVisible`, and the path is outside
+      // CUSTOMER_ALLOWED_PATH_PREFIXES. The server filters the inbox, so there
+      // is no role-editor row for it either.
+      alwaysVisible: true,
+      badge: "approvals-pending",
+      hideWhenIdle: true,
+    },
+    {
+      type: "link",
+      id: "anomalies",
+      label: "Anomalies",
+      path: "/anomalies",
+      icon: ShieldAlert,
+      iconColor: "text-rose-500 dark:text-rose-400",
+      // Open to every signed-in staff user: the API returns only the findings
+      // addressed to the caller (all of them for a super admin), so the page is
+      // empty for most people and there is no role-editor row for it.
+      alwaysVisible: true,
+    },
   ],
   sections: [
     {
@@ -178,6 +231,21 @@ export const sidebarNav: SidebarNavConfig = {
           iconColor: "text-emerald-600 dark:text-emerald-400",
           matchPaths: ["/sales"],
           children: [
+            {
+              type: "link",
+              id: "created-orders",
+              label: "Created Orders",
+              path: "/sales/created-orders",
+              icon: ClipboardPlus,
+              iconColor: "text-lime-600 dark:text-lime-400",
+              // The countertop orders a customer files from the portal. It has
+              // no staff module (and no resource in the role matrix), so like
+              // Support it declares no `permission` — `customerOnly` is what
+              // keeps it out of every staff sidebar.
+              alwaysVisible: true,
+              customerVisible: true,
+              customerOnly: true,
+            },
             {
               type: "link",
               id: "estimates",
@@ -300,6 +368,15 @@ export const sidebarNav: SidebarNavConfig = {
             },
             {
               type: "link",
+              id: "reorder",
+              label: "Reorder",
+              path: "/purchases/reorder",
+              icon: PackagePlus,
+              iconColor: "text-red-500 dark:text-red-400",
+              permission: { resource: "replenishment", action: "read" },
+            },
+            {
+              type: "link",
               id: "item-receipts",
               label: "Item Receipts",
               path: "/purchases/item_receipt",
@@ -370,7 +447,7 @@ export const sidebarNav: SidebarNavConfig = {
             {
               type: "link",
               id: "units-slabs",
-              label: "Units / Slabs",
+              label: "Inventory",
               path: "/inventory/unit",
               icon: Layers,
               iconColor: "text-fuchsia-500 dark:text-fuchsia-400",
@@ -396,9 +473,19 @@ export const sidebarNav: SidebarNavConfig = {
             },
             {
               type: "link",
-              id: "warehouses",
-              label: "Warehouses",
-              path: "/inventory/warehouse",
+              id: "bin-transfer",
+              label: "Bin Transfer",
+              path: "/inventory/bin_transfer",
+              icon: ArrowLeftRight,
+              iconColor: "text-violet-500 dark:text-violet-400",
+              permission: { resource: "bin_transfer", action: "read" },
+              workflowKey: "bin_transfer",
+            },
+            {
+              type: "link",
+              id: "locations",
+              label: "Locations",
+              path: "/inventory/location",
               icon: Warehouse,
               iconColor: "text-teal-600 dark:text-teal-400",
               permission: { resource: "warehouse", action: "read" },
@@ -475,6 +562,118 @@ export const sidebarNav: SidebarNavConfig = {
               icon: Settings2,
               iconColor: "text-slate-500 dark:text-slate-400",
               permission: { resource: "chart_of_account", action: "configure" },
+            },
+          ],
+        },
+        {
+          type: "group",
+          id: "calendar",
+          label: "Calendar",
+          icon: CalendarDays,
+          iconColor: "text-sky-600 dark:text-sky-400",
+          matchPaths: ["/calendar"],
+          children: [
+            {
+              type: "link",
+              id: "activity-planner",
+              label: "Activity Planner",
+              path: "/calendar/activity-planner",
+              icon: CalendarRange,
+              iconColor: "text-sky-500 dark:text-sky-400",
+              // A view over every order's schedule, so it reuses the Sales
+              // Order grant instead of naming a resource of its own. Keep this
+              // group AFTER Sales: buildPermModules keeps the first occurrence
+              // of a resource, and the role matrix must still list
+              // sales_order under Sales.
+              permission: { resource: "sales_order", action: "read" },
+              workflowKey: "sales_order",
+            },
+            {
+              type: "link",
+              id: "install-schedule",
+              label: "Install Schedule",
+              path: "/calendar/install-schedule",
+              icon: CalendarClock,
+              iconColor: "text-emerald-500 dark:text-emerald-400",
+              permission: { resource: "install_appointment", action: "read" },
+            },
+          ],
+        },
+        {
+          type: "group",
+          id: "reports",
+          label: "Reports",
+          icon: BarChart3,
+          iconColor: "text-fuchsia-600 dark:text-fuchsia-400",
+          matchPaths: ["/reports"],
+          // One read grant per sub-module (report_<module>:read), so a role can
+          // get Sales reports without CRM reports. These are the only rows the
+          // role matrix shows for the group. Custom Reports has its own
+          // resource (read = open/run, create = save/share); each source a
+          // custom report uses also needs that module's report grant.
+          children: [
+            {
+              type: "link",
+              id: "reports-crm",
+              label: "CRM Reports",
+              path: "/reports/crm",
+              icon: Building2,
+              iconColor: "text-blue-600 dark:text-blue-400",
+              permission: { resource: "report_crm", action: "read" },
+            },
+            {
+              type: "link",
+              id: "reports-sales",
+              label: "Sales Reports",
+              path: "/reports/sales",
+              icon: TrendingUp,
+              iconColor: "text-emerald-600 dark:text-emerald-400",
+              permission: { resource: "report_sales", action: "read" },
+            },
+            {
+              type: "link",
+              id: "reports-purchases",
+              label: "Purchases Reports",
+              path: "/reports/purchases",
+              icon: ShoppingCart,
+              iconColor: "text-amber-600 dark:text-amber-400",
+              permission: { resource: "report_purchases", action: "read" },
+            },
+            {
+              type: "link",
+              id: "reports-inventory",
+              label: "Inventory Reports",
+              path: "/reports/inventory",
+              icon: Boxes,
+              iconColor: "text-purple-600 dark:text-purple-400",
+              permission: { resource: "report_inventory", action: "read" },
+            },
+            {
+              type: "link",
+              id: "reports-calendar",
+              label: "Calendar Reports",
+              path: "/reports/calendar",
+              icon: CalendarDays,
+              iconColor: "text-sky-600 dark:text-sky-400",
+              permission: { resource: "report_calendar", action: "read" },
+            },
+            {
+              type: "link",
+              id: "reports-finance",
+              label: "Finance Reports",
+              path: "/reports/finance",
+              icon: Landmark,
+              iconColor: "text-slate-600 dark:text-slate-400",
+              permission: { resource: "report_finance", action: "read" },
+            },
+            {
+              type: "link",
+              id: "reports-custom",
+              label: "Custom Reports",
+              path: "/reports/custom",
+              icon: SlidersHorizontal,
+              iconColor: "text-violet-500 dark:text-violet-400",
+              permission: { resource: "custom_report", action: "read" },
             },
           ],
         },
@@ -599,6 +798,15 @@ export const sidebarNav: SidebarNavConfig = {
               // was checked, since both mapped to the same resource.
               permission: { resource: "import", action: "read" },
             },
+            {
+              type: "link",
+              id: "automation",
+              label: "Automation",
+              path: "/config/automation",
+              icon: Timer,
+              iconColor: "text-amber-500 dark:text-amber-400",
+              permission: { resource: "automation", action: "read" },
+            },
           ],
         },
       ],
@@ -623,6 +831,27 @@ export const sidebarNav: SidebarNavConfig = {
       ],
     },
     {
+      id: "support",
+      label: "Support",
+      entries: [
+        {
+          type: "link",
+          id: "my-tickets",
+          label: "My Tickets",
+          path: "/support",
+          icon: LifeBuoy,
+          iconColor: "text-teal-500 dark:text-teal-400",
+          badge: "support-unread",
+          // Open to every signed-in user — staff and customers alike — so it
+          // declares no `permission`: no role can grant or withhold it, and it
+          // never shows up as a row in the role editor's matrix. That is why
+          // Support has its own section instead of living under Configuration.
+          alwaysVisible: true,
+          customerVisible: true,
+        },
+      ],
+    },
+    {
       id: "platform",
       label: "Platform",
       platformAdminOnly: true,
@@ -643,6 +872,24 @@ export const sidebarNav: SidebarNavConfig = {
           path: "/platform/feedback",
           icon: MessageSquareText,
           iconColor: "text-teal-500 dark:text-teal-400",
+          platformAdminOnly: true,
+        },
+        {
+          type: "link",
+          id: "ai-assistant",
+          label: "AI Assistant",
+          path: "/platform/ai",
+          icon: Sparkles,
+          iconColor: "text-brand dark:text-brand",
+          platformAdminOnly: true,
+        },
+        {
+          type: "link",
+          id: "automation-scheduler",
+          label: "Automation",
+          path: "/platform/automation",
+          icon: Timer,
+          iconColor: "text-amber-500 dark:text-amber-400",
           platformAdminOnly: true,
         },
       ],

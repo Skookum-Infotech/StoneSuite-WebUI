@@ -11,7 +11,7 @@ function mockPermissions(canTransition = true) {
   vi.mocked(useUserPermissions).mockReturnValue({
     grants: [],
     isLoading: false,
-    activeRoleId: '',
+    activeRoleId: '', isSuperAdmin: false,
     hasPermission: (resource: string, action: string) =>
       resource === 'estimate' && action === 'transition' ? canTransition : false,
   } as ReturnType<typeof useUserPermissions>);

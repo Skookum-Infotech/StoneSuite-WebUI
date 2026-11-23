@@ -1,0 +1,521 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, screen, waitFor, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
+import { AxiosError, type AxiosResponse } from 'axios';
+
+vi.mock('@/services/purchaseOrderService', () => ({
+  purchaseOrderService: {
+    getPurchaseOrder: vi.fn(),
+    approve: vi.fn(),
+    reject: vi.fn(),
+    transition: vi.fn(),
+    convertToBill: vi.fn(),
+    resendToVendor: vi.fn(),
+  },
+}));
+vi.mock('@/services/documentService', () => ({
+  documentService: { sendToCustomer: vi.fn(), listSends: vi.fn().mockResolvedValue([]) },
+}));
+vi.mock('@/hooks/useUserPermissions', () => ({ useUserPermissions: vi.fn() }));
+vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn(), warning: vi.fn() } }));
+
+import PurchaseOrderDetailPage from './PurchaseOrderDetailPage';
+import { purchaseOrderService } from '@/services/purchaseOrderService';
+import { useUserPermissions } from '@/hooks/useUserPermissions';
+import { toast } from 'sonner';
+import type { PurchaseOrder } from '@/types/purchaseOrder';
+
+const address = { line1: '', line2: '', city: '', state: '', postalCode: '', country: '' };
+
+// A purchase order sitting on its approval gate, as the approver sees it.
+const pendingOrder = {
+  id: 'po-1',
+  purchaseOrderNumber: 'PO-000001',
+  status: 'Pending Approval',
+  statusCode: 'PAPV',
+  approvalStatus: 'pending',
+  nextStatusCodes: ['CANC', 'DRFT'],
+  gated: true,
+  approvers: [{ id: 'a1', name: 'Alice Approver', approved: false }],
+  requiredApprovals: 1,
+  approvedCount: 0,
+  canApprove: true,
+  isOverride: false,
+  callerAlreadyApproved: false,
+  canReject: true,
+  vendor: { id: 'v1', name: 'Nero Marble Co' },
+  orderDate: '2026-09-01',
+  salesTaxPercent: 0,
+  shipTo: address,
+  subtotal: 100, discountTotal: 0, taxTotal: 0, shippingCharge: 0, adjustment: 0, grandTotal: 100,
+  items: [],
+  createdAt: '2026-09-01T00:00:00Z',
+  updatedAt: '2026-09-01T00:00:00Z',
+} as unknown as PurchaseOrder;
+
+// Stands in for the Add page so a test can see where Copy sent the user.
+function AddPageProbe() {
+  const { pathname, search } = useLocation();
+  return <p data-testid="add-page">{`${pathname}${search}`}</p>;
+}
+
+function renderPage({ isSuperAdmin = false, denied = [] as string[] } = {}) {
+  vi.mocked(useUserPermissions).mockReturnValue({
+    grants: [], isLoading: false, activeRoleId: '', isSuperAdmin,
+    // `denied` lists "resource:action" grants to withhold; everything else is allowed.
+    hasPermission: (resource: string, action: string) => !denied.includes(`${resource}:${action}`),
+  } as ReturnType<typeof useUserPermissions>);
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
+  render(
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter initialEntries={['/purchases/purchase_order/po-1']}>
+        <Routes>
+          <Route path="/purchases/purchase_order/:id" element={<PurchaseOrderDetailPage />} />
+          <Route path="/purchases/purchase_order/new" element={<AddPageProbe />} />
+        </Routes>
+      </MemoryRouter>
+    </QueryClientProvider>,
+  );
+}
+
+beforeEach(() => vi.clearAllMocks());
+
+describe('PurchaseOrderDetailPage — approver Reject', () => {
+  it('lets an approver reject with a reason, then refetches and confirms', async () => {
+    vi.mocked(purchaseOrderService.getPurchaseOrder).mockResolvedValue(pendingOrder);
+    vi.mocked(purchaseOrderService.reject).mockResolvedValue({ ...pendingOrder, statusCode: 'DRFT' });
+    renderPage();
+    const user = userEvent.setup();
+
+    expect(await screen.findByRole('button', { name: 'Approve this record' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Reject this purchase order' }));
+    await user.type(screen.getByRole('textbox', { name: 'Rejection reason' }), 'Vendor is wrong');
+    await user.click(screen.getByRole('button', { name: 'Reject purchase order' }));
+
+    await waitFor(() => expect(purchaseOrderService.reject).toHaveBeenCalledWith('po-1', 'Vendor is wrong'));
+    await waitFor(() => expect(toast.success).toHaveBeenCalledWith('Rejected — sent back to Draft.'));
+    // the page refetches so the rejection banner (part of the approval overlay) shows up
+    await waitFor(() => expect(vi.mocked(purchaseOrderService.getPurchaseOrder).mock.calls.length).toBeGreaterThan(1));
+  });
+
+  it('shows the rejection, with no Approve or Reject, on a Draft that was sent back', async () => {
+    vi.mocked(purchaseOrderService.getPurchaseOrder).mockResolvedValue({
+      ...pendingOrder,
+      status: 'Draft', statusCode: 'DRFT', approvalStatus: 'none', nextStatusCodes: ['PAPV', 'CANC'],
+      gated: false, canApprove: false, canReject: false,
+      rejection: { byName: 'Alice Approver', reason: 'Vendor is wrong', at: '2026-09-19T10:00:00Z' },
+    });
+    renderPage();
+
+    expect(await screen.findByText(/Alice Approver: "Vendor is wrong"/)).toBeInTheDocument();
+    expect(screen.getByText(/submit it for approval again/)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Approve this record' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Reject this purchase order' })).not.toBeInTheDocument();
+  });
+
+  it('offers no Reject to someone who is not an approver', async () => {
+    vi.mocked(purchaseOrderService.getPurchaseOrder).mockResolvedValue({ ...pendingOrder, canApprove: false, canReject: false });
+    renderPage();
+
+    expect(await screen.findByText(/Awaiting approval from Alice Approver/)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Reject this purchase order' })).not.toBeInTheDocument();
+  });
+});
+
+const approvedOrder = {
+  ...pendingOrder,
+  status: 'Approved', statusCode: 'APPV', approvalStatus: 'approved', nextStatusCodes: ['SENT', 'DRFT', 'CANC'],
+  gated: false, canApprove: false, canReject: false,
+} as unknown as PurchaseOrder;
+
+const sentOrder = {
+  ...approvedOrder,
+  status: 'Sent', statusCode: 'SENT', nextStatusCodes: ['PART', 'RCVD', 'CLSD', 'CANC'],
+} as unknown as PurchaseOrder;
+
+// jsdom applies no CSS, so both of CrmPageHeader's layouts (mobile row and
+// desktop row) render their `actions`, and SalesDetailSidebar renders its
+// children twice (inline + the mobile sheet). A control in the header therefore
+// appears HEADER_COPIES times and one in the sidebar SIDEBAR_COPIES times.
+const HEADER_COPIES = 2;
+const SIDEBAR_COPIES = 2;
+
+// Send to Vendor / Submit for Approval / Receive items are header buttons; the
+// status dropdown is a super-admin control that no longer carries those moves.
+describe('PurchaseOrderDetailPage — header actions and the admin-only status dropdown', () => {
+  it('lets a non-admin send an approved order to the vendor from the header, with no status dropdown', async () => {
+    vi.mocked(purchaseOrderService.getPurchaseOrder).mockResolvedValue(approvedOrder);
+    vi.mocked(purchaseOrderService.transition).mockResolvedValue(sentOrder);
+    renderPage();
+    const user = userEvent.setup();
+
+    const sendButtons = await screen.findAllByRole('button', { name: 'Send to Vendor' });
+    expect(sendButtons).toHaveLength(HEADER_COPIES);
+    expect(screen.queryAllByText('Actions')).toHaveLength(0);
+    expect(screen.queryAllByRole('button', { name: 'Approved' })).toHaveLength(0);
+
+    await user.click(sendButtons[0]);
+
+    await waitFor(() => expect(purchaseOrderService.transition).toHaveBeenCalledWith('po-1', 'SENT'));
+    await waitFor(() => expect(toast.success).toHaveBeenCalledWith('Moved to Sent.'));
+  });
+
+  it('has no separate Send to Vendor quick action — the header button is the only one', async () => {
+    vi.mocked(purchaseOrderService.getPurchaseOrder).mockResolvedValue(approvedOrder);
+    renderPage();
+
+    await screen.findAllByRole('button', { name: 'Send to Vendor' });
+    expect(screen.queryAllByRole('button', { name: 'Send purchase order to vendor' })).toHaveLength(0);
+    expect(screen.getAllByRole('button', { name: 'Send to Vendor' })).toHaveLength(HEADER_COPIES);
+  });
+
+  it('reports the vendor email outcome of the header Send to Vendor move', async () => {
+    vi.mocked(purchaseOrderService.getPurchaseOrder).mockResolvedValue(approvedOrder);
+    vi.mocked(purchaseOrderService.transition).mockResolvedValue({ ...sentOrder, emailSent: true });
+    renderPage();
+    const user = userEvent.setup();
+    await user.click((await screen.findAllByRole('button', { name: 'Send to Vendor' }))[0]);
+    await waitFor(() => expect(toast.success).toHaveBeenCalledWith('Moved to Sent and emailed to the vendor.'));
+  });
+
+  it('lets a non-admin submit a Draft for approval from the header', async () => {
+    vi.mocked(purchaseOrderService.getPurchaseOrder).mockResolvedValue({
+      ...approvedOrder, status: 'Draft', statusCode: 'DRFT', approvalStatus: 'none', nextStatusCodes: ['PAPV', 'CANC'],
+    } as unknown as PurchaseOrder);
+    vi.mocked(purchaseOrderService.transition).mockResolvedValue(pendingOrder);
+    renderPage();
+    const user = userEvent.setup();
+
+    const submitButtons = await screen.findAllByRole('button', { name: 'Submit for Approval' });
+    expect(submitButtons).toHaveLength(HEADER_COPIES);
+    expect(screen.queryAllByText('Actions')).toHaveLength(0);
+
+    await user.click(submitButtons[0]);
+
+    await waitFor(() => expect(purchaseOrderService.transition).toHaveBeenCalledWith('po-1', 'PAPV'));
+  });
+
+  it('gives a super admin the status dropdown, without Submit for Approval but with Send to Vendor as an override', async () => {
+    vi.mocked(purchaseOrderService.getPurchaseOrder).mockResolvedValue(approvedOrder);
+    renderPage({ isSuperAdmin: true });
+    const user = userEvent.setup();
+
+    expect(await screen.findAllByText('Actions')).toHaveLength(SIDEBAR_COPIES);
+    expect(screen.getAllByRole('button', { name: 'Send to Vendor' })).toHaveLength(HEADER_COPIES);
+    await user.click(screen.getAllByRole('button', { name: 'Approved' })[0]);
+
+    expect(screen.getByRole('option', { name: 'Revise' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'Cancel' })).toBeInTheDocument();
+    // Send to Vendor sits in both the header (the normal, email-gated move)
+    // and the dropdown (the admin override onto Sent regardless) on purpose.
+    expect(screen.getByRole('option', { name: 'Send to Vendor' })).toBeInTheDocument();
+  });
+
+  it("forces a purchase order to Sent from the admin dropdown, bypassing the vendor-email gate", async () => {
+    vi.mocked(purchaseOrderService.getPurchaseOrder).mockResolvedValue(approvedOrder);
+    vi.mocked(purchaseOrderService.transition).mockResolvedValue({ ...sentOrder, emailSent: false, emailError: 'The email could not be delivered.' });
+    renderPage({ isSuperAdmin: true });
+    const user = userEvent.setup();
+
+    await user.click((await screen.findAllByRole('button', { name: 'Approved' }))[0]);
+    await user.click(screen.getByRole('option', { name: 'Send to Vendor' }));
+
+    await waitFor(() => expect(purchaseOrderService.transition).toHaveBeenCalledWith('po-1', 'SENT', { force: true }));
+    await waitFor(() => expect(toast.warning).toHaveBeenCalledWith(
+      'Moved to Sent, but the vendor email failed: The email could not be delivered.',
+    ));
+  });
+
+  it('hides the status dropdown from a super admin once no move is left at all', async () => {
+    vi.mocked(purchaseOrderService.getPurchaseOrder).mockResolvedValue({
+      ...approvedOrder, nextStatusCodes: [],
+    } as unknown as PurchaseOrder);
+    renderPage({ isSuperAdmin: true });
+
+    await screen.findAllByText('Approved');
+    expect(screen.queryAllByText('Actions')).toHaveLength(0);
+  });
+
+  it('shows Receive items in the header, not the sidebar, for a receivable order', async () => {
+    vi.mocked(purchaseOrderService.getPurchaseOrder).mockResolvedValue(sentOrder);
+    renderPage();
+
+    // Exactly the header's copies: were it still a sidebar Quick Action there would be more.
+    expect(await screen.findAllByRole('button', { name: 'Receive items' })).toHaveLength(HEADER_COPIES);
+  });
+
+  it('offers no Receive items on an order that cannot be received against', async () => {
+    vi.mocked(purchaseOrderService.getPurchaseOrder).mockResolvedValue(approvedOrder);
+    renderPage();
+
+    await screen.findAllByRole('button', { name: 'Send to Vendor' });
+    expect(screen.queryAllByRole('button', { name: 'Receive items' })).toHaveLength(0);
+  });
+
+  it('surfaces a refusal from the backend even though a non-admin has no Actions card to show it in', async () => {
+    const refusal = 'Only an administrator can move a purchase order to that status.';
+    vi.mocked(purchaseOrderService.getPurchaseOrder).mockResolvedValue(approvedOrder);
+    vi.mocked(purchaseOrderService.transition).mockRejectedValue(
+      new AxiosError('Request failed with status code 403', 'ERR_BAD_REQUEST', undefined, undefined, {
+        status: 403, data: { success: false, message: refusal },
+      } as AxiosResponse),
+    );
+    renderPage();
+    const user = userEvent.setup();
+
+    await user.click((await screen.findAllByRole('button', { name: 'Send to Vendor' }))[0]);
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(refusal);
+  });
+});
+
+// Create Bill is a header button (it used to be a sidebar "Convert to Bill"
+// action). It bills what has been received and not yet billed, so it is offered
+// on a partly received order and disappears once everything received is billed.
+describe('PurchaseOrderDetailPage — Create Bill', () => {
+  const line = (id: string, n: number, quantity: number, qtyReceived: number, qtyBilled: number) => ({
+    id, lineNumber: n, itemName: `Item ${n}`, description: '', quantity, qtyReceived, qtyBilled,
+    unitPrice: 25, discountPercent: 0, taxPercent: 0, lineSubtotal: 0, lineDiscount: 0, lineTax: 0, lineTotal: 0,
+  });
+  const partlyReceived = {
+    ...approvedOrder,
+    status: 'Partially Received', statusCode: 'PART', nextStatusCodes: ['RCVD', 'CLSD'],
+    items: [line('l1', 1, 10, 4, 0), line('l2', 2, 5, 0, 0)],
+  } as unknown as PurchaseOrder;
+
+  it('offers Create Bill in the header of a partly received order, not in the sidebar', async () => {
+    vi.mocked(purchaseOrderService.getPurchaseOrder).mockResolvedValue(partlyReceived);
+    renderPage();
+
+    expect(await screen.findAllByRole('button', { name: 'Create Bill' })).toHaveLength(HEADER_COPIES);
+    expect(screen.queryByRole('button', { name: /Convert this purchase order to a vendor bill/i })).not.toBeInTheDocument();
+    expect(screen.queryByText('Convert to Bill')).not.toBeInTheDocument();
+  });
+
+  it('lists only what has been received and not yet billed, then bills it', async () => {
+    vi.mocked(purchaseOrderService.getPurchaseOrder).mockResolvedValue(partlyReceived);
+    vi.mocked(purchaseOrderService.convertToBill).mockResolvedValue({ id: 'vb-1' } as never);
+    renderPage();
+    const user = userEvent.setup();
+
+    await user.click((await screen.findAllByRole('button', { name: 'Create Bill' }))[0]);
+
+    const list = await screen.findByRole('list', { name: 'Lines on the new bill' });
+    expect(list).toHaveTextContent('1. Item 1');
+    expect(list).toHaveTextContent('4 of 10 ordered');
+    expect(list).not.toHaveTextContent('Item 2'); // nothing received on it
+    await user.click(screen.getByRole('button', { name: 'Create vendor bill' }));
+
+    await waitFor(() => expect(purchaseOrderService.convertToBill).toHaveBeenCalledWith('po-1'));
+  });
+
+  it('is hidden once everything received has been billed', async () => {
+    vi.mocked(purchaseOrderService.getPurchaseOrder).mockResolvedValue({
+      ...partlyReceived, items: [line('l1', 1, 10, 4, 4)],
+    } as unknown as PurchaseOrder);
+    renderPage();
+
+    await screen.findAllByText('Partially Received');
+    expect(screen.queryAllByRole('button', { name: 'Create Bill' })).toHaveLength(0);
+  });
+
+  it.each([
+    ['Sent, nothing received', { status: 'Sent', statusCode: 'SENT', items: [line('l1', 1, 10, 0, 0)] }],
+    ['Approved', { items: [line('l1', 1, 10, 10, 0)] }],
+  ])('is hidden on an order that is %s', async (_label, overrides) => {
+    vi.mocked(purchaseOrderService.getPurchaseOrder).mockResolvedValue({ ...approvedOrder, ...overrides } as unknown as PurchaseOrder);
+    renderPage();
+
+    await screen.findAllByText(/Approved|Sent/);
+    expect(screen.queryAllByRole('button', { name: 'Create Bill' })).toHaveLength(0);
+  });
+
+  it('is offered on a fully received order that still has goods to bill', async () => {
+    vi.mocked(purchaseOrderService.getPurchaseOrder).mockResolvedValue({
+      ...partlyReceived, status: 'Received', statusCode: 'RCVD', nextStatusCodes: ['CLSD'],
+      items: [line('l1', 1, 10, 10, 6)],
+    } as unknown as PurchaseOrder);
+    renderPage();
+
+    expect(await screen.findAllByRole('button', { name: 'Create Bill' })).toHaveLength(HEADER_COPIES);
+  });
+
+  it('is hidden without permission to create vendor bills', async () => {
+    vi.mocked(purchaseOrderService.getPurchaseOrder).mockResolvedValue(partlyReceived);
+    renderPage({ denied: ['vendor_bill:create'] });
+
+    await screen.findAllByText('Partially Received');
+    expect(screen.queryAllByRole('button', { name: 'Create Bill' })).toHaveLength(0);
+  });
+});
+
+// Receiving now saves and posts in one step, so it takes both item-receipt grants.
+describe('PurchaseOrderDetailPage — Receive items permissions', () => {
+  const sentReceivable = { ...sentOrder, items: [] } as unknown as PurchaseOrder;
+
+  it('is offered with both item_receipt:create and item_receipt:transition', async () => {
+    vi.mocked(purchaseOrderService.getPurchaseOrder).mockResolvedValue(sentReceivable);
+    renderPage();
+
+    expect(await screen.findAllByRole('button', { name: 'Receive items' })).toHaveLength(HEADER_COPIES);
+  });
+
+  it.each(['item_receipt:create', 'item_receipt:transition'])('is hidden without %s', async (denied) => {
+    vi.mocked(purchaseOrderService.getPurchaseOrder).mockResolvedValue(sentReceivable);
+    renderPage({ denied: [denied] });
+
+    await screen.findAllByText('Sent');
+    expect(screen.queryAllByRole('button', { name: 'Receive items' })).toHaveLength(0);
+  });
+});
+
+// "Ordered 30" says nothing about what 30 is; the Items tab names the unit, and
+// a slab line also shows how many slabs have arrived against how many were expected.
+describe('PurchaseOrderDetailPage — Items tab units', () => {
+  const line = (id: string, n: number, over: Record<string, unknown>) => ({
+    id, lineNumber: n, itemName: `Item ${n}`, description: '', sku: `SKU-${n}`, quantity: 30, qtyReceived: 0, qtyBilled: 0,
+    unitPrice: 25, discountPercent: 0, taxPercent: 0, lineSubtotal: 0, lineDiscount: 0, lineTax: 0, lineTotal: 0, ...over,
+  });
+  const order = {
+    ...sentOrder,
+    items: [
+      line('l1', 1, { unitCode: 'EA' }),
+      line('l2', 2, { unitCode: 'SQFT', quantity: 600, qtyReceived: 550, tracking: 'serialized', expectedSlabs: 12, slabsReceived: 11 }),
+      line('l3', 3, { unitCode: 'SQM', tracking: 'serialized', slabsReceived: 4 }),
+      line('l4', 4, { unitCode: '' }),
+    ],
+  } as unknown as PurchaseOrder
+
+  async function openItemsTab() {
+    vi.mocked(purchaseOrderService.getPurchaseOrder).mockResolvedValue(order);
+    renderPage();
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole('button', { name: 'Items' }));
+  }
+
+  it('has a Unit column beside the quantity', async () => {
+    await openItemsTab();
+    const headers = screen.getAllByRole('columnheader').map((h) => h.textContent);
+    expect(headers.indexOf('Unit')).toBeGreaterThan(-1);
+    expect(headers.indexOf('Unit')).toBe(headers.indexOf('Qty') - 1);
+  });
+
+  it('names each line\'s unit', async () => {
+    await openItemsTab();
+    expect(within(screen.getByText('Item 1').closest('tr') as HTMLElement).getByText('Each')).toBeInTheDocument();
+    expect(within(screen.getByText('Item 2').closest('tr') as HTMLElement).getByText('Sq ft')).toBeInTheDocument();
+    expect(within(screen.getByText('Item 3').closest('tr') as HTMLElement).getByText('Sq m')).toBeInTheDocument();
+  });
+
+  it('shows a dash rather than nothing when a line has no unit', async () => {
+    await openItemsTab();
+    const cells = within(screen.getByText('Item 4').closest('tr') as HTMLElement).getAllByRole('cell');
+    expect(cells[4]).toHaveTextContent('—');
+  });
+
+  it('shows slabs received against those expected on a slab line', async () => {
+    await openItemsTab();
+    expect(within(screen.getByText('Item 2').closest('tr') as HTMLElement).getByText('11 of about 12 slabs')).toBeInTheDocument();
+  });
+
+  it('just counts the slabs when none were expected, and says nothing on a quantity line', async () => {
+    await openItemsTab();
+    expect(within(screen.getByText('Item 3').closest('tr') as HTMLElement).getByText('4 slabs')).toBeInTheDocument();
+    expect(within(screen.getByText('Item 1').closest('tr') as HTMLElement).queryByText(/slab/)).not.toBeInTheDocument();
+  });
+});
+
+describe('PurchaseOrderDetailPage — Resend email', () => {
+  it('offers Resend email on an order the vendor already holds', async () => {
+    vi.mocked(purchaseOrderService.getPurchaseOrder).mockResolvedValue(sentOrder);
+    renderPage();
+
+    expect(await screen.findAllByRole('button', { name: 'Resend email' })).toHaveLength(HEADER_COPIES);
+  });
+
+  it.each([
+    ['a draft', { statusCode: 'DRFT', status: 'Draft', approvalStatus: 'none', nextStatusCodes: ['PAPV', 'CANC'] }],
+    ['awaiting approval', { statusCode: 'PAPV', status: 'Pending Approval' }],
+    ['approved but not yet sent', { statusCode: 'APPV', status: 'Approved', approvalStatus: 'approved', nextStatusCodes: ['SENT', 'DRFT', 'CANC'] }],
+  ])('does not offer Resend email on %s order: the vendor has not been sent it yet', async (_label, patch) => {
+    vi.mocked(purchaseOrderService.getPurchaseOrder).mockResolvedValue({ ...pendingOrder, ...patch } as unknown as PurchaseOrder);
+    renderPage();
+
+    await screen.findAllByText('PO-000001');
+    expect(screen.queryAllByRole('button', { name: 'Resend email' })).toHaveLength(0);
+  });
+
+  it('does not offer Resend email to someone who cannot send to the vendor', async () => {
+    vi.mocked(purchaseOrderService.getPurchaseOrder).mockResolvedValue(sentOrder);
+    renderPage({ denied: ['purchase_order:transition'] });
+
+    await screen.findAllByText('PO-000001');
+    expect(screen.queryAllByRole('button', { name: 'Resend email' })).toHaveLength(0);
+  });
+
+  it('asks first, then resends through the purchase-order endpoint and says so', async () => {
+    vi.mocked(purchaseOrderService.getPurchaseOrder).mockResolvedValue(sentOrder);
+    vi.mocked(purchaseOrderService.resendToVendor).mockResolvedValue({
+      sendId: 's1', sentTo: ['vendor@nero.example'], emailSent: true,
+    });
+    renderPage();
+    const user = userEvent.setup();
+
+    await user.click((await screen.findAllByRole('button', { name: 'Resend email' }))[0]);
+    expect(purchaseOrderService.resendToVendor).not.toHaveBeenCalled();
+    expect(screen.getByRole('dialog', { name: 'Resend to vendor?' })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Confirm resend to vendor' }));
+
+    await waitFor(() => expect(purchaseOrderService.resendToVendor).toHaveBeenCalledWith('po-1'));
+    await waitFor(() => expect(toast.success).toHaveBeenCalledWith('Resent to vendor@nero.example.'));
+    // The status is untouched by a resend.
+    expect(purchaseOrderService.transition).not.toHaveBeenCalled();
+  });
+
+  it('keeps the dialog open with the reason when the email did not go', async () => {
+    vi.mocked(purchaseOrderService.getPurchaseOrder).mockResolvedValue(sentOrder);
+    vi.mocked(purchaseOrderService.resendToVendor).mockResolvedValue({
+      sendId: 's1', sentTo: ['vendor@nero.example'], emailSent: false, emailError: 'The email could not be delivered.',
+    });
+    renderPage();
+    const user = userEvent.setup();
+
+    await user.click((await screen.findAllByRole('button', { name: 'Resend email' }))[0]);
+    await user.click(screen.getByRole('button', { name: 'Confirm resend to vendor' }));
+
+    expect(await screen.findByText('The email could not be delivered.')).toBeInTheDocument();
+    expect(screen.getByRole('dialog', { name: 'Resend to vendor?' })).toBeInTheDocument();
+    expect(toast.success).not.toHaveBeenCalled();
+  });
+});
+
+// Copy opens the Add page pre-filled; it creates a record, so it takes the
+// create grant — not update, which only Edit needs.
+describe('PurchaseOrderDetailPage — Copy purchase order', () => {
+  it('opens the Add page for this order, nothing created yet', async () => {
+    vi.mocked(purchaseOrderService.getPurchaseOrder).mockResolvedValue(sentOrder);
+    renderPage();
+
+    await userEvent.click((await screen.findAllByRole('button', { name: 'Copy purchase order' }))[0]);
+
+    expect(screen.getByTestId('add-page')).toHaveTextContent('/purchases/purchase_order/new?copyFrom=po-1');
+  });
+
+  it('is hidden without permission to create purchase orders', async () => {
+    vi.mocked(purchaseOrderService.getPurchaseOrder).mockResolvedValue(sentOrder);
+    renderPage({ denied: ['purchase_order:create'] });
+
+    await screen.findAllByText('Sent');
+    expect(screen.queryAllByRole('button', { name: 'Copy purchase order' })).toHaveLength(0);
+  });
+
+  it('does not depend on the update grant', async () => {
+    vi.mocked(purchaseOrderService.getPurchaseOrder).mockResolvedValue(sentOrder);
+    renderPage({ denied: ['purchase_order:update'] });
+
+    expect((await screen.findAllByRole('button', { name: 'Copy purchase order' })).length).toBeGreaterThan(0);
+  });
+});

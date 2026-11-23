@@ -1,6 +1,7 @@
 import { create } from 'zustand';
-import type { UserProfile, PortalCustomer, PortalWorkspace } from '@/types/auth';
+import type { UserProfile, PortalCustomer, PortalWorkspace, ReplacedSessionInfo } from '@/types/auth';
 import { queryClient } from '@/lib/queryClient';
+import { clearAllDrafts } from '@/lib/documentReviewDraft';
 
 // Token is set as httpOnly cookie by the backend on login.
 // Do not store in localStorage — any XSS script can read localStorage.
@@ -78,6 +79,13 @@ interface AuthState {
   customer: PortalCustomer | null;
   workspaces: PortalWorkspace[];
   activeTenantId: string | null;
+  // Non-null once another sign-in took over this browser's session: the app
+  // is then covered by the countdown overlay until it signs out. In memory
+  // only -- a reload re-learns it from the server.
+  replacedSession: ReplacedSessionInfo | null;
+  // Records the takeover. The first report wins: a later one (another tab, the
+  // next poll) must not restart the countdown.
+  markSessionReplaced: (info: ReplacedSessionInfo) => void;
   setAuth: (user: UserProfile, token: string, expiresAt: number) => void;
   // Establishes a customer-portal session. Separate from setAuth (rather than
   // an overload) so every existing staff call site — SSO callback, role
@@ -123,6 +131,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   customer: loadCustomer(),
   workspaces: [],
   activeTenantId: loadActiveTenantId(),
+  replacedSession: null,
+  markSessionReplaced: (info) => {
+    if (get().replacedSession) return;
+    set({ replacedSession: info });
+  },
   setAuth: (user, token, expiresAt) => {
     localStorage.setItem(USER_KEY, JSON.stringify(user));
     localStorage.setItem(SESSION_EXPIRY_KEY, String(expiresAt));
@@ -134,7 +147,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     localStorage.removeItem(CUSTOMER_KEY);
     set({
       user, token, sessionExpiresAt: expiresAt, isAuthenticated: true,
-      kind: undefined, customer: null, workspaces: [], activeTenantId: null,
+      kind: undefined, customer: null, workspaces: [], activeTenantId: null, replacedSession: null,
     });
   },
   setPortalAuth: ({ user, token, expiresAt, tenantId, workspaces }) => {
@@ -158,6 +171,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     localStorage.setItem(SESSION_EXPIRY_KEY, String(expiresAt));
     const workspaces = get().workspaces.map((w) => ({ ...w, active: w.tenantId === tenantId }));
     queryClient.clear();
+    clearAllDrafts();
     set({ activeTenantId: tenantId, token, sessionExpiresAt: expiresAt, workspaces });
   },
   setSessionExpiry: (expiresAt) => {
@@ -186,9 +200,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     // design), so anything less would risk one tenant's cached sales-order/
     // invoice/etc. data surviving into the next session signed into this tab.
     queryClient.clear();
+    clearAllDrafts();
     set({
       user: null, token: null, sessionExpiresAt: null, isAuthenticated: false,
-      kind: undefined, customer: null, workspaces: [], activeTenantId: null,
+      kind: undefined, customer: null, workspaces: [], activeTenantId: null, replacedSession: null,
     });
   },
   setLoading: (isLoading) => set({ isLoading }),

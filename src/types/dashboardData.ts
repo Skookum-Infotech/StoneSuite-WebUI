@@ -250,8 +250,10 @@ export interface ArOutstandingData {
 }
 
 // One row in the Accounting snapshot widget's recent-entries list. date is a
-// real ISO timestamp -- the widget formats it ("2h ago") itself via
-// lib/recentRecordRoute's relativeTime, same as Recent records.
+// Postgres DATE, not a real instant: "2026-01-02" (older backends sent UTC
+// midnight, "2026-01-02T00:00:00Z") -- take its calendar day with
+// lib/dateUtils' datePart before formatting (the widget shows it via
+// relativeDay), or it renders a day early west of UTC.
 export interface JournalEntryRow {
   id: string;
   entryNumber: string;

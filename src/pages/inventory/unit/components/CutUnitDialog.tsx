@@ -70,7 +70,7 @@ export function CutUnitDialog({ unit, onClose, onCut }: {
             </div>
             <div>
               <h3 id="cut-unit-title" className="text-sm font-bold text-stone-900">Cut Slab</h3>
-              <p className="text-xs text-stone-400 mt-0.5">{unit.serial} · {unit.area.toFixed(2)} sq</p>
+              <p className="text-xs text-stone-500 mt-0.5">{unit.serial} · {unit.area.toFixed(2)} sq</p>
             </div>
           </div>
           <button type="button" onClick={onClose} aria-label="Close" className="rounded p-1 text-stone-400 hover:bg-stone-100"><X className="size-4" /></button>
@@ -84,7 +84,7 @@ export function CutUnitDialog({ unit, onClose, onCut }: {
           {pieces.map((p, i) => (
             <div key={p.key} className="rounded-lg border border-stone-200 p-3 space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-2xs font-semibold text-stone-400">Offcut {i + 1}</span>
+                <span className="text-2xs font-semibold text-stone-500">Offcut {i + 1}</span>
                 {pieces.length > 1 && (
                   <button type="button" onClick={() => removePiece(p.key)} aria-label={`Remove offcut ${i + 1}`} className="text-stone-400 hover:text-destructive"><Trash2 className="size-3.5" /></button>
                 )}
@@ -112,7 +112,7 @@ export function CutUnitDialog({ unit, onClose, onCut }: {
             <input type="number" min={0} value={minWidth} onChange={(e) => setMinWidth(e.target.value)} className="w-full h-9 px-2.5 text-xs border border-stone-300 rounded-lg" aria-label="Minimum usable width mm" />
           </div>
         </div>
-        <p className="text-2xs text-stone-400 mt-1">Pieces under this shop policy are still created but born scrapped — 0 keeps everything.</p>
+        <p className="text-2xs text-stone-500 mt-1">Pieces under this shop policy are still created but born scrapped — 0 keeps everything.</p>
 
         <div className="mt-3 space-y-1.5">
           <label className="block text-xs font-semibold text-stone-900">Reason</label>

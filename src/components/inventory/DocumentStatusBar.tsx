@@ -109,7 +109,7 @@ function TransitionConfirmDialog({ fromCode, toCode, onCancel, onConfirm }: {
           </div>
           <div>
             <h3 id="doc-transition-confirm-title" className="text-sm font-bold text-stone-900">{label}?</h3>
-            <p className="text-xs text-stone-400 mt-0.5">
+            <p className="text-xs text-stone-500 mt-0.5">
               {docStatusLabel(fromCode)} → {docStatusLabel(toCode)}
             </p>
           </div>

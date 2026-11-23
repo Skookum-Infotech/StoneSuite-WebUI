@@ -1,0 +1,241 @@
+import { tenantClient } from '@/api/tenantClient';
+import type {
+  FinanceWindowParams,
+  LedgerLine,
+  ProfitLoss,
+  CalendarReport,
+  CalendarWindowParams,
+  LeadTimeRow,
+  LeadTimeTotals,
+  OnTimeRow,
+  OnTimeTotals,
+  OverdueActivity,
+  OverdueTotals,
+  UpcomingInstall,
+  UpcomingInstallsReport,
+  WeekCount,
+  InventoryMovementParams,
+  InventoryReport,
+  LowStockRow,
+  LowStockTotals,
+  MovementRow,
+  MovementTotals,
+  SlabReport,
+  SlabRow,
+  SlabTotals,
+  StockRow,
+  StockTotals,
+  ApAgingReport,
+  ApAgingRow,
+  ApAgingTotals,
+  OpenPoRow,
+  OpenPoTotals,
+  PurchaseItemRow,
+  PurchaseItemTotals,
+  PurchaseVendorRow,
+  PurchaseVendorTotals,
+  PurchasesReport,
+  PurchasesReportParams,
+  CrmFunnel,
+  CrmFunnelStage,
+  CrmReportParams,
+  CrmSourceReport,
+  CrmSourceRow,
+  CrmSourceTotals,
+  CrmStaleRecord,
+  CrmStaleReport,
+  SalesBasis,
+  SalesCustomerRow,
+  SalesDrillRecord,
+  SalesDrillResult,
+  SalesDrillSelector,
+  SalesItemRow,
+  SalesReport,
+  SalesReportParams,
+  SalesTotals,
+  SalesTrendRow,
+} from '@/types/reports';
+
+interface SalesReportWire<Row> {
+  success: boolean;
+  basis: SalesBasis;
+  totals: SalesTotals;
+  rows?: Row[];
+}
+
+interface SalesDrillWire {
+  success: boolean;
+  basis: SalesBasis;
+  path: string;
+  records?: SalesDrillRecord[];
+}
+
+function toReport<Row>(wire: SalesReportWire<Row>): SalesReport<Row> {
+  return { basis: wire.basis, totals: wire.totals, rows: wire.rows ?? [] };
+}
+
+interface CrmFunnelWire {
+  success: boolean;
+  stages?: CrmFunnelStage[];
+  unqualified: number;
+}
+
+interface CrmSourceWire {
+  success: boolean;
+  totals: CrmSourceTotals;
+  rows?: CrmSourceRow[];
+}
+
+interface CrmStaleWire {
+  success: boolean;
+  days: number;
+  rows?: CrmStaleRecord[];
+}
+
+interface PurchasesWire<Row, Totals> {
+  success: boolean;
+  totals: Totals;
+  rows?: Row[];
+  labels?: string[];
+}
+
+function toPurchases<Row, Totals>(w: PurchasesWire<Row, Totals>): PurchasesReport<Row, Totals> {
+  return { totals: w.totals, rows: w.rows ?? [] };
+}
+
+interface InventoryWire<Row, Totals> {
+  success: boolean;
+  totals: Totals;
+  rows?: Row[];
+  labels?: string[];
+}
+
+function toInventory<Row, Totals>(w: InventoryWire<Row, Totals>): InventoryReport<Row, Totals> {
+  return { totals: w.totals, rows: w.rows ?? [] };
+}
+
+interface CalendarWire<Row, Totals> {
+  success: boolean;
+  totals: Totals;
+  rows?: Row[];
+}
+
+interface UpcomingInstallsWire {
+  success: boolean;
+  weeks: number;
+  perWeek?: WeekCount[];
+  rows?: UpcomingInstall[];
+}
+
+function toCalendar<Row, Totals>(w: CalendarWire<Row, Totals>): CalendarReport<Row, Totals> {
+  return { totals: w.totals, rows: w.rows ?? [] };
+}
+
+// Window + basis (+ bucket) go as query params. The server resolves tenant,
+// user and data scope from the JWT — never pass them from here.
+export const reportsService = {
+  salesByCustomer: (params: SalesReportParams): Promise<SalesReport<SalesCustomerRow>> =>
+    tenantClient
+      .get<SalesReportWire<SalesCustomerRow>>('/tenant/reports/sales/by-customer', { params })
+      .then((r) => toReport(r.data)),
+
+  salesByItem: (params: SalesReportParams): Promise<SalesReport<SalesItemRow>> =>
+    tenantClient
+      .get<SalesReportWire<SalesItemRow>>('/tenant/reports/sales/by-item', { params })
+      .then((r) => toReport(r.data)),
+
+  salesTrend: (params: SalesReportParams): Promise<SalesReport<SalesTrendRow>> =>
+    tenantClient
+      .get<SalesReportWire<SalesTrendRow>>('/tenant/reports/sales/trend', { params })
+      .then((r) => toReport(r.data)),
+
+  salesRecords: (params: SalesReportParams, selector: SalesDrillSelector): Promise<SalesDrillResult> =>
+    tenantClient
+      .get<SalesDrillWire>('/tenant/reports/sales/records', { params: { ...params, ...selector } })
+      .then((r) => ({ basis: r.data.basis, path: r.data.path, records: r.data.records ?? [] })),
+
+  crmFunnel: (params: CrmReportParams): Promise<CrmFunnel> =>
+    tenantClient
+      .get<CrmFunnelWire>('/tenant/reports/crm/funnel', { params })
+      .then((r) => ({ stages: r.data.stages ?? [], unqualified: r.data.unqualified })),
+
+  crmLeadSources: (params: CrmReportParams): Promise<CrmSourceReport> =>
+    tenantClient
+      .get<CrmSourceWire>('/tenant/reports/crm/lead-sources', { params })
+      .then((r) => ({ totals: r.data.totals, rows: r.data.rows ?? [] })),
+
+  crmStale: (days: number): Promise<CrmStaleReport> =>
+    tenantClient
+      .get<CrmStaleWire>('/tenant/reports/crm/stale', { params: { days } })
+      .then((r) => ({ days: r.data.days, rows: r.data.rows ?? [] })),
+
+  purchasesByVendor: (params: PurchasesReportParams): Promise<PurchasesReport<PurchaseVendorRow, PurchaseVendorTotals>> =>
+    tenantClient
+      .get<PurchasesWire<PurchaseVendorRow, PurchaseVendorTotals>>('/tenant/reports/purchases/by-vendor', { params })
+      .then((r) => toPurchases(r.data)),
+
+  purchasesByItem: (params: PurchasesReportParams): Promise<PurchasesReport<PurchaseItemRow, PurchaseItemTotals>> =>
+    tenantClient
+      .get<PurchasesWire<PurchaseItemRow, PurchaseItemTotals>>('/tenant/reports/purchases/by-item', { params })
+      .then((r) => toPurchases(r.data)),
+
+  openPurchaseOrders: (): Promise<PurchasesReport<OpenPoRow, OpenPoTotals>> =>
+    tenantClient
+      .get<PurchasesWire<OpenPoRow, OpenPoTotals>>('/tenant/reports/purchases/open-pos')
+      .then((r) => toPurchases(r.data)),
+
+  apAging: (): Promise<ApAgingReport> =>
+    tenantClient
+      .get<PurchasesWire<ApAgingRow, ApAgingTotals>>('/tenant/reports/purchases/ap-aging')
+      .then((r) => ({ ...toPurchases(r.data), labels: r.data.labels ?? [] })),
+
+  stockOnHand: (): Promise<InventoryReport<StockRow, StockTotals>> =>
+    tenantClient
+      .get<InventoryWire<StockRow, StockTotals>>('/tenant/reports/inventory/stock')
+      .then((r) => toInventory(r.data)),
+
+  slabAvailability: (): Promise<SlabReport> =>
+    tenantClient
+      .get<InventoryWire<SlabRow, SlabTotals>>('/tenant/reports/inventory/slabs')
+      .then((r) => ({ ...toInventory(r.data), labels: r.data.labels ?? [] })),
+
+  lowStock: (): Promise<InventoryReport<LowStockRow, LowStockTotals>> =>
+    tenantClient
+      .get<InventoryWire<LowStockRow, LowStockTotals>>('/tenant/reports/inventory/low-stock')
+      .then((r) => toInventory(r.data)),
+
+  stockMovement: (params: InventoryMovementParams): Promise<InventoryReport<MovementRow, MovementTotals>> =>
+    tenantClient
+      .get<InventoryWire<MovementRow, MovementTotals>>('/tenant/reports/inventory/movement', { params })
+      .then((r) => toInventory(r.data)),
+
+  upcomingInstalls: (weeks: number): Promise<UpcomingInstallsReport> =>
+    tenantClient
+      .get<UpcomingInstallsWire>('/tenant/reports/calendar/upcoming-installs', { params: { weeks } })
+      .then((r) => ({ weeks: r.data.weeks, perWeek: r.data.perWeek ?? [], rows: r.data.rows ?? [] })),
+
+  overdueActivities: (): Promise<CalendarReport<OverdueActivity, OverdueTotals>> =>
+    tenantClient
+      .get<CalendarWire<OverdueActivity, OverdueTotals>>('/tenant/reports/calendar/overdue')
+      .then((r) => toCalendar(r.data)),
+
+  onTimeCompletion: (params: CalendarWindowParams): Promise<CalendarReport<OnTimeRow, OnTimeTotals>> =>
+    tenantClient
+      .get<CalendarWire<OnTimeRow, OnTimeTotals>>('/tenant/reports/calendar/on-time', { params })
+      .then((r) => toCalendar(r.data)),
+
+  orderToInstallLeadTime: (params: CalendarWindowParams): Promise<CalendarReport<LeadTimeRow, LeadTimeTotals>> =>
+    tenantClient
+      .get<CalendarWire<LeadTimeRow, LeadTimeTotals>>('/tenant/reports/calendar/lead-time', { params })
+      .then((r) => toCalendar(r.data)),
+
+  profitLoss: (params: FinanceWindowParams): Promise<ProfitLoss> =>
+    tenantClient
+      .get<{ success: boolean; report: ProfitLoss }>('/tenant/reports/finance/profit-loss', { params })
+      .then((r) => r.data.report),
+
+  accountLines: (accountId: string, params: FinanceWindowParams): Promise<LedgerLine[]> =>
+    tenantClient
+      .get<{ success: boolean; lines?: LedgerLine[] }>('/tenant/reports/finance/account-lines', { params: { accountId, ...params } })
+      .then((r) => r.data.lines ?? []),
+};

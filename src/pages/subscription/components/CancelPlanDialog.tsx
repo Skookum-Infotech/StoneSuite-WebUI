@@ -30,7 +30,7 @@ export function CancelPlanDialog({
       onClose={onClose}
     >
       <fieldset className="space-y-1.5">
-        <legend className="text-2xs font-bold uppercase tracking-wider text-stone-400 mb-1.5">
+        <legend className="text-2xs font-bold uppercase tracking-wider text-stone-500 mb-1.5">
           Why are you cancelling? (optional)
         </legend>
         {cancelReasonOptions.map((opt) => (

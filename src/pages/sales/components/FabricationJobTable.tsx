@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Search, ArrowUp, ArrowDown, ArrowUpDown, X, Inbox,
@@ -8,9 +8,14 @@ import {
 import { cn } from '@/lib/utils';
 import { fabricationService } from '@/services/fabricationService';
 import { apiErrorMessage } from '@/api/tenantClient';
+import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { exportPagedCsv, fmtCsvDate } from '@/lib/csvExport';
 import { FabricationStatusControl } from './FabricationStatusControl';
+import { ReadOnlyStatusPill } from './ReadOnlyStatusPill';
+import { FJ_STATUS_COLORS } from '@/lib/fabricationForm';
 import type { FabricationJobSearchRequest } from '@/types/fabrication';
+import { formatDateValue, LIST_DATE_OPTIONS } from '@/lib/dateUtils';
+import { CustomerLink } from '@/components/crm/CustomerLink';
 
 const EXPORT_PAGE_SIZE = 200;
 
@@ -40,17 +45,19 @@ const SORT_KEY: Record<SortField, string> = {
 
 function fmtDate(iso?: string): string {
   if (!iso) return '—';
-  return new Date(iso).toLocaleDateString(undefined, { year: '2-digit', month: 'short', day: 'numeric' });
+  return formatDateValue(iso, undefined, LIST_DATE_OPTIONS);
 }
 
 export function FabricationJobTable() {
-  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const topRef = useRef<HTMLDivElement>(null);
 
-  // Inline status change from the list row's status pill — mirrors the Edit
-  // page's transition mutation. Forward-path moves only, same boundary as
-  // FabricationStatusControl everywhere else.
+  const { isSuperAdmin } = useUserPermissions();
+
+  // Inline status change from the list row's status pill, super admin only —
+  // everyone else sees a read-only pill and moves a job from its Detail page.
+  // Mirrors the Edit page's transition mutation. Forward-path moves only, same
+  // boundary as FabricationStatusControl everywhere else.
   const transition = useMutation({
     mutationFn: (vars: { id: string; toStatusCode: string }) => fabricationService.transition(vars.id, vars.toStatusCode),
     onSuccess: (updated) => {
@@ -172,14 +179,14 @@ export function FabricationJobTable() {
             placeholder="Search job #, site contact, notes…"
             value={term}
             onChange={(e) => setTerm(e.target.value)}
-            className="h-8 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-3 text-xs text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150"
+            className="h-8 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-3 text-xs text-stone-900 placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150"
           />
         </div>
 
         <div className="hidden h-5 w-px bg-stone-200 sm:block" aria-hidden="true" />
 
         <div className="flex flex-wrap items-center gap-1.5">
-          <span className="text-2xs font-semibold uppercase tracking-wider text-stone-400 pr-0.5">Sort:</span>
+          <span className="text-2xs font-semibold uppercase tracking-wider text-stone-500 pr-0.5">Sort:</span>
           {(Object.entries(SORT_LABELS) as [SortField, string][]).map(([field, label]) => (
             <button
               key={field}
@@ -230,55 +237,58 @@ export function FabricationJobTable() {
 
       <div className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm">
         <div className="overflow-x-auto modal-scrollbar">
-          <table className="w-full min-w-[640px] text-left text-xs">
+          <table className="w-full sm:min-w-[640px] text-left text-xs">
             <thead className="border-b border-stone-200 bg-table-header">
               <tr>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Job #</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Customer</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Status</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Promised Install</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Created</th>
+                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Job #</th>
+                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Customer</th>
+                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Status</th>
+                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 max-sm:hidden">Promised Install</th>
+                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 max-sm:hidden">Created</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-stone-100">
               {isLoading ? (
                 Array.from({ length: 5 }, (_, i) => (
                   <tr key={i}>
-                    <td className="px-4 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-24" /></td>
-                    <td className="px-4 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-36" /></td>
-                    <td className="px-4 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-24" /></td>
-                    <td className="px-4 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-16" /></td>
-                    <td className="px-4 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-16" /></td>
+                    <td className="px-4 max-sm:px-2 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-24" /></td>
+                    <td className="px-4 max-sm:px-2 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-36" /></td>
+                    <td className="px-4 max-sm:px-2 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-24" /></td>
+                    <td className="px-4 max-sm:px-2 py-3 max-sm:hidden"><div className="animate-pulse h-3 rounded bg-stone-100 w-16" /></td>
+                    <td className="px-4 max-sm:px-2 py-3 max-sm:hidden"><div className="animate-pulse h-3 rounded bg-stone-100 w-16" /></td>
                   </tr>
                 ))
               ) : records.length > 0 ? (
                 records.map((job) => {
                   return (
                     <tr key={job.id} className="group hover:bg-accent/10 transition-colors duration-150">
-                      <td className="px-4 py-3.5">
-                        <button
-                          type="button"
-                          onClick={() => navigate(`/sales/installation/${job.id}`)}
-                          className="font-mono text-xs font-semibold text-stone-900 hover:text-accent-foreground transition-colors"
+                      <td className="px-4 max-sm:px-2 py-3.5">
+                        <Link
+                          to={`/sales/installation/${job.id}`}
+                          className="font-mono text-xs font-semibold whitespace-nowrap text-stone-900 hover:text-accent-foreground transition-colors"
                         >
                           {job.jobNumber || '—'}
-                        </button>
+                        </Link>
                       </td>
-                      <td className="px-4 py-3.5 text-xs text-stone-700 truncate max-w-[200px]">
-                        {job.customer?.name ?? '—'}
+                      <td className="px-4 max-sm:px-2 py-3.5 text-xs text-stone-700 truncate max-w-[200px]">
+                        {job.customer?.name ? <CustomerLink id={job.customer.id} name={job.customer.name} className="hover:text-accent-foreground hover:underline" /> : '—'}
                       </td>
-                      <td className="px-4 py-3.5">
-                        <FabricationStatusControl
-                          job={job}
-                          onChange={(code) => transition.mutate({ id: job.id, toStatusCode: code })}
-                          disabled={transition.isPending && transition.variables?.id === job.id}
-                          variant="pill"
-                        />
+                      <td className="px-4 max-sm:px-2 py-3.5">
+                        {isSuperAdmin ? (
+                          <FabricationStatusControl
+                            job={job}
+                            onChange={(code) => transition.mutate({ id: job.id, toStatusCode: code })}
+                            disabled={transition.isPending && transition.variables?.id === job.id}
+                            variant="pill"
+                          />
+                        ) : (
+                          <ReadOnlyStatusPill label={job.status} color={FJ_STATUS_COLORS[job.status]} />
+                        )}
                       </td>
-                      <td className="px-4 py-3.5 text-xs text-stone-400 tabular-nums whitespace-nowrap">
+                      <td className="px-4 max-sm:px-2 py-3.5 text-xs text-stone-500 tabular-nums whitespace-nowrap max-sm:hidden">
                         {fmtDate(job.promisedInstallDate)}
                       </td>
-                      <td className="px-4 py-3.5 text-xs text-stone-400 tabular-nums whitespace-nowrap">
+                      <td className="px-4 max-sm:px-2 py-3.5 text-xs text-stone-500 tabular-nums whitespace-nowrap max-sm:hidden">
                         {fmtDate(job.createdAt)}
                       </td>
                     </tr>
@@ -293,7 +303,7 @@ export function FabricationJobTable() {
                           <Inbox className="size-6 text-stone-400" />
                         </div>
                         <p className="text-sm font-semibold text-stone-700">No fabrication jobs yet.</p>
-                        <p className="text-xs text-stone-400">Create one from a sales order to get started.</p>
+                        <p className="text-xs text-stone-500">Create one from a sales order to get started.</p>
                       </div>
                     ) : (
                       <div className="flex flex-col items-center gap-3">
@@ -301,7 +311,7 @@ export function FabricationJobTable() {
                           <Search className="size-6 text-stone-400" />
                         </div>
                         <p className="text-sm font-semibold text-stone-700">No fabrication jobs match the current search.</p>
-                        <p className="text-xs text-stone-400">Try adjusting your search terms.</p>
+                        <p className="text-xs text-stone-500">Try adjusting your search terms.</p>
                       </div>
                     )}
                   </td>

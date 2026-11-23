@@ -1,0 +1,84 @@
+import { recordRoute } from '@/lib/recentRecordRoute';
+import type { Citation } from '@/types/ai';
+
+/** The backend's question limit — in UTF-8 bytes, not characters, so it is
+ *  checked the same way here: an accented or CJK question hits it sooner
+ *  than its character count suggests. */
+export const MAX_QUESTION_BYTES = 2000;
+
+const encoder = new TextEncoder();
+export function questionBytes(text: string): number {
+  return encoder.encode(text).length;
+}
+
+/** The detail-page route for a record citation, or null when it can't be
+ *  linked (a help citation, or a record without a known type or id). Built
+ *  from the citation's own record_type — never from the page the user is on,
+ *  which would send a lead cited from a prospect page to /crm/prospect/<leadId>. */
+export function citationRoute(citation: Citation): string | null {
+  if (citation.source_type !== 'record' || !citation.record_type || !citation.source_id) return null;
+  return recordRoute('crm', citation.record_type, citation.source_id);
+}
+
+export const CITE_PREFIX = '#cite-';
+/** Longest range a single marker may expand to ("[1-3]"); a hallucinated
+ *  "[1-9999]" renders as its first few numbers, not thousands of links. */
+const MAX_MARKER_RANGE = 10;
+
+// Same marker shapes the backend recognizes when deciding which sources an
+// answer cited: [1], [1, 2], [1-3], [1–3].
+const markerRe = /\[(\d+(?:\s*[,\-\u2013]\s*\d+)*)\](?!\()/g;
+
+// Splits on fenced (```...```) and inline (`...`) code so marker rewriting
+// can skip them \u2014 a code sample that happens to contain "array[1]" or an
+// index expression must render verbatim, not become a citation link. The
+// capturing group makes String.prototype.split keep the delimiters in the
+// result, interleaved: even indices are prose, odd indices are code.
+const codeSegmentRe = /(```[\s\S]*?```|`[^`\n]*`)/g;
+
+function markerNumbers(inner: string): number[] {
+  const out: number[] = [];
+  for (const part of inner.split(',')) {
+    const [lo, hi] = part.replace('\u2013', '-').split('-').map((p) => Number.parseInt(p.trim(), 10));
+    if (Number.isNaN(lo)) continue;
+    const end = Number.isNaN(hi ?? Number.NaN) ? lo : Math.min(hi, lo + MAX_MARKER_RANGE - 1);
+    for (let n = lo; n <= end; n++) out.push(n);
+  }
+  return out;
+}
+
+function linkMarkersInProse(text: string): string {
+  return text.replace(markerRe, (_, inner: string) =>
+    markerNumbers(inner).map((n) => `[${n}](${CITE_PREFIX}${n})`).join(''),
+  );
+}
+
+/** Rewrites [n] markers as links to "#cite-n" so the markdown renderer can
+ *  turn them into citation buttons \u2014 outside code spans/blocks only. */
+export function linkCitationMarkers(text: string): string {
+  return text
+    .split(codeSegmentRe)
+    .map((segment, i) => (i % 2 === 1 ? segment : linkMarkersInProse(segment)))
+    .join('');
+}
+
+/** The distinct marker numbers referenced in an answer's prose (outside code
+ *  spans/blocks), ascending \u2014 e.g. "[1] and [3]." \u2192 [1, 3]. A reloaded
+ *  turn has no `sources` (the raw retrieved set isn't persisted), only the
+ *  cited subset in `citations`; the backend's own citedOnly() keeps that
+ *  subset in ascending marker order and only ever includes markers the
+ *  answer actually referenced within range, so the smallest
+ *  `citations.length` numbers here line up with `citations` 1:1 in order.
+ *  Any larger number is necessarily one the backend already excluded as
+ *  out-of-range (a hallucinated "[99]") \u2014 always sorts after every valid
+ *  one, so a caller can safely take the smallest N and ignore the rest. */
+export function referencedMarkerNumbers(text: string): number[] {
+  const nums = new Set<number>();
+  text.split(codeSegmentRe).forEach((segment, i) => {
+    if (i % 2 === 1) return; // code span/block \u2014 not a real citation reference
+    for (const m of segment.matchAll(markerRe)) {
+      for (const n of markerNumbers(m[1])) nums.add(n);
+    }
+  });
+  return Array.from(nums).sort((a, b) => a - b);
+}

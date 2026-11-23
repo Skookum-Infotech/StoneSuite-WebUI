@@ -1,3 +1,4 @@
+import { Select } from '@/components/ui/select';
 import { fieldCls } from '@/components/crm/formUtils';
 import type { Bin } from '@/types/inventory';
 import { cn } from '@/lib/utils';
@@ -13,21 +14,25 @@ interface FlatBin {
 // Breadcrumb of each ancestor's *name* (not code) — bin.path from the tree
 // endpoint is code-based (e.g. "YARD-A/AF-03/SLOT-7") and reads as jargon to
 // a yard crew who knows bins by name, not code.
-function flatten(bins: Bin[], parentNames: string[] = [], out: FlatBin[] = []): FlatBin[] {
+function flatten(bins: Bin[], parentNames: string[] = [], out: FlatBin[] = [], showWarehouse = false): FlatBin[] {
   for (const b of bins) {
-    const trail = [...parentNames, b.name];
+    // A root bin leads its trail with its location when asked, so a tree that
+    // spans several locations stays unambiguous.
+    const lead = showWarehouse && parentNames.length === 0 && b.warehouseName ? [b.warehouseName] : [];
+    const trail = [...parentNames, ...lead, b.name];
     out.push({ id: b.id, label: trail.join(' / '), depth: b.depth, unitCount: b.unitCount, overCapacity: b.overCapacity });
-    if (b.children?.length) flatten(b.children, trail, out);
+    if (b.children?.length) flatten(b.children, trail, out, showWarehouse);
   }
   return out;
 }
 
-// Bin <select> built from the tree endpoint's nested shape, flattened and
+// Bin <Select> built from the tree endpoint's nested shape, flattened and
 // indented by depth (max 4) so the name trail reads as a breadcrumb. Capacity
 // is shown as a plain suffix — advisory only, never disables an option: a
 // yard crew that already placed a slab cannot be blocked by a row count.
 export function BinPicker({
-  bins, value, onChange, label = 'Bin', required, allowEmpty = true, emptyLabel = '— No bin —',
+  bins, value, onChange, label = 'Bin', required, allowEmpty = true, emptyLabel = '— No bin —', showWarehouse = false,
+  disabled,
 }: {
   bins: Bin[];
   value: string;
@@ -36,13 +41,17 @@ export function BinPicker({
   required?: boolean;
   allowEmpty?: boolean;
   emptyLabel?: string;
+  /** Prefix each bin's trail with its location (for a tree spanning locations). */
+  showWarehouse?: boolean;
+  disabled?: boolean;
 }) {
-  const flat = flatten(bins);
+  const flat = flatten(bins, [], [], showWarehouse);
   return (
-    <select
+    <Select
       value={value}
       onChange={(e) => onChange(e.target.value)}
       required={required}
+      disabled={disabled}
       aria-label={label}
       className={cn(fieldCls)}
     >
@@ -54,6 +63,6 @@ export function BinPicker({
           {b.unitCount > 0 ? ` (${b.unitCount}${b.overCapacity ? ' · over capacity' : ''})` : ''}
         </option>
       ))}
-    </select>
+    </Select>
   );
 }

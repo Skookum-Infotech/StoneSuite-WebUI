@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate, useLocation } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { Building2 } from "lucide-react";
 import { crmService } from "@/services/crmService";
@@ -9,9 +9,9 @@ import { apiErrorMessage } from "@/api/tenantClient";
 import { Spinner, ErrorNote, Badge } from "@/components/tenant/ui";
 import { CustomerDeleteButton } from "@/pages/crm/customer/components/CustomerDeleteButton";
 import { CrmRecordDetail } from "@/components/crm/CrmRecordDetail";
+import { CustomerSummaryStrip } from "./components/transactions/CustomerSummaryStrip";
 import { CrmDetailSidebar } from "@/components/crm/CrmDetailSidebar";
-import { StatusDropdown } from "@/components/crm/StatusDropdown";
-import { CRM_WORKFLOW_ROUTES } from "@/components/crm/crmWorkflowRoutes";
+import { CustomerStatusActions } from "@/components/crm/CustomerStatusActions";
 import { ApprovalCard, type ApprovalStatus } from "@/components/crm/ApprovalCard";
 import { ApprovalBanner } from "@/components/tenant/ApprovalBanner";
 import { RejectRecordDialog } from "@/components/crm/RejectRecordDialog";
@@ -19,40 +19,30 @@ import { ModernSection } from "@/components/crm/FormPrimitives";
 import {
   AuditContent,
   FilesContent,
-  TransactionsContent,
 } from "@/components/crm/CrmSubTabsPanel";
 import { ActivityLogPanel } from "@/components/crm/ActivityLogPanel";
+import { CustomerDetailTabs } from "@/pages/crm/customer/components/CustomerDetailTabs";
+import { useCustomerTab } from "@/pages/crm/customer/components/customerTabs";
+import { CustomerTransactionsTab } from "@/pages/crm/customer/components/transactions/CustomerTransactionsTab";
+import { RecordCommunicationTab } from "@/components/tenant/RecordCommunicationTab";
+import { cn } from "@/lib/utils";
 import { PortalAccessPanel } from "@/pages/crm/customer/components/PortalAccessPanel";
 import { PortalAccessStatusCard } from "@/pages/crm/customer/components/PortalAccessStatusCard";
 import { useBreadcrumbStore } from "@/store/useBreadcrumbStore";
 import { CrmPageHeader } from "@/pages/crm/components/CrmPageHeader";
 import { readonlyCls, fieldLabelCls, resolveStatusColor } from "@/components/crm/formUtils";
-import { cn } from "@/lib/utils";
 import { useUserPermissions } from "@/hooks/useUserPermissions";
 import { recordApprovalState, type StatusInfo } from "@/types/tenant";
-
-const TABS = [
-  { key: "overview", label: "Overview" },
-  { key: "transactions", label: "Transactions" },
-  { key: "files", label: "Files" },
-  { key: "portal", label: "Portal Access" },
-  { key: "audit", label: "Audit" },
-  { key: "activity", label: "Activity" },
-] as const;
-
-type Tab = (typeof TABS)[number]["key"];
 
 export default function CustomerDetailPage() {
   const { id = "" } = useParams();
   const navigate = useNavigate();
-  const location = useLocation();
   const queryClient = useQueryClient();
-  const initialTab = (location.state as { initialTab?: Tab } | null)?.initialTab ?? "overview";
-  const [activeTab, setActiveTab] = useState<Tab>(initialTab);
+  const [activeTab, setActiveTab] = useCustomerTab();
   const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
   const canEdit = permissionsLoading || hasPermission("customer", "update");
+  const canChangeStatus = permissionsLoading || hasPermission("customer", "transition");
   const canViewPortalAccess = permissionsLoading || hasPermission("portal_access", "read");
-  const visibleTabs = TABS.filter((tab) => tab.key !== "portal" || canViewPortalAccess);
 
   const {
     data: record,
@@ -81,24 +71,19 @@ export default function CustomerDetailPage() {
     staleTime: 10 * 60 * 1000,
   });
 
+  // The customer's status changes with the Quick Action buttons, and approval
+  // settles it too (approved -> Active, rejected -> Draft). Either way it decides
+  // whether the customer can be used on other records, so besides the record
+  // itself the customer list and the Sales customer picker must refetch.
+  function refreshCustomer() {
+    queryClient.invalidateQueries({ queryKey: ["crm-record", id] });
+    queryClient.invalidateQueries({ queryKey: ["crm-records", "customer"] });
+    queryClient.invalidateQueries({ queryKey: ["customer-picker"] });
+  }
+
   const approve = useMutation({
     mutationFn: () => crmService.approveRecord(id, "customer"),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["crm-record", id] }),
-  });
-
-  // Inline status change from the sidebar's Status row — mirrors the Edit
-  // page's transition mutation.
-  const transition = useMutation({
-    mutationFn: (toStateId: string) => crmService.transitionRecord(id, toStateId, "customer"),
-    onSuccess: (updated) => {
-      queryClient.invalidateQueries({ queryKey: ["crm-record", id] });
-      queryClient.invalidateQueries({ queryKey: ["crm-records", "customer"] });
-      const newType = updated.workflowId?.toLowerCase();
-      if (newType && newType !== "customer" && CRM_WORKFLOW_ROUTES[newType]) {
-        queryClient.invalidateQueries({ queryKey: ["crm-records", newType] });
-        navigate(`${CRM_WORKFLOW_ROUTES[newType]}/${updated.id}`);
-      }
-    },
+    onSuccess: refreshCustomer,
   });
 
   const [exportingPdf, setExportingPdf] = useState(false);
@@ -205,6 +190,15 @@ export default function CustomerDetailPage() {
         subtitle="Customer"
         recordNumber={record.recordNumber}
         statusBadge={statusInfo && <Badge color={resolveStatusColor(statusInfo.stateKey, statusInfo.color)}>{statusInfo.statusLabel}</Badge>}
+        actions={canChangeStatus && (
+          <CustomerStatusActions
+            recordId={id}
+            statusCode={statusInfo?.stateKey}
+            gated={approval?.gated}
+            statuses={statusData?.statuses ?? []}
+            onChanged={refreshCustomer}
+          />
+        )}
       />
 
       {approval?.gated && (
@@ -223,39 +217,24 @@ export default function CustomerDetailPage() {
             <RejectRecordDialog
               recordId={id}
               workflowKey="customer"
-              onRejected={() => queryClient.invalidateQueries({ queryKey: ["crm-record", id] })}
+              onRejected={refreshCustomer}
             />
           )}
         />
       )}
 
-      {/* Tab bar — scrolls horizontally on small screens rather than
-          overflowing the page (6 tabs don't fit a phone width). */}
-      <div className="flex shrink-0 overflow-x-auto modal-scrollbar border-b border-stone-200 bg-white px-3 sm:px-5 3xl:px-12 4xl:px-16">
-        {visibleTabs.map((tab) => (
-          <button
-            key={tab.key}
-            type="button"
-            onClick={() => setActiveTab(tab.key)}
-            className={cn(
-              "shrink-0 whitespace-nowrap px-3 py-3 text-sm font-semibold border-b-2 -mb-px transition-colors duration-150 sm:px-4",
-              activeTab === tab.key
-                ? "border-brand text-stone-950"
-                : "border-transparent text-stone-500 hover:text-stone-700 hover:border-stone-200",
-            )}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
+      <CustomerDetailTabs active={activeTab} onChange={setActiveTab} canViewPortalAccess={canViewPortalAccess} />
 
       {/* Two-column body — stacks on mobile, side-by-side on lg+ */}
       <div className="flex flex-col lg:flex-row gap-6 px-4 py-4 sm:px-5 sm:py-5 3xl:px-12 3xl:py-8 3xl:gap-10 4xl:px-16 4xl:py-10 4xl:gap-14">
 
         {/* Left column — main content */}
-        <div className="flex-1 space-y-3 min-w-0">
+        {/* The Communication tab fills the column, so its note box can sit at the
+            bottom of the screen even when the timeline is empty. */}
+        <div className={cn("flex-1 space-y-3 min-w-0", activeTab === "communication" && "flex flex-col")}>
           {activeTab === "overview" && (
             <>
+              <CustomerSummaryStrip customerId={id} />
               <CrmRecordDetail coreFields={cf} showCustomerBalances users={users} />
               {Object.keys(record.customFields).length > 0 && (
                 <ModernSection title="Custom Fields" index={0} defaultCollapsed>
@@ -265,7 +244,7 @@ export default function CustomerDetailPage() {
                         <label className={fieldLabelCls}>{key}</label>
                         <div className={readonlyCls}>
                           {String(value ?? "") || (
-                            <span className="text-stone-400">—</span>
+                            <span className="text-stone-500">—</span>
                           )}
                         </div>
                       </div>
@@ -276,7 +255,11 @@ export default function CustomerDetailPage() {
             </>
           )}
 
-          {activeTab === "transactions" && <TransactionsContent />}
+          {activeTab === "transactions" && <CustomerTransactionsTab customerId={id} />}
+
+          {activeTab === "communication" && (
+            <RecordCommunicationTab recordId={id} audience="internal" canReply={canEdit} />
+          )}
 
           {activeTab === "portal" && canViewPortalAccess && (
             <PortalAccessPanel
@@ -306,18 +289,6 @@ export default function CustomerDetailPage() {
         <div className="lg:w-72 lg:shrink-0 lg:sticky lg:top-[4.5rem] lg:h-fit lg:self-start">
           <CrmDetailSidebar
             statusInfo={statusInfo}
-            statusControl={statusInfo && (
-              <StatusDropdown
-                workflowKey="customer"
-                mode="transitions"
-                recordId={id}
-                value={record.currentStateId}
-                onChange={(toStateId) => transition.mutate(toStateId)}
-                disabled={transition.isPending}
-                variant="pill"
-                gated={approval?.gated}
-              />
-            )}
             ownerUserId={record.ownerUserId}
             users={users}
             createdAt={record.createdAt}

@@ -11,10 +11,11 @@ import {
 } from '@/lib/refundForm';
 import { ApplyRefundDialog } from './ApplyRefundDialog';
 import type { Refund } from '@/types/refund';
+import { formatDateValue } from '@/lib/dateUtils';
 
 function fmtDate(iso?: string): string {
   if (!iso) return '—';
-  return new Date(iso).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+  return formatDateValue(iso, undefined, { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
 function currency(n: number | undefined): string {
@@ -56,7 +57,7 @@ export function RefundApplicationsTab({ refund }: { refund: Refund }) {
               keyboard, so a tooltip would strand the one thing the user needs
               to know — that approving is the unblocking step. */}
           {blockedReason && (
-            <p className="text-2xs text-stone-400">{blockedReason}</p>
+            <p className="text-2xs text-stone-500">{blockedReason}</p>
           )}
           <button
             type="button"
@@ -98,7 +99,7 @@ export function RefundApplicationsTab({ refund }: { refund: Refund }) {
                     </button>
                   </td>
                   <td className="px-3 py-2.5 tabular-nums text-stone-700">{currency(app.amount)}</td>
-                  <td className="px-3 py-2.5 tabular-nums text-stone-400">{fmtDate(app.createdAt)}</td>
+                  <td className="px-3 py-2.5 tabular-nums text-stone-500">{fmtDate(app.createdAt)}</td>
                   <td className="px-3 py-2.5 text-right">
                     {canEdit && (
                       <button
@@ -118,7 +119,7 @@ export function RefundApplicationsTab({ refund }: { refund: Refund }) {
             })}
             {refund.applications.length === 0 && (
               <tr>
-                <td colSpan={5} className="py-8 text-center text-stone-400">
+                <td colSpan={5} className="py-8 text-center text-stone-500">
                   Not drawn from any source yet.
                 </td>
               </tr>

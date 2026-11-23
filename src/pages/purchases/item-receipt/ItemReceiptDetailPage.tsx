@@ -12,12 +12,19 @@ import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { cn } from '@/lib/utils';
+import { TAB_LIST_CLASS, tabClass } from '@/components/ui/tabStyles';
+import { unitLabel } from '@/lib/unitLabels';
 import { IR_STATUS_COLORS, IR_EDITABLE_STATUSES, IR_POSTABLE_STATUSES, IR_VOIDABLE_STATUSES, IR_DELETABLE_STATUSES } from '@/lib/itemReceiptForm';
 import { ItemReceiptAuditTab } from './components/ItemReceiptAuditTab';
 import { DeleteItemReceiptDialog } from './components/DeleteItemReceiptDialog';
+import { DangerZoneCard } from '@/components/tenant/DangerZoneCard';
 import { PostReceiptDialog } from './components/PostReceiptDialog';
 import { VoidReceiptDialog } from './components/VoidReceiptDialog';
+import { ReceiptSlabsTable } from './components/ReceiptSlabsTable';
+import { INVENTORY_STOCK_QUERY_KEYS } from '@/lib/inventoryQueryKeys';
+import { WorkflowCard } from '@/components/tenant/WorkflowCard';
 import { SalesDetailSidebar } from '@/pages/sales/components/SalesDetailSidebar';
+import { formatDateValue } from '@/lib/dateUtils';
 
 const TABS = [
   { key: 'overview', label: 'Overview' },
@@ -29,7 +36,7 @@ type Tab = (typeof TABS)[number]['key'];
 
 function fmtDate(iso?: string): string {
   if (!iso) return '—';
-  return new Date(iso).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+  return formatDateValue(iso, undefined, { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
 function fmtDateTime(iso?: string): string {
@@ -70,6 +77,8 @@ export default function ItemReceiptDetailPage() {
     queryClient.invalidateQueries({ queryKey: ['item-receipts'] });
     queryClient.invalidateQueries({ queryKey: ['purchase-order-receipts'] });
     queryClient.invalidateQueries({ queryKey: ['purchase-order'] });
+    // Posting adds slabs to Inventory and voiding takes them back out.
+    for (const queryKey of INVENTORY_STOCK_QUERY_KEYS) queryClient.invalidateQueries({ queryKey });
   }
 
   if (isLoading) return <div className="p-6"><Spinner label="Loading item receipt…" /></div>;
@@ -94,9 +103,10 @@ export default function ItemReceiptDetailPage() {
         title: ir.itemReceiptNumber || 'Item Receipt',
         recordNumber: ir.itemReceiptNumber,
         statusLabel: ir.status,
+        issueDate: fmtDate(ir.receiptDate),
+        issueDateLabel: 'Receipt Date',
         counterpartyName: ir.vendor.name,
-        createdAt: ir.createdAt,
-        updatedAt: ir.updatedAt,
+        notesText: ir.notes || undefined,
         sections: [
           {
             title: 'Source Purchase Order',
@@ -105,13 +115,11 @@ export default function ItemReceiptDetailPage() {
           {
             title: 'Receipt Information',
             rows: [
-              ['Receipt Date', fmtDate(ir.receiptDate)],
-              ['Warehouse', ir.warehouseName || ''],
+              ['Location', ir.warehouseName || ''],
               ['Packing Slip #', ir.packingSlip || ''],
               ['Carrier', ir.carrier || ''],
               ['Tracking #', ir.trackingNumber || ''],
               ['Bill of Lading #', ir.billOfLading || ''],
-              ['Notes', ir.notes || ''],
               ['Internal Notes', ir.internalNotes || ''],
               ['Over-Receipt Reason', ir.overReceiptReason || ''],
               ['Void Reason', ir.voidReason || ''],
@@ -119,17 +127,19 @@ export default function ItemReceiptDetailPage() {
           },
         ],
         itemsTable: {
-          head: ['#', 'Item', 'SKU', 'Ordered', 'Received', 'Rejected', 'Notes'],
+          head: ['#', 'Item', 'SKU', 'Unit', 'Ordered', 'Received', 'Rejected', 'Notes'],
           rows: items.map((line) => [
             String(line.lineNumber),
             line.itemName || line.description || '—',
             line.sku || '—',
+            unitLabel(line.unitCode) || '—',
             String(line.qtyOrdered),
             String(line.qtyReceived),
             String(line.qtyRejected),
             line.lineNotes || '—',
           ]),
-          numericFrom: 3,
+          descriptions: items.map((line) => line.description || undefined),
+          numericFrom: 4,
         },
       });
     } catch (err) {
@@ -152,22 +162,19 @@ export default function ItemReceiptDetailPage() {
       />
 
       {/* Tab bar */}
-      <div className="flex shrink-0 overflow-x-auto overflow-y-hidden border-b border-stone-200 bg-white px-5 3xl:px-12 4xl:px-16 modal-scrollbar">
-        {TABS.map((tab) => (
-          <button
-            key={tab.key}
-            type="button"
-            onClick={() => setActiveTab(tab.key)}
-            className={cn(
-              'px-4 py-3 text-sm font-semibold border-b-2 -mb-px transition-colors duration-150 whitespace-nowrap shrink-0',
-              activeTab === tab.key
-                ? 'border-brand text-stone-950'
-                : 'border-transparent text-stone-500 hover:text-stone-700 hover:border-stone-200',
-            )}
-          >
-            {tab.label}
-          </button>
-        ))}
+      <div className="flex shrink-0 overflow-x-auto overflow-y-hidden border-b border-stone-200 bg-white px-5 3xl:px-12 4xl:px-16 modal-scrollbar py-2.5">
+        <div role="tablist" className={TAB_LIST_CLASS}>
+          {TABS.map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setActiveTab(tab.key)}
+              className={tabClass(activeTab === tab.key)}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="flex flex-col lg:flex-row gap-6 px-4 py-4 sm:px-5 sm:py-5 3xl:px-12 3xl:py-8 3xl:gap-10 4xl:px-16 4xl:py-10 4xl:gap-14">
@@ -181,7 +188,7 @@ export default function ItemReceiptDetailPage() {
                     <Package className="size-4 shrink-0 text-stone-400" aria-hidden="true" />
                     <div className="min-w-0">
                       <p className="truncate text-sm font-semibold text-stone-800">{ir.purchaseOrder.number || '—'}</p>
-                      <p className="truncate text-xs text-stone-400">{ir.vendor.name}</p>
+                      <p className="truncate text-xs text-stone-500">{ir.vendor.name}</p>
                     </div>
                   </div>
                   <button
@@ -197,7 +204,7 @@ export default function ItemReceiptDetailPage() {
               <ModernSection title="Receipt Information" index={1}>
                 <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
                   <ReadonlyField label="Receipt Date" value={fmtDate(ir.receiptDate)} />
-                  <ReadonlyField label="Warehouse" value={ir.warehouseName} />
+                  <ReadonlyField label="Location" value={ir.warehouseName} />
                   <ReadonlyField label="Packing Slip #" value={ir.packingSlip} />
                   <ReadonlyField label="Carrier" value={ir.carrier} />
                   <ReadonlyField label="Tracking #" value={ir.trackingNumber} />
@@ -212,6 +219,7 @@ export default function ItemReceiptDetailPage() {
           )}
 
           {activeTab === 'items' && (
+            <>
             <div className="overflow-x-auto modal-scrollbar rounded-lg border border-stone-200 bg-white">
               <table className="w-full text-left text-xs">
                 <thead className="bg-stone-50 border-b border-stone-200">
@@ -220,6 +228,7 @@ export default function ItemReceiptDetailPage() {
                       { label: '#' },
                       { label: 'Item' },
                       { label: 'SKU' },
+                      { label: 'Unit' },
                       { label: 'Ordered', right: true },
                       { label: 'Received', right: true },
                       { label: 'Rejected', right: true },
@@ -232,11 +241,14 @@ export default function ItemReceiptDetailPage() {
                 <tbody className="divide-y divide-stone-100">
                   {items.map((line) => (
                     <tr key={line.id} className="hover:bg-stone-50/50 divide-x divide-stone-100">
-                      <td className="px-3 py-2.5 text-stone-400 tabular-nums">{line.lineNumber}</td>
+                      <td className="px-3 py-2.5 text-stone-500 tabular-nums">{line.lineNumber}</td>
                       <td className="px-3 py-2.5 font-medium text-stone-800">
-                        {line.itemName || line.description || <span className="text-stone-300">—</span>}
+                        {line.itemName || line.description || <span className="text-stone-500">—</span>}
                       </td>
                       <td className="px-3 py-2.5 font-mono text-2xs text-stone-500">{line.sku || '—'}</td>
+                      <td className="px-3 py-2.5 text-stone-500 whitespace-nowrap" title={line.unitCode || undefined}>
+                        {unitLabel(line.unitCode) || <span className="text-stone-500">—</span>}
+                      </td>
                       <td className="px-3 py-2.5 tabular-nums text-right text-stone-600">{line.qtyOrdered}</td>
                       <td className="px-3 py-2.5 tabular-nums text-right text-stone-800 font-semibold">{line.qtyReceived}</td>
                       <td className="px-3 py-2.5 tabular-nums text-right text-stone-500">{line.qtyRejected}</td>
@@ -244,11 +256,13 @@ export default function ItemReceiptDetailPage() {
                     </tr>
                   ))}
                   {items.length === 0 && (
-                    <tr><td colSpan={7} className="py-8 text-center text-stone-400">No line items.</td></tr>
+                    <tr><td colSpan={8} className="py-8 text-center text-stone-500">No line items.</td></tr>
                   )}
                 </tbody>
               </table>
             </div>
+            <ReceiptSlabsTable lines={items} />
+            </>
           )}
 
           {activeTab === 'audit' && <ItemReceiptAuditTab itemReceiptId={id} />}
@@ -259,8 +273,9 @@ export default function ItemReceiptDetailPage() {
 
         {/* Right sidebar */}
         <SalesDetailSidebar label="Item Receipt Details">
+          <WorkflowCard module="itemReceipt" statusCode={ir.statusCode} statusLabel={ir.status} workflow={ir.workflow} links={{ purchaseOrderId: ir.purchaseOrder?.id }} />
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-            <p className="text-xs font-semibold text-stone-400">Quick Actions</p>
+            <p className="text-xs font-semibold text-stone-500">Quick Actions</p>
             <div className="space-y-0.5">
               <button
                 type="button"
@@ -298,13 +313,13 @@ export default function ItemReceiptDetailPage() {
 
           {canPostHere && (
             <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-2.5 mb-4">
-              <p className="text-xs font-semibold text-stone-400">Actions</p>
+              <p className="text-xs font-semibold text-stone-500">Actions</p>
               <PostReceiptDialog itemReceiptId={id} onPosted={refresh} />
             </div>
           )}
 
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-            <p className="text-xs font-semibold text-stone-400">Status</p>
+            <p className="text-xs font-semibold text-stone-500">Status</p>
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
               <span className="text-stone-500">Status</span>
               <Badge color={color}>{ir.status}</Badge>
@@ -342,8 +357,7 @@ export default function ItemReceiptDetailPage() {
           </div>
 
           {(canDeleteHere || canVoidHere) && (
-            <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-              <p className="text-xs font-semibold text-red-400">Danger Zone</p>
+            <DangerZoneCard>
               {canVoidHere && (
                 <VoidReceiptDialog itemReceiptId={id} statusCode={ir.statusCode} onVoided={refresh} />
               )}
@@ -357,7 +371,7 @@ export default function ItemReceiptDetailPage() {
                   }}
                 />
               )}
-            </div>
+            </DangerZoneCard>
           )}
         </SalesDetailSidebar>
       </div>
@@ -369,7 +383,7 @@ function ReadonlyField({ label, value, full }: { label: string; value?: string; 
   return (
     <div className={cn('space-y-1', full && 'col-span-full')}>
       <label className={fieldLabelCls}>{label}</label>
-      <div className={readonlyCls}>{value || <span className="text-stone-400">—</span>}</div>
+      <div className={readonlyCls}>{value || <span className="text-stone-500">—</span>}</div>
     </div>
   );
 }

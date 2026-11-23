@@ -3,7 +3,10 @@ import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
-vi.mock('react-router-dom', () => ({ useNavigate: () => vi.fn() }));
+vi.mock('react-router-dom', async () => ({
+  useNavigate: () => vi.fn(),
+  Link: (await import('@/test/routerLinkStub')).RouterLinkStub,
+}));
 vi.mock('@/hooks/useUserPermissions', () => ({ useUserPermissions: vi.fn() }));
 vi.mock('@/services/invoiceService', () => ({
   invoiceService: { searchInvoices: vi.fn(), transition: vi.fn() },
@@ -14,11 +17,13 @@ import { invoiceService } from '@/services/invoiceService';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import type { InvoiceSummary } from '@/types/invoice';
 
+// The status pill dropdown is a super-admin control (everyone else gets a
+// read-only pill -- see SalesTablesStatusGate.test.tsx), so these run as one.
 function mockPermissions() {
   vi.mocked(useUserPermissions).mockReturnValue({
     grants: [],
     isLoading: false,
-    activeRoleId: '',
+    activeRoleId: '', isSuperAdmin: true,
     hasPermission: () => true,
   } as ReturnType<typeof useUserPermissions>);
 }
@@ -85,5 +90,43 @@ describe('InvoiceTable status pill', () => {
 
     expect(screen.getByRole('option', { name: 'Submit for Approval' })).toBeInTheDocument();
     expect(screen.queryByRole('option', { name: 'Sent' })).not.toBeInTheDocument();
+  });
+});
+
+describe('InvoiceTable customer link', () => {
+  it('links the customer name to the customer page', async () => {
+    mockPermissions();
+    const row = await renderWithRow(draftInvoice([]));
+    expect(within(row).getByRole('link', { name: 'View customer Fontaine Builders' })).toHaveAttribute('href', '/crm/customer/c-1');
+  });
+});
+
+// Below the sm breakpoint the table keeps only what identifies and prices an invoice, so
+// Status and Balance Due stay on screen instead of scrolling sideways.
+describe('InvoiceTable phone layout', () => {
+  const PHONE_HIDDEN = 'max-sm:hidden';
+
+  it.each([
+    ['Invoice #', false],
+    ['Customer', false],
+    ['Status', false],
+    ['Balance Due', false],
+    ['Invoice Date', true],
+    ['Amount', true],
+    ['Actions', true],
+  ])('column %s is hidden on phones: %s', async (name, hidden) => {
+    mockPermissions();
+    await renderWithRow(draftInvoice([]));
+    const header = screen.getByRole('columnheader', { name });
+    expect(header.classList.contains(PHONE_HIDDEN)).toBe(hidden);
+  });
+
+  it('hides the same row cells as the header, so the columns stay aligned', async () => {
+    mockPermissions();
+    const row = await renderWithRow(draftInvoice([]));
+    const headers = screen.getAllByRole('columnheader');
+    const cells = within(row).getAllByRole('cell');
+    expect(cells.map((c) => c.classList.contains(PHONE_HIDDEN)))
+      .toEqual(headers.map((h) => h.classList.contains(PHONE_HIDDEN)));
   });
 });

@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { Undo2 } from 'lucide-react';
 import type { VendorPaymentRefund } from '@/types/vendorPayment';
+import { formatDateValue } from '@/lib/dateUtils';
 
 function currency(n: number | undefined): string {
   return (n ?? 0).toLocaleString(undefined, { style: 'currency', currency: 'USD' });
@@ -8,7 +9,7 @@ function currency(n: number | undefined): string {
 
 function fmtDate(iso?: string): string {
   if (!iso) return '—';
-  return new Date(iso).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+  return formatDateValue(iso, undefined, { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
 // Money the vendor sent back against a bill this payment settled (backend
@@ -23,8 +24,8 @@ export function VendorPaymentRefundsTab({ refunds }: { refunds: VendorPaymentRef
   if (refunds.length === 0) {
     return (
       <div className="flex flex-col items-center gap-2 py-12 text-center">
-        <Undo2 className="size-6 text-stone-300" aria-hidden="true" />
-        <p className="text-sm text-stone-400">No refunds recorded against this payment.</p>
+        <Undo2 className="size-6 text-stone-400" aria-hidden="true" />
+        <p className="text-sm text-stone-500">No refunds recorded against this payment.</p>
       </div>
     );
   }
@@ -57,7 +58,7 @@ export function VendorPaymentRefundsTab({ refunds }: { refunds: VendorPaymentRef
               <td className="px-3 py-2.5 text-stone-500 max-w-[200px] truncate">{refund.reason || '—'}</td>
               <td className="px-3 py-2.5 font-mono text-2xs text-stone-500">{refund.referenceNumber || '—'}</td>
               <td className="px-3 py-2.5 text-stone-500 max-w-[200px] truncate">{refund.memo || '—'}</td>
-              <td className="px-3 py-2.5 tabular-nums text-stone-400 whitespace-nowrap">{fmtDate(refund.refundedAt)}</td>
+              <td className="px-3 py-2.5 tabular-nums text-stone-500 whitespace-nowrap">{fmtDate(refund.refundedAt)}</td>
             </tr>
           ))}
         </tbody>

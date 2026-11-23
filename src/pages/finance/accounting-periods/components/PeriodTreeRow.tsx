@@ -9,14 +9,14 @@ import {
 function StatusIcon({ status }: { status: PeriodStatus }) {
   return status === 'closed'
     ? <CheckCircle2 className="mx-auto size-4 text-emerald-500" aria-hidden="true" />
-    : <Circle className="mx-auto size-4 text-stone-300" aria-hidden="true" />;
+    : <Circle className="mx-auto size-4 text-stone-400" aria-hidden="true" />;
 }
 
 function LockIcon({ status, lockedForever }: { status: PeriodStatus; lockedForever?: boolean }) {
   if (status === 'closed') {
     return <Lock className={cn('mx-auto size-4', lockedForever ? 'text-stone-400' : 'text-amber-500')} aria-hidden="true" />;
   }
-  return <Unlock className="mx-auto size-4 text-stone-300" aria-hidden="true" />;
+  return <Unlock className="mx-auto size-4 text-stone-400" aria-hidden="true" />;
 }
 
 function AllowNonGlIcon() {
@@ -203,7 +203,7 @@ export function PeriodTreeRow({
           onClick={() => onOpenHistory(period)}
           aria-label={`View history for ${period.name}`}
           title="History"
-          className="mx-auto flex rounded p-1 text-stone-400 transition-colors hover:bg-stone-100 hover:text-stone-700"
+          className="mx-auto flex rounded p-1 text-stone-500 transition-colors hover:bg-stone-100 hover:text-stone-700"
         >
           <History className="size-3.5" />
         </button>

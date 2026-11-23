@@ -3,7 +3,10 @@ import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
-vi.mock('react-router-dom', () => ({ useNavigate: () => vi.fn() }));
+vi.mock('react-router-dom', async () => ({
+  useNavigate: () => vi.fn(),
+  Link: (await import('@/test/routerLinkStub')).RouterLinkStub,
+}));
 vi.mock('@/hooks/useUserPermissions', () => ({ useUserPermissions: vi.fn() }));
 vi.mock('@/services/purchaseOrderService', () => ({
   purchaseOrderService: { searchPurchaseOrders: vi.fn(), transition: vi.fn() },
@@ -17,11 +20,14 @@ import { purchaseOrderService } from '@/services/purchaseOrderService';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import type { PurchaseOrderSummary } from '@/types/purchaseOrder';
 
-function mockPermissions() {
+// Every permission granted; `isSuperAdmin` is the only thing that decides
+// whether the list row's status is a dropdown or a read-only pill.
+function mockPermissions(isSuperAdmin = true) {
   vi.mocked(useUserPermissions).mockReturnValue({
     grants: [],
     isLoading: false,
     activeRoleId: '',
+    isSuperAdmin,
     hasPermission: () => true,
   } as ReturnType<typeof useUserPermissions>);
 }
@@ -60,6 +66,50 @@ async function renderWithRow(row: PurchaseOrderSummary): Promise<HTMLElement> {
 
 beforeEach(() => {
   vi.clearAllMocks();
+});
+
+// The Received column (4th: PO #, Vendor, Status, Received): a segmented bar
+// once an order can receive goods, a dash before that (nothing can arrive on a
+// Draft).
+const RECEIVED_COLUMN = 3;
+
+describe('PurchaseOrderTable received column', () => {
+  it('shows the receiving bar for an order that is partially received', async () => {
+    mockPermissions();
+    const row = await renderWithRow({ ...draftOrder([]), status: 'Partially Received', statusCode: 'PART', receivedPercent: 40 });
+
+    expect(within(row).getByRole('button', { name: 'Receiving progress for PO-1001: 40%. Show details' })).toBeInTheDocument();
+    expect(within(row).getByText('40%')).toBeInTheDocument();
+  });
+
+  it('shows a dash instead of a bar for a draft order', async () => {
+    mockPermissions();
+    const row = await renderWithRow({ ...draftOrder([]), receivedPercent: 0 });
+
+    const receivedCell = row.querySelectorAll('td')[RECEIVED_COLUMN];
+    expect(within(row).queryByRole('button', { name: /Receiving progress/ })).not.toBeInTheDocument();
+    expect(receivedCell).toHaveTextContent('—');
+  });
+});
+
+// Only a super admin may change status from the list; everyone else sees the
+// status but gets no control for it (they move an order from its Detail page).
+describe('PurchaseOrderTable status for a non-admin', () => {
+  it('shows the status as plain text, with no dropdown to change it', async () => {
+    mockPermissions(false);
+    const row = await renderWithRow(draftOrder(['CANC', 'SENT']));
+
+    expect(within(row).getByText('Draft')).toBeInTheDocument();
+    expect(within(row).queryByRole('button', { name: 'Draft' })).not.toBeInTheDocument();
+    expect(within(row).queryByRole('listbox')).not.toBeInTheDocument();
+  });
+
+  it('shows the same status pill dropdown to a super admin', async () => {
+    mockPermissions(true);
+    const row = await renderWithRow(draftOrder(['CANC', 'SENT']));
+
+    expect(within(row).getByRole('button', { name: 'Draft' })).toBeInTheDocument();
+  });
 });
 
 // The list row's status pill must offer the record's own nextStatusCodes (what

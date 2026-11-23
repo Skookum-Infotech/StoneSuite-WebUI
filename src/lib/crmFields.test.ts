@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { primaryAddressFields } from './crmFields'
+import { applyAddressMirroring, primaryAddressFields } from './crmFields'
 
 describe('primaryAddressFields', () => {
   const primary = {
@@ -42,5 +42,35 @@ describe('primaryAddressFields', () => {
       customer_bill_addr_city: '', customer_bill_addr_country: '', customer_bill_addr_state: '',
       customer_bill_addr_zip: '',
     })
+  })
+})
+
+describe('applyAddressMirroring', () => {
+  const base = {
+    customer_is_bill_as_primary: true,
+    customer_is_ship_as_primary: false,
+    customer_addr_city: 'Chicago',
+    customer_bill_addr_city: 'Chicago',
+    customer_ship_addr_city: 'Dallas',
+  }
+
+  it('re-copies to billing when a primary field changes while the flag is on', () => {
+    const next = applyAddressMirroring(base, 'customer_addr_city', 'Boston')
+    expect(next.customer_bill_addr_city).toBe('Boston')
+  })
+
+  it('leaves shipping untouched while its flag is off', () => {
+    const next = applyAddressMirroring(base, 'customer_addr_city', 'Boston')
+    expect(next.customer_ship_addr_city).toBe('Dallas')
+  })
+
+  it('copies on ticking the flag', () => {
+    const next = applyAddressMirroring(base, 'customer_is_ship_as_primary', true)
+    expect(next.customer_ship_addr_city).toBe('Chicago')
+  })
+
+  it('does not overwrite billing when the flag is off', () => {
+    const next = applyAddressMirroring({ ...base, customer_is_bill_as_primary: false }, 'customer_addr_city', 'Boston')
+    expect(next.customer_bill_addr_city).toBe('Chicago')
   })
 })

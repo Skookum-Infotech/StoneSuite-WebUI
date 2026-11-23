@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest'
 import {
-  toCreatePayload, toUpdatePayload, fromPayment, toRFC3339OrUndefined, fromRFC3339DateOnly,
+  toCreatePayload, toUpdatePayload, fromPayment, fromSourceInvoice, toRFC3339OrUndefined, fromRFC3339DateOnly,
   PAYMENT_ALLOWED_TRANSITIONS,
+  paymentHeaderTransitions,
 } from './paymentForm'
 import type { Payment } from '@/types/payment'
 
@@ -20,6 +21,32 @@ describe('fromRFC3339DateOnly', () => {
     [undefined, ''],
   ])('fromRFC3339DateOnly(%p) -> %p', (input, expected) => {
     expect(fromRFC3339DateOnly(input)).toBe(expected)
+  })
+})
+
+describe('fromSourceInvoice', () => {
+  it('prefills the customer, balance, currency, and invoice selection', () => {
+    expect(fromSourceInvoice({
+      id: 'inv-1',
+      invoiceNumber: 'INV-000001',
+      balanceDue: 125.5,
+      currencyId: 2,
+      customer: { id: 'cust-1', name: 'Acme Co' },
+    })).toEqual({
+      data: { amount: 125.5, currency_id: 2 },
+      customer: { id: 'cust-1', name: 'Acme Co' },
+      pendingInvoice: { id: 'inv-1', number: 'INV-000001', balanceDue: 125.5 },
+    })
+  })
+
+  it('leaves currency unset when the invoice has no currency', () => {
+    expect(fromSourceInvoice({
+      id: 'inv-2',
+      invoiceNumber: 'INV-000002',
+      balanceDue: 50,
+      currencyId: null,
+      customer: { id: 'cust-2', name: 'Stone Co' },
+    }).data.currency_id).toBe('')
   })
 })
 
@@ -141,5 +168,17 @@ describe('PAYMENT_ALLOWED_TRANSITIONS', () => {
   it('has no moves out of DEPO or VOID (terminal)', () => {
     expect(PAYMENT_ALLOWED_TRANSITIONS.DEPO).toEqual([])
     expect(PAYMENT_ALLOWED_TRANSITIONS.VOID).toEqual([])
+  })
+})
+
+describe('paymentHeaderTransitions', () => {
+  it.each([
+    ['PEND', false, ['VOID']],
+    ['APPV', false, ['DEPO', 'VOID']],
+    ['DEPO', false, []],
+    ['VOID', false, []],
+    ['PEND', true, []],
+  ])('%s (gated %s) offers %j', (statusCode, gated, want) => {
+    expect(paymentHeaderTransitions({ statusCode, approvalStatus: 'none', gated })).toEqual(want)
   })
 })

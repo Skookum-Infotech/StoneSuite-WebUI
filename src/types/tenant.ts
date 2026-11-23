@@ -1,5 +1,7 @@
 // Shared types for the multi-tenant platform (Phases 1–3).
 
+import type { EmailStatusFields } from '@/types/emailStatus';
+
 export interface TenantUser {
   id: string;
   email: string;
@@ -26,6 +28,18 @@ export interface Tenant {
   createdAt: string;
   hardDeleteAfter?: string | null;
   metadata?: Record<string, unknown>;
+  // The workspace the platform admin signs in to. The backend refuses to
+  // suspend or delete it; both fields are absent on an older backend.
+  isPlatformOwner?: boolean;
+  r2Bucket?: string;
+  // One browser session per user (licence enforcement). Absent on an older
+  // backend; always false for the platform owner.
+  singleSessionEnforced?: boolean;
+  // Minutes a user must wait between moving their sign-in to another device,
+  // and how many moves are allowed per 24 hours; 0 = off. Absent on an older
+  // backend (the defaults, 5 and 5, then apply).
+  takeoverCooldownMinutes?: number;
+  takeoverDailyCap?: number;
 }
 
 export interface CreateTenantResult {
@@ -63,7 +77,7 @@ export interface AsyncJob {
 }
 
 // An onboarding invite (the token is the shareable "invite key").
-export interface TenantInvite {
+export interface TenantInvite extends EmailStatusFields {
   id: string;
   contactEmail: string;
   token: string;
@@ -187,6 +201,31 @@ export interface RecordApprover {
   id: string;
   name: string;
   approved: boolean;
+}
+
+/** Who rejected a record that was awaiting approval, why and when. Sent under
+ *  a record's `approval` overlay while the record still sits in the status the
+ *  rejection left it in -- the Draft it was sent back to, or (Credit Memo,
+ *  Vendor Credit, Payment, Refund) the status it was flagged rejected in. */
+export interface ApprovalRejection {
+  byName: string;
+  reason: string;
+  at: string;
+}
+
+/** The approval fields the Sales/Purchases detail endpoints overlay onto a
+ *  record. Every module's record type carries them, so any of those records
+ *  can be handed to `RecordApprovalBanner` as-is. */
+export interface ApprovalOverlay {
+  gated: boolean;
+  approvers: RecordApprover[];
+  requiredApprovals: number;
+  approvedCount: number;
+  canApprove: boolean;
+  isOverride: boolean;
+  callerAlreadyApproved: boolean;
+  canReject?: boolean;
+  rejection?: ApprovalRejection;
 }
 
 export interface WorkflowTransition {
@@ -446,7 +485,6 @@ export interface StatusInfo {
 export interface CRMCreatePayload {
   ownerUserId?: string;
   teamId?: string;
-  crmStatusId?: string;
   coreFields: Record<string, unknown>;
   customFields?: Record<string, unknown>;
 }
@@ -468,6 +506,21 @@ export interface WorkspaceUser {
   createdAt: string;
   updatedAt: string;
   roles: RoleSummary[];
+  // Two-step verification (emailed sign-in code). Optional so the page still
+  // works against a backend that predates the field.
+  mfaEnabled?: boolean;
+  // False for a single-sign-on member, who has no password step to add a code to.
+  mfaAvailable?: boolean;
+}
+
+// One member's outcome from POST /tenant/users/mfa. "skipped" carries a reason
+// (self, deactivated, mfa_unavailable, not_found); a "changed" member also
+// reports whether the notice email went out.
+export interface MfaChangeResult {
+  userId: string;
+  status: 'changed' | 'unchanged' | 'skipped' | 'failed';
+  reason?: string;
+  emailSent?: boolean;
 }
 
 // Minimal, non-admin-sensitive projection of a workspace user for "who owns
@@ -481,7 +534,7 @@ export interface AssignableUser {
 }
 
 // Serialized from tenancy.UserInvite (no json tags → Go default PascalCase keys).
-export interface UserInvite {
+export interface UserInvite extends EmailStatusFields {
   ID: string;
   TenantID: string;
   Email: string;

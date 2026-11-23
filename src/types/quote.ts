@@ -6,7 +6,8 @@
 // a Quote's billing/shipping address references lkp_state/lkp_country by
 // numeric id (stateId/countryId), not free-text. A line item is either a
 // catalog pick or free-text, same as Estimate — see QuoteLineInput below.
-import type { FilterClause, SortKey, RecordApprover } from '@/types/tenant';
+import type { WorkflowBlock } from '@/types/workflow';
+import type { FilterClause, SortKey, RecordApprover, ApprovalRejection } from '@/types/tenant';
 
 // ── Create / update inputs (client → server) ─────────────────────────────────
 
@@ -44,6 +45,21 @@ export interface QuoteLineInput {
   unitPrice: number;
   discountPercent?: number;
   taxRateId?: number | null;
+  /** Set on a line added from a kit: the kit's id and the name it had then.
+   *  A label only — the server stores it and returns it as kitId / kitName. */
+  kitUuid?: string;
+  kitName?: string;
+  /** Size of one slab and how many slabs the line covers. With length and
+   *  width both set the server derives the quantity from them (length x width x
+   *  slabs, in the item's area unit), so the quantity sent is then ignored. */
+  length?: number;
+  width?: number;
+  /** The one unit length and width are measured in: mm, cm, in, ft or m. Blank takes
+   *  the item's unit, then cm. */
+  dimensionUnit?: string;
+  slabs?: number;
+  /** Thickness of one slab, in `dimensionUnit`. Descriptive only: it never enters the quantity. */
+  thickness?: number;
 }
 
 export interface QuoteCreatePayload {
@@ -109,6 +125,19 @@ export interface QuoteLine {
   lineDiscount: number;
   lineTax: number;
   lineTotal: number;
+  /** Set on a line added from a kit (see lib/kitLines.ts): the kit's id and the
+   *  name it had when the line was added. */
+  kitId?: string;
+  kitName?: string;
+  /** The slab size and count the line was priced from, when entered that
+   *  way; quantity is then their area. */
+  length?: number | null;
+  width?: number | null;
+  /** The unit length and width were measured in. */
+  dimensionUnit?: string | null;
+  slabs?: number | null;
+  /** Thickness of one slab, in `dimensionUnit`. */
+  thickness?: number | null;
 }
 
 // Full detail response (GET/Create/Update/Transition/Approve). Every field the
@@ -116,6 +145,8 @@ export interface QuoteLine {
 // can reload a quote and re-save it without silently blanking billing/
 // shipping or any header field.
 export interface Quote {
+  /** End-to-end flow this record belongs to; see BACKEND_SPEC_workflow_links.md. */
+  workflow?: WorkflowBlock;
   id: string;
   quoteNumber: string;
   status: string;              // human label, e.g. "Draft"
@@ -129,6 +160,8 @@ export interface Quote {
   canApprove: boolean;         // whether the requesting user can approve (configured approver OR super admin)
   isOverride: boolean;         // true when canApprove is only true because the user is a super admin, not a configured approver
   callerAlreadyApproved: boolean; // true if the requesting user already signed off this round (quorum may still need others)
+  canReject?: boolean;            // whether the requesting user can reject it right now (configured approver OR super admin, while it awaits approval)
+  rejection?: ApprovalRejection;  // who rejected it and why -- present while it still sits in the status the rejection left it in
   customer: QuoteCustomerRef;
   estimate?: QuoteEstimateRef | null;
   quoteDate: string;

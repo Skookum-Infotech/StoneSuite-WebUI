@@ -13,13 +13,17 @@ import { UnsavedChangesPrompt } from '@/components/UnsavedChangesPrompt';
 import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { SalesOrderFormBody } from './components/SalesOrderFormBody';
+import { shortageToastMessage, uncoveredShortages } from '@/lib/stockShortage';
 import { SalesOrderStatusControl } from './components/SalesOrderStatusControl';
 import type { CustomerRef } from './components/CustomerPicker';
 import { shipSameAsBillFields } from '@/lib/shipToDefaults';
 import {
-  fromOrder, toCreatePayload, PAGE_TABS, type PageTab,
+  fromOrder, toCreatePayload, PAGE_TABS, BILL_TO_FIELDS, SHIP_TO_FIELDS, type PageTab,
   type SOLineItem, type SODrawing, SO_STATUS_CODES,
 } from '@/lib/salesOrderForm';
+import { firstInvalidPhoneLabel } from '@/lib/phoneValidation';
+import { installDateError } from '@/lib/salesOrderSchedule';
+import { PLANNER_QUERY_KEY } from '@/lib/plannerCalendar';
 import { statusToastLabel } from '@/lib/statusToast';
 import { InventoryItemReturnContext, useInventoryItemReturn } from '@/hooks/useInventoryItemReturn';
 import { useScrollToError } from '@/hooks/useScrollToError';
@@ -147,11 +151,28 @@ export default function EditSalesOrderPage() {
   );
 
   const save = useMutation({
-    mutationFn: () => salesOrderService.updateOrder(id, toCreatePayload(data, lineItems, customFieldValues)),
-    onSuccess: () => {
+    mutationFn: () => {
+      const badPhone = firstInvalidPhoneLabel([...BILL_TO_FIELDS, ...SHIP_TO_FIELDS], data);
+      if (badPhone) throw new Error(`Enter a valid phone number for ${badPhone}.`);
+      // The date already saved on the order stays valid untouched, even once past.
+      const badInstallDate = installDateError(data.scheduled_install_date, order?.scheduledInstallDate);
+      if (badInstallDate) throw new Error(badInstallDate);
+      return salesOrderService.updateOrder(id, toCreatePayload(data, lineItems, customFieldValues));
+    },
+    onSuccess: (saved) => {
       queryClient.invalidateQueries({ queryKey: ['sales-order', id] });
+      queryClient.invalidateQueries({ queryKey: ['sales-order-schedule', id] });
+      queryClient.invalidateQueries({ queryKey: [PLANNER_QUERY_KEY] });
       queryClient.invalidateQueries({ queryKey: ['sales-orders'] });
       guard.markClean();
+      // Short stock never stops the save: warn, and open the order so its
+      // "items short" banner (with Order shortage items) is the next thing seen.
+      const short = uncoveredShortages(saved.stockShortages ?? []);
+      if (short.length > 0) {
+        toast.warning(shortageToastMessage(saved.salesOrderNumber, 'saved', short));
+        navigate(`/sales/sales_order/${id}`);
+        return;
+      }
       navigate('/sales/sales_order');
     },
   });

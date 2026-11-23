@@ -51,7 +51,7 @@ export function FilterDropdown({ label, value, onChange, allLabel, options }: Pr
     <div className="flex flex-col gap-1">
       <span
         id={triggerId}
-        className="text-2xs font-semibold uppercase tracking-wider text-stone-400"
+        className="text-2xs font-semibold uppercase tracking-wider text-stone-500"
       >
         {label}
       </span>
@@ -67,7 +67,7 @@ export function FilterDropdown({ label, value, onChange, allLabel, options }: Pr
             'flex h-8 w-full items-center justify-between gap-1.5 rounded-lg border border-stone-200 bg-white px-3 text-xs transition-colors',
             'focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand',
             'disabled:cursor-not-allowed disabled:opacity-50',
-            value ? 'text-stone-900' : 'text-stone-400',
+            value ? 'text-stone-900' : 'text-stone-500',
           )}
         >
           <span className="truncate">{selectedLabel}</span>

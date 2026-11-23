@@ -1,21 +1,26 @@
 import type { ReactNode } from 'react';
+import { Flag } from '@/components/ui/Flag';
+import type { OptionFlag } from '@/lib/flags';
 import { ModernSection } from '@/components/crm/FormPrimitives';
 import { readonlyCls, fieldLabelCls } from '@/components/crm/formUtils';
 import { cn } from '@/lib/utils';
 import type { Vendor } from '@/types/vendor';
+import { formatDateValue } from '@/lib/dateUtils';
+import { isHttpUrl } from '@/lib/safeExternalUrl';
+import { VendorSummaryStrip } from './transactions/VendorSummaryStrip';
 
 function fmtDate(iso?: string): string {
   if (!iso) return '—';
-  return new Date(iso).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+  return formatDateValue(iso, undefined, { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
-function ReadonlyField({ label, value, full, link, multiline }: {
-  label: string; value?: string; full?: boolean; link?: boolean; multiline?: boolean;
+function ReadonlyField({ label, value, full, link, multiline, flag }: {
+  label: string; value?: string; full?: boolean; link?: boolean; multiline?: boolean; flag?: OptionFlag;
 }) {
   return (
     <div className={cn('space-y-1', full && 'col-span-full')}>
       <label className={fieldLabelCls}>{label}</label>
-      {value && link ? (
+      {value && link && isHttpUrl(value) ? (
         <a
           href={value}
           target="_blank"
@@ -26,7 +31,12 @@ function ReadonlyField({ label, value, full, link, multiline }: {
         </a>
       ) : (
         <div className={cn(readonlyCls, multiline && 'whitespace-pre-wrap min-h-[4.5rem]')}>
-          {value || <span className="text-stone-400">—</span>}
+          {value ? (
+            <span className="inline-flex items-center gap-2">
+              {flag && <Flag {...flag} />}
+              {value}
+            </span>
+          ) : <span className="text-stone-500">—</span>}
         </div>
       )}
     </div>
@@ -35,7 +45,7 @@ function ReadonlyField({ label, value, full, link, multiline }: {
 
 function ChipList({ items, emptyLabel }: { items: string[]; emptyLabel: ReactNode }) {
   if (items.length === 0) return typeof emptyLabel === 'string'
-    ? <div className={cn(readonlyCls, 'text-stone-400')}>{emptyLabel}</div>
+    ? <div className={cn(readonlyCls, 'text-stone-500')}>{emptyLabel}</div>
     : <>{emptyLabel}</>;
   return (
     <div className="flex flex-wrap gap-1.5">
@@ -51,13 +61,14 @@ function ChipList({ items, emptyLabel }: { items: string[]; emptyLabel: ReactNod
 // Read-only field layout for the Vendor Detail page's Overview tab — mirrors
 // SalesOrderDetailPage's ModernSection + ReadonlyField pattern, branching on
 // vendorType the same way VendorFormBody does for the Add/Edit forms.
-export function VendorOverviewTab({ vendor, countryName }: { vendor: Vendor; countryName?: string }) {
+export function VendorOverviewTab({ vendor, countryName, countryCode }: { vendor: Vendor; countryName?: string; countryCode?: string }) {
   const isPerson = vendor.vendorType === 'Person';
   const associatedBrands = vendor.associatedBrands ?? [];
   const acceptedPaymentMethods = vendor.acceptedPaymentMethods ?? [];
 
   return (
     <>
+      <VendorSummaryStrip vendorId={vendor.id} />
       {isPerson ? (
         <>
           <ModernSection title="Personal Identity" index={0}>
@@ -73,7 +84,7 @@ export function VendorOverviewTab({ vendor, countryName }: { vendor: Vendor; cou
           <ModernSection title="Personal Details" index={1}>
             <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
               <ReadonlyField label="Gender" value={vendor.gender} />
-              <ReadonlyField label="Nationality" value={countryName} />
+              <ReadonlyField label="Nationality" value={countryName} flag={countryCode ? { kind: 'country', code: countryCode } : undefined} />
               <ReadonlyField label="Personal Height" value={vendor.height} />
               <ReadonlyField label="Net Worth" value={vendor.netWorth} />
             </div>
@@ -106,7 +117,7 @@ export function VendorOverviewTab({ vendor, countryName }: { vendor: Vendor; cou
             <ReadonlyField label="Fax Number" value={vendor.faxNumber} />
             <ReadonlyField label="Physical Address" value={vendor.physicalAddress} full multiline />
           </div>
-          <p className="pt-1 text-2xs font-semibold uppercase tracking-wider text-stone-400">Primary Contact Point</p>
+          <p className="pt-1 text-2xs font-semibold uppercase tracking-wider text-stone-500">Primary Contact Point</p>
           <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
             <ReadonlyField label="Contact Type" value={vendor.contactPoint?.contactType} />
             <ReadonlyField label="Contact Telephone" value={vendor.contactPoint?.telephone} />
@@ -147,7 +158,7 @@ export function VendorOverviewTab({ vendor, countryName }: { vendor: Vendor; cou
       {!isPerson && (
         <>
           <ModernSection title="Accepted Payment Methods" index={6}>
-            <ChipList items={acceptedPaymentMethods} emptyLabel={<p className="text-xs text-stone-400 italic">No payment methods on file.</p>} />
+            <ChipList items={acceptedPaymentMethods} emptyLabel={<p className="text-xs text-stone-500 italic">No payment methods on file.</p>} />
           </ModernSection>
           <ModernSection title="Compliance Policies" index={7}>
             <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2">

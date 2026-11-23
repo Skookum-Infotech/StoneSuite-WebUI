@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect, useRef, type ReactNode } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Search, ArrowUp, ArrowDown, ArrowUpDown, X, Inbox, Pencil, Filter,
@@ -16,7 +16,16 @@ import {
 } from '@/lib/purchaseOrderFilters';
 import { PurchaseOrderFilterDrawer } from './PurchaseOrderFilterDrawer';
 import { PurchaseOrderStatusControl } from './PurchaseOrderStatusControl';
+import { PurchaseOrderReceivingProgress } from './PurchaseOrderReceivingProgress';
+import { showsReceivingProgress } from '@/lib/receivingProgress';
+import { ReadOnlyStatusPill } from '@/pages/sales/components/ReadOnlyStatusPill';
+import { PO_STATUS_COLORS } from '@/lib/purchaseOrderForm';
 import type { PurchaseOrderSearchRequest } from '@/types/purchaseOrder';
+import { formatDateValue, LIST_DATE_OPTIONS } from '@/lib/dateUtils';
+import { VendorLink } from '@/pages/purchases/vendor/components/VendorLink';
+
+// Columns still shown below the sm breakpoint (indexes into the header row); the rest return from sm up.
+const PHONE_COLUMNS = new Set([0, 1, 2, 8]);
 
 const EXPORT_PAGE_SIZE = 200;
 
@@ -59,19 +68,21 @@ function currency(n: number | undefined): string {
 
 function fmtDate(iso?: string): string {
   if (!iso) return '—';
-  return new Date(iso).toLocaleDateString(undefined, { year: '2-digit', month: 'short', day: 'numeric' });
+  return formatDateValue(iso, undefined, LIST_DATE_OPTIONS);
 }
 
-export function PurchaseOrderTable() {
+export function PurchaseOrderTable({ toolbarActions }: { toolbarActions?: ReactNode }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const topRef = useRef<HTMLDivElement>(null);
 
-  const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
+  const { hasPermission, isSuperAdmin, isLoading: permissionsLoading } = useUserPermissions();
   const canEdit = permissionsLoading || hasPermission('purchase_order', 'update');
 
-  // Inline status change from the list row's status pill — mirrors the
-  // Detail page's transition mutation (see PurchaseOrderDetailPage.tsx).
+  // Inline status change from the list row's status pill, super admin only —
+  // everyone else sees a read-only pill and moves an order from its Detail
+  // page. Mirrors the Detail page's transition mutation (see
+  // PurchaseOrderDetailPage.tsx).
   const transition = useMutation({
     mutationFn: (vars: { id: string; toStatusCode: string }) => purchaseOrderService.transition(vars.id, vars.toStatusCode),
     onSuccess: (updated) => {
@@ -82,7 +93,7 @@ export function PurchaseOrderTable() {
 
   const [term, setTerm] = useState('');
   const [debounced, setDebounced] = useState('');
-  const [sortBy, setSortBy] = useState<SortField>('orderDate');
+  const [sortBy, setSortBy] = useState<SortField>('recordNumber');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
   const [filters, setFilters] = useState<PurchaseOrderFilterState>(EMPTY_FILTER_STATE);
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -184,11 +195,12 @@ export function PurchaseOrderTable() {
     try {
       await exportPagedCsv(
         (exportCursor) => purchaseOrderService.searchPurchaseOrders({ ...req, limit: EXPORT_PAGE_SIZE, cursor: exportCursor }),
-        ['PO #', 'Vendor', 'Status', 'Approval', 'Order Date', 'Expected Date', 'Owner', 'Grand Total'],
+        ['PO #', 'Vendor', 'Status', 'Received %', 'Approval', 'Order Date', 'Expected Date', 'Owner', 'Grand Total'],
         (po) => [
           po.purchaseOrderNumber ?? '',
           po.vendor?.name ?? '',
           po.status ?? '',
+          showsReceivingProgress(po.statusCode) && po.receivedPercent !== undefined ? String(po.receivedPercent) : '',
           APPROVAL_LABELS[po.approvalStatus] ?? '',
           fmtCsvDate(po.orderDate),
           fmtCsvDate(po.expectedDate),
@@ -215,7 +227,7 @@ export function PurchaseOrderTable() {
             placeholder="Search PO #, vendor, reference…"
             value={term}
             onChange={(e) => setTerm(e.target.value)}
-            className="h-8 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-3 text-xs text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150"
+            className="h-8 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-3 text-xs text-stone-900 placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150"
           />
         </div>
 
@@ -235,7 +247,7 @@ export function PurchaseOrderTable() {
         <div className="h-5 w-px bg-stone-200" aria-hidden="true" />
 
         <div className="flex items-center gap-1.5">
-          <span className="text-2xs font-semibold uppercase tracking-wider text-stone-400 pr-0.5">Sort:</span>
+          <span className="text-2xs font-semibold uppercase tracking-wider text-stone-500 pr-0.5">Sort:</span>
           {(Object.entries(SORT_LABELS) as [SortField, string][]).map(([field, label]) => (
             <button
               key={field}
@@ -263,18 +275,22 @@ export function PurchaseOrderTable() {
           </button>
         )}
 
-        {records.length > 0 && (
-          <button
-            type="button"
-            onClick={handleDownloadCsv}
-            disabled={isExporting}
-            aria-label={hasFilters ? 'Download filtered purchase orders as CSV' : 'Download all purchase orders as CSV'}
-            className="ml-auto flex items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-2.5 h-8 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            {isExporting ? <Loader2 className="size-3.5 animate-spin" /> : <Download className="size-3.5" />}
-            {isExporting ? 'Exporting…' : hasFilters ? 'Download filtered CSV' : 'Download CSV'}
-          </button>
-        )}
+        {/* Right-aligned: Download CSV, then any actions the page slots in (e.g. Upload). */}
+        <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
+          {records.length > 0 && (
+            <button
+              type="button"
+              onClick={handleDownloadCsv}
+              disabled={isExporting}
+              aria-label={hasFilters ? 'Download filtered purchase orders as CSV' : 'Download all purchase orders as CSV'}
+              className="flex items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-2.5 h-8 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {isExporting ? <Loader2 className="size-3.5 animate-spin" /> : <Download className="size-3.5" />}
+              {isExporting ? 'Exporting…' : hasFilters ? 'Download filtered CSV' : 'Download CSV'}
+            </button>
+          )}
+          {toolbarActions}
+        </div>
       </div>
 
       {isError && (
@@ -287,19 +303,20 @@ export function PurchaseOrderTable() {
       {/* Table */}
       <div className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm">
         <div className="overflow-x-auto modal-scrollbar">
-          <table className="w-full min-w-[920px] text-left text-xs">
+          <table className="w-full sm:min-w-[1040px] text-left text-xs">
             <thead className="border-b border-stone-200 bg-table-header">
               <tr>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">PO #</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Vendor</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Status</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Approval</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Order Date</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Expected Date</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Owner</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right">Grand Total</th>
+                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">PO #</th>
+                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Vendor</th>
+                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Status</th>
+                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 max-sm:hidden">Received</th>
+                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 max-sm:hidden">Approval</th>
+                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 max-sm:hidden">Order Date</th>
+                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 max-sm:hidden">Expected Date</th>
+                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 max-sm:hidden">Owner</th>
+                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right">Grand Total</th>
                 {canEdit && (
-                  <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right">Actions</th>
+                  <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right max-sm:hidden">Actions</th>
                 )}
               </tr>
             </thead>
@@ -307,8 +324,8 @@ export function PurchaseOrderTable() {
               {isLoading ? (
                 Array.from({ length: 5 }, (_, i) => (
                   <tr key={i}>
-                    {Array.from({ length: canEdit ? 9 : 8 }, (_, j) => (
-                      <td key={j} className="px-4 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-16" /></td>
+                    {Array.from({ length: canEdit ? 10 : 9 }, (_, j) => (
+                      <td key={j} className={cn('px-4 max-sm:px-2 py-3', !PHONE_COLUMNS.has(j) && 'max-sm:hidden')}><div className="animate-pulse h-3 rounded bg-stone-100 w-16" /></td>
                     ))}
                   </tr>
                 ))
@@ -318,27 +335,33 @@ export function PurchaseOrderTable() {
                   const ownerName = po.ownerEmployeeId ? employeeNames.get(String(po.ownerEmployeeId)) : undefined;
                   return (
                     <tr key={po.id} className="group hover:bg-accent/10 transition-colors duration-150">
-                      <td className="px-4 py-3.5">
-                        <button
-                          type="button"
-                          onClick={() => navigate(`/purchases/purchase_order/${po.id}`)}
-                          className="font-mono text-xs font-semibold text-stone-900 hover:text-accent-foreground transition-colors"
+                      <td className="px-4 max-sm:px-2 py-3.5">
+                        <Link
+                          to={`/purchases/purchase_order/${po.id}`}
+                          className="font-mono text-xs font-semibold whitespace-nowrap text-stone-900 hover:text-accent-foreground transition-colors"
                         >
                           {po.purchaseOrderNumber || '—'}
-                        </button>
+                        </Link>
                       </td>
-                      <td className="px-4 py-3.5 text-xs text-stone-700 truncate max-w-[200px]">
-                        {po.vendor?.name ?? '—'}
+                      <td className="px-4 max-sm:px-2 py-3.5 text-xs text-stone-700 truncate max-w-[200px]">
+                        <VendorLink vendor={po.vendor} />
                       </td>
-                      <td className="px-4 py-3.5">
-                        <PurchaseOrderStatusControl
-                          order={{ statusCode: po.statusCode, approvalStatus: po.approvalStatus, nextStatusCodes: po.nextStatusCodes }}
-                          onChange={(code) => transition.mutate({ id: po.id, toStatusCode: code })}
-                          disabled={transition.isPending && transition.variables?.id === po.id}
-                          variant="pill"
-                        />
+                      <td className="px-4 max-sm:px-2 py-3.5">
+                        {isSuperAdmin ? (
+                          <PurchaseOrderStatusControl
+                            order={{ statusCode: po.statusCode, approvalStatus: po.approvalStatus, nextStatusCodes: po.nextStatusCodes }}
+                            onChange={(code) => transition.mutate({ id: po.id, toStatusCode: code })}
+                            disabled={transition.isPending && transition.variables?.id === po.id}
+                            variant="pill"
+                          />
+                        ) : (
+                          <ReadOnlyStatusPill label={po.status} color={PO_STATUS_COLORS[po.statusCode]} />
+                        )}
                       </td>
-                      <td className="px-4 py-3.5">
+                      <td className="px-4 max-sm:px-2 py-3.5 max-sm:hidden">
+                        <PurchaseOrderReceivingProgress order={po} />
+                      </td>
+                      <td className="px-4 max-sm:px-2 py-3.5 max-sm:hidden">
                         {approvalLabel ? (
                           <span
                             className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-2xs font-semibold whitespace-nowrap"
@@ -348,23 +371,23 @@ export function PurchaseOrderTable() {
                             {approvalLabel}
                           </span>
                         ) : (
-                          <span className="text-2xs text-stone-300">—</span>
+                          <span className="text-2xs text-stone-500">—</span>
                         )}
                       </td>
-                      <td className="px-4 py-3.5 text-xs text-stone-400 tabular-nums whitespace-nowrap">
+                      <td className="px-4 max-sm:px-2 py-3.5 text-xs text-stone-500 tabular-nums whitespace-nowrap max-sm:hidden">
                         {fmtDate(po.orderDate)}
                       </td>
-                      <td className="px-4 py-3.5 text-xs text-stone-400 tabular-nums whitespace-nowrap">
+                      <td className="px-4 max-sm:px-2 py-3.5 text-xs text-stone-500 tabular-nums whitespace-nowrap max-sm:hidden">
                         {fmtDate(po.expectedDate)}
                       </td>
-                      <td className="px-4 py-3.5 text-xs text-stone-500 truncate max-w-[140px]">
+                      <td className="px-4 max-sm:px-2 py-3.5 text-xs text-stone-500 truncate max-w-[140px] max-sm:hidden">
                         {ownerName ?? '—'}
                       </td>
-                      <td className="px-4 py-3.5 text-xs font-semibold text-stone-900 tabular-nums text-right whitespace-nowrap">
+                      <td className="px-4 max-sm:px-2 py-3.5 text-xs font-semibold text-stone-900 tabular-nums text-right whitespace-nowrap">
                         {currency(po.grandTotal)}
                       </td>
                       {canEdit && (
-                        <td className="px-4 py-3.5 text-right">
+                        <td className="px-4 max-sm:px-2 py-3.5 text-right max-sm:hidden">
                           <button
                             type="button"
                             onClick={() => navigate(`/purchases/purchase_order/${po.id}/edit`)}
@@ -380,14 +403,14 @@ export function PurchaseOrderTable() {
                 })
               ) : (
                 <tr>
-                  <td colSpan={8 + (canEdit ? 1 : 0)} className="py-16 text-center">
+                  <td colSpan={9 + (canEdit ? 1 : 0)} className="py-16 text-center">
                     {!hasFilters ? (
                       <div className="flex flex-col items-center gap-3">
                         <div className="rounded-2xl bg-stone-100 p-4">
                           <Inbox className="size-6 text-stone-400" />
                         </div>
                         <p className="text-sm font-semibold text-stone-700">No purchase orders added yet.</p>
-                        <p className="text-xs text-stone-400">Create your first purchase order to get started.</p>
+                        <p className="text-xs text-stone-500">Create your first purchase order to get started.</p>
                       </div>
                     ) : (
                       <div className="flex flex-col items-center gap-3">
@@ -395,7 +418,7 @@ export function PurchaseOrderTable() {
                           <Search className="size-6 text-stone-400" />
                         </div>
                         <p className="text-sm font-semibold text-stone-700">No purchase orders match the current search.</p>
-                        <p className="text-xs text-stone-400">Try adjusting your search or filters.</p>
+                        <p className="text-xs text-stone-500">Try adjusting your search or filters.</p>
                       </div>
                     )}
                   </td>

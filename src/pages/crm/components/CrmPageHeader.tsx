@@ -78,18 +78,18 @@ export function CrmPageHeader({
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5 flex-wrap">
-              <h1 className="text-sm font-bold tracking-tight text-stone-900 truncate max-w-[160px]">
+              <h1 className="text-sm font-bold tracking-tight text-stone-900 dark:text-stone-100 truncate max-w-[160px]">
                 {title}
               </h1>
               {recordNumber && (
-                <span className="font-mono text-2xs bg-stone-100 px-1.5 py-0.5 rounded text-stone-400 shrink-0">
+                <span className="font-mono text-2xs bg-stone-100 px-1.5 py-0.5 rounded text-stone-500 shrink-0">
                   {recordNumber}
                 </span>
               )}
               {statusBadge}
             </div>
             {subtitle && (
-              <p className="text-2xs text-stone-400 leading-relaxed mt-0.5">{subtitle}</p>
+              <p className="text-2xs text-stone-500 leading-relaxed mt-0.5">{subtitle}</p>
             )}
           </div>
         </div>
@@ -105,11 +105,11 @@ export function CrmPageHeader({
         {/* Title block */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <h1 className="text-xl font-bold tracking-tight text-stone-900 truncate">
+            <h1 className="text-xl font-bold tracking-tight text-stone-900 dark:text-stone-100 truncate">
               {title}
             </h1>
             {recordNumber && (
-              <span className="font-mono text-xs bg-stone-100 px-2 py-0.5 rounded-lg text-stone-400 shrink-0">
+              <span className="font-mono text-xs bg-stone-100 px-2 py-0.5 rounded-lg text-stone-500 shrink-0">
                 {recordNumber}
               </span>
             )}
@@ -125,7 +125,7 @@ export function CrmPageHeader({
           type="button"
           onClick={onBack}
           aria-label={`Back to ${backLabel}`}
-          className="flex items-center gap-1 text-xs font-medium text-stone-400 hover:text-stone-700 transition-colors px-2 py-1.5 rounded-lg hover:bg-stone-100 shrink-0"
+          className="flex items-center gap-1 text-xs font-medium text-stone-500 hover:text-stone-700 transition-colors px-2 py-1.5 rounded-lg hover:bg-stone-100 shrink-0"
         >
           <ChevronLeft className="size-3.5" />
           Back

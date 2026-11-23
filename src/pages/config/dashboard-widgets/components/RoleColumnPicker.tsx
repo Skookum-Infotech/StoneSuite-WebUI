@@ -83,7 +83,7 @@ export function RoleColumnPicker({
                   type="button"
                   aria-label={`Remove ${role.name} from the comparison`}
                   onClick={() => onChange(selectedIds.filter((sid) => sid !== id))}
-                  className="rounded-full p-0.5 text-stone-400 transition hover:bg-stone-200 hover:text-stone-600"
+                  className="rounded-full p-0.5 text-stone-500 transition hover:bg-stone-200 hover:text-stone-600"
                 >
                   <X className="size-3" aria-hidden="true" />
                 </button>
@@ -109,7 +109,7 @@ export function RoleColumnPicker({
         {open && (
           <div className="absolute z-20 mt-1 w-full max-w-xs overflow-hidden rounded-xl border border-stone-200 bg-white shadow-md">
             {results.length === 0 ? (
-              <p className="px-3 py-2 text-2xs text-stone-400">
+              <p className="px-3 py-2 text-2xs text-stone-500">
                 {roles.length === selectedIds.length ? 'Every role is already shown.' : 'No matching roles.'}
               </p>
             ) : (

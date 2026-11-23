@@ -12,7 +12,10 @@ import { WarehouseSelect } from '@/components/inventory/WarehouseSelect';
 import { toNumericWarehouseId } from '@/lib/inventoryWarehouse';
 import { ReasonSelect } from '@/components/inventory/ReasonSelect';
 import { useInventoryLookups } from '@/hooks/useInventoryLookups';
+import { useDefaultLocation } from '@/hooks/useDefaultLocation';
 import { useScrollToError } from '@/hooks/useScrollToError';
+import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
+import { UnsavedChangesPrompt } from '@/components/UnsavedChangesPrompt';
 import { TRACKING_SERIALIZED } from '@/types/inventory';
 import type { AdjustmentLineInput } from '@/types/inventory';
 import { AdjustmentLinesEditor } from './components/AdjustmentLinesEditor';
@@ -35,12 +38,16 @@ export default function AddAdjustmentPage() {
   const queryClient = useQueryClient();
   const { lookups } = useInventoryLookups();
 
-  const [warehouseId, setWarehouseId] = useState('');
+  const [warehouseId, setWarehouseId] = useDefaultLocation(lookups?.warehouses ?? []);
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [reasonId, setReasonId] = useState('');
   const [notes, setNotes] = useState('');
   const [lines, setLines] = useState<AdjustmentDraftLine[]>([emptyAdjustmentLine()]);
   const [fieldError, setFieldError] = useState<string | null>(null);
+
+  // The default location is derived once the lookups arrive, so the snapshot
+  // waits for them rather than baselining on an empty location.
+  const guard = useUnsavedChangesGuard({ warehouseId, date, reasonId, notes, lines }, Boolean(lookups));
 
   const { mutate: save, isPending, error: saveError } = useMutation({
     mutationFn: () => {
@@ -56,6 +63,7 @@ export default function AddAdjustmentPage() {
     onSuccess: () => {
       toast.success('Adjustment saved.');
       queryClient.invalidateQueries({ queryKey: ['inventory-adjustments'] });
+      guard.markClean();
       navigate('/inventory/adjustment');
     },
   });
@@ -63,7 +71,7 @@ export default function AddAdjustmentPage() {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!warehouseId) { setFieldError('A warehouse is required.'); return; }
+    if (!warehouseId) { setFieldError('A location is required.'); return; }
     const lineInputs = lines.map(toLineInput).filter(Boolean);
     if (lineInputs.length === 0) { setFieldError('At least one complete line (item, reason, and quantity or unit) is required.'); return; }
     setFieldError(null);
@@ -72,6 +80,7 @@ export default function AddAdjustmentPage() {
 
   return (
     <div className="flex flex-col flex-1 min-h-0 bg-stone-50">
+      <UnsavedChangesPrompt guard={guard} />
       <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
         <CrmPageHeader
           backLabel="Adjustments"
@@ -103,7 +112,7 @@ export default function AddAdjustmentPage() {
           <div className="px-4 py-3 pb-24 space-y-2 3xl:px-10 3xl:py-5 4xl:px-16 4xl:py-8">
             <ModernSection title="Header" index={0}>
               <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
-                <ModernFieldShell label="Warehouse" required>
+                <ModernFieldShell label="Location" required>
                   <WarehouseSelect warehouses={lookups?.warehouses ?? []} value={warehouseId} onChange={setWarehouseId} required />
                 </ModernFieldShell>
                 <ModernFieldShell label="Date" required>

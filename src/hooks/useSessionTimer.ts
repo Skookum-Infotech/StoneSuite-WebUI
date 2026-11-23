@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/useAuthStore';
-import { authService } from '@/services/authService';
-import { apiClient } from '@/api/client';
+import { apiClient, attemptRefresh, invalidateSession, isRefreshInFlight } from '@/api/client';
 
 // Show the warning modal this many milliseconds before the access token expires.
 const WARNING_MS = 5 * 60 * 1000; // 5 minutes
@@ -11,6 +10,13 @@ const WARNING_MS = 5 * 60 * 1000; // 5 minutes
 const COUNTDOWN_SECONDS = 5 * 60; // matches WARNING_MS
 
 const SYNC_CHANNEL = 'session-sync';
+
+// When the expiry failsafe fires while a refresh is still running (in this tab
+// or another), look again this often, up to this many times, before giving up
+// and logging out. Logout revokes the refresh token with no grace, so it must
+// never land underneath a refresh that is about to succeed.
+const FAILSAFE_RECHECK_MS = 1000;
+const FAILSAFE_MAX_DEFERRALS = 15;
 
 export interface SessionTimerState {
   showWarning: boolean;
@@ -58,10 +64,31 @@ export function useSessionTimer(): SessionTimerState {
     // Await logout so the server clears cookies before we navigate. Without this,
     // a fast re-login could race against a late-arriving logout response that
     // would delete the freshly-issued auth_token cookie.
-    await apiClient.post('/auth/logout').catch(() => undefined);
+    // A customer session's cookies live at the portal endpoint; the staff one
+    // would not clear them.
+    const logoutPath = useAuthStore.getState().kind === 'portal' ? '/portal/auth/logout' : '/auth/logout';
+    // Discard any refresh still in flight so it cannot resurrect this session.
+    invalidateSession();
+    await apiClient.post(logoutPath).catch(() => undefined);
     logout();
     navigate('/auth/login', { replace: true });
   }, [clearAllTimers, logout, navigate]);
+
+  // The expiry failsafe: log out, but first let any refresh that is running
+  // (here or in another tab) finish — if it succeeds the timers are re-armed
+  // for the new expiry and this never logs out.
+  const logoutWhenIdle = useCallback((): Promise<void> => {
+    const attempt = async (deferrals: number): Promise<void> => {
+      if (deferrals < FAILSAFE_MAX_DEFERRALS && (await isRefreshInFlight())) {
+        expiryTimerRef.current = setTimeout(() => {
+          void attempt(deferrals + 1);
+        }, FAILSAFE_RECHECK_MS);
+        return;
+      }
+      await performLogout();
+    };
+    return attempt(0);
+  }, [performLogout]);
 
   // Arm (or re-arm) the warning and expiry timers whenever sessionExpiresAt changes.
   useEffect(() => {
@@ -98,7 +125,7 @@ export function useSessionTimer(): SessionTimerState {
 
     // Failsafe: hard-logout when the token actually expires.
     expiryTimerRef.current = setTimeout(() => {
-      performLogout();
+      void logoutWhenIdle();
     }, msUntilExpiry);
 
     return () => clearAllTimers();
@@ -128,27 +155,42 @@ export function useSessionTimer(): SessionTimerState {
 
   const onStay = useCallback(async () => {
     setIsExtending(true);
+    // Stand the hard-logout failsafe down while the refresh is in flight. Left
+    // armed, it can fire mid-request (the refresh can take seconds on a cold
+    // start) and POST /auth/logout, which revokes the refresh token with no
+    // grace — the refresh that follows is then refused as "reused" and the user
+    // who just clicked Stay is signed out.
+    if (expiryTimerRef.current) clearTimeout(expiryTimerRef.current);
     try {
-      const res = await authService.refreshSession();
-      if (res.success && res.expiresAt) {
-        setSessionExpiry(res.expiresAt);
+      // The same refresh the 401 interceptor uses. It stores the new access token
+      // and expiry, tells other tabs, re-sends the selected role, retries a cold
+      // start, and refreshes a customer-portal session at its own endpoint — a
+      // bare POST /auth/refresh did none of that (and always failed for portal
+      // sessions, whose refresh cookie is scoped to /api/portal/auth).
+      const outcome = await attemptRefresh();
+      if (outcome === 'ok') {
         setShowWarning(false);
-        // Notify other tabs.
-        try {
-          const ch = new BroadcastChannel(SYNC_CHANNEL);
-          ch.postMessage({ type: 'SESSION_EXTENDED', expiresAt: res.expiresAt });
-          ch.close();
-        } catch { /* ignore */ }
-      } else {
-        // Refresh failed — both tokens expired. Logout.
-        performLogout();
+      } else if (outcome === 'rejected') {
+        // Only an explicit refusal ends the session.
+        await performLogout();
       }
-    } catch {
-      performLogout();
+      // 'transient': the backend was unreachable — keep the warning open so the
+      // user can press Stay signed in again instead of being signed out. Put the
+      // failsafe back for whatever time is left; if the access token has already
+      // run out meanwhile, leave the modal up rather than logging out a session
+      // whose refresh token may still be good.
+      if (outcome === 'transient') {
+        const msLeft = (useAuthStore.getState().sessionExpiresAt ?? 0) - Date.now();
+        if (msLeft > 0) {
+          expiryTimerRef.current = setTimeout(() => {
+            void logoutWhenIdle();
+          }, msLeft);
+        }
+      }
     } finally {
       setIsExtending(false);
     }
-  }, [performLogout, setSessionExpiry]);
+  }, [performLogout, logoutWhenIdle]);
 
   const onLogout = useCallback(() => {
     try {

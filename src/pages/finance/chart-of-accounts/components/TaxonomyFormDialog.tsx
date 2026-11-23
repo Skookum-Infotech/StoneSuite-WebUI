@@ -1,3 +1,4 @@
+import { Select } from '@/components/ui/select';
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -132,7 +133,7 @@ export function TaxonomyFormDialog({ intent, onClose }: {
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="rounded p-1 text-stone-400 transition-colors hover:bg-stone-100 hover:text-stone-600"
+            className="rounded p-1 text-stone-500 transition-colors hover:bg-stone-100 hover:text-stone-600"
           >
             <X className="size-4" />
           </button>
@@ -171,7 +172,7 @@ export function TaxonomyFormDialog({ intent, onClose }: {
           {intent.kind === 'create-category' && (
             <>
               <ModernFieldShell label="Reports under" required>
-                <select
+                <Select
                   value={side}
                   onChange={(e) => setSide(e.target.value as CategorySide)}
                   className={fieldCls}
@@ -180,11 +181,11 @@ export function TaxonomyFormDialog({ intent, onClose }: {
                   {SIDE_OPTIONS.map((o) => (
                     <option key={o.value} value={o.value}>{o.label} — {o.hint}</option>
                   ))}
-                </select>
+                </Select>
               </ModernFieldShell>
 
               <ModernFieldShell label="Normal balance" required>
-                <select
+                <Select
                   value={normalBalance}
                   onChange={(e) => setNormalBalance(e.target.value as NormalBalance)}
                   className={fieldCls}
@@ -193,10 +194,10 @@ export function TaxonomyFormDialog({ intent, onClose }: {
                   {NORMAL_BALANCES.map((b) => (
                     <option key={b} value={b}>{NORMAL_BALANCE_LABELS[b]}</option>
                   ))}
-                </select>
+                </Select>
               </ModernFieldShell>
 
-              <p className="text-2xs text-stone-400">
+              <p className="text-2xs text-stone-500">
                 The code and range are assigned automatically from the next free block, and cannot
                 be changed later.
               </p>
@@ -204,7 +205,7 @@ export function TaxonomyFormDialog({ intent, onClose }: {
           )}
 
           {intent.kind === 'create-subcategory' && (
-            <p className="text-2xs text-stone-400">
+            <p className="text-2xs text-stone-500">
               The code and range are assigned automatically from the next free block under{' '}
               {intent.parentLabel}. It reports on the same side as its category.
             </p>

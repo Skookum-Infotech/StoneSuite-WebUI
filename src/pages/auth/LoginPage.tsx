@@ -10,11 +10,15 @@ import { samlProviderLabel } from '@/lib/ssoConfigForm'
 import { SAML_PENDING_PROVIDER_KEY } from '@/lib/samlSession'
 import { EmailStep } from './components/EmailStep'
 import { PasswordStep } from './components/PasswordStep'
+import { CodeStep } from './components/CodeStep'
+import { TakeoverPrompt } from './components/TakeoverPrompt'
+import { AuthNotice } from './components/AuthNotice'
 import { LoginHero } from './components/LoginHero'
-import type { UserRole, AuthResponse, IdentifyResult } from '@/types/auth'
+import type { UserRole, AuthResponse, IdentifyResult, MfaChallenge, ActiveSessionPrompt } from '@/types/auth'
 import type { SAMLProvider } from '@/types/tenant'
+import { isSafeReturnPath } from '@/lib/safeReturnPath'
 
-type Step = 'email' | 'password' | 'redirecting'
+type Step = 'email' | 'password' | 'code' | 'takeover' | 'redirecting'
 
 export default function LoginPage() {
   const navigate = useNavigate()
@@ -25,6 +29,11 @@ export default function LoginPage() {
   const [step, setStep] = useState<Step>('email')
   const [email, setEmail] = useState('')
   const [redirectProvider, setRedirectProvider] = useState<SAMLProvider | null>(null)
+  // Set while the code step is showing: the password was right, a code was
+  // emailed, and no session exists until it is entered.
+  const [challenge, setChallenge] = useState<MfaChallenge | null>(null)
+  // Set while asking whether to end the session open on another browser.
+  const [takeover, setTakeover] = useState<ActiveSessionPrompt | null>(null)
 
   const loggedOut = searchParams.get('logged_out') === 'true'
 
@@ -40,12 +49,20 @@ export default function LoginPage() {
     }
     setRedirectProvider(result.provider)
     setStep('redirecting')
-    const returnTo = searchParams.get('return_to') ?? undefined
+    const requestedReturnTo = searchParams.get('return_to')
+    const returnTo = isSafeReturnPath(requestedReturnTo) ? requestedReturnTo : undefined
     sessionStorage.setItem(SAML_PENDING_PROVIDER_KEY, result.provider)
     window.location.href = samlAuthService.initiateUrl(result.provider, {
       tenantId: result.tenantId,
       returnTo,
     })
+  }
+
+  // Where to land after sign-in: the page the user originally asked for (see
+  // MainLayout's redirect), when it is a safe in-app path, else the default.
+  function postLoginPath(fallback: string): string {
+    const requested = searchParams.get('return_to')
+    return isSafeReturnPath(requested) ? requested : fallback
   }
 
   async function handleLoginSuccess(response: AuthResponse) {
@@ -67,7 +84,7 @@ export default function LoginPage() {
         tenantId: response.tenantId ?? '',
         workspaces: response.workspaces ?? [],
       })
-      navigate('/sales/sales_order', { replace: true })
+      navigate(postLoginPath('/sales/sales_order'), { replace: true })
       return
     }
 
@@ -91,11 +108,35 @@ export default function LoginPage() {
 
     // replace: true drops /auth/login from the history stack so the browser
     // Back button cannot land a signed-in user back on the sign-in screen.
-    navigate('/dashboard', { replace: true })
+    navigate(postLoginPath('/dashboard'), { replace: true })
   }
 
   function handleBack() {
     setStep('email')
+  }
+
+  function handleMfaRequired(next: MfaChallenge) {
+    setChallenge(next)
+    setStep('code')
+  }
+
+  function handleActiveSession(prompt: ActiveSessionPrompt) {
+    setTakeover(prompt)
+    setStep('takeover')
+  }
+
+  // Cancel keeps the other session: start over, signed out.
+  function handleTakeoverCancel() {
+    setTakeover(null)
+    setChallenge(null)
+    setStep('email')
+  }
+
+  // Back from the code step lands on the password step: the code belongs to
+  // that password entry, so asking for a new one means entering it again.
+  function handleCodeBack() {
+    setChallenge(null)
+    setStep('password')
   }
 
   return (
@@ -208,13 +249,23 @@ export default function LoginPage() {
                       }}
                     />
                   </div>
-                  <h2 className="text-xl font-semibold tracking-tight text-stone-950 sm:text-2xl">Welcome back</h2>
+                  <h2 className="text-xl font-semibold tracking-tight text-stone-950 sm:text-2xl">
+                    {step === 'code' ? 'Check your email' : step === 'takeover' ? 'Already signed in' : 'Welcome back'}
+                  </h2>
                   <p className="mt-1 text-xs text-stone-500 sm:mt-2 sm:text-sm">
-                    {step === 'password' ? 'Enter your password to continue' : 'Sign in to your Stone Suite workspace'}
+                    {step === 'code'
+                      ? 'Enter the code we emailed you to finish signing in'
+                      : step === 'takeover'
+                        ? 'Choose where to stay signed in'
+                      : step === 'password'
+                        ? 'Enter your password to continue'
+                        : 'Sign in to your Stone Suite workspace'}
                   </p>
                 </>
               )}
             </div>
+
+            {step === 'email' && <AuthNotice />}
 
             {step === 'email' && loggedOut && (
               <div className="mb-4 flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-xs font-medium text-emerald-700">
@@ -227,16 +278,31 @@ export default function LoginPage() {
               <div className="flex justify-center py-6">
                 <Loader2 className="size-6 animate-spin text-stone-400" aria-hidden="true" />
               </div>
+            ) : step === 'takeover' && takeover ? (
+              <TakeoverPrompt prompt={takeover} onSuccess={handleLoginSuccess} onCancel={handleTakeoverCancel} />
+            ) : step === 'code' && challenge ? (
+              <CodeStep
+                challenge={challenge}
+                onSuccess={handleLoginSuccess}
+                onBack={handleCodeBack}
+                onActiveSession={handleActiveSession}
+              />
             ) : step === 'password' ? (
-              <PasswordStep email={email} onSuccess={handleLoginSuccess} onBack={handleBack} />
+              <PasswordStep
+                email={email}
+                onSuccess={handleLoginSuccess}
+                onMfaRequired={handleMfaRequired}
+                onActiveSession={handleActiveSession}
+                onBack={handleBack}
+              />
             ) : (
               <EmailStep defaultEmail={email} onIdentified={handleIdentified} />
             )}
 
             {/* Footer */}
             <div className="mt-4 hidden items-center justify-center gap-1.5 sm:flex sm:mt-8">
-              <Lock className="size-3 text-stone-300" aria-hidden="true" />
-              <p className="text-center text-xs text-stone-300">Protected by enterprise-grade security</p>
+              <Lock className="size-3 text-stone-400" aria-hidden="true" />
+              <p className="text-center text-xs text-stone-500">Protected by enterprise-grade security</p>
             </div>
           </div>
         </div>

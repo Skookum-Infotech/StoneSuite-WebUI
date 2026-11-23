@@ -1,27 +1,43 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
-import { FileCheck, Upload, Pencil, FileDown, Loader2, Send } from 'lucide-react';
+import { FileCheck, Upload, Pencil, FileDown, Loader2, Ban, Wallet } from 'lucide-react';
+import { CopyQuickAction } from '@/components/tenant/CopyQuickAction';
 import { toast } from 'sonner';
 import { vendorBillService } from '@/services/vendorBillService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { Spinner, ErrorNote, Badge } from '@/components/tenant/ui';
-import { SendToCustomerDialog } from '@/components/tenant/SendToCustomerDialog';
 import { ModernSection } from '@/components/crm/FormPrimitives';
 import { readonlyCls, fieldLabelCls } from '@/components/crm/formUtils';
 import { FilesContent } from '@/components/crm/CrmSubTabsPanel';
 import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
-import { ApprovalBanner } from '@/components/tenant/ApprovalBanner';
+import { RecordApprovalBanner } from '@/components/tenant/RecordApprovalBanner';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { cn } from '@/lib/utils';
-import { VB_STATUS_COLORS, VB_STATUS_CODES, VB_ALLOWED_TRANSITIONS, VB_DELETABLE_STATUSES } from '@/lib/vendorBillForm';
+import { TAB_LIST_CLASS, tabClass } from '@/components/ui/tabStyles';
+import { unitLabel } from '@/lib/unitLabels';
+import { LineSizeViewCells } from '@/components/inventory/LineSizeCells';
+import { KitLineRows } from '@/components/inventory/KitLineRows';
+import { PDF_DIMENSION_HEAD, anyDimensions, dimensionCells } from '@/lib/lineDimensions';
+import { PDF_THICKNESS_HEAD, SALES_SIZE_COLS, anyThickness, thicknessPdfCell } from '@/lib/lineThickness';
+import {
+  VB_STATUS_COLORS, VB_STATUS_CODES, VB_DELETABLE_STATUSES, VB_VOID_CODE, VB_PAYABLE_STATUSES,
+  isVbTransitionBlocked, isVbConfirmedTransition, vbCanVoid, vbDropdownTransitions,
+  type VbConfirmedCode,
+} from '@/lib/vendorBillForm';
 import { statusToastLabel } from '@/lib/statusToast';
 import { VendorBillAuditTab } from './components/VendorBillAuditTab';
 import { BillPaymentsTab } from './components/BillPaymentsTab';
 import { DeleteVendorBillDialog } from './components/DeleteVendorBillDialog';
+import { DangerZoneCard, DangerZoneAction } from '@/components/tenant/DangerZoneCard';
 import { VendorBillStatusControl } from './components/VendorBillStatusControl';
+import { ConfirmVendorBillStatusDialog } from './components/ConfirmVendorBillStatusDialog';
+import { WorkflowCard } from '@/components/tenant/WorkflowCard';
 import { SalesDetailSidebar } from '@/pages/sales/components/SalesDetailSidebar';
+import { formatDateValue } from '@/lib/dateUtils';
+import { formatMoney, currencyCodeFor } from '@/lib/formatMoney';
+import { lookupService } from '@/services/lookupService';
 
 const TABS = [
   { key: 'overview', label: 'Overview' },
@@ -35,15 +51,13 @@ const TABS = [
 // tab show up without a manual reload — same cadence as NotificationBell's
 // unread poll.
 const DETAIL_POLL_MS = 60_000;
+/** Columns in the Items table — a kit heading and the empty row span them all. */
+const VB_ITEM_COLUMNS = 14;
 type Tab = (typeof TABS)[number]['key'];
 
 function fmtDate(iso?: string): string {
   if (!iso) return '—';
-  return new Date(iso).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
-}
-
-function currency(n: number | undefined): string {
-  return (n ?? 0).toLocaleString(undefined, { style: 'currency', currency: 'USD' });
+  return formatDateValue(iso, undefined, { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
 export default function VendorBillDetailPage() {
@@ -53,13 +67,18 @@ export default function VendorBillDetailPage() {
   const [activeTab, setActiveTab] = useState<Tab>('overview');
   const [exportingPdf, setExportingPdf] = useState(false);
   const [exportPdfError, setExportPdfError] = useState<string>();
-  const [sendDialogOpen, setSendDialogOpen] = useState(false);
-  const [sendSuccess, setSendSuccess] = useState<string>();
+  // The terminal move (Paid / Void) awaiting confirmation, if any.
+  const [confirmCode, setConfirmCode] = useState<VbConfirmedCode | null>(null);
+  // Stable so the dialog's focus effect doesn't re-run (and re-steal focus) on
+  // every page render.
+  const cancelConfirm = useCallback(() => setConfirmCode(null), []);
 
   const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
   const canEdit = permissionsLoading || hasPermission('vendor_bill', 'update');
   const canDelete = permissionsLoading || hasPermission('vendor_bill', 'delete');
+  const canCopy = permissionsLoading || hasPermission('vendor_bill', 'create');
   const canTransition = permissionsLoading || hasPermission('vendor_bill', 'transition');
+  const canRecordPayment = permissionsLoading || hasPermission('vendor_payment', 'create');
 
   const { data: bill, isLoading, error } = useQuery({
     queryKey: ['vendor-bill', id],
@@ -67,6 +86,14 @@ export default function VendorBillDetailPage() {
     enabled: Boolean(id),
     refetchInterval: DETAIL_POLL_MS,
   });
+
+  const { data: lookups } = useQuery({
+    queryKey: ['crm-lookups'],
+    queryFn: lookupService.getCrmLookups,
+    staleTime: 10 * 60 * 1000,
+  });
+  const currencyCode = currencyCodeFor(lookups, bill?.currencyId);
+  const currency = (n: number | undefined) => formatMoney(n, currencyCode);
 
   const setLabel = useBreadcrumbStore((s) => s.setLabel);
   const clearLabel = useBreadcrumbStore((s) => s.clearLabel);
@@ -89,6 +116,17 @@ export default function VendorBillDetailPage() {
     },
   });
 
+  // Terminal moves (Paid / Void) ask first; every other move fires straight away.
+  const requestTransition = (code: string) => {
+    if (isVbConfirmedTransition(code)) setConfirmCode(code);
+    else transition.mutate(code);
+  };
+  const runConfirmed = () => {
+    if (!confirmCode) return;
+    // Close on either outcome: a failure shows in the error banner under the header.
+    transition.mutate(confirmCode, { onSettled: () => setConfirmCode(null) });
+  };
+
   const approve = useMutation({
     mutationFn: () => vendorBillService.approve(id),
     onSuccess: (updated) => {
@@ -97,6 +135,14 @@ export default function VendorBillDetailPage() {
       toast.success('Approved.');
     },
   });
+
+  // An approver rejected it. The POST response carries no approval overlay, so refetch
+  // to show the rejection banner and drop it from the list's pending view.
+  const handleRejected = () => {
+    queryClient.invalidateQueries({ queryKey: ['vendor-bill', id] });
+    queryClient.invalidateQueries({ queryKey: ['vendor-bills'] });
+    toast.success('Rejected — sent back to Draft.');
+  };
 
   if (isLoading) return <div className="p-6"><Spinner label="Loading vendor bill…" /></div>;
   if (!bill)
@@ -110,12 +156,16 @@ export default function VendorBillDetailPage() {
   // should never go negative in practice.
   const creditsApplied = Math.max(0, bill.grandTotal - bill.amountPaid - bill.balanceDue);
   const canDeleteHere = canDelete && VB_DELETABLE_STATUSES.has(bill.statusCode);
-  // Terminal statuses (PAID/VOID) have no legal transitions, and a user
-  // without `vendor_bill:transition` sees none either — in both cases the
-  // bar renders nothing, so the card would be an empty "Actions" header.
-  // Hide it unless it has real content (mirrors PurchaseOrderDetailPage).
-  const hasTransitions = canTransition && (VB_ALLOWED_TRANSITIONS[bill.statusCode]?.length ?? 0) > 0;
-  const showActions = hasTransitions || Boolean(transition.error);
+  // Settlement moves (Overdue / Partially Paid / Paid) have no manual button —
+  // payment status follows Record Payment. Void is a Danger Zone button at the
+  // bottom of the sidebar, and the approval moves (Submit, Approve, Recall) are
+  // all the sidebar pill keeps. When none of those is left — a paid or void bill, or a user without
+  // `vendor_bill:transition` — the pill would render nothing, so the card would
+  // be an empty "Actions" header; hide it then (mirrors PurchaseOrderDetailPage).
+  const pillCodes = canTransition ? vbDropdownTransitions(bill) : [];
+  const showActions = pillCodes.length > 0;
+  const canVoidHere = canTransition && vbCanVoid(bill);
+  const voidBlocked = isVbTransitionBlocked(VB_VOID_CODE, bill.approvalStatus, bill.gated);
 
   async function handleExportPdf() {
     if (!bill) return;
@@ -123,42 +173,48 @@ export default function VendorBillDetailPage() {
     setExportingPdf(true);
     try {
       const { exportPurchasesRecordToPdf } = await import('@/lib/purchasesPdfExport');
+      // The size columns only appear when some line states a size (or a thickness).
+      const thick = anyThickness(bill.items);
+      const sized = anyDimensions(bill.items) || thick;
       await exportPurchasesRecordToPdf({
         recordType: 'vendor_bill',
         title: bill.vendorBillNumber || 'Vendor Bill',
         recordNumber: bill.vendorBillNumber,
         statusLabel: bill.status,
+        issueDate: fmtDate(bill.billDate),
+        issueDateLabel: 'Bill Date',
+        dueDate: bill.dueDate ? fmtDate(bill.dueDate) : undefined,
+        keyAmount: { label: 'Balance Due', value: currency(bill.balanceDue) },
         counterpartyName: bill.vendor.name,
-        createdAt: bill.createdAt,
-        updatedAt: bill.updatedAt,
+        notesText: bill.notes || undefined,
+        termsText: bill.termsConditions || undefined,
         sections: [
           {
             title: 'Primary Information',
             rows: [
               ["Vendor's Invoice #", bill.vendorInvoiceNumber || ''],
               ['Reference #', bill.referenceNumber || ''],
-              ['Bill Date', fmtDate(bill.billDate)],
-              ['Due Date', bill.dueDate ? fmtDate(bill.dueDate) : ''],
               ['Sales Tax %', `${bill.salesTaxPercent}%`],
               ['Purchase Order', bill.purchaseOrder?.number || ''],
               ['Memo', bill.memo || ''],
-              ['Notes', bill.notes || ''],
-              ['Terms & Conditions', bill.termsConditions || ''],
             ],
           },
         ],
         itemsTable: {
-          head: ['#', 'Item', 'SKU', 'Qty', 'Unit Price', 'Disc %', 'Tax %', 'Total'],
+          head: ['#', 'Item', 'SKU', ...(sized ? PDF_DIMENSION_HEAD : []), ...(thick ? [PDF_THICKNESS_HEAD] : []), 'Qty', 'Unit Price', 'Disc %', 'Tax %', 'Total'],
           rows: bill.items.map((line) => [
             String(line.lineNumber),
             line.itemName || line.description || '—',
             line.sku || '—',
+            ...(sized ? dimensionCells(line) : []),
+            ...(thick ? [thicknessPdfCell(line)] : []),
             String(line.quantity),
             currency(line.unitPrice),
             `${line.discountPercent}%`,
             `${line.taxPercent}%`,
             currency(line.lineTotal),
           ]),
+          descriptions: bill.items.map((line) => line.description || undefined),
           numericFrom: 3,
         },
         totals: [
@@ -169,7 +225,6 @@ export default function VendorBillDetailPage() {
           { label: 'Grand Total', value: currency(bill.grandTotal), bold: true },
           { label: 'Amount Paid', value: currency(bill.amountPaid) },
           { label: 'Credits Applied', value: currency(creditsApplied) },
-          { label: 'Balance Due', value: currency(bill.balanceDue), bold: true },
         ],
       });
     } catch (err) {
@@ -189,45 +244,56 @@ export default function VendorBillDetailPage() {
         subtitle={bill.vendor.name}
         recordNumber={bill.vendorBillNumber}
         statusBadge={<Badge color={color}>{bill.status}</Badge>}
+        actions={(
+          <>
+          {canRecordPayment && VB_PAYABLE_STATUSES.has(bill.statusCode) && bill.balanceDue > 0 && (
+            <button
+              type="button"
+              onClick={() => navigate(`/purchases/vendor_payment/new?fromBill=${encodeURIComponent(id)}`)}
+              aria-label="Record payment for this vendor bill"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3.5 py-1.5 text-xs font-semibold text-stone-900 shadow-sm transition-colors hover:bg-brand-hover"
+            >
+              <Wallet className="size-3.5" aria-hidden="true" />
+              Record Payment
+            </button>
+          )}
+          </>
+        )}
       />
 
-      {bill.gated && (
-        <>
-          <ApprovalBanner
-            approverNames={bill.approvers.filter((a) => !a.approved).map((a) => a.name)}
-            canApprove={bill.canApprove}
-            isOverride={bill.isOverride}
-            requiredApprovals={bill.requiredApprovals}
-            approvedCount={bill.approvedCount}
-            callerAlreadyApproved={bill.callerAlreadyApproved}
-            onApprove={() => approve.mutate()}
-            approving={approve.isPending}
-          />
-          {approve.isError && (
-            <p role="alert" className="px-5 py-1.5 text-2xs text-destructive 3xl:px-12 4xl:px-16">
-              {apiErrorMessage(approve.error, 'Failed to approve vendor bill.')}
-            </p>
-          )}
-        </>
+      {transition.isError && (
+        <p role="alert" className="border-b border-stone-200 bg-white px-5 py-2 text-2xs text-destructive 3xl:px-12 4xl:px-16">
+          {apiErrorMessage(transition.error, 'Failed to change status.')}
+        </p>
+      )}
+
+      <RecordApprovalBanner
+        record={bill}
+        onApprove={() => approve.mutate()}
+        approving={approve.isPending}
+        reject={{ noun: 'vendor bill', run: (reason) => vendorBillService.reject(id, reason), onRejected: handleRejected }}
+        resubmitVia="submit"
+      />
+      {bill.gated && approve.isError && (
+        <p role="alert" className="px-5 py-1.5 text-2xs text-destructive 3xl:px-12 4xl:px-16">
+          {apiErrorMessage(approve.error, 'Failed to approve vendor bill.')}
+        </p>
       )}
 
       {/* Tab bar */}
-      <div className="flex shrink-0 overflow-x-auto overflow-y-hidden border-b border-stone-200 bg-white px-5 3xl:px-12 4xl:px-16 modal-scrollbar">
-        {TABS.map((tab) => (
-          <button
-            key={tab.key}
-            type="button"
-            onClick={() => setActiveTab(tab.key)}
-            className={cn(
-              'px-4 py-3 text-sm font-semibold border-b-2 -mb-px transition-colors duration-150 whitespace-nowrap shrink-0',
-              activeTab === tab.key
-                ? 'border-brand text-stone-950'
-                : 'border-transparent text-stone-500 hover:text-stone-700 hover:border-stone-200',
-            )}
-          >
-            {tab.label}
-          </button>
-        ))}
+      <div className="flex shrink-0 overflow-x-auto overflow-y-hidden border-b border-stone-200 bg-white px-5 3xl:px-12 4xl:px-16 modal-scrollbar py-2.5">
+        <div role="tablist" className={TAB_LIST_CLASS}>
+          {TABS.map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setActiveTab(tab.key)}
+              className={tabClass(activeTab === tab.key)}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="flex flex-col lg:flex-row gap-6 px-4 py-4 sm:px-5 sm:py-5 3xl:px-12 3xl:py-8 3xl:gap-10 4xl:px-16 4xl:py-10 4xl:gap-14">
@@ -262,14 +328,14 @@ export default function VendorBillDetailPage() {
               </ModernSection>
               <div className="rounded-lg border border-stone-200 bg-white p-4">
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-8">
-                  <Total label="Subtotal" value={bill.subtotal} />
-                  <Total label="Discount" value={bill.discountTotal} />
-                  <Total label="Tax" value={bill.taxTotal} />
-                  <Total label="Adjustment" value={bill.adjustment} />
-                  <Total label="Grand Total" value={bill.grandTotal} bold />
-                  <Total label="Amount Paid" value={bill.amountPaid} />
-                  <Total label="Credits Applied" value={creditsApplied} />
-                  <Total label="Balance Due" value={bill.balanceDue} bold />
+                  <Total currencyCode={currencyCode} label="Subtotal" value={bill.subtotal} />
+                  <Total currencyCode={currencyCode} label="Discount" value={bill.discountTotal} />
+                  <Total currencyCode={currencyCode} label="Tax" value={bill.taxTotal} />
+                  <Total currencyCode={currencyCode} label="Adjustment" value={bill.adjustment} />
+                  <Total currencyCode={currencyCode} label="Grand Total" value={bill.grandTotal} bold />
+                  <Total currencyCode={currencyCode} label="Amount Paid" value={bill.amountPaid} />
+                  <Total currencyCode={currencyCode} label="Credits Applied" value={creditsApplied} />
+                  <Total currencyCode={currencyCode} label="Balance Due" value={bill.balanceDue} bold />
                 </div>
               </div>
             </>
@@ -285,6 +351,8 @@ export default function VendorBillDetailPage() {
                       { label: 'Item' },
                       { label: 'Description' },
                       { label: 'SKU' },
+                      ...SALES_SIZE_COLS,
+                      { label: 'Unit' },
                       { label: 'Qty', right: true },
                       { label: 'Unit Price', right: true },
                       { label: 'Disc %', right: true },
@@ -296,23 +364,28 @@ export default function VendorBillDetailPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-stone-100">
-                  {bill.items.map((line) => (
-                    <tr key={line.id} className="hover:bg-stone-50/50 divide-x divide-stone-100">
-                      <td className="px-3 py-2.5 text-stone-400 tabular-nums">{line.lineNumber}</td>
+                  {/* Lines added from a kit sit under the kit's heading, as in Sales. */}
+                  <KitLineRows lines={bill.items} colSpan={VB_ITEM_COLUMNS} renderRow={(line, kitCls) => (
+                    <tr className={cn('hover:bg-stone-50/50 divide-x divide-stone-100', kitCls)}>
+                      <td className="px-3 py-2.5 text-stone-500 tabular-nums">{line.lineNumber}</td>
                       <td className="px-3 py-2.5 font-medium text-stone-800">
-                        {line.itemName || line.description || <span className="text-stone-300">—</span>}
+                        {line.itemName || line.description || <span className="text-stone-500">—</span>}
                       </td>
                       <td className="px-3 py-2.5 text-stone-500 max-w-[200px] truncate">{line.description || '—'}</td>
                       <td className="px-3 py-2.5 font-mono text-2xs text-stone-500">{line.sku || '—'}</td>
+                      <LineSizeViewCells size={line} unit={line.dimensionUnit} units={line.unitCode} />
+                      <td className="px-3 py-2.5 text-stone-500 whitespace-nowrap" title={line.unitCode || undefined}>
+                        {unitLabel(line.unitCode) || <span className="text-stone-500">—</span>}
+                      </td>
                       <td className="px-3 py-2.5 tabular-nums text-right text-stone-600">{line.quantity}</td>
                       <td className="px-3 py-2.5 tabular-nums text-right text-stone-600">{currency(line.unitPrice)}</td>
                       <td className="px-3 py-2.5 tabular-nums text-right text-stone-500">{line.discountPercent}%</td>
                       <td className="px-3 py-2.5 tabular-nums text-right text-stone-500">{line.taxPercent}%</td>
                       <td className="px-3 py-2.5 tabular-nums text-right text-stone-800 font-semibold">{currency(line.lineTotal)}</td>
                     </tr>
-                  ))}
+                  )} />
                   {bill.items.length === 0 && (
-                    <tr><td colSpan={9} className="py-8 text-center text-stone-400">No line items.</td></tr>
+                    <tr><td colSpan={VB_ITEM_COLUMNS} className="py-8 text-center text-stone-500">No line items.</td></tr>
                   )}
                 </tbody>
               </table>
@@ -320,7 +393,7 @@ export default function VendorBillDetailPage() {
           )}
 
           {activeTab === 'payments' && (
-            <BillPaymentsTab vendorBillId={id} balanceDue={bill.balanceDue} />
+            <BillPaymentsTab vendorBillId={id} balanceDue={bill.balanceDue} vendor={bill.vendor} currencyCode={currencyCode} />
           )}
           {activeTab === 'audit' && <VendorBillAuditTab vendorBillId={id} />}
           {activeTab === 'files' && <FilesContent ref={null} recordId={id} readOnly={false} />}
@@ -330,8 +403,9 @@ export default function VendorBillDetailPage() {
 
         {/* Right sidebar */}
         <SalesDetailSidebar label="Vendor Bill Details">
+          <WorkflowCard module="vendorBill" statusCode={bill.statusCode} statusLabel={bill.status} workflow={bill.workflow} links={{ vendorBillId: bill.id, purchaseOrderId: bill.purchaseOrder?.id }} />
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-            <p className="text-xs font-semibold text-stone-400">Quick Actions</p>
+            <p className="text-xs font-semibold text-stone-500">Quick Actions</p>
             <div className="space-y-0.5">
               <button
                 type="button"
@@ -351,16 +425,8 @@ export default function VendorBillDetailPage() {
                   Edit vendor bill
                 </button>
               )}
-              {canEdit && (
-                <button
-                  type="button"
-                  onClick={() => setSendDialogOpen(true)}
-                  className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs text-stone-700 w-full transition-colors text-left"
-                  aria-label="Send vendor bill to vendor"
-                >
-                  <Send className="size-4 text-stone-400 shrink-0" />
-                  Send to Vendor
-                </button>
+              {canCopy && (
+                <CopyQuickAction recordLabel="vendor bill" addPath="/purchases/vendor_bill/new" sourceId={id} />
               )}
               <button
                 type="button"
@@ -376,28 +442,22 @@ export default function VendorBillDetailPage() {
             {exportPdfError && (
               <p role="alert" className="text-2xs text-destructive">{exportPdfError}</p>
             )}
-            {sendSuccess && (
-              <p role="status" className="text-2xs text-emerald-600">{sendSuccess}</p>
-            )}
           </div>
 
           {showActions && (
             <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-              <p className="text-xs font-semibold text-stone-400">Actions</p>
+              <p className="text-xs font-semibold text-stone-500">Actions</p>
               <VendorBillStatusControl
-                order={{ statusCode: bill.statusCode, approvalStatus: bill.approvalStatus, gated: bill.gated, nextStatusCodes: bill.nextStatusCodes }}
-                onChange={(toCode) => transition.mutate(toCode)}
+                order={{ statusCode: bill.statusCode, approvalStatus: bill.approvalStatus, gated: bill.gated, nextStatusCodes: pillCodes }}
+                onChange={requestTransition}
                 disabled={transition.isPending}
                 variant="pill"
               />
-              {transition.error && (
-                <p role="alert" className="text-2xs text-destructive">{apiErrorMessage(transition.error, 'Failed to change status.')}</p>
-              )}
             </div>
           )}
 
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-            <p className="text-xs font-semibold text-stone-400">Status</p>
+            <p className="text-xs font-semibold text-stone-500">Status</p>
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
               <span className="text-stone-500">Status</span>
               <Badge color={color}>{bill.status}</Badge>
@@ -442,35 +502,43 @@ export default function VendorBillDetailPage() {
             </div>
           </div>
 
-          {canDeleteHere && (
-            <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-              <p className="text-xs font-semibold text-red-400">Danger Zone</p>
-              <DeleteVendorBillDialog
-                vendorBillId={id}
-                label={`Vendor Bill ${bill.vendorBillNumber}`}
-                onDeleted={() => {
-                  queryClient.invalidateQueries({ queryKey: ['vendor-bills'] });
-                  navigate('/purchases/vendor_bill');
-                }}
-              />
-            </div>
+          {(canVoidHere || canDeleteHere) && (
+            <DangerZoneCard>
+              {canVoidHere && (
+                <DangerZoneAction
+                  description="Void this vendor bill. It can no longer be paid or edited."
+                  buttonLabel="Void vendor bill"
+                  ariaLabel={`Void Vendor Bill ${bill.vendorBillNumber}`}
+                  icon={Ban}
+                  onClick={() => setConfirmCode(VB_VOID_CODE)}
+                  disabled={voidBlocked || transition.isPending}
+                  hint={voidBlocked ? 'Awaiting approval sign-off' : undefined}
+                />
+              )}
+              {canDeleteHere && (
+                <DeleteVendorBillDialog
+                  vendorBillId={id}
+                  label={`Vendor Bill ${bill.vendorBillNumber}`}
+                  onDeleted={() => {
+                    queryClient.invalidateQueries({ queryKey: ['vendor-bills'] });
+                    navigate('/purchases/vendor_bill');
+                  }}
+                />
+              )}
+            </DangerZoneCard>
           )}
         </SalesDetailSidebar>
       </div>
 
-      <SendToCustomerDialog
-        recordId={id}
-        open={sendDialogOpen}
-        onOpenChange={setSendDialogOpen}
-        recipientEmail=""
-        recipientKind="vendor"
-        label={`Vendor Bill ${bill.vendorBillNumber}`}
-        onSent={(result) =>
-          setSendSuccess(
-            result.sentTo.length ? `Sent to ${result.sentTo.join(', ')}.` : 'Send completed, but no recipients were found.',
-          )
-        }
-      />
+      {confirmCode && (
+        <ConfirmVendorBillStatusDialog
+          target={confirmCode}
+          billNumber={bill.vendorBillNumber}
+          pending={transition.isPending}
+          onConfirm={runConfirmed}
+          onCancel={cancelConfirm}
+        />
+      )}
     </div>
   );
 }
@@ -479,17 +547,17 @@ function ReadonlyField({ label, value, full }: { label: string; value?: string; 
   return (
     <div className={cn('space-y-1', full && 'col-span-full')}>
       <label className={fieldLabelCls}>{label}</label>
-      <div className={readonlyCls}>{value || <span className="text-stone-400">—</span>}</div>
+      <div className={readonlyCls}>{value || <span className="text-stone-500">—</span>}</div>
     </div>
   );
 }
 
-function Total({ label, value, bold }: { label: string; value: number; bold?: boolean }) {
+function Total({ label, value, bold, currencyCode }: { label: string; value: number; bold?: boolean; currencyCode?: string }) {
   return (
     <div>
-      <p className="text-2xs font-semibold uppercase tracking-wide text-stone-400">{label}</p>
+      <p className="text-2xs font-semibold uppercase tracking-wide text-stone-500">{label}</p>
       <p className={cn('tabular-nums', bold ? 'text-sm font-bold text-stone-900' : 'text-xs font-semibold text-stone-600')}>
-        {currency(value)}
+        {formatMoney(value, currencyCode)}
       </p>
     </div>
   );

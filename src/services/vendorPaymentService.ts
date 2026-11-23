@@ -1,4 +1,6 @@
+import type { WorkflowBlock } from '@/types/workflow';
 import { tenantClient } from '@/api/tenantClient';
+import type { ApprovalRejection } from '@/types/tenant';
 import type { AuditEntry } from '@/services/crmService';
 import type {
   VendorPayment,
@@ -38,15 +40,16 @@ export const vendorPaymentService = {
   getVendorPayment: (uuid: string): Promise<VendorPayment> =>
     tenantClient
       .get<{
-        success: boolean; vendorPayment: VendorPayment; approval?: {
+        success: boolean; workflow?: WorkflowBlock; vendorPayment: VendorPayment; approval?: {
           gated?: boolean; approvers?: VendorPayment['approvers']; requiredApprovals?: number; approvedCount?: number;
-          canApprove?: boolean; isOverride?: boolean; callerAlreadyApproved?: boolean;
+          canApprove?: boolean; isOverride?: boolean; callerAlreadyApproved?: boolean; canReject?: boolean; rejection?: ApprovalRejection;
         };
       }>(`${BASE}/${uuid}`)
       .then((r) => {
         const a = r.data.approval;
         return {
           ...r.data.vendorPayment,
+          workflow: r.data.workflow ?? r.data.vendorPayment.workflow,
           gated: a?.gated ?? false,
           approvers: a?.approvers ?? [],
           requiredApprovals: a?.requiredApprovals ?? 0,
@@ -54,6 +57,8 @@ export const vendorPaymentService = {
           canApprove: a?.canApprove ?? false,
           isOverride: a?.isOverride ?? false,
           callerAlreadyApproved: a?.callerAlreadyApproved ?? false,
+          canReject: a?.canReject ?? false,
+          rejection: a?.rejection,
         };
       }),
 
@@ -96,6 +101,16 @@ export const vendorPaymentService = {
   approve: (uuid: string): Promise<VendorPayment> =>
     tenantClient
       .post<{ success: boolean; vendorPayment: VendorPayment }>(`${BASE}/${uuid}/approve`, {})
+      .then((r) => r.data.vendorPayment),
+
+  // An approver's veto: rejects the vendor payment while it awaits approval (a reason
+  // is required) and sends it back to Draft. Rejected with 403 if the caller isn't a
+  // configured approver (and isn't a super admin), 409 if it isn't awaiting
+  // approval, 400 without a reason. The POST response has no approval overlay, so
+  // callers invalidate the record's query to pick up the rejection banner.
+  reject: (uuid: string, reason: string): Promise<VendorPayment> =>
+    tenantClient
+      .post<{ success: boolean; vendorPayment: VendorPayment }>(`${BASE}/${uuid}/reject`, { reason })
       .then((r) => r.data.vendorPayment),
 
   // Allocates part of the payment's unapplied balance to a vendor bill.

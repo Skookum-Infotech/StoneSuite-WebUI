@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Search, ArrowUp, ArrowDown, ArrowUpDown, X, Inbox, Pencil, Filter,
@@ -16,7 +16,12 @@ import {
 } from '@/lib/expenseFilters';
 import { ExpenseFilterDrawer } from './ExpenseFilterDrawer';
 import { ExpenseStatusControl } from './ExpenseStatusControl';
+import { ReadOnlyStatusPill } from '@/pages/sales/components/ReadOnlyStatusPill';
+import { EXPENSE_STATUS_COLORS } from '@/lib/expenseForm';
 import type { ExpenseSearchRequest } from '@/types/expense';
+
+// Columns still shown below the sm breakpoint (indexes into the header row); the rest return from sm up.
+const PHONE_COLUMNS = new Set([0, 1, 3, 5]);
 
 const EXPORT_PAGE_SIZE = 200;
 const PAGE_SIZE = 25;
@@ -74,7 +79,7 @@ export function ExpenseTable() {
     },
   });
 
-  const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
+  const { hasPermission, isSuperAdmin, isLoading: permissionsLoading } = useUserPermissions();
   const canEdit = permissionsLoading || hasPermission('expense', 'update');
 
   const [term, setTerm] = useState('');
@@ -213,7 +218,7 @@ export function ExpenseTable() {
             value={term}
             onChange={(e) => setTerm(e.target.value)}
             aria-label="Search expenses"
-            className="h-8 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-3 text-xs text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150"
+            className="h-8 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-3 text-xs text-stone-900 placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150"
           />
         </div>
 
@@ -234,7 +239,7 @@ export function ExpenseTable() {
         <div className="h-5 w-px bg-stone-200" aria-hidden="true" />
 
         <div className="flex items-center gap-1.5">
-          <span className="text-2xs font-semibold uppercase tracking-wider text-stone-400 pr-0.5">Sort:</span>
+          <span className="text-2xs font-semibold uppercase tracking-wider text-stone-500 pr-0.5">Sort:</span>
           {(Object.entries(SORT_LABELS) as [SortField, string][]).map(([field, label]) => (
             <button
               key={field}
@@ -290,17 +295,17 @@ export function ExpenseTable() {
       {/* Table */}
       <div className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm">
         <div className="overflow-x-auto modal-scrollbar">
-          <table className="w-full min-w-[860px] text-left text-xs">
+          <table className="w-full sm:min-w-[860px] text-left text-xs">
             <thead className="border-b border-stone-200 bg-table-header">
               <tr>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Expense #</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Claimant</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Department</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Status</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Approval</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right">Total</th>
+                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Expense #</th>
+                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Claimant</th>
+                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 max-sm:hidden">Department</th>
+                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Status</th>
+                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 max-sm:hidden">Approval</th>
+                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right">Total</th>
                 {canEdit && (
-                  <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right">Actions</th>
+                  <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right max-sm:hidden">Actions</th>
                 )}
               </tr>
             </thead>
@@ -309,7 +314,7 @@ export function ExpenseTable() {
                 Array.from({ length: 5 }, (_, i) => (
                   <tr key={i}>
                     {Array.from({ length: canEdit ? 7 : 6 }, (_, j) => (
-                      <td key={j} className="px-4 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-16" /></td>
+                      <td key={j} className={cn('px-4 max-sm:px-2 py-3', !PHONE_COLUMNS.has(j) && 'max-sm:hidden')}><div className="animate-pulse h-3 rounded bg-stone-100 w-16" /></td>
                     ))}
                   </tr>
                 ))
@@ -321,31 +326,34 @@ export function ExpenseTable() {
                     : undefined;
                   return (
                     <tr key={exp.id} className="group hover:bg-accent/10 transition-colors duration-150">
-                      <td className="px-4 py-3.5">
-                        <button
-                          type="button"
-                          onClick={() => navigate(`/purchases/expense/${exp.id}`)}
+                      <td className="px-4 max-sm:px-2 py-3.5">
+                        <Link
+                          to={`/purchases/expense/${exp.id}`}
                           aria-label={`Open expense ${exp.expenseNumber}`}
                           className="inline-flex items-center gap-1.5 font-mono text-xs font-semibold text-stone-900 hover:text-accent-foreground transition-colors"
                         >
                           {exp.expenseNumber || '—'}
-                        </button>
+                        </Link>
                       </td>
-                      <td className="px-4 py-3.5 text-xs text-stone-700 truncate max-w-[140px]">
+                      <td className="px-4 max-sm:px-2 py-3.5 text-xs text-stone-700 truncate max-w-[140px]">
                         {claimantName ?? '—'}
                       </td>
-                      <td className="px-4 py-3.5 text-xs text-stone-500 truncate max-w-[120px]">
+                      <td className="px-4 max-sm:px-2 py-3.5 text-xs text-stone-500 truncate max-w-[120px] max-sm:hidden">
                         {exp.department || '—'}
                       </td>
-                      <td className="px-4 py-3.5">
-                        <ExpenseStatusControl
-                          order={{ statusCode: exp.statusCode, approvalStatus: exp.approvalStatus, nextStatusCodes: exp.nextStatusCodes }}
-                          onChange={(code) => transition.mutate({ id: exp.id, toStatusCode: code })}
-                          disabled={transition.isPending && transition.variables?.id === exp.id}
-                          variant="pill"
-                        />
+                      <td className="px-4 max-sm:px-2 py-3.5">
+                        {isSuperAdmin ? (
+                          <ExpenseStatusControl
+                            order={{ statusCode: exp.statusCode, approvalStatus: exp.approvalStatus, nextStatusCodes: exp.nextStatusCodes }}
+                            onChange={(code) => transition.mutate({ id: exp.id, toStatusCode: code })}
+                            disabled={transition.isPending && transition.variables?.id === exp.id}
+                            variant="pill"
+                          />
+                        ) : (
+                          <ReadOnlyStatusPill label={exp.status} color={EXPENSE_STATUS_COLORS[exp.statusCode]} />
+                        )}
                       </td>
-                      <td className="px-4 py-3.5">
+                      <td className="px-4 max-sm:px-2 py-3.5 max-sm:hidden">
                         {approvalLabel ? (
                           <span
                             className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-2xs font-semibold whitespace-nowrap"
@@ -355,14 +363,14 @@ export function ExpenseTable() {
                             {approvalLabel}
                           </span>
                         ) : (
-                          <span className="text-2xs text-stone-300">—</span>
+                          <span className="text-2xs text-stone-500">—</span>
                         )}
                       </td>
-                      <td className="px-4 py-3.5 text-xs font-semibold text-stone-900 tabular-nums text-right whitespace-nowrap">
+                      <td className="px-4 max-sm:px-2 py-3.5 text-xs font-semibold text-stone-900 tabular-nums text-right whitespace-nowrap">
                         {currency(exp.total)}
                       </td>
                       {canEdit && (
-                        <td className="px-4 py-3.5 text-right">
+                        <td className="px-4 max-sm:px-2 py-3.5 text-right max-sm:hidden">
                           <button
                             type="button"
                             onClick={() => navigate(`/purchases/expense/${exp.id}/edit`)}
@@ -385,7 +393,7 @@ export function ExpenseTable() {
                           <Inbox className="size-6 text-stone-400" />
                         </div>
                         <p className="text-sm font-semibold text-stone-700">No expense claims yet.</p>
-                        <p className="text-xs text-stone-400">Create your first expense claim to get started.</p>
+                        <p className="text-xs text-stone-500">Create your first expense claim to get started.</p>
                       </div>
                     ) : (
                       <div className="flex flex-col items-center gap-3">
@@ -393,7 +401,7 @@ export function ExpenseTable() {
                           <Search className="size-6 text-stone-400" />
                         </div>
                         <p className="text-sm font-semibold text-stone-700">No expenses match the current search.</p>
-                        <p className="text-xs text-stone-400">Try adjusting your search or filters.</p>
+                        <p className="text-xs text-stone-500">Try adjusting your search or filters.</p>
                       </div>
                     )}
                   </td>

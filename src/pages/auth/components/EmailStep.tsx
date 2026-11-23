@@ -53,11 +53,11 @@ export function EmailStep({ defaultEmail, onIdentified }: EmailStepProps) {
   return (
     <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-5">
       <div className="space-y-2">
-        <Label htmlFor="email" className="text-2xs font-bold uppercase tracking-[0.2em] text-stone-400">
+        <Label htmlFor="email" className="text-2xs font-bold uppercase tracking-[0.2em] text-stone-500">
           Email
         </Label>
         <div className="relative">
-          <Mail className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-stone-300" />
+          <Mail className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-stone-400" />
           <Input
             id="email"
             type="email"
@@ -67,7 +67,7 @@ export function EmailStep({ defaultEmail, onIdentified }: EmailStepProps) {
             aria-invalid={Boolean(errors.email)}
             aria-describedby={errors.email ? 'email-error' : undefined}
             {...register('email')}
-            className="h-12 rounded-xl border-stone-200 bg-white pl-11 text-sm text-stone-950 placeholder:text-stone-300 transition-colors duration-150"
+            className="h-12 rounded-xl border-stone-200 bg-white pl-11 text-sm text-stone-950 placeholder:text-stone-500 transition-colors duration-150"
             style={{ '--tw-ring-color': 'rgba(0,95,115,0.15)' } as React.CSSProperties}
           />
         </div>

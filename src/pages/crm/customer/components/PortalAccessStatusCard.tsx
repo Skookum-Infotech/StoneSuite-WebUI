@@ -30,12 +30,12 @@ export function PortalAccessStatusCard({
 
   return (
     <div className={cardCls}>
-      <p className="text-xs font-semibold text-stone-400">Portal Access</p>
+      <p className="text-xs font-semibold text-stone-500">Portal Access</p>
 
       <div className={rowCls}>
         <span className="text-stone-500">Status</span>
         {usersQ.isLoading ? (
-          <span className="text-stone-400">Loading…</span>
+          <span className="text-stone-500">Loading…</span>
         ) : active.length > 0 ? (
           <PortalUserStatusBadge status="active" />
         ) : suspended.length > 0 ? (

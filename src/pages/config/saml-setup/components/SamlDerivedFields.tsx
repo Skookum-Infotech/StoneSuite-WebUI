@@ -18,7 +18,7 @@ export function SamlDerivedFields({ config, onRefresh, isRefreshing }: SamlDeriv
       <div className="flex items-center justify-between gap-3">
         <div>
           <p className="text-xs font-semibold text-stone-700">Identity provider details</p>
-          <p className="mt-0.5 text-2xs text-stone-400">
+          <p className="mt-0.5 text-2xs text-stone-500">
             {config.metadataFetchedAt
               ? `Last fetched ${new Date(config.metadataFetchedAt).toLocaleString()}`
               : "Not fetched yet"}

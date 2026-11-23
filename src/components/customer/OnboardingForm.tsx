@@ -1,81 +1,27 @@
 import { useMemo, useState } from 'react';
-import { AlertCircle, Building2, MapPin, Truck, RotateCcw, ShieldCheck, Banknote, Plus, ArrowRight } from 'lucide-react';
+import { AlertCircle, Plus, ArrowRight } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { onboardingService } from '@/services/tenantServices';
 import { DynamicFieldInput } from '@/components/tenant/DynamicFieldInput';
 import { PhoneNumberInput } from '@/components/crm/PhoneNumberInput';
+import { firstInvalidPhoneLabel } from '@/lib/phoneValidation';
+import { defaultCountryName } from '@/lib/lookupDefaults';
+import { countryOptions, currencyOptions, stateOptionsForCountry, timezoneOptions } from '@/lib/companyInfoLookupOptions';
+import { UnsavedChangesPrompt } from '@/components/UnsavedChangesPrompt';
+import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
+import { OnboardingSelectField } from './OnboardingSelectField';
+import {
+  ALL_BASE_FIELDS,
+  BASE_KEYS,
+  SECTIONS,
+  missingRequiredLabels,
+  type BaseField,
+} from './onboardingFormFields';
 import type { FieldDefinition } from '@/types/tenant';
 import { cn } from '@/lib/utils';
 
-// 'full' spans both columns inside a section card; default = 1 column
-type BaseField = {
-  key: string;
-  label: string;
-  required?: boolean;
-  type?: string;
-  full?: boolean;
-};
-
-// Same line1/line2/suite/city/country/state/zip shape as a CRM record's own
-// address fields (lib/crmFields.ts) and the tenant's own Company Info page
-// (CompanyProfilePage.tsx) — structured, not one free-text blob. Submitted
-// as flat prefix_line1/prefix_city/etc. keys (see OnboardingFormData),
-// matching what cmd/backfill-company-profile's metadata parser reads back.
-function addressFields(prefix: string): BaseField[] {
-  return [
-    { key: `${prefix}_line1`, label: 'Address Line 1', full: true },
-    { key: `${prefix}_line2`, label: 'Address Line 2' },
-    { key: `${prefix}_suite`, label: 'Suite / Unit #' },
-    { key: `${prefix}_city`, label: 'City' },
-    { key: `${prefix}_country`, label: 'Country' },
-    { key: `${prefix}_state`, label: 'State / Province' },
-    { key: `${prefix}_zip`, label: 'Zip / Postal Code' },
-  ];
-}
-
-const SECTIONS: { title: string; icon: React.ElementType; fields: BaseField[] }[] = [
-  {
-    title: 'Company Information',
-    icon: Building2,
-    fields: [
-      { key: 'company_name', label: 'Company Name', required: true, full: true },
-      { key: 'legal_name',   label: 'Legal Name' },
-      { key: 'industry',     label: 'Industry' },
-      { key: 'website',      label: 'Website',    type: 'url' },
-      { key: 'country',      label: 'Country' },
-      { key: 'currency',     label: 'Currency' },
-      { key: 'timezone',     label: 'Timezone' },
-      { key: 'tax_id',       label: 'Tax / VAT ID' },
-    ],
-  },
-  { title: 'Billing Address', icon: MapPin, fields: addressFields('billing_address') },
-  { title: 'Shipping Address', icon: Truck, fields: addressFields('shipping_address') },
-  { title: 'Return Address', icon: RotateCcw, fields: addressFields('return_address') },
-  {
-    title: 'Super Admin Contact',
-    icon: ShieldCheck,
-    fields: [
-      { key: 'super_admin_name',      label: 'Full Name' },
-      { key: 'super_admin_email',     label: 'Email',     required: true, type: 'email' },
-      { key: 'super_admin_phone',     label: 'Phone',     type: 'tel' },
-      { key: 'super_admin_job_title', label: 'Job Title' },
-    ],
-  },
-  {
-    title: 'Finance Contact',
-    icon: Banknote,
-    fields: [
-      { key: 'finance_name',  label: 'Name' },
-      { key: 'finance_email', label: 'Email', type: 'email' },
-      { key: 'finance_phone', label: 'Phone', type: 'tel' },
-    ],
-  },
-];
-
-const BASE_KEYS = new Set(SECTIONS.flatMap((s) => s.fields.map((f) => f.key)));
-
 const inputCls =
-  'w-full rounded-lg border border-stone-200 bg-stone-50 px-3 py-2 text-sm text-stone-800 outline-none placeholder:text-stone-300 focus:border-brand focus:bg-white focus:ring-2 focus:ring-brand/20 transition disabled:bg-stone-100 disabled:text-stone-400';
+  'w-full rounded-lg border border-stone-200 bg-stone-50 px-3 py-2 text-sm text-stone-800 outline-none placeholder:text-stone-500 focus:border-brand focus:bg-white focus:ring-2 focus:ring-brand/20 transition disabled:bg-stone-100 disabled:text-stone-400';
 
 export function OnboardingForm({
   prefill,
@@ -88,14 +34,17 @@ export function OnboardingForm({
   errorMessage?: string | null;
   onSubmit: (formData: Record<string, unknown>) => void;
 }) {
-  // New applications default to United States / USD — the spread order lets
-  // `prefill` (e.g. a saved draft) override these when present.
+  // New applications default currency to USD. The spread order lets
+  // `prefill` (e.g. a saved draft) override this when present.
   const [data, setData] = useState<Record<string, unknown>>(() => ({
-    country: 'United States',
     currency: 'USD',
     ...(prefill ?? {}),
   }));
   const set = (key: string, value: unknown) => setData((d) => ({ ...d, [key]: value }));
+  const [validationError, setValidationError] = useState<string | null>(null);
+  // A successful submit replaces this form with a confirmation screen, which
+  // unmounts it (and so its navigation block); a failed one keeps it armed.
+  const guard = useUnsavedChangesGuard(data);
 
   const schemaQ = useQuery({ queryKey: ['onboarding-form-schema'], queryFn: onboardingService.formSchema });
   const extras = useMemo<FieldDefinition[]>(
@@ -103,20 +52,132 @@ export function OnboardingForm({
     [schemaQ.data],
   );
 
+  // This form runs pre-tenant (no JWT yet), so it can't call the
+  // tenant-scoped CRM lookups endpoint the rest of the app uses — it fetches
+  // its own public, read-only country/state/currency lists instead.
+  const lookupsQ = useQuery({
+    queryKey: ['onboarding-lookups'],
+    queryFn: onboardingService.lookups,
+    staleTime: 10 * 60 * 1000,
+  });
+
+  // Country defaults to the live lookup table's own wording once it loads —
+  // derived rather than copied into state (same pattern as
+  // AddSalesOrderPage.tsx's bill_country/ship_country), so it never clobbers
+  // a value the applicant (or a saved draft) already set, and falls back to
+  // the static mirror while the fetch is pending or if it fails.
+  const formData = useMemo<Record<string, unknown>>(
+    () => ({
+      ...data,
+      country: (typeof data.country === 'string' && data.country) || defaultCountryName(lookupsQ.data?.countries),
+    }),
+    [data, lookupsQ.data],
+  );
+
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    onSubmit(data);
+    const missing = missingRequiredLabels(formData);
+    if (missing.length > 0) { setValidationError(`Please fill in the required fields: ${missing.join(', ')}.`); return; }
+    const badPhone = firstInvalidPhoneLabel(ALL_BASE_FIELDS, formData);
+    if (badPhone) { setValidationError(`Enter a valid phone number for ${badPhone}.`); return; }
+    setValidationError(null);
+    onSubmit(formData);
   };
 
-  const str = (k: string) => (typeof data[k] === 'string' ? (data[k] as string) : '');
+  const str = (k: string) => (typeof formData[k] === 'string' ? (formData[k] as string) : '');
+  const bannerMessage = validationError || errorMessage;
+
+  // One dispatch point per field (tel / country / state / currency / plain
+  // text) so the section grid below stays a simple map -- same shape as
+  // CompanyProfileTab.tsx's renderCompanyField/renderAddressField.
+  function renderField(f: BaseField) {
+    if (f.type === 'tel') {
+      return (
+        <PhoneNumberInput
+          value={str(f.key)}
+          onChange={(v) => set(f.key, v)}
+          required={f.required}
+          placeholder={f.placeholder}
+          className={inputCls}
+          aria-label={f.label}
+        />
+      );
+    }
+    if (f.type === 'country') {
+      return (
+        <OnboardingSelectField
+          label={f.label}
+          value={str(f.key)}
+          onChange={(v) => {
+            // A state belongs to one country: picking a different country
+            // drops the stale state instead of leaving it behind as "(current)".
+            if (f.stateKey && v !== str(f.key)) set(f.stateKey, '');
+            set(f.key, v);
+          }}
+          options={countryOptions(lookupsQ.data?.countries, str(f.key))}
+          placeholder={f.placeholder ?? 'Select a country'}
+          className={inputCls}
+        />
+      );
+    }
+    if (f.type === 'state') {
+      return (
+        <OnboardingSelectField
+          label={f.label}
+          value={str(f.key)}
+          onChange={(v) => set(f.key, v)}
+          options={stateOptionsForCountry(lookupsQ.data, f.countryKey ? str(f.countryKey) : '', str(f.key))}
+          placeholder={f.placeholder ?? 'Select a state'}
+          className={inputCls}
+        />
+      );
+    }
+    if (f.type === 'currency') {
+      return (
+        <OnboardingSelectField
+          label={f.label}
+          value={str(f.key)}
+          onChange={(v) => set(f.key, v)}
+          options={currencyOptions(lookupsQ.data?.currencies, str(f.key))}
+          placeholder={f.placeholder ?? 'Select a currency'}
+          className={inputCls}
+        />
+      );
+    }
+    if (f.type === 'timezone') {
+      return (
+        <OnboardingSelectField
+          label={f.label}
+          value={str(f.key)}
+          onChange={(v) => set(f.key, v)}
+          options={timezoneOptions(str(f.key))}
+          placeholder={f.placeholder ?? 'Select a timezone'}
+          className={inputCls}
+        />
+      );
+    }
+    return (
+      <input
+        name={f.key}
+        type={f.type ?? 'text'}
+        required={f.required}
+        placeholder={f.placeholder}
+        value={str(f.key)}
+        onChange={(e) => set(f.key, e.target.value)}
+        className={inputCls}
+      />
+    );
+  }
 
   return (
+    <>
+    <UnsavedChangesPrompt guard={guard} />
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
 
-      {errorMessage && (
+      {bannerMessage && (
         <div className="flex items-start gap-2.5 rounded-xl border border-red-200 bg-red-50 px-4 py-3">
           <AlertCircle className="size-4 mt-0.5 shrink-0 text-red-500" />
-          <p className="text-sm text-red-700">{errorMessage}</p>
+          <p className="text-sm text-red-700">{bannerMessage}</p>
         </div>
       )}
 
@@ -145,24 +206,7 @@ export function OnboardingForm({
                       {f.label}
                       {f.required && <span className="ml-0.5 text-red-500">*</span>}
                     </label>
-                    {f.type === 'tel' ? (
-                      <PhoneNumberInput
-                        value={str(f.key)}
-                        onChange={(v) => set(f.key, v)}
-                        required={f.required}
-                        className={inputCls}
-                        aria-label={f.label}
-                      />
-                    ) : (
-                      <input
-                        name={f.key}
-                        type={f.type ?? 'text'}
-                        required={f.required}
-                        value={str(f.key)}
-                        onChange={(e) => set(f.key, e.target.value)}
-                        className={inputCls}
-                      />
-                    )}
+                    {renderField(f)}
                   </div>
                 ))}
               </div>
@@ -183,7 +227,7 @@ export function OnboardingForm({
           <div className="px-5 py-4 grid grid-cols-2 lg:grid-cols-4 gap-x-4 gap-y-3.5">
             {extras.map((f) => (
               <div key={f.id || f.key} className="col-span-1 lg:col-span-2">
-                <DynamicFieldInput field={f} value={data[f.key]} onChange={set} />
+                <DynamicFieldInput field={f} value={formData[f.key]} onChange={set} />
               </div>
             ))}
           </div>
@@ -202,5 +246,6 @@ export function OnboardingForm({
         </button>
       </div>
     </form>
+    </>
   );
 }

@@ -1,7 +1,10 @@
 import { AxiosError } from 'axios';
 import { tenantClient } from '@/api/tenantClient';
+import type { SessionPolicyPatch } from '@/lib/sessionPolicyForm';
 import { isPortalSession } from '@/store/useAuthStore';
 import { normalizeScope, normalizeScopeList } from '@/lib/scope';
+import type { LookupItem, StateLookupItem } from '@/services/lookupService';
+import type { UserRole } from '@/types/auth';
 import type {
   Tenant,
   TenantInvite,
@@ -19,6 +22,7 @@ import type {
   FieldDefinition,
   OnboardingApplyDetails,
   WorkspaceUser,
+  MfaChangeResult,
   AssignableUser,
   UserInvite,
   UserInviteActionResult,
@@ -30,6 +34,12 @@ import type {
 // e.g. { company_name, super_admin_email, ...customExtras }.
 export type OnboardingFormData = Record<string, unknown>;
 
+export interface OnboardingLookups {
+  countries: LookupItem[];
+  states: StateLookupItem[];
+  currencies: LookupItem[];
+}
+
 // ----- Public onboarding (self-service) -------------------------------------
 
 export const onboardingService = {
@@ -37,6 +47,18 @@ export const onboardingService = {
     tenantClient
       .get<{ success: boolean; fields: FieldDefinition[] }>('/onboarding/form-schema')
       .then((r) => r.data.fields ?? []),
+  // Read-only country/state/currency reference lists for the public form's
+  // Country/State/Currency dropdowns — separate from services/lookupService.ts's
+  // getCrmLookups, which requires a tenant JWT this pre-auth flow doesn't have.
+  // `states` is absent from a backend that predates it, hence the fallback.
+  lookups: (): Promise<OnboardingLookups> =>
+    tenantClient
+      .get<{ success: boolean } & Partial<OnboardingLookups>>('/onboarding/lookups')
+      .then((r) => ({
+        countries: r.data.countries ?? [],
+        states: r.data.states ?? [],
+        currencies: r.data.currencies ?? [],
+      })),
   getApply: (token: string) =>
     tenantClient.get<OnboardingApplyDetails>(`/onboarding/apply/${token}`).then((r) => r.data),
   submitApply: (token: string, formData: OnboardingFormData) =>
@@ -66,7 +88,7 @@ export const platformService = {
   // Lightweight invite → customer self-fills the form (approval path).
   inviteCustomer: (payload: {
     companyName: string;
-    recipientName?: string;
+    recipientName: string;
     contactEmail: string;
   }) => tenantClient.post<CreateTenantResult>('/platform/invites', payload).then((r) => r.data),
   approveTenant: (tenantId: string) =>
@@ -75,8 +97,28 @@ export const platformService = {
       .then((r) => r.data),
   rejectTenant: (tenantId: string) =>
     tenantClient.post(`/platform/tenants/${tenantId}/reject`).then((r) => r.data),
+  // Updates a customer's session settings: the one-browser-per-user rule and
+  // its device-switch wait and daily cap. Only the fields given change. The
+  // backend refuses to turn the rule on for the platform owner.
+  updateSessionPolicy: (tenantId: string, patch: SessionPolicyPatch) =>
+    tenantClient
+      .put<{
+        success: boolean;
+        singleSessionEnforced?: boolean;
+        takeoverCooldownMinutes?: number;
+        takeoverDailyCap?: number;
+      }>(`/platform/tenants/${tenantId}/single-session`, patch)
+      .then((r) => r.data),
   lifecycle: (tenantId: string, action: 'suspend' | 'restore' | 'delete') =>
     tenantClient.post(`/platform/tenants/${tenantId}/${action}`).then((r) => r.data),
+  // Irreversibly removes the tenant: its storage bucket, database and records.
+  // The backend re-checks confirmSlug against the tenant's real slug and
+  // refuses the platform owner, so the typed-slug UI is a convenience, not the
+  // safeguard.
+  purgeTenant: (tenantId: string, confirmSlug: string) =>
+    tenantClient
+      .post<{ success: boolean }>(`/platform/tenants/${tenantId}/purge`, { confirmSlug })
+      .then((r) => r.data),
 
   // Invite management (keys / expiry / retry).
   listInvites: (tenantId: string) =>
@@ -148,15 +190,21 @@ export const rbacService = {
   deleteRole: (id: string) => tenantClient.delete(`/tenant/roles/${id}`).then((r) => r.data),
   // activeRoleId is '' when the caller has no active-role restriction (all
   // assigned roles' grants apply, unioned) — the server-side source of truth
-  // for which role, if any, the switch-role flow last narrowed to.
+  // for which role, if any, the switch-role flow last narrowed to. roles is the
+  // caller's assigned roles, live: it stays undefined (not []) when an older
+  // backend omits the field, so callers can tell "none assigned" from "unknown".
   myPermissions: () =>
     tenantClient
-      .get<{ success: boolean; grants: GrantWire[] | null; activeRoleId: string }>(
-        '/tenant/users/me/permissions',
-      )
+      .get<{
+        success: boolean;
+        grants: GrantWire[] | null;
+        activeRoleId: string;
+        roles?: UserRole[] | null;
+      }>('/tenant/users/me/permissions')
       .then((r) => ({
         grants: (r.data.grants ?? []).map(toGrant),
         activeRoleId: r.data.activeRoleId ?? '',
+        roles: r.data.roles ?? undefined,
       })),
   // Sets (or clears, when roleId is '') which one of the caller's assigned
   // roles is enforced server-side. Returns a freshly-signed token — the
@@ -371,6 +419,16 @@ export const userService = {
     tenantClient
       .delete<{ success: boolean; message: string }>(`/tenant/users/${id}`)
       .then((r) => r.data),
+
+  // Super admin only: turn two-step verification on or off for one or many
+  // members. One member being skipped never blocks the rest.
+  setUsersMfa: (userIds: string[], enabled: boolean) =>
+    tenantClient
+      .post<{ success: boolean; enabled: boolean; results: MfaChangeResult[] }>('/tenant/users/mfa', {
+        userIds,
+        enabled,
+      })
+      .then((r) => r.data.results ?? []),
 
   assignRole: (userId: string, roleId: string) =>
     tenantClient

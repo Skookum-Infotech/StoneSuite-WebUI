@@ -6,7 +6,8 @@
 // served from `/api/tenant/vendor-payments*`, not the generic WorkflowRecord
 // JSONB CRM router. Its sibling on the receivables side is `types/payment.ts`;
 // the document it settles is `types/vendorBill.ts`.
-import type { FilterClause, RecordApprover, SortKey } from '@/types/tenant';
+import type { WorkflowBlock } from '@/types/workflow';
+import type { FilterClause, RecordApprover, SortKey, ApprovalRejection } from '@/types/tenant';
 
 // ── Create / update inputs (client → server) ─────────────────────────────────
 
@@ -26,7 +27,6 @@ export interface CreateVendorPaymentPayload {
   paymentDate?: string;
   scheduledDate?: string;   // RFC3339; required before a move to SCHD
   currencyId?: number | null;
-  ownerEmployeeId?: number | null;
   amount: number;
   memo?: string;
   internalNotes?: string;
@@ -82,6 +82,8 @@ export type VendorPaymentStatusCode =
 
 // Full detail response (GET/Create/Update/Transition/Approve/Apply/Unapply).
 export interface VendorPayment {
+  /** End-to-end flow this record belongs to; see BACKEND_SPEC_workflow_links.md. */
+  workflow?: WorkflowBlock;
   id: string;
   vendorPaymentNumber: string;
 
@@ -96,9 +98,10 @@ export interface VendorPayment {
   canApprove: boolean;
   isOverride: boolean;
   callerAlreadyApproved: boolean;
+  canReject?: boolean;            // whether the requesting user can reject it right now (configured approver OR super admin, while it awaits approval)
+  rejection?: ApprovalRejection;  // who rejected it and why -- present while it still sits in the status the rejection left it in
 
   vendor: VendorPaymentVendorRef;
-  ownerEmployeeId?: number | null;
   approvedByEmployeeId?: number | null;
 
   methodId: number;
@@ -132,7 +135,7 @@ export type VendorPaymentSummary = Pick<
   | 'id' | 'vendorPaymentNumber' | 'status' | 'statusCode' | 'approvalStatus' | 'nextStatusCodes'
   | 'vendor' | 'method' | 'methodId' | 'referenceNumber'
   | 'paymentDate' | 'scheduledDate' | 'amount' | 'appliedTotal' | 'unappliedAmount'
-  | 'ownerEmployeeId' | 'createdAt' | 'updatedAt'
+  | 'createdAt' | 'updatedAt'
 >;
 
 /** Search request = the shared `query.Request` plus the optional global-search

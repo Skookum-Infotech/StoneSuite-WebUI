@@ -1,4 +1,6 @@
+import type { WorkflowBlock } from '@/types/workflow';
 import { tenantClient } from '@/api/tenantClient';
+import type { ApprovalRejection } from '@/types/tenant';
 import type { AuditEntry } from '@/services/crmService';
 import type { PurchaseOrder } from '@/types/purchaseOrder';
 import type {
@@ -36,15 +38,16 @@ export const requisitionService = {
   getRequisition: (uuid: string): Promise<Requisition> =>
     tenantClient
       .get<{
-        success: boolean; requisition: Requisition; approval?: {
+        success: boolean; workflow?: WorkflowBlock; requisition: Requisition; approval?: {
           gated?: boolean; approvers?: Requisition['approvers']; requiredApprovals?: number; approvedCount?: number;
-          canApprove?: boolean; isOverride?: boolean; callerAlreadyApproved?: boolean;
+          canApprove?: boolean; isOverride?: boolean; callerAlreadyApproved?: boolean; canReject?: boolean; rejection?: ApprovalRejection;
         };
       }>(`${BASE}/${uuid}`)
       .then((r) => {
         const a = r.data.approval;
         return {
           ...r.data.requisition,
+          workflow: r.data.workflow ?? r.data.requisition.workflow,
           gated: a?.gated ?? false,
           approvers: a?.approvers ?? [],
           requiredApprovals: a?.requiredApprovals ?? 0,
@@ -52,6 +55,8 @@ export const requisitionService = {
           canApprove: a?.canApprove ?? false,
           isOverride: a?.isOverride ?? false,
           callerAlreadyApproved: a?.callerAlreadyApproved ?? false,
+          canReject: a?.canReject ?? false,
+          rejection: a?.rejection,
         };
       }),
 
@@ -86,6 +91,16 @@ export const requisitionService = {
   approve: (uuid: string): Promise<Requisition> =>
     tenantClient
       .post<{ success: boolean; requisition: Requisition }>(`${BASE}/${uuid}/approve`, {})
+      .then((r) => r.data.requisition),
+
+  // An approver's veto: rejects the requisition while it awaits approval (a reason
+  // is required) and sends it back to Draft. Rejected with 403 if the caller isn't a
+  // configured approver (and isn't a super admin), 409 if it isn't awaiting
+  // approval, 400 without a reason. The POST response has no approval overlay, so
+  // callers invalidate the record's query to pick up the rejection banner.
+  reject: (uuid: string, reason: string): Promise<Requisition> =>
+    tenantClient
+      .post<{ success: boolean; requisition: Requisition }>(`${BASE}/${uuid}/reject`, { reason })
       .then((r) => r.data.requisition),
 
   // Converts an APPV requisition into a draft Purchase Order. `vendorUuid` is

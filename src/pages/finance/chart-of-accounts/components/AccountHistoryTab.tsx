@@ -66,7 +66,7 @@ export function AccountHistoryTab({ accountId }: { accountId?: string }) {
   if (error) {
     return <p className="py-6 text-center text-xs text-destructive/70 italic">{apiErrorMessage(error, 'Failed to load history.')}</p>;
   }
-  if (entries.length === 0) return <p className="py-6 text-center text-xs text-stone-400 italic">No history recorded yet.</p>;
+  if (entries.length === 0) return <p className="py-6 text-center text-xs text-stone-500 italic">No history recorded yet.</p>;
 
   return (
     <div className="overflow-x-auto rounded-lg border border-stone-200 bg-white">
@@ -74,7 +74,7 @@ export function AccountHistoryTab({ accountId }: { accountId?: string }) {
         <thead>
           <tr className="border-b border-stone-100">
             {['Action', 'Field', 'Change', 'By', 'Date'].map((h) => (
-              <th key={h} className="py-2 px-3 text-left font-semibold uppercase tracking-wide text-stone-400 text-2xs whitespace-nowrap">
+              <th key={h} className="py-2 px-3 text-left font-semibold uppercase tracking-wide text-stone-500 text-2xs whitespace-nowrap">
                 {h}
               </th>
             ))}
@@ -107,19 +107,19 @@ function HistoryRow({ entry, employeeNames }: { entry: AccountHistoryEntry; empl
       <td className="py-2.5 px-3 text-stone-700">{FIELD_LABELS[entry.field] ?? entry.field}</td>
       <td className="py-2.5 px-3 text-stone-600">
         {redacted ? (
-          <span className="italic text-stone-400">changed</span>
+          <span className="italic text-stone-500">changed</span>
         ) : entry.action === 'create' ? (
           <span className="font-medium text-stone-800">{fmtValue(entry.field, entry.newValue)}</span>
         ) : (
           <span>
-            <span className="text-stone-400">{fmtValue(entry.field, entry.oldValue)}</span>
-            <span className="mx-1.5 text-stone-300">→</span>
+            <span className="text-stone-500">{fmtValue(entry.field, entry.oldValue)}</span>
+            <span className="mx-1.5 text-stone-500">→</span>
             <span className="font-medium text-stone-800">{fmtValue(entry.field, entry.newValue)}</span>
           </span>
         )}
       </td>
-      <td className="py-2.5 px-3 text-stone-500">{byName ?? <span className="italic text-stone-300">system</span>}</td>
-      <td className="py-2.5 px-3 text-stone-400 text-2xs whitespace-nowrap">{new Date(entry.at).toLocaleString()}</td>
+      <td className="py-2.5 px-3 text-stone-500">{byName ?? <span className="italic text-stone-500">system</span>}</td>
+      <td className="py-2.5 px-3 text-stone-500 text-2xs whitespace-nowrap">{new Date(entry.at).toLocaleString()}</td>
     </tr>
   );
 }

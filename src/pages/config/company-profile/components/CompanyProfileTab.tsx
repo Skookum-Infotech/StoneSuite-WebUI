@@ -11,15 +11,17 @@ import {
 import { ModernSection } from '@/components/crm/FormPrimitives';
 import { companyProfileService } from '@/services/companyProfileService';
 import { companyProfileSchema, type CompanyProfileFormValues } from '@/lib/companyProfileForm';
-import type { Address, PaymentDetails } from '@/types/companyProfile';
+import { DEFAULT_FABRICATION_PERCENT, type Address, type PaymentDetails } from '@/types/companyProfile';
 import { lookupService } from '@/services/lookupService';
-import { countryOptions, currencyOptions, stateOptionsForCountry } from '@/lib/companyInfoLookupOptions';
+import { countryOptions, currencyOptions, stateOptionsForCountry, timezoneOptions } from '@/lib/companyInfoLookupOptions';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { Spinner, ErrorNote } from '@/components/tenant/ui';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { CompanyInfoTextField, CompanyInfoReadonlyField, type CompanyInfoFieldSpec } from './CompanyInfoTextField';
 import { CompanyInfoSelectField } from './CompanyInfoSelectField';
 import { PaymentDetailsSection } from './PaymentDetailsSection';
+import { DocumentDefaultsSection } from './DocumentDefaultsSection';
+import { CompanyLogoCard } from './CompanyLogoCard';
 
 const EMPTY_ADDRESS: Address = { line1: '', line2: '', suite: '', city: '', country: '', state: '', zip: '' };
 const EMPTY_PAYMENT_DETAILS: PaymentDetails = { bankName: '', accountNumber: '', routingNumber: '' };
@@ -33,10 +35,17 @@ const DEFAULT_VALUES: CompanyProfileFormValues = {
   currency: '',
   timezone: '',
   taxId: '',
+  fabricationPercent: DEFAULT_FABRICATION_PERCENT,
   billingAddress: EMPTY_ADDRESS,
   shippingAddress: EMPTY_ADDRESS,
   returnAddress: EMPTY_ADDRESS,
   paymentDetails: EMPTY_PAYMENT_DETAILS,
+  documentDefaults: {
+    estimate: { terms: '', notes: '' },
+    quote: { terms: '', notes: '' },
+    sales_order: { terms: '', notes: '' },
+    invoice: { terms: '', notes: '' },
+  },
 };
 
 // Spans chosen by how much text each field typically holds, not uniformly:
@@ -44,8 +53,9 @@ const DEFAULT_VALUES: CompanyProfileFormValues = {
 // their neighbors) get 2 of 3 columns, everything else is a single column —
 // tiling into clean 3-wide rows (3, then 2+1, then 2+1, then 1+1+1).
 // Country/Currency render as CompanyInfoSelectField (backend-lookup-backed
-// dropdowns, see the id special-cases below) — Industry/Timezone stay plain
-// text since no backend lookup exists for either.
+// dropdowns) and Timezone as a grouped IANA-zone dropdown (see the id
+// special-cases below) — Industry stays plain text since no lookup exists.
+// The timezone drives the automation send window (08:00–18:00 local).
 const COMPANY_FIELDS: CompanyInfoFieldSpec[] = [
   { id: 'cp-company-name', label: 'Company Name', icon: Building2, placeholder: 'e.g. Acme Stone Co.', required: true, colSpan: 3 },
   { id: 'cp-legal-name', label: 'Legal Name', icon: ScrollText, placeholder: 'e.g. Acme Stone Company LLC', colSpan: 2 },
@@ -53,7 +63,7 @@ const COMPANY_FIELDS: CompanyInfoFieldSpec[] = [
   { id: 'cp-website', label: 'Website', icon: Globe, placeholder: 'e.g. https://acmestone.com', colSpan: 2 },
   { id: 'cp-country', label: 'Country', icon: Flag, placeholder: 'Select a country' },
   { id: 'cp-currency', label: 'Currency', icon: DollarSign, placeholder: 'Select a currency' },
-  { id: 'cp-timezone', label: 'Timezone', icon: Clock, placeholder: 'e.g. America/Chicago' },
+  { id: 'cp-timezone', label: 'Timezone', icon: Clock, placeholder: 'Select a timezone' },
   { id: 'cp-tax-id', label: 'Tax / VAT ID', icon: Receipt, placeholder: 'e.g. 12-3456789' },
 ];
 
@@ -168,7 +178,8 @@ export function CompanyProfileTab({ actionsSlot }: { actionsSlot: HTMLDivElement
           field={field}
           registration={register('country')}
           error={errors.country?.message}
-          options={countryOptions(lookupsQ.data, values.country ?? '')}
+          value={values.country ?? ''}
+          options={countryOptions(lookupsQ.data?.countries, values.country ?? '')}
         />
       );
     }
@@ -179,7 +190,20 @@ export function CompanyProfileTab({ actionsSlot }: { actionsSlot: HTMLDivElement
           field={field}
           registration={register('currency')}
           error={errors.currency?.message}
-          options={currencyOptions(lookupsQ.data, values.currency ?? '')}
+          value={values.currency ?? ''}
+          options={currencyOptions(lookupsQ.data?.currencies, values.currency ?? '')}
+        />
+      );
+    }
+    if (field.id === 'cp-timezone') {
+      return (
+        <CompanyInfoSelectField
+          key={field.id}
+          field={field}
+          registration={register('timezone')}
+          error={errors.timezone?.message}
+          value={values.timezone ?? ''}
+          options={timezoneOptions(values.timezone ?? '')}
         />
       );
     }
@@ -208,7 +232,8 @@ export function CompanyProfileTab({ actionsSlot }: { actionsSlot: HTMLDivElement
           field={fieldSpec}
           registration={register(`${group.key}.country`)}
           error={errors[group.key]?.country?.message}
-          options={countryOptions(lookupsQ.data, groupValues?.country ?? '')}
+          value={groupValues?.country ?? ''}
+          options={countryOptions(lookupsQ.data?.countries, groupValues?.country ?? '')}
         />
       );
     }
@@ -219,6 +244,7 @@ export function CompanyProfileTab({ actionsSlot }: { actionsSlot: HTMLDivElement
           field={fieldSpec}
           registration={register(`${group.key}.state`)}
           error={errors[group.key]?.state?.message}
+          value={groupValues?.state ?? ''}
           options={stateOptionsForCountry(lookupsQ.data, groupValues?.country ?? '', groupValues?.state ?? '')}
         />
       );
@@ -310,18 +336,23 @@ export function CompanyProfileTab({ actionsSlot }: { actionsSlot: HTMLDivElement
           </div>
         )}
 
-        {/* Separate ModernSection per group (Company Information, then each
-            address) with minimal space between them — same pattern as
+        {/* Separate ModernSection per group (Logo, Company Information, then
+            each address) with minimal space between them — same pattern as
             VendorFormBody's edit form / VendorOverviewTab's read-only view,
-            rather than one big card. */}
-        <ModernSection title="Company Information" index={0}>
+            rather than one big card. CompanyLogoCard isn't part of this
+            react-hook-form instance — its buttons are type="button" and it
+            mutates immediately via its own upload/delete endpoints, so
+            nesting it inside this <form> doesn't interact with Save/Cancel. */}
+        <CompanyLogoCard canConfigure={canConfigure} />
+
+        <ModernSection title="Company Information" index={1}>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-4">
             {COMPANY_FIELDS.map(renderCompanyField)}
           </div>
         </ModernSection>
 
         {ADDRESS_GROUPS.map((group, i) => (
-          <ModernSection key={group.key} title={group.title} index={i + 1}>
+          <ModernSection key={group.key} title={group.title} index={i + 2}>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-4">
               {ADDRESS_SUBFIELDS.map((sub) => renderAddressField(group, sub))}
             </div>
@@ -330,6 +361,14 @@ export function CompanyProfileTab({ actionsSlot }: { actionsSlot: HTMLDivElement
 
         <PaymentDetailsSection
           index={ADDRESS_GROUPS.length + 1}
+          isEditing={isEditing}
+          values={values}
+          register={register}
+          errors={errors}
+        />
+
+        <DocumentDefaultsSection
+          index={ADDRESS_GROUPS.length + 2}
           isEditing={isEditing}
           values={values}
           register={register}

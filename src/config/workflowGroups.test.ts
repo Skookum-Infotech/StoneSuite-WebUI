@@ -10,13 +10,22 @@ interface Wf {
 const wf = (key: string, name = key, description = ''): Wf => ({ key, name, description });
 
 describe('groupWorkflows', () => {
-  it('splits the seeded workflows into CRM, Sales, Purchases and Finance', () => {
+  it('splits the seeded workflows into CRM, Sales, Purchases, Finance and Inventory', () => {
     const all = WORKFLOW_GROUPS.flatMap((g) => g.keys).map((k) => wf(k));
 
     const sections = groupWorkflows(all);
 
-    expect(sections.map((s) => s.group.id)).toEqual(['crm', 'sales', 'purchases', 'finance']);
-    expect(sections.map((s) => s.workflows.length)).toEqual([3, 8, 8, 1]);
+    expect(sections.map((s) => s.group.id)).toEqual(['crm', 'sales', 'purchases', 'finance', 'inventory']);
+    expect(sections.map((s) => s.workflows.length)).toEqual([3, 8, 8, 1, 1]);
+  });
+
+  // Bin Transfer is the one inventory module with an approver chain, so it is
+  // what puts an Inventory section on Configure Forms at all.
+  it('files Bin Transfer under Inventory rather than the catch-all', () => {
+    const sections = groupWorkflows([wf('bin_transfer')]);
+
+    expect(sections.map((s) => s.group.id)).toEqual(['inventory']);
+    expect(sections[0].workflows.map((w) => w.key)).toEqual(['bin_transfer']);
   });
 
   it('orders each module by its declared keys, not the server order', () => {

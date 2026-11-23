@@ -1,9 +1,10 @@
 import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { AlertTriangle, Trash2 } from 'lucide-react';
+import { AlertTriangle } from 'lucide-react';
 import { useMutation } from '@tanstack/react-query';
 import { vendorCreditService } from '@/services/vendorCreditService';
 import { apiErrorMessage } from '@/api/tenantClient';
+import { DangerZoneAction } from '@/components/tenant/DangerZoneCard';
 
 // Mirrors DeleteVendorPaymentDialog's focus management (moves focus into the
 // panel on open, restores it to the trigger on close, closes on Escape) — a
@@ -51,16 +52,13 @@ export function DeleteVendorCreditDialog({ vendorCreditId, label, onDeleted }: {
 
   return (
     <>
-      <button
+      <DangerZoneAction
         ref={triggerRef}
-        type="button"
+        description="Delete this vendor credit permanently."
+        buttonLabel="Delete vendor credit"
+        ariaLabel={`Delete ${label}`}
         onClick={() => setOpen(true)}
-        aria-label={`Delete ${label}`}
-        className="flex items-center gap-2.5 hover:bg-destructive/5 rounded-lg px-3 py-2 cursor-pointer text-xs text-destructive w-full transition-colors text-left"
-      >
-        <Trash2 className="size-4 shrink-0" />
-        Delete vendor credit
-      </button>
+      />
 
       {open && createPortal(
         <div
@@ -79,7 +77,7 @@ export function DeleteVendorCreditDialog({ vendorCreditId, label, onDeleted }: {
                 <h3 id="delete-vc-dialog-title" className="text-sm font-bold text-stone-900">
                   Delete vendor credit?
                 </h3>
-                <p className="text-xs text-stone-400 mt-0.5">This action cannot be undone.</p>
+                <p className="text-xs text-stone-500 mt-0.5">This action cannot be undone.</p>
               </div>
             </div>
 

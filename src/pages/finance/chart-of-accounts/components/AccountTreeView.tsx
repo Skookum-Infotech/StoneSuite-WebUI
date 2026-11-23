@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Search, ChevronRight, ChevronDown, ChevronsDown, ChevronsUp, FolderPlus, Plus, X } from 'lucide-react';
 import { chartOfAccountsService } from '@/services/chartOfAccountsService';
@@ -9,7 +10,8 @@ import { Spinner, ErrorNote, EmptyState } from '@/components/tenant/ui';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { placementLabel, placementOf, type Placement } from '@/lib/coaPlacement';
 import { accountRowDomId, HighlightedAccountContext } from '@/lib/coaAccountHighlight';
-import type { Account, TreeSection } from '@/types/chartOfAccounts';
+import { ACCOUNT_NEW_PARAM, createDrawerFromParams } from '@/lib/pickerCreate';
+import type { Account, AccountType, TreeSection } from '@/types/chartOfAccounts';
 import { AccountTreeRow, type TreeRowActions, type TreeRowPerms } from './AccountTreeRow';
 import { BulkActionBar } from './BulkActionBar';
 import { AccountFormDrawer, type AccountParentRef } from './AccountFormDrawer';
@@ -22,7 +24,9 @@ type DrawerState =
   // initialPlacement is set when opened from a category/sub-category's own
   // inline "+" — the click already said where the account goes, so the
   // picker opens pre-selected instead of forcing the user to choose again.
-  | { mode: 'create'; initialPlacement?: Placement; initialPlacementLabel?: string }
+  // initialName/initialType are set when an account picker's "Create" link
+  // opened this page (?new=1&name=…), so the drawer starts with what was typed.
+  | { mode: 'create'; initialPlacement?: Placement; initialPlacementLabel?: string; initialName?: string; initialType?: AccountType }
   | { mode: 'create-child'; parent: AccountParentRef }
   | { mode: 'edit'; account: Account }
   | null;
@@ -88,7 +92,10 @@ export function AccountTreeView() {
   const [includeHidden, setIncludeHidden] = useState(false);
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [drawer, setDrawer] = useState<DrawerState>(null);
+  // An account picker elsewhere links here to create the account it couldn't
+  // find; open the drawer for it, but only for someone who may create accounts.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [drawer, setDrawer] = useState<DrawerState>(() => (perms.canCreate ? createDrawerFromParams(searchParams) : null));
   const [taxonomy, setTaxonomy] = useState<TaxonomyIntent | null>(null);
   const [announcement, setAnnouncement] = useState('');
 
@@ -112,10 +119,17 @@ export function AccountTreeView() {
   // just kicked off the background refetch.
   const { highlightedId, markCreated } = useHighlightOnCreate(accountRowDomId, sections);
 
+  // The link's params only seed the drawer; drop them once it closes so a
+  // refresh doesn't reopen it.
+  function closeDrawer() {
+    setDrawer(null);
+    if (searchParams.has(ACCOUNT_NEW_PARAM)) setSearchParams({}, { replace: true });
+  }
+
   // Fires for both a top-level create and a sub-account create, never edit —
   // an edited account is already visible wherever the user opened it from.
   function handleAccountCreated(account: Account) {
-    setDrawer(null);
+    closeDrawer();
     // A create can be opened while a search is active (the row-level "add
     // sub-account" button renders in search results too). Clearing it here
     // guarantees the new account is reachable: the search query isn't part of
@@ -199,7 +213,7 @@ export function AccountTreeView() {
             placeholder="Search code or name…"
             value={term}
             onChange={(e) => setTerm(e.target.value)}
-            className="h-8 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-8 text-xs text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150"
+            className="h-8 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-8 text-xs text-stone-900 placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150"
             aria-label="Search accounts by code or name"
           />
           {term && (
@@ -207,7 +221,7 @@ export function AccountTreeView() {
               type="button"
               onClick={() => setTerm('')}
               aria-label="Clear search"
-              className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-0.5 text-stone-400 hover:bg-stone-100 hover:text-stone-600"
+              className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-0.5 text-stone-500 hover:bg-stone-100 hover:text-stone-600"
             >
               <X className="size-3.5" />
             </button>
@@ -233,7 +247,7 @@ export function AccountTreeView() {
             >
               <ChevronsDown className="size-3.5" /> Expand All
             </button>
-            <span className="text-stone-300" aria-hidden="true">|</span>
+            <span className="text-stone-500" aria-hidden="true">|</span>
             <button
               type="button"
               onClick={() => setCollapsed(new Set(allGroupKeys(sections)))}
@@ -293,7 +307,7 @@ export function AccountTreeView() {
               ))}
             </HighlightedAccountContext.Provider>
             {searchPage?.hasMore && (
-              <p className="px-2 py-2 text-2xs text-stone-400">
+              <p className="px-2 py-2 text-2xs text-stone-500">
                 Showing the first {SEARCH_RESULT_LIMIT} matches. Refine your search or use the table view for full pagination.
               </p>
             )}
@@ -372,7 +386,7 @@ export function AccountTreeView() {
 
                                   {!subCollapsed && (
                                     sub.accounts.length === 0 ? (
-                                      <p className="pl-8 py-1 text-2xs italic text-stone-300">No accounts yet.</p>
+                                      <p className="pl-8 py-1 text-2xs italic text-stone-500">No accounts yet.</p>
                                     ) : (
                                       <div>
                                         {sub.accounts.map((acct) => (
@@ -392,7 +406,7 @@ export function AccountTreeView() {
                             })}
 
                             {cat.accounts.length === 0 && cat.subCategories.length === 0 && (
-                              <p className="pl-2 py-1 text-2xs italic text-stone-300">
+                              <p className="pl-2 py-1 text-2xs italic text-stone-500">
                                 Nothing under this category yet.
                               </p>
                             )}
@@ -411,10 +425,12 @@ export function AccountTreeView() {
 
       {drawer?.mode === 'create' && (
         <AccountFormDrawer
-          onClose={() => setDrawer(null)}
+          onClose={closeDrawer}
           onSaved={handleAccountCreated}
           initialPlacement={drawer.initialPlacement}
           initialPlacementLabel={drawer.initialPlacementLabel}
+          initialName={drawer.initialName}
+          initialType={drawer.initialType}
         />
       )}
       {drawer?.mode === 'create-child' && (

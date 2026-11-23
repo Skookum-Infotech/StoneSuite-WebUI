@@ -1,7 +1,7 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Bell, CheckCheck } from 'lucide-react';
+import { Bell, CheckCheck, ChevronDown, ChevronUp } from 'lucide-react';
 import { notificationService } from '@/services/notificationService';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useHeaderMenuStore } from '@/store/useHeaderMenuStore';
@@ -11,7 +11,10 @@ import { cn } from '@/lib/utils';
 // unread-reply poll, cheap enough to run continuously while a session is
 // open.
 const UNREAD_POLL_MS = 60_000;
-const LIST_LIMIT = 10;
+// Fetch enough to cover the expanded view; only COLLAPSED_COUNT rows are
+// shown until the user clicks "N more".
+const LIST_LIMIT = 30;
+const COLLAPSED_COUNT = 3;
 
 const SUMMARY_KEY = ['notifications-summary'];
 const LIST_KEY = ['notifications-list'];
@@ -28,6 +31,16 @@ export function NotificationBell() {
   const navigate = useNavigate();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const queryClient = useQueryClient();
+  const [expanded, setExpanded] = useState(false);
+
+  // Always reopen collapsed to the 3 most recent. Adjusting state during
+  // render (not in an effect) is React's recommended pattern for resetting
+  // state when a prop/derived value changes.
+  const [wasOpen, setWasOpen] = useState(open);
+  if (wasOpen !== open) {
+    setWasOpen(open);
+    if (!open) setExpanded(false);
+  }
 
   const enabled = isAuthenticated;
 
@@ -90,6 +103,10 @@ export function NotificationBell() {
 
   if (!enabled) return null;
 
+  const items = listQ.data ?? [];
+  const visible = expanded ? items : items.slice(0, COLLAPSED_COUNT);
+  const hiddenCount = items.length - COLLAPSED_COUNT;
+
   return (
     <div className="relative">
       <button
@@ -137,15 +154,15 @@ export function NotificationBell() {
 
           <div className="max-h-96 overflow-y-auto">
             {listQ.isLoading && (
-              <p className="px-3 py-4 text-center text-2xs text-stone-500">Loading…</p>
+              <p className="px-3 py-4 text-center text-2xs text-stone-400">Loading…</p>
             )}
             {listQ.isError && !listQ.data && (
-              <p className="px-3 py-4 text-center text-2xs text-stone-500">Couldn't load notifications.</p>
+              <p className="px-3 py-4 text-center text-2xs text-stone-400">Couldn't load notifications.</p>
             )}
             {listQ.data?.length === 0 && (
-              <p className="px-3 py-4 text-center text-2xs text-stone-500">You're all caught up.</p>
+              <p className="px-3 py-4 text-center text-2xs text-stone-400">You're all caught up.</p>
             )}
-            {listQ.data?.map((n) => (
+            {visible.map((n) => (
               <button
                 key={n.id}
                 type="button"
@@ -166,11 +183,30 @@ export function NotificationBell() {
                 )}
                 <span className={cn('flex-1', n.readAt && 'pl-4')}>
                   <span className="block text-xs font-semibold text-stone-200">{n.title}</span>
-                  {n.body && <span className="mt-0.5 block text-2xs text-stone-500">{n.body}</span>}
+                  {n.body && <span className="mt-0.5 block text-2xs text-stone-400">{n.body}</span>}
                   <span className="mt-1 block text-2xs text-stone-600">{timeAgo(n.createdAt)}</span>
                 </span>
               </button>
             ))}
+            {hiddenCount > 0 && (
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); setExpanded(!expanded); }}
+                className="flex w-full items-center justify-center gap-1 rounded-xl px-3 py-2 text-2xs font-medium text-stone-400 hover:bg-white/[0.06] hover:text-stone-200 cursor-pointer"
+              >
+                {expanded ? (
+                  <>
+                    <ChevronUp className="size-3" />
+                    Show less
+                  </>
+                ) : (
+                  <>
+                    <ChevronDown className="size-3" />
+                    {hiddenCount} more {hiddenCount === 1 ? 'notification' : 'notifications'}
+                  </>
+                )}
+              </button>
+            )}
           </div>
         </div>
       )}

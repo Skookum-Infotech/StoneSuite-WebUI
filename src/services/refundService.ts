@@ -1,4 +1,6 @@
+import type { WorkflowBlock } from '@/types/workflow';
 import { tenantClient } from '@/api/tenantClient';
+import type { ApprovalRejection } from '@/types/tenant';
 import { isPortalSession } from '@/store/useAuthStore';
 import type { AuditEntry } from '@/services/crmService';
 import type {
@@ -52,15 +54,16 @@ export const refundService = {
     }
     return tenantClient
       .get<{
-        success: boolean; refund: Refund; approval?: {
+        success: boolean; workflow?: WorkflowBlock; refund: Refund; approval?: {
           gated?: boolean; approvers?: Refund['approvers']; requiredApprovals?: number; approvedCount?: number;
-          canApprove?: boolean; isOverride?: boolean; callerAlreadyApproved?: boolean;
+          canApprove?: boolean; isOverride?: boolean; callerAlreadyApproved?: boolean; canReject?: boolean; rejection?: ApprovalRejection;
         };
       }>(`${BASE}/${uuid}`)
       .then((r) => {
         const a = r.data.approval;
         return {
           ...r.data.refund,
+          workflow: r.data.workflow ?? r.data.refund.workflow,
           gated: a?.gated ?? false,
           approvers: a?.approvers ?? [],
           requiredApprovals: a?.requiredApprovals ?? 0,
@@ -68,6 +71,8 @@ export const refundService = {
           canApprove: a?.canApprove ?? false,
           isOverride: a?.isOverride ?? false,
           callerAlreadyApproved: a?.callerAlreadyApproved ?? false,
+          canReject: a?.canReject ?? false,
+          rejection: a?.rejection,
         };
       });
   },
@@ -80,6 +85,16 @@ export const refundService = {
   approve: (uuid: string): Promise<Refund> =>
     tenantClient
       .post<{ success: boolean; refund: Refund }>(`${BASE}/${uuid}/approve`, {})
+      .then((r) => r.data.refund),
+
+  // An approver's veto: rejects the refund while it awaits approval (a reason
+  // is required) and flags it rejected in place until it is edited. Rejected with 403 if the caller isn't a
+  // configured approver (and isn't a super admin), 409 if it isn't awaiting
+  // approval, 400 without a reason. The POST response has no approval overlay, so
+  // callers invalidate the record's query to pick up the rejection banner.
+  reject: (uuid: string, reason: string): Promise<Refund> =>
+    tenantClient
+      .post<{ success: boolean; refund: Refund }>(`${BASE}/${uuid}/reject`, { reason })
       .then((r) => r.data.refund),
 
   createRefund: (payload: RefundCreatePayload): Promise<Refund> =>

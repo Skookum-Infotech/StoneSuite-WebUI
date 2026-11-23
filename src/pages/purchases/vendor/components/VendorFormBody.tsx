@@ -15,7 +15,7 @@ import { AssociatedBrandsInput } from './AssociatedBrandsInput';
 
 function SubGroupLabel({ children }: { children: ReactNode }) {
   return (
-    <p className="pt-1 text-2xs font-semibold uppercase tracking-wider text-stone-400">
+    <p className="pt-1 text-2xs font-semibold uppercase tracking-wider text-stone-500">
       {children}
     </p>
   );

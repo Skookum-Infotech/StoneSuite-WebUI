@@ -97,7 +97,7 @@ export function ConvertToPurchaseOrderDialog({
                 <h3 id="reqn-convert-title" className="text-sm font-bold text-stone-900">
                   Convert to Purchase Order
                 </h3>
-                <p className="text-xs text-stone-400 mt-0.5">{requisitionNumber}</p>
+                <p className="text-xs text-stone-500 mt-0.5">{requisitionNumber}</p>
               </div>
             </div>
 
@@ -116,13 +116,13 @@ export function ConvertToPurchaseOrderDialog({
             </ModernFieldShell>
 
             {suggestedVendor ? (
-              <p className="mt-1.5 text-2xs text-stone-400">
+              <p className="mt-1.5 text-2xs text-stone-500">
                 {changedFromSuggestion
                   ? `Requisition suggested ${suggestedVendor.name}.`
                   : `Pre-filled from the requisition’s suggested vendor.`}
               </p>
             ) : (
-              <p className="mt-1.5 text-2xs text-stone-400">
+              <p className="mt-1.5 text-2xs text-stone-500">
                 This requisition didn&rsquo;t suggest a vendor — pick the one to order from.
               </p>
             )}

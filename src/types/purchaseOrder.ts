@@ -7,7 +7,8 @@
 // router — served from `/api/tenant/purchase-orders*`. Structurally
 // identical to Estimate, with a vendor instead of a customer and a single
 // ship-to address instead of a billing/shipping pair.
-import type { FilterClause, RecordApprover, SortKey } from '@/types/tenant';
+import type { WorkflowBlock } from '@/types/workflow';
+import type { FilterClause, RecordApprover, SortKey, ApprovalRejection } from '@/types/tenant';
 
 // ── Create / update inputs (client → server) ─────────────────────────────────
 
@@ -43,6 +44,25 @@ export interface PurchaseOrderLineInput {
   unitPrice: number;
   discountPercent?: number;
   taxRateId?: number | null;
+  /** How many slabs a slab-tracked line is expected to bring — optional and
+   *  informational (the quantity, in the item's area unit, is what is priced
+   *  and received). Refused for any other line. */
+  expectedSlabs?: number;
+  /** Size of one slab. With length and width both set — and expectedSlabs
+   *  as the slab count — the server derives the quantity from them, so the
+   *  quantity sent is then ignored. */
+  length?: number;
+  width?: number;
+  /** Thickness of one slab, in the same unit as length and width. Optional and
+   *  descriptive; the slabs put on order when the PO is sent are cut to it. */
+  thickness?: number;
+  /** The one unit length, width and thickness are measured in: mm, cm, in, ft or m.
+   *  Blank takes the item's unit, then inches. */
+  dimensionUnit?: string;
+  /** Set on a line added from a kit: the kit's id and the name it had then.
+   *  A label only — the server stores it and returns it as kitId / kitName. */
+  kitUuid?: string;
+  kitName?: string;
 }
 
 export interface PurchaseOrderCreatePayload {
@@ -90,6 +110,10 @@ export interface PurchaseOrderLine {
   /** Cumulative quantity received against this line via Item Receipt — 0
    *  until that module ships (AD-4 receiving hook). */
   qtyReceived: number;
+  /** How much of this line existing vendor bills already cover (live,
+   *  non-void bills raised from this order). Received minus billed is what a
+   *  new bill can still claim. */
+  qtyBilled: number;
   unitPrice: number;
   discountPercent: number;
   taxPercent: number;
@@ -97,6 +121,29 @@ export interface PurchaseOrderLine {
   lineDiscount: number;
   lineTax: number;
   lineTotal: number;
+  /** The catalogue item's tracking mode — `serialized` items are received slab
+   *  by slab (Item Receipt), anything else by quantity. Empty on a free-text
+   *  line. Live catalogue data, not part of the line's frozen snapshot. */
+  tracking?: string;
+  /** The buyer's slab count for a slab line, when stated. */
+  expectedSlabs?: number | null;
+  /** Slabs that live (non-void) receipts have brought in against this line so far. */
+  slabsReceived?: number;
+  /** The slab size the line was priced from, when entered that way;
+   *  quantity is then length x width x expectedSlabs. */
+  length?: number | null;
+  width?: number | null;
+  /** Thickness of one slab, in `dimensionUnit`; null when the line states none. */
+  thickness?: number | null;
+  /** Set on a line added from a kit: the kit's id and the name it had then.
+   *  Consecutive lines with the same kitId sit under one kit heading. */
+  kitId?: string;
+  kitName?: string;
+  /** The unit length, width and thickness were measured in. */
+  dimensionUnit?: string | null;
+  /** How many of this line's slabs are still On Order in Inventory — put on order
+   *  when the PO was sent, not yet arrived on a receipt. */
+  slabsOnOrder?: number;
 }
 
 /** `lkp_record_status` code for the PORD record type — the fixed, mostly
@@ -109,6 +156,8 @@ export type PurchaseOrderStatusCode =
 // page can reload a purchase order and re-save it without silently blanking
 // the ship-to block or any header field.
 export interface PurchaseOrder {
+  /** End-to-end flow this record belongs to; see BACKEND_SPEC_workflow_links.md. */
+  workflow?: WorkflowBlock;
   id: string;
   purchaseOrderNumber: string;
   status: string;                       // human label, e.g. "Draft"
@@ -122,6 +171,8 @@ export interface PurchaseOrder {
   canApprove: boolean;
   isOverride: boolean;
   callerAlreadyApproved: boolean;
+  canReject?: boolean;            // whether the requesting user can reject it right now (configured approver OR super admin, while it awaits approval)
+  rejection?: ApprovalRejection;  // who rejected it and why -- present while it still sits in the status the rejection left it in
   vendor: PurchaseOrderVendorRef;
   orderDate: string;
   expectedDate?: string;
@@ -145,6 +196,10 @@ export interface PurchaseOrder {
   createdAt?: string;
   updatedAt?: string;
   items: PurchaseOrderLine[];
+  /** 0-100 receiving progress, average of each line's received ÷ ordered
+   *  (see lib/receivingProgress.ts). Filled on list/search rows only — the
+   *  detail response carries the lines, which are the source of truth. */
+  receivedPercent?: number;
 }
 
 /** List/search rows are full `PurchaseOrder` records server-side with `items`
@@ -154,7 +209,7 @@ export type PurchaseOrderSummary = Pick<
   PurchaseOrder,
   | 'id' | 'purchaseOrderNumber' | 'status' | 'statusCode' | 'approvalStatus' | 'nextStatusCodes'
   | 'vendor' | 'orderDate' | 'expectedDate' | 'grandTotal' | 'ownerEmployeeId'
-  | 'createdAt' | 'updatedAt'
+  | 'receivedPercent' | 'createdAt' | 'updatedAt'
 >;
 
 /** Search request = the shared `query.Request` plus the optional global-search

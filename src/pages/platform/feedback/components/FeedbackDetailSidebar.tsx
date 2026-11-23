@@ -1,3 +1,4 @@
+import { Select } from '@/components/ui/select';
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { FileDown, Loader2 } from 'lucide-react';
@@ -49,11 +50,11 @@ export function FeedbackDetailSidebar({ ticket, assigneeCandidates, onExportPdf,
   return (
     <div className="space-y-4">
       <div className="mb-4 space-y-3 rounded-xl border border-stone-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
-        <p className="text-xs font-semibold text-stone-400">Quick Actions</p>
+        <p className="text-xs font-semibold text-stone-500">Quick Actions</p>
 
         <div>
           <label htmlFor="fb-status" className={fieldLabelCls}>Status</label>
-          <select
+          <Select
             id="fb-status"
             value={ticket.status}
             onChange={(e) => patchMutation.mutate({ status: e.target.value as FeedbackStatus })}
@@ -63,12 +64,12 @@ export function FeedbackDetailSidebar({ ticket, assigneeCandidates, onExportPdf,
             {Object.entries(FEEDBACK_STATUS_LABELS).map(([value, label]) => (
               <option key={value} value={value}>{label}</option>
             ))}
-          </select>
+          </Select>
         </div>
 
         <div>
           <label htmlFor="fb-priority" className={fieldLabelCls}>Priority</label>
-          <select
+          <Select
             id="fb-priority"
             value={ticket.priority}
             onChange={(e) => patchMutation.mutate({ priority: e.target.value as FeedbackPriority })}
@@ -78,7 +79,7 @@ export function FeedbackDetailSidebar({ ticket, assigneeCandidates, onExportPdf,
             {Object.entries(FEEDBACK_PRIORITY_LABELS).map(([value, label]) => (
               <option key={value} value={value}>{label}</option>
             ))}
-          </select>
+          </Select>
         </div>
 
         <div>
@@ -116,7 +117,7 @@ export function FeedbackDetailSidebar({ ticket, assigneeCandidates, onExportPdf,
 
       <div className="space-y-2 rounded-xl border border-stone-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
         <label htmlFor="fb-internal-notes" className={fieldLabelCls}>Internal Notes</label>
-        <p className="text-2xs text-stone-400">Visible to platform admins only — never shown to the reporter.</p>
+        <p className="text-2xs text-stone-500">Visible to platform admins only — never shown to the reporter.</p>
         <textarea
           id="fb-internal-notes"
           value={notes}

@@ -6,7 +6,8 @@
 // generic `WorkflowRecord` used by the v1 JSONB CRM router — Sales Orders are a
 // relational sibling of `customer` with ordered line items, snapshots, and
 // stored money totals, served from `/api/tenant/sales-orders*`.
-import type { FilterClause, SortKey, RecordApprover } from '@/types/tenant';
+import type { WorkflowBlock } from '@/types/workflow';
+import type { FilterClause, SortKey, RecordApprover, ApprovalRejection } from '@/types/tenant';
 
 // ── Create / update inputs (client → server) ─────────────────────────────────
 
@@ -47,6 +48,21 @@ export interface SalesOrderLineInput {
   taxRateId?: number | null;
   taxPercent?: number;
   warehouseId?: number | null;
+  /** Set on a line added from a kit: the kit's id and the name it had then.
+   *  A label only — the server stores it and returns it as kitId / kitName. */
+  kitUuid?: string;
+  kitName?: string;
+  /** Size of one slab and how many slabs the line covers. With length and
+   *  width both set the server derives the quantity from them (length x width x
+   *  slabs, in the item's area unit), so the quantity sent is then ignored. */
+  length?: number;
+  width?: number;
+  /** The one unit length and width are measured in: mm, cm, in, ft or m. Blank takes
+   *  the item's unit, then cm. */
+  dimensionUnit?: string;
+  slabs?: number;
+  /** Thickness of one slab, in `dimensionUnit`. Descriptive only: it never enters the quantity. */
+  thickness?: number;
 }
 
 export interface SalesOrderCreatePayload {
@@ -58,6 +74,10 @@ export interface SalesOrderCreatePayload {
   /** ISO date "yyyy-mm-dd". Optional — if omitted and paymentTermsId is set,
    *  the server derives it as orderDate + the term's net-days (AD-8). */
   paymentDueDate?: string;
+  /** ISO date "yyyy-mm-dd" the order is to be installed. Mandatory: the server
+   *  refuses a blank one (400) and a past one, and saving it (re)plans the
+   *  order's production schedule. */
+  scheduledInstallDate: string;
   paymentTermsId?: number | null;
   priceLevelId?: number | null;
   currencyId?: number | null;
@@ -74,6 +94,8 @@ export interface SalesOrderCreatePayload {
   shippingCharge?: number;
   adjustment?: number;
   customFields?: Record<string, unknown>;
+  /** Create anyway past a live same-customer, same-PO order (409 duplicate_document). */
+  allowDuplicate?: boolean;
   items: SalesOrderLineInput[];
 }
 
@@ -103,11 +125,24 @@ export interface SalesOrderLine {
   lineDiscount: number;
   lineTax: number;
   lineTotal: number;
+  /** Set on a line added from a kit (see lib/kitLines.ts): the kit's id and the
+   *  name it had when the line was added. */
+  kitId?: string;
+  kitName?: string;
   /** Stored rollup of this line's fulfilled allocations (AD-9). */
   fulfilledQuantity: number;
   /** Derived server-side from fulfilledQuantity vs quantity — never stored,
    *  always "open" until the fulfillment flow ships. */
   status: 'open' | 'partial' | 'filled';
+  /** The slab size and count the line was priced from, when entered that
+   *  way; quantity is then their area. */
+  length?: number | null;
+  width?: number | null;
+  /** The unit length and width were measured in. */
+  dimensionUnit?: string | null;
+  slabs?: number | null;
+  /** Thickness of one slab, in `dimensionUnit`. */
+  thickness?: number | null;
 }
 
 // Full detail response (GET/Create/Update). Every field the create/update
@@ -116,6 +151,8 @@ export interface SalesOrderLine {
 // header field (server backfilled this after an earlier gap where Get only
 // returned display-only summary fields).
 export interface SalesOrder {
+  /** End-to-end flow this record belongs to; see BACKEND_SPEC_workflow_links.md. */
+  workflow?: WorkflowBlock;
   id: string;
   salesOrderNumber: string;
   status: string;             // human label, e.g. "Draft"
@@ -129,10 +166,16 @@ export interface SalesOrder {
   canApprove: boolean;        // whether the requesting user can approve (configured approver OR super admin)
   isOverride: boolean;        // true when canApprove is only true because the user is a super admin, not a configured approver
   callerAlreadyApproved: boolean; // true if the requesting user already signed off this round (quorum may still need others)
+  canReject?: boolean;            // whether the requesting user can reject it right now (configured approver OR super admin, while it awaits approval)
+  rejection?: ApprovalRejection;  // who rejected it and why -- present while it still sits in the status the rejection left it in
+  /** What the order holds that inventory cannot cover yet (staff reads and saves only; absent on portal reads). */
+  stockShortages?: StockShortage[];
   customer: SalesOrderCustomerRef;
   orderDate: string;
   expectedDelivery?: string;
   paymentDueDate?: string;
+  /** Absent on orders created before the field existed. */
+  scheduledInstallDate?: string;
   poNumber?: string;
   referenceNumber?: string;
   memo?: string;
@@ -172,6 +215,7 @@ export interface SalesOrderSummary {
   nextStatusCodes?: string[];
   customer?: SalesOrderCustomerRef;
   orderDate?: string;
+  scheduledInstallDate?: string;
   grandTotal?: number;
   createdAt?: string;
   updatedAt?: string;
@@ -194,12 +238,112 @@ export interface SalesOrderPage {
   scope: string;
 }
 
+// ── Scheduling tab (GET/PATCH /sales-orders/{uuid}/schedule) ─────────────────
+
+/** Stored status of one schedule row. "Overdue" is not a stored status — it is
+ *  derived client-side from a `pending` row whose time has passed. */
+export type ScheduleActivityStatus = 'pending' | 'in_progress' | 'completed';
+
+/** One planned activity. `scheduledAt` / `completedAt` are zone-less wall-clock
+ *  strings ("yyyy-mm-ddThh:mm:ss") — never feed them to `new Date()`, which
+ *  would read them in the viewer's zone and can shift them. */
+export interface SalesOrderScheduleActivity {
+  code: string;
+  /** 1-based position in the plan. */
+  sequence: number;
+  /** The phase the activity belongs to, e.g. "Installation". */
+  group: string;
+  /** Activity name, e.g. "Saw" or "Installation Ready". Never carries a status —
+   *  that is `status`. */
+  name: string;
+  status: ScheduleActivityStatus;
+  scheduledAt: string;
+  completedAt?: string;
+  notes: string;
+}
+
+/** A partial edit to one activity — omitted fields are left as they are. */
+export interface SalesOrderScheduleActivityPatch {
+  status?: ScheduleActivityStatus;
+  /** "yyyy-mm-ddThh:mm" */
+  scheduledAt?: string;
+  /** Only with `status: 'completed'`; the server defaults it to now. */
+  completedAt?: string;
+  notes?: string;
+}
+
+/** The order a calendar card belongs to (`GET /sales-orders/schedule`). */
+export interface ScheduleFeedOrder {
+  id: string;
+  /** The Sales Order number, e.g. "SO-1042". */
+  number: string;
+  customerName: string;
+  /** Status label, e.g. "Open". */
+  status: string;
+  /** lkp_record_status code, e.g. "OPEN". */
+  statusCode: string;
+  poNumber?: string;
+  /** `yyyy-mm-dd` */
+  scheduledInstallDate?: string;
+}
+
+/** One planned activity of one order, as the cross-order calendar lists it. */
+export interface ScheduleFeedEvent extends SalesOrderScheduleActivity {
+  order: ScheduleFeedOrder;
+}
+
+/** One window of the calendar feed for one activity group. */
+export interface ScheduleFeed {
+  events: ScheduleFeedEvent[];
+  /** The server stopped at its row cap — there are more events than listed. */
+  truncated: boolean;
+}
+
+export interface ScheduleFeedQuery {
+  /** Activity group, e.g. "Template" or "WIP Bin Transfer". */
+  group: string;
+  /** First day of the window, `yyyy-mm-dd`, inclusive. */
+  from: string;
+  /** Last day of the window, `yyyy-mm-dd`, inclusive. */
+  to: string;
+}
+
 /** One row of the Inventory tab (design §10 `/inventory`). */
 export interface SalesOrderInventoryRow {
   itemId: string;
   sku: string;
   onHand: number;
+  /** On hand less what every open order holds — what is still free to promise. */
   available: number;
+  /** What every open order still holds (its reservation less what is fulfilled). */
   allocated: number;
+  /** This order's own share of `allocated`. */
+  reservedForOrder?: number;
   salesOrderQuantity: number;
+  /** False for an item whose stock is not checked or reserved (a service). */
+  tracked?: boolean;
+}
+
+/** One item a Sales Order holds more of than inventory has in stock. Short stock
+ *  never stops a save: the server saves the order and lists these next to it so
+ *  the screen can warn that delivery may be delayed — by stock already on order
+ *  (`onOrder`), or by stock nobody has ordered yet (`short`). */
+export interface StockShortage {
+  /** inventory_item uuid */
+  itemId: string;
+  sku: string;
+  name: string;
+  unitCode: string;
+  /** What the order still needs. */
+  requested: number;
+  /** What is free for it in stock (never negative). */
+  available: number;
+  /** Of the rest, what purchase orders already sent to a vendor are bringing
+   *  (absent from an older server, read as 0). */
+  onOrder?: number;
+  /** What nothing covers yet: requested - available - onOrder. What a new
+   *  purchase order should be for; 0 when sent POs cover it all. */
+  short: number;
+  /** Numbers of the sent purchase orders bringing `onOrder`. */
+  purchaseOrders?: string[] | null;
 }

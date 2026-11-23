@@ -77,7 +77,7 @@ function SlotRow({ slot }: { slot: DefaultSlot }) {
     <div id={`slot-${slot.key}`} className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 scroll-mt-4">
       <div className="min-w-0">
         <p className="text-sm font-semibold text-stone-900">{slot.label}</p>
-        <p className="mt-0.5 text-xs text-stone-400">{slot.description}</p>
+        <p className="mt-0.5 text-xs text-stone-500">{slot.description}</p>
       </div>
       <div className="mt-3">
         <AccountPicker
@@ -87,7 +87,7 @@ function SlotRow({ slot }: { slot: DefaultSlot }) {
         />
       </div>
       {localError && <p className="mt-2 text-2xs text-destructive">{localError}</p>}
-      {repoint.isPending && <p className="mt-2 text-2xs text-stone-400">Saving…</p>}
+      {repoint.isPending && <p className="mt-2 text-2xs text-stone-500">Saving…</p>}
     </div>
   );
 }

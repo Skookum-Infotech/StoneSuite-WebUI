@@ -1,10 +1,14 @@
 import { useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Send, X, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import { portalAccessService } from "@/services/portalAccessService";
 import { apiErrorMessage } from "@/api/tenantClient";
 import { ErrorNote } from "@/components/tenant/ui";
 import { Button } from "@/components/ui/button";
+
+// Long enough to read and act on: a failed invite is something staff must fix.
+const EMAIL_FAILURE_TOAST_MS = 12000;
 
 // Confirmation dialog for granting this customer a portal login. The login is
 // always the customer record's own contact email (customer_contact_email,
@@ -29,8 +33,18 @@ export function GrantPortalAccessModal({
         email: contactEmail,
         fullName: contactName,
       }),
-    onSuccess: () => {
+    onSuccess: (result) => {
       qc.invalidateQueries({ queryKey: ["portal-users", customerUuid] });
+      // Access is granted either way, so the dialog closes — but never with a
+      // silent "success" when the invitation email did not go out.
+      if (result.emailSent === false) {
+        toast.warning("Portal access was granted, but the invitation email was not sent.", {
+          description: `${result.emailError ?? "The email could not be delivered."} Use Resend on the login to try again.`,
+          duration: EMAIL_FAILURE_TOAST_MS,
+        });
+      } else if (result.emailSent) {
+        toast.success("Portal access granted. Invitation email sent.");
+      }
       onClose();
     },
   });
@@ -64,7 +78,7 @@ export function GrantPortalAccessModal({
             type="button"
             onClick={onClose}
             aria-label="Close modal"
-            className="rounded-lg p-1.5 text-stone-400 transition hover:bg-stone-100 hover:text-stone-600"
+            className="rounded-lg p-1.5 text-stone-500 transition hover:bg-stone-100 hover:text-stone-600"
           >
             <X className="size-4" />
           </button>
@@ -72,7 +86,7 @@ export function GrantPortalAccessModal({
 
         <div className="space-y-4">
           <div className="rounded-lg border border-stone-200 bg-stone-50 px-3 py-2.5">
-            <p className="text-2xs font-semibold uppercase tracking-wide text-stone-400">
+            <p className="text-2xs font-semibold uppercase tracking-wide text-stone-500">
               Portal login
             </p>
             <p className="mt-0.5 text-sm font-semibold text-stone-800 break-all">

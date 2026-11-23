@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { AlertTriangle, Trash2 } from 'lucide-react';
+import { AlertTriangle } from 'lucide-react';
 import { useMutation } from '@tanstack/react-query';
 import { invoiceService } from '@/services/invoiceService';
 import { apiErrorMessage } from '@/api/tenantClient';
+import { DangerZoneAction } from '@/components/tenant/DangerZoneCard';
 
 // Mirrors DeleteSalesOrderDialog's look, but calls invoiceService.deleteInvoice
 // directly (no reason field — the invoice DELETE endpoint doesn't accept one).
@@ -24,15 +25,12 @@ export function DeleteInvoiceDialog({ invoiceId, label, onDeleted }: {
 
   return (
     <>
-      <button
-        type="button"
+      <DangerZoneAction
+        description="Delete this invoice permanently."
+        buttonLabel="Delete invoice"
+        ariaLabel={`Delete ${label}`}
         onClick={() => setOpen(true)}
-        aria-label={`Delete ${label}`}
-        className="flex items-center gap-2.5 hover:bg-destructive/5 rounded-lg px-3 py-2 cursor-pointer text-xs text-destructive w-full transition-colors text-left"
-      >
-        <Trash2 className="size-4 shrink-0" />
-        Delete invoice
-      </button>
+      />
 
       {open && createPortal(
         <div
@@ -51,7 +49,7 @@ export function DeleteInvoiceDialog({ invoiceId, label, onDeleted }: {
                 <h3 id="delete-invoice-dialog-title" className="text-sm font-bold text-stone-900">
                   Delete invoice?
                 </h3>
-                <p className="text-xs text-stone-400 mt-0.5">This action cannot be undone.</p>
+                <p className="text-xs text-stone-500 mt-0.5">This action cannot be undone.</p>
               </div>
             </div>
 

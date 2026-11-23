@@ -11,7 +11,8 @@
 // no address block, no per-line discount or tax, no shipping/adjustment, and
 // three live statuses instead of seven. A requisition is a rough ask, not a
 // priced commitment.
-import type { FilterClause, RecordApprover, SortKey } from '@/types/tenant';
+import type { WorkflowBlock } from '@/types/workflow';
+import type { FilterClause, RecordApprover, SortKey, ApprovalRejection } from '@/types/tenant';
 
 // ── Create / update inputs (client → server) ─────────────────────────────────
 
@@ -26,6 +27,21 @@ export interface RequisitionLineInput {
   description?: string;
   quantity: number;
   estimatedUnitPrice: number;
+  /** Size of one slab and how many slabs the line covers. With length and
+   *  width both set the server derives the quantity from them (length x width x
+   *  slabs, in the item's area unit), so the quantity sent is then ignored. */
+  length?: number;
+  width?: number;
+  /** The one unit length and width are measured in: mm, cm, in, ft or m. Blank takes
+   *  the item's unit, then cm. */
+  dimensionUnit?: string;
+  slabs?: number;
+  /** Thickness of one slab, in `dimensionUnit`. Descriptive only: it never enters the quantity. */
+  thickness?: number;
+  /** Set on a line added from a kit: the kit's id and the name it had then.
+   *  A label only — the server stores it and returns it as kitId / kitName. */
+  kitUuid?: string;
+  kitName?: string;
 }
 
 export interface RequisitionCreatePayload {
@@ -70,6 +86,19 @@ export interface RequisitionLine {
   quantity: number;
   estimatedUnitPrice: number;
   estimatedAmount: number;
+  /** The slab size and count the line was priced from, when entered that
+   *  way; quantity is then their area. */
+  length?: number | null;
+  width?: number | null;
+  /** The unit length and width were measured in. */
+  dimensionUnit?: string | null;
+  slabs?: number | null;
+  /** Thickness of one slab, in `dimensionUnit`. */
+  thickness?: number | null;
+  /** Set on a line added from a kit: the kit's id and the name it had then.
+   *  Consecutive lines with the same kitId sit under one kit heading. */
+  kitId?: string;
+  kitName?: string;
 }
 
 /** `lkp_record_status` codes seeded for the REQN record type. There is no
@@ -82,6 +111,8 @@ export type RequisitionPriority = 'low' | 'normal' | 'high' | 'urgent';
  *  the create/update contract accepts round-trips back here, so the Edit page
  *  can reload a requisition and re-save it without blanking a header field. */
 export interface Requisition {
+  /** End-to-end flow this record belongs to; see BACKEND_SPEC_workflow_links.md. */
+  workflow?: WorkflowBlock;
   id: string;
   requisitionNumber: string;
   status: string;                  // human label, e.g. "Draft"
@@ -95,6 +126,8 @@ export interface Requisition {
   canApprove: boolean;
   isOverride: boolean;
   callerAlreadyApproved: boolean;
+  canReject?: boolean;            // whether the requesting user can reject it right now (configured approver OR super admin, while it awaits approval)
+  rejection?: ApprovalRejection;  // who rejected it and why -- present while it still sits in the status the rejection left it in
 
   requestedByEmployeeId: number;
   department: string;

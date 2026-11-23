@@ -40,7 +40,12 @@ export function LocationsTab({ actionsSlot }: { actionsSlot: HTMLDivElement | nu
   const profileQ = useQuery({ queryKey: ['company-profile'], queryFn: companyProfileService.get });
   const locationsQ = useQuery({ queryKey: ['company-locations'], queryFn: companyLocationService.list });
 
-  const invalidate = () => qc.invalidateQueries({ queryKey: ['company-locations'] });
+  // Inventory's location dropdowns are these same rows (via the inventory
+  // lookups), so a change here must refresh them too, not just this tab.
+  const invalidate = () => Promise.all([
+    qc.invalidateQueries({ queryKey: ['company-locations'] }),
+    qc.invalidateQueries({ queryKey: ['inventory-lookups'] }),
+  ]);
 
   const createMut = useMutation({
     mutationFn: (values: CompanyLocationFormValues) => companyLocationService.create(values),
@@ -197,7 +202,7 @@ export function LocationsTab({ actionsSlot }: { actionsSlot: HTMLDivElement | nu
                   : 'No address on file yet — add one on the Company Profile tab.'}
               </span>
             </div>
-            <p className="mt-3 text-xs text-stone-400">
+            <p className="mt-3 text-xs text-stone-500">
               Add a location to give the company a specific address instead of this default.
             </p>
           </div>

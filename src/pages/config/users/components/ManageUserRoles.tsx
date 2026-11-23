@@ -1,3 +1,4 @@
+import { Select } from '@/components/ui/select';
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Plus, ShieldCheck, X } from "lucide-react";
@@ -6,6 +7,8 @@ import { apiErrorMessage } from "@/api/tenantClient";
 import { ErrorNote } from "@/components/tenant/ui";
 import { Button } from "@/components/ui/button";
 import { useUserPermissions } from "@/hooks/useUserPermissions";
+import { invalidateUserRoleQueries } from "@/lib/userRoleQueries";
+import { SUPER_ADMIN_ROLE_KEY, isSuperAdminUser } from "@/lib/userBulk";
 import type { WorkspaceUser } from "@/types/tenant";
 
 export function ManageUserRoles({ user }: { user: WorkspaceUser }) {
@@ -15,18 +18,22 @@ export function ManageUserRoles({ user }: { user: WorkspaceUser }) {
   const [pendingRemove, setPendingRemove] = useState<{ id: string; name: string } | null>(null);
   // Assigning/removing a role is enforced server-side as role:update (see
   // RBACOps.UserRoles in the backend) — not a user-resource permission.
-  const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
-  const canManageRoles = permissionsLoading || hasPermission("role", "update");
+  const { hasPermission, isSuperAdmin, isLoading: permissionsLoading } = useUserPermissions();
+  // A super admin's roles, and the super admin role itself, are for super admins only.
+  const canManageRoles =
+    (permissionsLoading || hasPermission("role", "update")) && (isSuperAdmin || !isSuperAdminUser(user));
 
   const rolesQ = useQuery({ queryKey: ["roles"], queryFn: rbacService.listRoles });
 
   const assignedIds = new Set(user.roles.map((r) => r.id));
-  const availableRoles = (rolesQ.data ?? []).filter((r) => !assignedIds.has(r.id));
+  const availableRoles = (rolesQ.data ?? []).filter(
+    (r) => !assignedIds.has(r.id) && (isSuperAdmin || r.key !== SUPER_ADMIN_ROLE_KEY),
+  );
 
   const assignMut = useMutation({
     mutationFn: (roleId: string) => userService.assignRole(user.id, roleId),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["users"] });
+      invalidateUserRoleQueries(qc);
       setSelectedRoleId("");
       setError(null);
     },
@@ -36,7 +43,7 @@ export function ManageUserRoles({ user }: { user: WorkspaceUser }) {
   const removeMut = useMutation({
     mutationFn: (roleId: string) => userService.removeRole(user.id, roleId),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["users"] });
+      invalidateUserRoleQueries(qc);
       setError(null);
       setPendingRemove(null);
     },
@@ -48,12 +55,12 @@ export function ManageUserRoles({ user }: { user: WorkspaceUser }) {
 
   return (
     <div className="mb-4 sm:mb-6">
-      <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-stone-400">
+      <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-stone-500">
         Roles
       </h3>
 
       {user.roles.length === 0 ? (
-        <p className="mb-2 text-xs text-stone-400 italic">No roles assigned.</p>
+        <p className="mb-2 text-xs text-stone-500 italic">No roles assigned.</p>
       ) : (
         <div className="mb-2 flex flex-wrap gap-1.5">
           {user.roles.map((r) => (
@@ -120,7 +127,7 @@ export function ManageUserRoles({ user }: { user: WorkspaceUser }) {
 
       {canManageRoles && availableRoles.length > 0 && (
         <div className="flex items-center gap-2">
-          <select
+          <Select
             aria-label="Select a role to add"
             value={selectedRoleId}
             onChange={(e) => setSelectedRoleId(e.target.value)}
@@ -132,7 +139,7 @@ export function ManageUserRoles({ user }: { user: WorkspaceUser }) {
                 {r.name}
               </option>
             ))}
-          </select>
+          </Select>
           <Button
             type="button"
             onClick={() => selectedRoleId && assignMut.mutate(selectedRoleId)}

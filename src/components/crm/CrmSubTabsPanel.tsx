@@ -6,10 +6,13 @@ import {
   CloudUpload,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { TAB_LIST_CLASS, tabClass } from '@/components/ui/tabStyles';
 import { crmService, type AuditEntry } from '@/services/crmService';
 import { attachmentService, type Attachment } from '@/services/attachmentService';
 import { Spinner } from '@/components/tenant/ui';
+import { AuditChanges } from '@/components/tenant/AuditChanges';
 import { apiErrorMessage } from '@/api/tenantClient';
+import { DXF_CONTENT_TYPE, withDxfContentType } from '@/lib/drawing/dxfFiles';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -47,13 +50,14 @@ const ALLOWED_TYPES: Record<string, string> = {
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'xlsx',
   'image/png': 'png',
   'image/jpeg': 'jpg',
+  [DXF_CONTENT_TYPE]: 'dxf',
 };
-const ALLOWED_EXTS = ['.pdf', '.docx', '.xlsx', '.png', '.jpg', '.jpeg'];
+const ALLOWED_EXTS = ['.pdf', '.docx', '.xlsx', '.png', '.jpg', '.jpeg', '.dxf'];
 const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25 MB
 
 function validateFile(file: File): string | null {
   if (!ALLOWED_TYPES[file.type] && !ALLOWED_EXTS.some((e) => file.name.toLowerCase().endsWith(e))) {
-    return `${file.name}: Unsupported type. Allowed: PDF, DOCX, XLSX, PNG, JPG`;
+    return `${file.name}: Unsupported type. Allowed: PDF, DOCX, XLSX, PNG, JPG, DXF`;
   }
   if (file.size > MAX_FILE_SIZE) {
     return `${file.name}: Exceeds 25 MB limit`;
@@ -96,22 +100,19 @@ export function CrmSubTabsPanel({ tabs, readOnly = true, recordId, workflowKey }
 
   return (
     <div className="rounded-xl border border-stone-200 bg-white shadow-sm overflow-hidden">
-      <div className="flex border-b border-stone-100 px-1">
-        {tabs.map((tab) => (
-          <button
-            key={tab.key}
-            type="button"
-            onClick={() => setActive(tab.key)}
-            className={cn(
-              'px-4 py-2.5 text-xs font-medium border-b-2 -mb-px transition-colors duration-150',
-              active === tab.key
-                ? 'border-brand text-stone-950'
-                : 'border-transparent text-stone-500 hover:text-stone-700 hover:border-stone-200',
-            )}
-          >
-            {tab.label}
-          </button>
-        ))}
+      <div className="flex border-b border-stone-200 px-3 py-2.5">
+        <div role="tablist" className={TAB_LIST_CLASS}>
+          {tabs.map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setActive(tab.key)}
+              className={tabClass(active === tab.key)}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="px-5 py-4">
@@ -157,7 +158,7 @@ EditableFilesPanel.displayName = 'EditableFilesPanel';
 
 export function TransactionsContent() {
   return (
-    <p className="py-6 text-center text-xs text-stone-400 italic">No transactions yet.</p>
+    <p className="py-6 text-center text-xs text-stone-500 italic">No transactions yet.</p>
   );
 }
 
@@ -171,13 +172,13 @@ export function AuditContent({ recordId, workflowKey }: { recordId?: string; wor
   });
 
   if (!recordId)
-    return <p className="py-6 text-center text-xs text-stone-400 italic">No audit events recorded yet.</p>;
+    return <p className="py-6 text-center text-xs text-stone-500 italic">No audit events recorded yet.</p>;
   if (isLoading)
     return <div className="py-6 flex justify-center"><Spinner label="Loading audit trail…" /></div>;
   if (error)
     return <p className="py-6 text-center text-xs text-destructive/70 italic">Failed to load audit trail.</p>;
   if (entries.length === 0)
-    return <p className="py-6 text-center text-xs text-stone-400 italic">No audit events recorded yet.</p>;
+    return <p className="py-6 text-center text-xs text-stone-500 italic">No audit events recorded yet.</p>;
 
   return (
     <div className="overflow-x-auto">
@@ -185,7 +186,7 @@ export function AuditContent({ recordId, workflowKey }: { recordId?: string; wor
         <thead>
           <tr className="border-b border-stone-100">
             {['Action', 'Resource', 'Actor', 'IP Address', 'Version', 'Date'].map((h) => (
-              <th key={h} className="py-2 pr-4 text-left font-semibold uppercase tracking-wide text-stone-400 text-2xs whitespace-nowrap">
+              <th key={h} className="py-2 pr-4 text-left font-semibold uppercase tracking-wide text-stone-500 text-2xs whitespace-nowrap">
                 {h}
               </th>
             ))}
@@ -211,21 +212,18 @@ function AuditRow({ entry }: { entry: AuditEntry }) {
       >
         <td className="py-2.5 pr-4"><ActionBadge action={entry.action} /></td>
         <td className="py-2.5 pr-4 text-stone-900 capitalize">{entry.resource}</td>
-        <td className="py-2.5 pr-4 text-stone-900 text-xs">{entry.actorName || <span className="text-stone-300 italic">system</span>}</td>
-        <td className="py-2.5 pr-4 text-stone-400 font-mono text-2xs">{entry.ipAddress || '—'}</td>
-        <td className="py-2.5 pr-4 text-stone-400 text-2xs">{entry.appVersion || '—'}</td>
-        <td className="py-2.5 text-stone-400 text-2xs whitespace-nowrap">
+        <td className="py-2.5 pr-4 text-stone-900 text-xs">{entry.actorName || <span className="text-stone-500 italic">system</span>}</td>
+        <td className="py-2.5 pr-4 text-stone-500 font-mono text-2xs">{entry.ipAddress || '—'}</td>
+        <td className="py-2.5 pr-4 text-stone-500 text-2xs">{entry.appVersion || '—'}</td>
+        <td className="py-2.5 text-stone-500 text-2xs whitespace-nowrap">
           {new Date(entry.at).toLocaleString()}
-          {hasChanges && <span className="ml-1.5 text-stone-300">{expanded ? '▲' : '▼'}</span>}
+          {hasChanges && <span className="ml-1.5 text-stone-500">{expanded ? '▲' : '▼'}</span>}
         </td>
       </tr>
       {expanded && hasChanges && (
         <tr className="bg-stone-50">
           <td colSpan={6} className="px-2 pb-3 pt-1">
-            <div className="grid grid-cols-2 gap-3">
-              {entry.oldValue && <ChangesBlock label="Before" data={entry.oldValue} />}
-              {entry.newValue && <ChangesBlock label="After" data={entry.newValue} />}
-            </div>
+            <AuditChanges oldValue={entry.oldValue} newValue={entry.newValue} />
           </td>
         </tr>
       )}
@@ -246,35 +244,7 @@ function ActionBadge({ action }: { action: string }) {
   );
 }
 
-function ChangesBlock({ label, data }: { label: string; data: Record<string, unknown> }) {
-  const entries = flattenChanges(data);
-  return (
-    <div>
-      <p className="text-2xs font-semibold uppercase tracking-wide text-stone-400 mb-1.5">{label}</p>
-      <div className="space-y-0.5">
-        {entries.map(([key, val]) => (
-          <div key={key} className="flex gap-2 text-2xs">
-            <span className="text-stone-400 shrink-0 min-w-[80px] font-medium">{key}</span>
-            <span className="text-stone-600 break-all">{val}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
 
-function flattenChanges(obj: Record<string, unknown>, prefix = ''): [string, string][] {
-  const result: [string, string][] = [];
-  for (const [k, v] of Object.entries(obj)) {
-    const key = prefix ? `${prefix}.${k}` : k;
-    if (v !== null && typeof v === 'object' && !Array.isArray(v)) {
-      result.push(...flattenChanges(v as Record<string, unknown>, key));
-    } else {
-      result.push([key, v === null || v === undefined ? '—' : String(v)]);
-    }
-  }
-  return result;
-}
 
 // ── Files tab ─────────────────────────────────────────────────────────────────
 
@@ -387,7 +357,7 @@ export const FilesContent = forwardRef<EditableFilesPanelHandle, FilesContentPro
       const valid: File[] = [];
       files.forEach((f) => {
         const err = validateFile(f);
-        if (err) errors.push(err); else valid.push(f);
+        if (err) errors.push(err); else valid.push(withDxfContentType(f));
       });
       setValidationErrors(errors);
       if (valid.length === 0) return;
@@ -468,7 +438,7 @@ export const FilesContent = forwardRef<EditableFilesPanelHandle, FilesContentPro
                 : 'border-stone-200 bg-white hover:border-stone-300 hover:bg-stone-50/50',
             )}
           >
-            <input ref={fileInputRef} type="file" multiple accept=".pdf,.docx,.xlsx,.png,.jpg,.jpeg"
+            <input ref={fileInputRef} type="file" multiple accept=".pdf,.docx,.xlsx,.png,.jpg,.jpeg,.dxf"
               className="sr-only" onChange={onFileChange} />
             <div className={cn(
               'inline-flex items-center justify-center w-10 h-10 rounded-full mb-3 transition-colors',
@@ -479,7 +449,7 @@ export const FilesContent = forwardRef<EditableFilesPanelHandle, FilesContentPro
             <p className="text-xs font-medium text-stone-600 mb-1">
               {dragging ? 'Release to add' : 'Drop files here or click to browse'}
             </p>
-            <p className="text-2xs text-stone-400">PDF, DOCX, XLSX, PNG, JPG · Max 25 MB each</p>
+            <p className="text-2xs text-stone-500">PDF, DOCX, XLSX, PNG, JPG, DXF · Max 25 MB each</p>
             {!recordId && (
               <div className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-warning/10 border border-warning/20 px-3 py-1">
                 <CloudUpload className="h-3 w-3 text-warning" />
@@ -517,7 +487,7 @@ export const FilesContent = forwardRef<EditableFilesPanelHandle, FilesContentPro
               ) : (
                 <>
                   <Loader2 className="h-3 w-3 text-stone-400 animate-spin" />
-                  <span className="text-2xs font-semibold uppercase tracking-wide text-stone-400">Uploading</span>
+                  <span className="text-2xs font-semibold uppercase tracking-wide text-stone-500">Uploading</span>
                 </>
               )}
             </div>
@@ -562,7 +532,7 @@ export const FilesContent = forwardRef<EditableFilesPanelHandle, FilesContentPro
             ))}
           </div>
         ) : activeUploads.length === 0 ? (
-          <p className="py-4 text-center text-xs text-stone-400 italic">No files attached yet.</p>
+          <p className="py-4 text-center text-xs text-stone-500 italic">No files attached yet.</p>
         ) : null}
 
       </div>
@@ -596,7 +566,7 @@ function UploadProgressRow({ item, onDismiss }: { item: UploadItem; onDismiss: (
           <p className="text-xs font-medium text-stone-700 truncate pr-2">{item.file.name}</p>
           <span className={cn(
             'text-2xs shrink-0',
-            item.status === 'error' ? 'text-destructive' : 'text-stone-400',
+            item.status === 'error' ? 'text-destructive' : 'text-stone-500',
           )}>
             {statusLabel}
           </span>
@@ -622,7 +592,7 @@ function UploadProgressRow({ item, onDismiss }: { item: UploadItem; onDismiss: (
 
       {/* Dismiss on error */}
       {item.status === 'error' && (
-        <button type="button" onClick={onDismiss} className="text-stone-300 hover:text-stone-500 transition-colors">
+        <button type="button" onClick={onDismiss} className="text-stone-500 hover:text-stone-500 transition-colors">
           <span className="sr-only">Dismiss</span>
           <span aria-hidden>×</span>
         </button>
@@ -658,11 +628,11 @@ function AttachmentRow({ att, isDownloading, isDeleting, readOnly, onDownload, o
         <p className="text-xs font-medium text-stone-700 truncate">{att.fileName}</p>
         <div className="flex items-center gap-2 mt-0.5">
           <span className={cn('text-2xs font-semibold px-1 rounded', ft.bg, ft.color)}>{ft.label}</span>
-          <span className="text-2xs text-stone-400">{formatBytes(att.sizeBytes)}</span>
+          <span className="text-2xs text-stone-500">{formatBytes(att.sizeBytes)}</span>
           {att.createdAt && (
             <>
-              <span className="text-2xs text-stone-300">·</span>
-              <span className="text-2xs text-stone-400">{formatDate(att.createdAt)}</span>
+              <span className="text-2xs text-stone-500">·</span>
+              <span className="text-2xs text-stone-500">{formatDate(att.createdAt)}</span>
             </>
           )}
           {att.status === 'infected' && (
@@ -717,7 +687,7 @@ function AttachmentRow({ att, isDownloading, isDeleting, readOnly, onDownload, o
             <button
               type="button"
               onClick={() => setConfirmDelete(true)}
-              className="flex items-center gap-1 px-2 py-1.5 rounded text-2xs text-stone-400 hover:text-destructive hover:bg-destructive/5 transition-colors"
+              className="flex items-center gap-1 px-2 py-1.5 rounded text-2xs text-stone-500 hover:text-destructive hover:bg-destructive/5 transition-colors"
               title="Delete"
             >
               <Trash2 className="h-3.5 w-3.5" />

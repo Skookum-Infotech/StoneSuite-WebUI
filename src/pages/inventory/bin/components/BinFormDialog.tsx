@@ -1,3 +1,4 @@
+import { Select } from '@/components/ui/select';
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { MapPin, X } from 'lucide-react';
@@ -7,6 +8,7 @@ import { apiErrorMessage } from '@/api/tenantClient';
 import { useModalDialog } from '@/hooks/useModalDialog';
 import { fieldCls, fieldLabelCls } from '@/components/crm/formUtils';
 import { WarehouseSelect } from '@/components/inventory/WarehouseSelect';
+import { defaultWarehouseUuid } from '@/lib/inventoryWarehouse';
 import { BIN_TYPES } from '@/types/inventory';
 import type { Bin, BinInput, Warehouse } from '@/types/inventory';
 
@@ -26,7 +28,10 @@ export function BinFormDialog({ bin, warehouses, allBins, defaultWarehouseId, de
   const queryClient = useQueryClient();
   const isEdit = Boolean(bin);
 
-  const [warehouseId, setWarehouseId] = useState(bin?.warehouseId ?? defaultWarehouseId ?? '');
+  // A new bin starts in the location the list was filtered to, else the tenant's default.
+  const [warehouseId, setWarehouseId] = useState(
+    bin?.warehouseId ?? (defaultWarehouseId || defaultWarehouseUuid(warehouses)),
+  );
   const [code, setCode] = useState(bin?.code ?? '');
   const [name, setName] = useState(bin?.name ?? '');
   const [type, setType] = useState(bin?.type ?? BIN_TYPES[0]);
@@ -34,6 +39,8 @@ export function BinFormDialog({ bin, warehouses, allBins, defaultWarehouseId, de
   const [capacityUnits, setCapacityUnits] = useState(String(bin?.capacityUnits ?? 0));
   const [capacityArea, setCapacityArea] = useState(String(bin?.capacityArea ?? 0));
   const [isActive, setIsActive] = useState(bin?.isActive ?? true);
+  const [isWip, setIsWip] = useState(bin?.isWip ?? false);
+  const [machineLabel, setMachineLabel] = useState(bin?.machineLabel ?? '');
   const [notes, setNotes] = useState(bin?.notes ?? '');
 
   const payload: BinInput = {
@@ -41,7 +48,7 @@ export function BinFormDialog({ bin, warehouses, allBins, defaultWarehouseId, de
     parentId: parentId || null,
     capacityUnits: Number(capacityUnits) || 0,
     capacityArea: Number(capacityArea) || 0,
-    isActive, notes,
+    isActive, notes, isWip, machineLabel: isWip ? machineLabel.trim() : '',
   };
 
   const { mutate: save, isPending, error } = useMutation({
@@ -68,7 +75,7 @@ export function BinFormDialog({ bin, warehouses, allBins, defaultWarehouseId, de
 
         <div className="space-y-3">
           <div className="space-y-1.5">
-            <label className={fieldLabelCls}>Warehouse *</label>
+            <label className={fieldLabelCls}>Location *</label>
             <WarehouseSelect warehouses={warehouses} value={warehouseId} onChange={(v) => { setWarehouseId(v); setParentId(''); }} required />
           </div>
           <div className="grid grid-cols-2 gap-3">
@@ -78,9 +85,9 @@ export function BinFormDialog({ bin, warehouses, allBins, defaultWarehouseId, de
             </div>
             <div className="space-y-1.5">
               <label className={fieldLabelCls}>Type</label>
-              <select value={type} onChange={(e) => setType(e.target.value)} className={fieldCls} aria-label="Bin type">
+              <Select value={type} onChange={(e) => setType(e.target.value)} className={fieldCls} aria-label="Bin type">
                 {BIN_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
-              </select>
+              </Select>
             </div>
           </div>
           <div className="space-y-1.5">
@@ -89,10 +96,10 @@ export function BinFormDialog({ bin, warehouses, allBins, defaultWarehouseId, de
           </div>
           <div className="space-y-1.5">
             <label className={fieldLabelCls}>Parent Bin</label>
-            <select value={parentId} onChange={(e) => setParentId(e.target.value)} className={fieldCls} aria-label="Parent bin">
+            <Select value={parentId} onChange={(e) => setParentId(e.target.value)} className={fieldCls} aria-label="Parent bin">
               <option value="">— Top level —</option>
               {parentOptions.map((b) => <option key={b.id} value={b.id}>{b.path || b.name}</option>)}
-            </select>
+            </Select>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
@@ -104,11 +111,23 @@ export function BinFormDialog({ bin, warehouses, allBins, defaultWarehouseId, de
               <input type="number" min={0} value={capacityArea} onChange={(e) => setCapacityArea(e.target.value)} className={fieldCls} aria-label="Capacity area" />
             </div>
           </div>
-          <p className="text-2xs text-stone-400">Capacity is advisory only — it never blocks a move.</p>
+          <p className="text-2xs text-stone-500">Capacity is advisory only — it never blocks a move.</p>
           <div className="space-y-1.5">
             <label className={fieldLabelCls}>Notes</label>
             <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} className={`${fieldCls} h-auto resize-none`} aria-label="Notes" />
           </div>
+          <fieldset className="rounded-lg border border-stone-200 bg-stone-50 p-3 space-y-3">
+            <label className="flex items-center gap-2 text-xs font-medium text-stone-700">
+              <input type="checkbox" checked={isWip} onChange={(e) => setIsWip(e.target.checked)} className="size-4 rounded border-stone-300" />
+              Work in progress (WIP) bin
+            </label>
+            <p className="text-xs text-stone-500">Use for material waiting at a saw or in a shared fabrication work area.</p>
+            {isWip && <div className="space-y-1.5">
+              <label htmlFor="bin-machine" className={fieldLabelCls}>Machine name (optional)</label>
+              <input id="bin-machine" value={machineLabel} onChange={(e) => setMachineLabel(e.target.value)} placeholder="e.g. Saw 1" className={fieldCls} />
+              <p className="text-xs text-stone-500">Leave blank for a shared WIP area.</p>
+            </div>}
+          </fieldset>
           <div className="flex items-center gap-2">
             <input type="checkbox" id="bin-active" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} className="size-4 rounded border-stone-300 text-brand focus:ring-brand/30" />
             <label htmlFor="bin-active" className="text-xs font-medium text-stone-700">Active</label>

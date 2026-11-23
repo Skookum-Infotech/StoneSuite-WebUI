@@ -1,14 +1,19 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 
 vi.mock('@/hooks/useUserPermissions', () => ({ useUserPermissions: vi.fn() }));
 vi.mock('@/hooks/useWorkflows', () => ({ useWorkflows: vi.fn() }));
+vi.mock('@/hooks/useFeedbackUnreadCount', () => ({ useFeedbackUnreadCount: vi.fn() }));
+vi.mock('@/hooks/useApprovalInboxSummary', () => ({ useApprovalInboxSummary: vi.fn() }));
 vi.mock('@/store/useAuthStore', () => ({ useAuthStore: vi.fn() }));
 
 import Sidebar from './Sidebar';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { useWorkflows } from '@/hooks/useWorkflows';
+import { useFeedbackUnreadCount } from '@/hooks/useFeedbackUnreadCount';
+import { useApprovalInboxSummary } from '@/hooks/useApprovalInboxSummary';
 import { useAuthStore } from '@/store/useAuthStore';
 
 type Grant = { resource: string; action: string };
@@ -22,6 +27,9 @@ function setup({
   disabledWorkflows = [],
   workflowsLoading = false,
   kind,
+  unreadTickets = 0,
+  approvals = { total: 0, isApprover: false },
+  path = '/',
 }: {
   grants?: Grant[];
   isPlatformAdmin?: boolean;
@@ -30,7 +38,16 @@ function setup({
   disabledWorkflows?: string[];
   workflowsLoading?: boolean;
   kind?: 'portal';
+  /** Tickets with unread replies, as the shared polling hook would report. */
+  unreadTickets?: number;
+  /** Pending approvals, as the shared summary hook would report. */
+  approvals?: { total: number; isApprover: boolean };
+  /** The URL the sidebar is rendered at. */
+  path?: string;
 } = {}) {
+  vi.mocked(useFeedbackUnreadCount).mockReturnValue(unreadTickets);
+  vi.mocked(useApprovalInboxSummary).mockReturnValue(approvals);
+
   vi.mocked(useUserPermissions).mockReturnValue({
     grants,
     isLoading,
@@ -53,13 +70,16 @@ function setup({
   );
 
   render(
-    <MemoryRouter>
+    <MemoryRouter initialEntries={[path]}>
       <Sidebar isOpen onClose={() => {}} />
     </MemoryRouter>,
   );
 }
 
-beforeEach(() => vi.clearAllMocks());
+beforeEach(() => {
+  vi.clearAllMocks();
+  localStorage.clear();
+});
 
 describe('Sidebar permission gating', () => {
   // Groups render only when at least one child passes its own check, so a
@@ -124,6 +144,44 @@ describe('Sidebar permission gating', () => {
   });
 });
 
+describe('Sidebar Support > My Tickets link', () => {
+  // Support is open to every signed-in user — the whole reason it lives in its
+  // own section rather than under the RBAC-gated Configuration group.
+  it('shows My Tickets to a staff user holding no grants', () => {
+    setup({ grants: [] });
+
+    expect(screen.getByRole('link', { name: /My Tickets/ })).toHaveAttribute('href', '/support');
+  });
+
+  // Customers could file tickets from the old header popup; the sidebar entry
+  // must not take that away from them.
+  it('shows My Tickets to a customer-portal session', () => {
+    setup({ kind: 'portal', grants: [] });
+
+    expect(screen.getByRole('link', { name: /My Tickets/ })).toBeInTheDocument();
+  });
+
+  // Guards the customer branch of canShowLink: opting one link in must not
+  // widen every alwaysVisible link (Dashboard is staff-only) to customers.
+  it('still hides staff-only alwaysVisible links from a customer-portal session', () => {
+    setup({ kind: 'portal', grants: [] });
+
+    expect(screen.queryByText('Dashboard')).toBeNull();
+  });
+
+  it('shows how many tickets have unread replies', () => {
+    setup({ unreadTickets: 3 });
+
+    expect(screen.getByRole('link', { name: /My Tickets/ })).toHaveTextContent('3');
+  });
+
+  it('shows no count when nothing is unread', () => {
+    setup({ unreadTickets: 0 });
+
+    expect(screen.getByRole('link', { name: /My Tickets/ })).toHaveTextContent(/^My Tickets$/);
+  });
+});
+
 describe('Sidebar workflow-enabled gating', () => {
   const fullGrants = [{ resource: '*', action: '*' }];
 
@@ -180,5 +238,152 @@ describe('Sidebar workflow-enabled gating', () => {
 
     expect(screen.queryByText('Invoices')).toBeNull();
     expect(screen.getByText('Payments')).toBeInTheDocument();
+  });
+});
+
+describe('Sidebar Calendar group', () => {
+  const readOrders = [{ resource: 'sales_order', action: 'read' }];
+
+  it('shows Calendar > Activity Planner to anyone who can read sales orders', () => {
+    setup({ grants: readOrders });
+
+    expect(screen.getByText('Calendar')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Activity Planner/ })).toHaveAttribute('href', '/calendar/activity-planner');
+  });
+
+  it('hides Calendar from a user who cannot read sales orders', () => {
+    setup({ grants: [{ resource: 'invoice', action: 'read' }] });
+
+    expect(screen.queryByText('Calendar')).toBeNull();
+    expect(screen.queryByText('Activity Planner')).toBeNull();
+  });
+
+  it('hides Activity Planner once the Sales Order workflow is disabled, keeping Install Schedule', () => {
+    setup({ grants: [{ resource: '*', action: '*' }], disabledWorkflows: ['sales_order'] });
+
+    expect(screen.queryByText('Activity Planner')).toBeNull();
+    expect(screen.getByRole('link', { name: /Install Schedule/ })).toHaveAttribute('href', '/calendar/install-schedule');
+  });
+
+  // A portal session is granted sales_order:read for its own order pages, but
+  // the Planner is staff-only and MainLayout bounces customers away from it —
+  // so the menu must not offer it.
+  it('does not offer the Calendar to a customer-portal session', () => {
+    setup({ kind: 'portal', grants: readOrders });
+
+    expect(screen.queryByText('Calendar')).toBeNull();
+    expect(screen.queryByText('Activity Planner')).toBeNull();
+    expect(screen.getByText('Sales Orders')).toBeInTheDocument();
+  });
+});
+
+describe('Sidebar Created Orders link', () => {
+  // The portal-only entry: the countertop orders a customer files themselves.
+  it('shows Created Orders to a customer-portal session', () => {
+    setup({ kind: 'portal', grants: [] });
+
+    expect(screen.getByRole('link', { name: /Created Orders/ })).toHaveAttribute(
+      'href',
+      '/sales/created-orders',
+    );
+  });
+
+  // `alwaysVisible` alone would show it to every staff user — customerOnly is
+  // what keeps a portal-only page out of the staff menu.
+  it('hides Created Orders from staff, even a super admin', () => {
+    setup({ grants: [{ resource: '*', action: '*' }] });
+
+    expect(screen.queryByText('Created Orders')).toBeNull();
+  });
+
+  // Sidebar shows every link while permissions load to avoid layout shift;
+  // the portal-only link must not ride that shortcut.
+  it('does not flash Created Orders at staff while permissions load', () => {
+    setup({ grants: [], isLoading: true });
+
+    expect(screen.queryByText('Created Orders')).toBeNull();
+  });
+});
+
+describe('Sidebar groups', () => {
+  const ALL_ACCESS = [{ resource: '*', action: '*' }];
+  const salesToggle = () => screen.getByRole('button', { name: 'Toggle Sales menu' });
+
+  it('starts collapsed away from the group, and tells assistive tech so', () => {
+    setup({ grants: ALL_ACCESS, path: '/' });
+
+    expect(salesToggle()).toHaveAttribute('aria-expanded', 'false');
+  });
+
+  it('opens the group the current page lives in', () => {
+    setup({ grants: ALL_ACCESS, path: '/sales/invoice' });
+
+    expect(salesToggle()).toHaveAttribute('aria-expanded', 'true');
+  });
+
+  it('takes the links of a collapsed group out of the tab order', () => {
+    setup({ grants: ALL_ACCESS, path: '/' });
+
+    const panel = document.getElementById(salesToggle().getAttribute('aria-controls') ?? '');
+    expect(panel).toHaveAttribute('inert');
+  });
+
+  it('makes the links reachable again once the group is opened', async () => {
+    setup({ grants: ALL_ACCESS, path: '/' });
+
+    await userEvent.setup().click(salesToggle());
+
+    const panel = document.getElementById(salesToggle().getAttribute('aria-controls') ?? '');
+    expect(salesToggle()).toHaveAttribute('aria-expanded', 'true');
+    expect(panel).not.toHaveAttribute('inert');
+  });
+
+  it('remembers a group the user opened for the next visit', async () => {
+    setup({ grants: ALL_ACCESS, path: '/' });
+    await userEvent.setup().click(salesToggle());
+
+    expect(JSON.parse(localStorage.getItem('ss.sidebar.open') ?? '{}')).toMatchObject({ sales: true });
+  });
+
+  it('starts with a remembered group open, even away from it', () => {
+    localStorage.setItem('ss.sidebar.open', JSON.stringify({ sales: true }));
+
+    setup({ grants: ALL_ACCESS, path: '/' });
+
+    expect(salesToggle()).toHaveAttribute('aria-expanded', 'true');
+  });
+
+  it('ignores a corrupt remembered value instead of breaking the menu', () => {
+    localStorage.setItem('ss.sidebar.open', '{not json');
+
+    setup({ grants: ALL_ACCESS, path: '/' });
+
+    expect(salesToggle()).toHaveAttribute('aria-expanded', 'false');
+  });
+});
+
+describe('Sidebar Approvals link', () => {
+  it('shows the pending count beside the link', () => {
+    setup({ grants: [], approvals: { total: 7, isApprover: true } });
+
+    expect(screen.getByRole('link', { name: /Approvals/ })).toHaveTextContent('7');
+  });
+
+  it('hides the link when nothing is pending and the user is not an approver', () => {
+    setup({ grants: [], approvals: { total: 0, isApprover: false } });
+
+    expect(screen.queryByRole('link', { name: /Approvals/ })).not.toBeInTheDocument();
+  });
+
+  it('keeps the link for an approver with nothing pending right now', () => {
+    setup({ grants: [], approvals: { total: 0, isApprover: true } });
+
+    expect(screen.getByRole('link', { name: /Approvals/ })).toBeInTheDocument();
+  });
+
+  it('never offers the link to a customer-portal session', () => {
+    setup({ kind: 'portal', approvals: { total: 3, isApprover: true } });
+
+    expect(screen.queryByRole('link', { name: /Approvals/ })).not.toBeInTheDocument();
   });
 });

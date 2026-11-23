@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect, useMemo, useRef } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Search, ArrowUp, ArrowDown, ArrowUpDown, X, Inbox, Pencil,
@@ -7,11 +7,23 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { invoiceService } from '@/services/invoiceService';
+import { lookupService } from '@/services/lookupService';
+import { formatMoney, currencyCodeFor } from '@/lib/formatMoney';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { InvoiceStatusControl } from './InvoiceStatusControl';
-import { exportPagedCsv, fmtCsvDate } from '@/lib/csvExport';
+import { ReadOnlyStatusPill } from './ReadOnlyStatusPill';
+import { INVOICE_STATUS_COLORS } from '@/lib/invoiceForm';
+import { buildCsvFilename, buildCsvText, downloadCsv, exportPagedCsv } from '@/lib/csvExport';
+import { INVOICE_CSV_HEADERS, invoiceCsvRow } from '@/lib/invoiceCsv';
+import { useIdSelection } from '@/hooks/useIdSelection';
+import { BulkSelectionBar } from '@/components/tenant/BulkSelectionBar';
+import { SelectAllCheckbox, SelectRowCheckbox } from '@/components/tenant/SelectionCheckboxes';
 import type { InvoiceSearchRequest } from '@/types/invoice';
+import { formatDateValue, LIST_DATE_OPTIONS } from '@/lib/dateUtils';
+import { CustomerLink } from '@/components/crm/CustomerLink';
+import { InvoiceSavedViews } from './InvoiceSavedViews';
+import type { InvoiceViewState } from '@/lib/invoiceSavedViews';
 
 const EXPORT_PAGE_SIZE = 200;
 
@@ -21,37 +33,36 @@ const EXPORT_PAGE_SIZE = 200;
 // CrmRecordTable/crmService. Mirrors SalesOrderTable's search/sort/
 // cursor-pagination UX for visual consistency.
 
-type SortField = 'invoiceDate' | 'grandTotal' | 'balanceDue';
+type SortField = 'createdAt' | 'invoiceDate' | 'grandTotal' | 'balanceDue';
 type SortDir = 'asc' | 'desc';
 
 const PAGE_SIZE = 25;
 
 const SORT_LABELS: Record<SortField, string> = {
+  createdAt: 'Date Created',
   invoiceDate: 'Invoice Date',
   grandTotal: 'Amount',
   balanceDue: 'Balance Due',
 };
 
 const SORT_KEY: Record<SortField, string> = {
+  createdAt: 'created_at',
   invoiceDate: 'invoice_date',
   grandTotal: 'grand_total',
   balanceDue: 'balance_due',
 };
-
-function currency(n: number | undefined): string {
-  return (n ?? 0).toLocaleString(undefined, { style: 'currency', currency: 'USD' });
-}
 
 export function InvoiceTable() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const topRef = useRef<HTMLDivElement>(null);
 
-  const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
+  const { hasPermission, isSuperAdmin, isLoading: permissionsLoading } = useUserPermissions();
   const canEdit = permissionsLoading || hasPermission('invoice', 'update');
 
-  // Inline status change from the list row's status pill — mirrors the Edit
-  // page's transition mutation.
+  // Inline status change from the list row's status pill, super admin only —
+  // everyone else sees a read-only pill and moves an invoice from its Detail
+  // page. Mirrors the Edit page's transition mutation.
   const transition = useMutation({
     mutationFn: (vars: { id: string; toStatusCode: string }) => invoiceService.transition(vars.id, vars.toStatusCode),
     onSuccess: (updated) => {
@@ -62,7 +73,7 @@ export function InvoiceTable() {
 
   const [term, setTerm] = useState('');
   const [debounced, setDebounced] = useState('');
-  const [sortBy, setSortBy] = useState<SortField>('invoiceDate');
+  const [sortBy, setSortBy] = useState<SortField>('createdAt');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
 
   const [cursor, setCursor] = useState('');
@@ -93,7 +104,18 @@ export function InvoiceTable() {
     placeholderData: (prev) => prev,
   });
 
+  const { data: lookups } = useQuery({
+    queryKey: ['crm-lookups'],
+    queryFn: lookupService.getCrmLookups,
+    staleTime: 10 * 60 * 1000,
+  });
+
   const records = data?.records ?? [];
+  // Ticked rows. Ids that leave the page (a re-sort can swap them out) stop
+  // counting but return with their row, so a selection survives sorting; a
+  // change of search clears it (see changeSearch / clearFilters).
+  const pageIds = useMemo(() => (data?.records ?? []).map((inv) => inv.id), [data?.records]);
+  const selection = useIdSelection(pageIds);
   const hasMore = data?.hasMore ?? false;
   const hasPrev = prevCursors.length > 0;
   const pageNum = prevCursors.length + 1;
@@ -122,6 +144,32 @@ export function InvoiceTable() {
     setTerm('');
     setCursor('');
     setPrevCursors([]);
+    selection.clear();
+  }
+
+  function changeSearch(value: string) {
+    setTerm(value);
+    selection.clear();
+  }
+
+  function toggleAllOnPage() {
+    if (selection.selected.size === pageIds.length) selection.clear();
+    else selection.setAll(pageIds);
+  }
+
+  // Only the ticked rows, from the page on screen: nothing is fetched.
+  function handleExportSelected() {
+    const rows = records.filter((inv) => selection.selected.has(inv.id));
+    downloadCsv(buildCsvFilename('Invoice'), buildCsvText(INVOICE_CSV_HEADERS, rows.map(invoiceCsvRow)));
+  }
+
+  // A saved view is the same as typing the search and picking the sort by hand.
+  function applyView(view: InvoiceViewState) {
+    setTerm(view.term);
+    setSortBy(view.sortBy);
+    setSortDir(view.sortDir);
+    setCursor('');
+    setPrevCursors([]);
   }
 
   function handleSort(field: SortField) {
@@ -146,15 +194,8 @@ export function InvoiceTable() {
     try {
       await exportPagedCsv(
         (exportCursor) => invoiceService.searchInvoices({ ...req, limit: EXPORT_PAGE_SIZE, cursor: exportCursor }),
-        ['Invoice #', 'Customer', 'Status', 'Invoice Date', 'Amount', 'Balance Due'],
-        (inv) => [
-          inv.invoiceNumber ?? '',
-          inv.customer?.name ?? '',
-          inv.status ?? '',
-          fmtCsvDate(inv.invoiceDate),
-          String(inv.grandTotal ?? 0),
-          String(inv.balanceDue ?? 0),
-        ],
+        INVOICE_CSV_HEADERS,
+        invoiceCsvRow,
         'Invoice',
       );
     } catch (err) {
@@ -174,15 +215,15 @@ export function InvoiceTable() {
             type="text"
             placeholder="Search invoice #, customer, PO…"
             value={term}
-            onChange={(e) => setTerm(e.target.value)}
-            className="h-8 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-3 text-xs text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150"
+            onChange={(e) => changeSearch(e.target.value)}
+            className="h-8 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-3 text-xs text-stone-900 placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150"
           />
         </div>
 
         <div className="h-5 w-px bg-stone-200" aria-hidden="true" />
 
         <div className="flex items-center gap-1.5">
-          <span className="text-2xs font-semibold uppercase tracking-wider text-stone-400 pr-0.5">Sort:</span>
+          <span className="text-2xs font-semibold uppercase tracking-wider text-stone-500 pr-0.5">Sort:</span>
           {(Object.entries(SORT_LABELS) as [SortField, string][]).map(([field, label]) => (
             <button
               key={field}
@@ -199,6 +240,8 @@ export function InvoiceTable() {
             </button>
           ))}
         </div>
+
+        <InvoiceSavedViews current={{ term, sortBy, sortDir }} onApply={applyView} />
 
         {hasFilters && (
           <button
@@ -234,17 +277,20 @@ export function InvoiceTable() {
       {/* Table */}
       <div className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm">
         <div className="overflow-x-auto modal-scrollbar">
-          <table className="w-full min-w-[680px] text-left text-xs">
+          <table className="w-full sm:min-w-[680px] text-left text-xs">
             <thead className="border-b border-stone-200 bg-table-header">
               <tr>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Invoice #</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Customer</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Status</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Invoice Date</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right">Amount</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right">Balance Due</th>
+                <th className="w-10 px-4 max-sm:px-2 py-3">
+                  <SelectAllCheckbox selectedCount={selection.selected.size} pageCount={pageIds.length} onToggle={toggleAllOnPage} />
+                </th>
+                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Invoice #</th>
+                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Customer</th>
+                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Status</th>
+                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 max-sm:hidden">Invoice Date</th>
+                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right max-sm:hidden">Amount</th>
+                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right">Balance Due</th>
                 {canEdit && (
-                  <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right">Actions</th>
+                  <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right max-sm:hidden">Actions</th>
                 )}
               </tr>
             </thead>
@@ -252,52 +298,63 @@ export function InvoiceTable() {
               {isLoading ? (
                 Array.from({ length: 5 }, (_, i) => (
                   <tr key={i}>
-                    <td className="px-4 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-20" /></td>
-                    <td className="px-4 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-36" /></td>
-                    <td className="px-4 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-20" /></td>
-                    <td className="px-4 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-16" /></td>
-                    <td className="px-4 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-16 ml-auto" /></td>
-                    <td className="px-4 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-16 ml-auto" /></td>
-                    {canEdit && <td className="px-4 py-3" />}
+                    <td className="w-10 px-4 max-sm:px-2 py-3" />
+                    <td className="px-4 max-sm:px-2 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-20" /></td>
+                    <td className="px-4 max-sm:px-2 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-36" /></td>
+                    <td className="px-4 max-sm:px-2 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-20" /></td>
+                    <td className="px-4 max-sm:px-2 py-3 max-sm:hidden"><div className="animate-pulse h-3 rounded bg-stone-100 w-16" /></td>
+                    <td className="px-4 max-sm:px-2 py-3 max-sm:hidden"><div className="animate-pulse h-3 rounded bg-stone-100 w-16 ml-auto" /></td>
+                    <td className="px-4 max-sm:px-2 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-16 ml-auto" /></td>
+                    {canEdit && <td className="px-4 max-sm:px-2 py-3 max-sm:hidden" />}
                   </tr>
                 ))
               ) : records.length > 0 ? (
                 records.map((inv) => {
                   return (
                     <tr key={inv.id} className="group hover:bg-accent/10 transition-colors duration-150">
-                      <td className="px-4 py-3.5">
-                        <button
-                          type="button"
-                          onClick={() => navigate(`/sales/invoice/${inv.id}`)}
-                          className="font-mono text-xs font-semibold text-stone-900 hover:text-accent-foreground transition-colors"
-                        >
-                          {inv.invoiceNumber || '—'}
-                        </button>
-                      </td>
-                      <td className="px-4 py-3.5 text-xs text-stone-700 truncate max-w-[200px]">
-                        {inv.customer?.name ?? '—'}
-                      </td>
-                      <td className="px-4 py-3.5">
-                        <InvoiceStatusControl
-                          invoice={{ statusCode: inv.statusCode, approvalStatus: inv.approvalStatus ?? 'none', nextStatusCodes: inv.nextStatusCodes }}
-                          onChange={(code) => transition.mutate({ id: inv.id, toStatusCode: code })}
-                          disabled={transition.isPending && transition.variables?.id === inv.id}
-                          variant="pill"
+                      <td className="w-10 px-4 max-sm:px-2 py-3.5">
+                        <SelectRowCheckbox
+                          checked={selection.selected.has(inv.id)}
+                          label={`Select invoice ${inv.invoiceNumber || inv.id}`}
+                          onToggle={() => selection.toggle(inv.id)}
                         />
                       </td>
-                      <td className="px-4 py-3.5 text-xs text-stone-400 tabular-nums whitespace-nowrap">
+                      <td className="px-4 max-sm:px-2 py-3.5">
+                        <Link
+                          to={`/sales/invoice/${inv.id}`}
+                          className="font-mono text-xs font-semibold whitespace-nowrap text-stone-900 hover:text-accent-foreground transition-colors"
+                        >
+                          {inv.invoiceNumber || '—'}
+                        </Link>
+                      </td>
+                      <td className="px-4 max-sm:px-2 py-3.5 text-xs text-stone-700 truncate max-w-[200px]">
+                        {inv.customer?.name ? <CustomerLink id={inv.customer.id} name={inv.customer.name} className="hover:text-accent-foreground hover:underline" /> : '—'}
+                      </td>
+                      <td className="px-4 max-sm:px-2 py-3.5">
+                        {isSuperAdmin ? (
+                          <InvoiceStatusControl
+                            invoice={{ statusCode: inv.statusCode, approvalStatus: inv.approvalStatus ?? 'none', nextStatusCodes: inv.nextStatusCodes }}
+                            onChange={(code) => transition.mutate({ id: inv.id, toStatusCode: code })}
+                            disabled={transition.isPending && transition.variables?.id === inv.id}
+                            variant="pill"
+                          />
+                        ) : (
+                          <ReadOnlyStatusPill label={inv.status} color={INVOICE_STATUS_COLORS[inv.status]} />
+                        )}
+                      </td>
+                      <td className="px-4 max-sm:px-2 py-3.5 text-xs text-stone-500 tabular-nums whitespace-nowrap max-sm:hidden">
                         {inv.invoiceDate
-                          ? new Date(inv.invoiceDate).toLocaleDateString(undefined, { year: '2-digit', month: 'short', day: 'numeric' })
+                          ? formatDateValue(inv.invoiceDate, undefined, LIST_DATE_OPTIONS)
                           : '—'}
                       </td>
-                      <td className="px-4 py-3.5 text-xs font-semibold text-stone-900 tabular-nums text-right whitespace-nowrap">
-                        {currency(inv.grandTotal)}
+                      <td className="px-4 max-sm:px-2 py-3.5 text-xs font-semibold text-stone-900 tabular-nums text-right whitespace-nowrap max-sm:hidden">
+                        {formatMoney(inv.grandTotal, currencyCodeFor(lookups, inv.currencyId))}
                       </td>
-                      <td className="px-4 py-3.5 text-xs font-medium text-stone-600 tabular-nums text-right whitespace-nowrap">
-                        {currency(inv.balanceDue)}
+                      <td className="px-4 max-sm:px-2 py-3.5 text-xs font-medium text-stone-600 tabular-nums text-right whitespace-nowrap">
+                        {formatMoney(inv.balanceDue, currencyCodeFor(lookups, inv.currencyId))}
                       </td>
                       {canEdit && (
-                        <td className="px-4 py-3.5 text-right">
+                        <td className="px-4 max-sm:px-2 py-3.5 text-right max-sm:hidden">
                           <button
                             type="button"
                             onClick={() => navigate(`/sales/invoice/${inv.id}/edit`)}
@@ -313,14 +370,14 @@ export function InvoiceTable() {
                 })
               ) : (
                 <tr>
-                  <td colSpan={6 + (canEdit ? 1 : 0)} className="py-16 text-center">
+                  <td colSpan={7 + (canEdit ? 1 : 0)} className="py-16 text-center">
                     {!hasFilters ? (
                       <div className="flex flex-col items-center gap-3">
                         <div className="rounded-2xl bg-stone-100 p-4">
                           <Inbox className="size-6 text-stone-400" />
                         </div>
                         <p className="text-sm font-semibold text-stone-700">No invoices added yet.</p>
-                        <p className="text-xs text-stone-400">Create your first invoice to get started.</p>
+                        <p className="text-xs text-stone-500">Create your first invoice to get started.</p>
                       </div>
                     ) : (
                       <div className="flex flex-col items-center gap-3">
@@ -328,7 +385,7 @@ export function InvoiceTable() {
                           <Search className="size-6 text-stone-400" />
                         </div>
                         <p className="text-sm font-semibold text-stone-700">No invoices match the current search.</p>
-                        <p className="text-xs text-stone-400">Try adjusting your search terms.</p>
+                        <p className="text-xs text-stone-500">Try adjusting your search terms.</p>
                       </div>
                     )}
                   </td>
@@ -366,6 +423,14 @@ export function InvoiceTable() {
           </div>
         )}
       </div>
+
+      {selection.selected.size > 0 && (
+        <BulkSelectionBar
+          count={selection.selected.size}
+          onExport={handleExportSelected}
+          onClear={selection.clear}
+        />
+      )}
     </div>
   );
 }

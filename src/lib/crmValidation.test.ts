@@ -49,7 +49,7 @@ describe('validateCrmRecord — customer core address/contact requirements', () 
     customer_addr_country: '1',
     customer_addr_state: '36',
     customer_addr_zip: '10001',
-    customer_primary_phonenum: '+1 555 123 4567',
+    customer_primary_phonenum: '+1 415 555 0123',
   }
 
   it('flags a missing primary address and phone on an otherwise-complete record', () => {

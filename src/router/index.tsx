@@ -1,30 +1,16 @@
 /* eslint-disable react-refresh/only-export-components */
-import React, { lazy, Suspense } from "react";
+import React, { Suspense } from "react";
 import { createBrowserRouter, Navigate } from "react-router-dom";
 import AuthLayout from "@/layouts/AuthLayout";
 import MainLayout from "@/layouts/MainLayout";
-
-// Wraps lazy() so that a ChunkLoadError (stale CDN chunk after a new deploy)
-// triggers a one-time hard reload instead of showing a crash screen.
-function lazyWithRetry<T extends React.ComponentType<unknown>>(
-  factory: () => Promise<{ default: T }>,
-): React.LazyExoticComponent<T> {
-  return lazy(() =>
-    factory().catch((err: unknown) => {
-      const reloadKey = "chunk_reload_attempted";
-      if (!sessionStorage.getItem(reloadKey)) {
-        sessionStorage.setItem(reloadKey, "1");
-        window.location.reload();
-        // Return a never-resolving promise — reload takes over.
-        return new Promise<never>(() => {});
-      }
-      return Promise.reject(err);
-    }),
-  );
-}
+import { lazyWithRetry } from "@/lib/lazyWithRetry";
+import RouteErrorPage from "@/pages/common/RouteErrorPage";
 
 import { PermissionGuard } from "@/components/PermissionGuard";
+import { REPORT_MODULES } from "@/lib/reportsRegistry";
+import { PortalOnlyGuard } from "@/components/PortalOnlyGuard";
 
+const FabricationApprovalPage = lazyWithRetry(() => import("@/pages/customer/FabricationApprovalPage"));
 const LoginPage = lazyWithRetry(() => import("@/pages/auth/LoginPage"));
 const ForgotPasswordPage = lazyWithRetry(
   () => import("@/pages/auth/ForgotPasswordPage"),
@@ -34,6 +20,7 @@ const SsoCallbackPage = lazyWithRetry(() => import("@/pages/auth/SsoCallbackPage
 const DashboardPage = lazyWithRetry(() => import("@/pages/dashboard/DashboardPage"));
 const SearchResultsPage = lazyWithRetry(() => import("@/pages/search/SearchResultsPage"));
 const OnboardingPage = lazyWithRetry(() => import("@/pages/customer/OnboardingPage"));
+const TenantDetailPage = lazyWithRetry(() => import("@/pages/customer/TenantDetailPage"));
 const AddCustomerPage = lazyWithRetry(() => import("@/pages/customer/AddCustomerPage"));
 const OnboardingApplyPage = lazyWithRetry(
   () => import("@/pages/onboarding/OnboardingApplyPage"),
@@ -84,6 +71,11 @@ const UsersPage = lazyWithRetry(() => import("@/pages/config/users/UsersPage"));
 const CompanyProfilePage = lazyWithRetry(
   () => import("@/pages/config/company-profile/CompanyProfilePage"),
 );
+const AIAssistantConfigPage = lazyWithRetry(
+  () => import("@/pages/config/ai-assistant/AIAssistantConfigPage"),
+);
+const AutomationPage = lazyWithRetry(() => import("@/pages/config/automation/AutomationPage"));
+const DeliveryLogPage = lazyWithRetry(() => import("@/pages/config/automation/deliveries/DeliveryLogPage"));
 const RecordNumberingPage = lazyWithRetry(
   () => import("@/pages/config/record-numbering/RecordNumberingPage"),
 );
@@ -105,6 +97,12 @@ const FeedbackListPage = lazyWithRetry(
 const FeedbackDetailPage = lazyWithRetry(
   () => import("@/pages/platform/feedback/FeedbackDetailPage"),
 );
+const PlatformAIPage = lazyWithRetry(
+  () => import("@/pages/platform/ai/PlatformAIPage"),
+);
+const PlatformAutomationPage = lazyWithRetry(
+  () => import("@/pages/platform/automation/PlatformAutomationPage"),
+);
 const SamlSetupPage = lazyWithRetry(
   () => import("@/pages/config/saml-setup/SamlSetupPage"),
 );
@@ -117,14 +115,18 @@ const EntraSamlSetupPage = lazyWithRetry(
 const CustomSamlSetupPage = lazyWithRetry(
   () => import("@/pages/config/saml-setup/CustomSamlSetupPage"),
 );
-const WorkflowPlaceholderPage = lazyWithRetry(
-  () => import("@/pages/common/WorkflowPlaceholderPage"),
-);
 const AccountSettingsPage = lazyWithRetry(
   () => import("@/pages/account/AccountSettingsPage"),
 );
 const TransactionsPage = lazyWithRetry(
   () => import("@/pages/transactions/TransactionsPage"),
+);
+const SupportPage = lazyWithRetry(() => import("@/pages/support/SupportPage"));
+const ApprovalsInboxPage = lazyWithRetry(
+  () => import("@/pages/approvals/ApprovalsInboxPage"),
+);
+const AnomaliesPage = lazyWithRetry(
+  () => import("@/pages/anomalies/AnomaliesPage"),
 );
 const SubscriptionPage = lazyWithRetry(
   () => import("@/pages/subscription/SubscriptionPage"),
@@ -149,6 +151,18 @@ const QuoteDetailPage = lazyWithRetry(
 const EditQuotePage = lazyWithRetry(
   () => import("@/pages/sales/EditQuotePage"),
 );
+const CreatedOrderListPage = lazyWithRetry(
+  () => import("@/pages/sales/created-order/CreatedOrderListPage"),
+);
+const AddCreatedOrderPage = lazyWithRetry(
+  () => import("@/pages/sales/created-order/AddCreatedOrderPage"),
+);
+const CreatedOrderDetailPage = lazyWithRetry(
+  () => import("@/pages/sales/created-order/CreatedOrderDetailPage"),
+);
+const EditCreatedOrderPage = lazyWithRetry(
+  () => import("@/pages/sales/created-order/EditCreatedOrderPage"),
+);
 const SalesOrderListPage = lazyWithRetry(
   () => import("@/pages/sales/SalesOrderListPage"),
 );
@@ -158,6 +172,9 @@ const SalesOrderDetailPage = lazyWithRetry(
 );
 const EditSalesOrderPage = lazyWithRetry(
   () => import("@/pages/sales/EditSalesOrderPage"),
+);
+const SalesOrderDrawingPage = lazyWithRetry(
+  () => import("@/pages/sales/drawing/SalesOrderDrawingPage"),
 );
 const FabricationJobListPage = lazyWithRetry(
   () => import("@/pages/sales/FabricationJobListPage"),
@@ -247,6 +264,9 @@ const PurchaseOrderDetailPage = lazyWithRetry(
 const EditPurchaseOrderPage = lazyWithRetry(
   () => import("@/pages/purchases/purchase-order/EditPurchaseOrderPage"),
 );
+const ReorderPage = lazyWithRetry(
+  () => import("@/pages/purchases/reorder/ReorderPage"),
+);
 const ItemReceiptListPage = lazyWithRetry(
   () => import("@/pages/purchases/item-receipt/ItemReceiptListPage"),
 );
@@ -312,8 +332,9 @@ const ItemListPage = lazyWithRetry(() => import("@/pages/inventory/item/ItemList
 const AddItemPage = lazyWithRetry(() => import("@/pages/inventory/item/AddItemPage"));
 const EditItemPage = lazyWithRetry(() => import("@/pages/inventory/item/EditItemPage"));
 const ItemDetailPage = lazyWithRetry(() => import("@/pages/inventory/item/ItemDetailPage"));
+const AddKitPage = lazyWithRetry(() => import("@/pages/inventory/kit/AddKitPage"));
+const EditKitPage = lazyWithRetry(() => import("@/pages/inventory/kit/EditKitPage"));
 const UnitListPage = lazyWithRetry(() => import("@/pages/inventory/unit/UnitListPage"));
-const AddUnitPage = lazyWithRetry(() => import("@/pages/inventory/unit/AddUnitPage"));
 const UnitDetailPage = lazyWithRetry(() => import("@/pages/inventory/unit/UnitDetailPage"));
 const BinListPage = lazyWithRetry(() => import("@/pages/inventory/bin/BinListPage"));
 const WarehouseListPage = lazyWithRetry(() => import("@/pages/inventory/warehouse/WarehouseListPage"));
@@ -330,6 +351,11 @@ const TransferDetailPage = lazyWithRetry(() => import("@/pages/inventory/transfe
 const CountListPage = lazyWithRetry(() => import("@/pages/inventory/count/CountListPage"));
 const AddCountPage = lazyWithRetry(() => import("@/pages/inventory/count/AddCountPage"));
 const CountDetailPage = lazyWithRetry(() => import("@/pages/inventory/count/CountDetailPage"));
+const BinDetailPage = lazyWithRetry(() => import("@/pages/inventory/bin/BinDetailPage"));
+const BinTransferListPage = lazyWithRetry(() => import("@/pages/inventory/bin-transfer/BinTransferListPage"));
+const AddBinTransferPage = lazyWithRetry(() => import("@/pages/inventory/bin-transfer/AddBinTransferPage"));
+const EditBinTransferPage = lazyWithRetry(() => import("@/pages/inventory/bin-transfer/EditBinTransferPage"));
+const BinTransferDetailPage = lazyWithRetry(() => import("@/pages/inventory/bin-transfer/BinTransferDetailPage"));
 const InventorySetupPage = lazyWithRetry(() => import("@/pages/config/inventory-setup/InventorySetupPage"));
 
 const JournalEntryListPage = lazyWithRetry(
@@ -357,6 +383,38 @@ const AccountingPeriodsPage = lazyWithRetry(
   () => import("@/pages/finance/accounting-periods/AccountingPeriodsPage"),
 );
 
+// Calendar module
+const ActivityPlannerPage = lazyWithRetry(
+  () => import("@/pages/calendar/ActivityPlannerPage"),
+);
+const InstallSchedulePage = lazyWithRetry(
+  () => import("@/pages/calendar/InstallSchedulePage"),
+);
+
+// Reports module
+const ReportsHubPage = lazyWithRetry(() => import("@/pages/reports/ReportsHubPage"));
+const CustomReportsPage = lazyWithRetry(() => import("@/pages/reports/CustomReportsPage"));
+const CustomReportBuilderPage = lazyWithRetry(() => import("@/pages/reports/custom/CustomReportBuilderPage"));
+const ConversionFunnelPage = lazyWithRetry(() => import("@/pages/reports/crm/ConversionFunnelPage"));
+const LeadSourcePage = lazyWithRetry(() => import("@/pages/reports/crm/LeadSourcePage"));
+const StaleRecordsPage = lazyWithRetry(() => import("@/pages/reports/crm/StaleRecordsPage"));
+const PurchasesByVendorPage = lazyWithRetry(() => import("@/pages/reports/purchases/PurchasesByVendorPage"));
+const PurchasesByItemPage = lazyWithRetry(() => import("@/pages/reports/purchases/PurchasesByItemPage"));
+const OpenPurchaseOrdersPage = lazyWithRetry(() => import("@/pages/reports/purchases/OpenPurchaseOrdersPage"));
+const ApAgingPage = lazyWithRetry(() => import("@/pages/reports/purchases/ApAgingPage"));
+const StockOnHandPage = lazyWithRetry(() => import("@/pages/reports/inventory/StockOnHandPage"));
+const SlabAvailabilityPage = lazyWithRetry(() => import("@/pages/reports/inventory/SlabAvailabilityPage"));
+const LowStockPage = lazyWithRetry(() => import("@/pages/reports/inventory/LowStockPage"));
+const StockMovementPage = lazyWithRetry(() => import("@/pages/reports/inventory/StockMovementPage"));
+const UpcomingInstallsPage = lazyWithRetry(() => import("@/pages/reports/calendar/UpcomingInstallsPage"));
+const OverdueActivitiesPage = lazyWithRetry(() => import("@/pages/reports/calendar/OverdueActivitiesPage"));
+const OnTimeCompletionPage = lazyWithRetry(() => import("@/pages/reports/calendar/OnTimeCompletionPage"));
+const LeadTimePage = lazyWithRetry(() => import("@/pages/reports/calendar/LeadTimePage"));
+const ProfitLossPage = lazyWithRetry(() => import("@/pages/reports/finance/ProfitLossPage"));
+const SalesByCustomerPage = lazyWithRetry(() => import("@/pages/reports/sales/SalesByCustomerPage"));
+const SalesByItemPage = lazyWithRetry(() => import("@/pages/reports/sales/SalesByItemPage"));
+const SalesTrendPage = lazyWithRetry(() => import("@/pages/reports/sales/SalesTrendPage"));
+
 const PageLoader = () => (
   <div className="flex items-center justify-center h-full min-h-[200px]">
     <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
@@ -371,26 +429,53 @@ export const router = createBrowserRouter([
   // Public onboarding routes: self-service application + password setup.
   {
     path: "/onboarding/apply",
+    errorElement: <RouteErrorPage />,
     element: lazy_(<OnboardingApplyPage />),
   },
   {
     path: "/onboarding/set-password",
+    errorElement: <RouteErrorPage />,
     element: lazy_(<SetPasswordPage />),
   },
   // Public workspace invite acceptance route.
   {
     path: "/accept-invite",
+    errorElement: <RouteErrorPage />,
     element: lazy_(<AcceptInvitePage />),
   },
+  // `/login` is the first URL people guess; the real route lives under /auth.
+  { path: "/login", element: <Navigate to="/auth/login" replace /> },
   {
     path: "/",
     element: <MainLayout />,
+    // Only reached if MainLayout itself crashes; a page crash is caught by the
+    // pathless route below so the sidebar and header stay usable.
+    errorElement: <RouteErrorPage />,
     children: [
+      {
+        errorElement: <RouteErrorPage embedded />,
+        children: [
       { path: "", element: <Navigate to="/dashboard" replace /> },
       { path: "dashboard", element: lazy_(<DashboardPage />) },
       { path: "search", element: lazy_(<SearchResultsPage />) },
+      // The backend's portal emails (welcome, note receipt, and every PDF email
+      // sent before document links went direct) link to <app>/portal. It is not a
+      // page of its own: signed-out visitors are sent to sign in by MainLayout,
+      // and a customer lands on the first document list the portal offers.
+      { path: "portal", element: <Navigate to="/sales/sales_order" replace /> },
       { path: "account/settings", element: lazy_(<AccountSettingsPage />) },
       { path: "transactions", element: lazy_(<TransactionsPage />) },
+      // Open to every signed-in user, customer-portal sessions included (see
+      // CUSTOMER_ALLOWED_PATH_PREFIXES), so deliberately no PermissionGuard.
+      { path: "support", element: lazy_(<SupportPage />) },
+      // Staff only (customer sessions are bounced by CUSTOMER_ALLOWED_PATH_PREFIXES)
+      // and deliberately no PermissionGuard: the server addresses each finding to
+      // specific people and returns only theirs, so there is no RBAC resource.
+      { path: "anomalies", element: lazy_(<AnomaliesPage />) },
+      // Staff only (not in CUSTOMER_ALLOWED_PATH_PREFIXES) and no PermissionGuard:
+      // the server returns only what the caller may approve, so a non-approver
+      // simply sees the empty state.
+      { path: "approvals", element: lazy_(<ApprovalsInboxPage />) },
       {
         path: "subscription",
         element: lazy_(
@@ -416,6 +501,10 @@ export const router = createBrowserRouter([
             <AddProspectPage />
           </PermissionGuard>,
         ),
+      },
+      {
+        path: "customer/fabrication-approvals/:job/:revision",
+        element: lazy_(<FabricationApprovalPage />),
       },
       {
         path: "crm/prospect/:id",
@@ -570,6 +659,42 @@ export const router = createBrowserRouter([
         ),
       },
 
+      // Created Orders — countertop orders a customer-portal user files. Portal
+      // only: no staff module, so the guard is the session kind, not an RBAC
+      // resource (the API is /api/portal/created-orders).
+      {
+        path: "sales/created-orders",
+        element: lazy_(
+          <PortalOnlyGuard>
+            <CreatedOrderListPage />
+          </PortalOnlyGuard>,
+        ),
+      },
+      {
+        path: "sales/created-orders/new",
+        element: lazy_(
+          <PortalOnlyGuard>
+            <AddCreatedOrderPage />
+          </PortalOnlyGuard>,
+        ),
+      },
+      {
+        path: "sales/created-orders/:id",
+        element: lazy_(
+          <PortalOnlyGuard>
+            <CreatedOrderDetailPage />
+          </PortalOnlyGuard>,
+        ),
+      },
+      {
+        path: "sales/created-orders/:id/edit",
+        element: lazy_(
+          <PortalOnlyGuard>
+            <EditCreatedOrderPage />
+          </PortalOnlyGuard>,
+        ),
+      },
+
       // Sales Orders (specific routes must come before the catch-all)
       {
         path: "sales/sales_order",
@@ -600,6 +725,14 @@ export const router = createBrowserRouter([
         element: lazy_(
           <PermissionGuard resource="sales_order" action="update" workflowKey="sales_order">
             <EditSalesOrderPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "sales/sales_order/:id/drawing",
+        element: lazy_(
+          <PermissionGuard resource="sales_order" action="update" workflowKey="sales_order">
+            <SalesOrderDrawingPage />
           </PermissionGuard>,
         ),
       },
@@ -774,6 +907,218 @@ export const router = createBrowserRouter([
         ),
       },
 
+      // Calendar: Activity Planner. It reads every order's schedule, so it is
+      // gated like the Sales Orders list (and hidden from customer sessions by
+      // CUSTOMER_ALLOWED_PATH_PREFIXES, which has no /calendar entry).
+      {
+        path: "calendar/activity-planner",
+        element: lazy_(
+          <PermissionGuard resource="sales_order" action="read" workflowKey="sales_order">
+            <ActivityPlannerPage />
+          </PermissionGuard>,
+        ),
+      },
+
+      // Calendar: Install Schedule. Gated by its own install_appointment grant;
+      // no workflowKey because visits are not a workflow record.
+      {
+        path: "calendar/install-schedule",
+        element: lazy_(
+          <PermissionGuard resource="install_appointment" action="read">
+            <InstallSchedulePage />
+          </PermissionGuard>,
+        ),
+      },
+
+      // Reports. Each module hub (/reports/<module>) is gated by that module's
+      // own report_<module>:read grant; the data scope (all/team/own) is
+      // applied by the server. Staff only: /reports is not in
+      // CUSTOMER_ALLOWED_PATH_PREFIXES.
+      ...REPORT_MODULES.map((m) => ({
+        path: `reports/${m.slug}`,
+        element: lazy_(
+          <PermissionGuard resource={m.resource} action="read">
+            <ReportsHubPage slug={m.slug} />
+          </PermissionGuard>,
+        ),
+      })),
+      {
+        path: "reports/crm/funnel",
+        element: lazy_(
+          <PermissionGuard resource="report_crm" action="read">
+            <ConversionFunnelPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "reports/crm/lead-sources",
+        element: lazy_(
+          <PermissionGuard resource="report_crm" action="read">
+            <LeadSourcePage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "reports/crm/stale",
+        element: lazy_(
+          <PermissionGuard resource="report_crm" action="read">
+            <StaleRecordsPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "reports/purchases/by-vendor",
+        element: lazy_(
+          <PermissionGuard resource="report_purchases" action="read">
+            <PurchasesByVendorPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "reports/purchases/by-item",
+        element: lazy_(
+          <PermissionGuard resource="report_purchases" action="read">
+            <PurchasesByItemPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "reports/purchases/open-pos",
+        element: lazy_(
+          <PermissionGuard resource="report_purchases" action="read">
+            <OpenPurchaseOrdersPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "reports/purchases/ap-aging",
+        element: lazy_(
+          <PermissionGuard resource="report_purchases" action="read">
+            <ApAgingPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "reports/inventory/stock",
+        element: lazy_(
+          <PermissionGuard resource="report_inventory" action="read">
+            <StockOnHandPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "reports/inventory/slabs",
+        element: lazy_(
+          <PermissionGuard resource="report_inventory" action="read">
+            <SlabAvailabilityPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "reports/inventory/low-stock",
+        element: lazy_(
+          <PermissionGuard resource="report_inventory" action="read">
+            <LowStockPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "reports/inventory/movement",
+        element: lazy_(
+          <PermissionGuard resource="report_inventory" action="read">
+            <StockMovementPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "reports/calendar/upcoming-installs",
+        element: lazy_(
+          <PermissionGuard resource="report_calendar" action="read">
+            <UpcomingInstallsPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "reports/calendar/overdue",
+        element: lazy_(
+          <PermissionGuard resource="report_calendar" action="read">
+            <OverdueActivitiesPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "reports/calendar/on-time",
+        element: lazy_(
+          <PermissionGuard resource="report_calendar" action="read">
+            <OnTimeCompletionPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "reports/calendar/lead-time",
+        element: lazy_(
+          <PermissionGuard resource="report_calendar" action="read">
+            <LeadTimePage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "reports/finance/profit-loss",
+        element: lazy_(
+          <PermissionGuard resource="report_finance" action="read">
+            <ProfitLossPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "reports/sales/by-customer",
+        element: lazy_(
+          <PermissionGuard resource="report_sales" action="read">
+            <SalesByCustomerPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "reports/sales/by-item",
+        element: lazy_(
+          <PermissionGuard resource="report_sales" action="read">
+            <SalesByItemPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "reports/sales/trend",
+        element: lazy_(
+          <PermissionGuard resource="report_sales" action="read">
+            <SalesTrendPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "reports/custom",
+        element: lazy_(
+          <PermissionGuard resource="custom_report" action="read">
+            <CustomReportsPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "reports/custom/new",
+        element: lazy_(
+          <PermissionGuard resource="custom_report" action="read">
+            <CustomReportBuilderPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "reports/custom/:id",
+        element: lazy_(
+          <PermissionGuard resource="custom_report" action="read">
+            <CustomReportBuilderPage />
+          </PermissionGuard>,
+        ),
+      },
+
       // Vendors (specific routes must come before the purchases catch-all)
       {
         path: "purchases/vendor",
@@ -872,6 +1217,17 @@ export const router = createBrowserRouter([
         element: lazy_(
           <PermissionGuard resource="purchase_order" action="update" workflowKey="purchase_order">
             <EditPurchaseOrderPage />
+          </PermissionGuard>,
+        ),
+      },
+
+      // Reorder (the auto-draft-PO shortage safety net) — no workflowKey,
+      // it isn't a workflow record type.
+      {
+        path: "purchases/reorder",
+        element: lazy_(
+          <PermissionGuard resource="replenishment" action="read">
+            <ReorderPage />
           </PermissionGuard>,
         ),
       },
@@ -1149,19 +1505,28 @@ export const router = createBrowserRouter([
           </PermissionGuard>,
         ),
       },
+      // Kits: named groups of items sold together. Same grant as the items.
+      {
+        path: "inventory/kit/new",
+        element: lazy_(
+          <PermissionGuard resource="inventory_item" action="create">
+            <AddKitPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "inventory/kit/:id",
+        element: lazy_(
+          <PermissionGuard resource="inventory_item" action="update">
+            <EditKitPage />
+          </PermissionGuard>,
+        ),
+      },
       {
         path: "inventory/unit",
         element: lazy_(
           <PermissionGuard resource="inventory_unit" action="read">
             <UnitListPage />
-          </PermissionGuard>,
-        ),
-      },
-      {
-        path: "inventory/unit/new",
-        element: lazy_(
-          <PermissionGuard resource="inventory_unit" action="create">
-            <AddUnitPage />
           </PermissionGuard>,
         ),
       },
@@ -1182,13 +1547,55 @@ export const router = createBrowserRouter([
         ),
       },
       {
-        path: "inventory/warehouse",
+        path: "inventory/bin/:id",
+        element: lazy_(
+          <PermissionGuard resource="inventory_bin" action="read">
+            <BinDetailPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "inventory/bin_transfer",
+        element: lazy_(
+          <PermissionGuard resource="bin_transfer" action="read">
+            <BinTransferListPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "inventory/bin_transfer/new",
+        element: lazy_(
+          <PermissionGuard resource="bin_transfer" action="create">
+            <AddBinTransferPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "inventory/bin_transfer/:id",
+        element: lazy_(
+          <PermissionGuard resource="bin_transfer" action="read">
+            <BinTransferDetailPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "inventory/bin_transfer/:id/edit",
+        element: lazy_(
+          <PermissionGuard resource="bin_transfer" action="update">
+            <EditBinTransferPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "inventory/location",
         element: lazy_(
           <PermissionGuard resource="warehouse" action="read">
             <WarehouseListPage />
           </PermissionGuard>,
         ),
       },
+      // Warehouses are Locations now; keep bookmarks to the old URL working.
+      { path: "inventory/warehouse", element: <Navigate to="/inventory/location" replace /> },
       {
         path: "inventory/bundle",
         element: lazy_(
@@ -1294,20 +1701,6 @@ export const router = createBrowserRouter([
         ),
       },
 
-      // Sales, Purchases & Inventory modules (placeholder pages — full functionality coming soon)
-      {
-        path: "sales/:moduleKey",
-        element: lazy_(<WorkflowPlaceholderPage />),
-      },
-      {
-        path: "purchases/:moduleKey",
-        element: lazy_(<WorkflowPlaceholderPage />),
-      },
-      {
-        path: "inventory/:moduleKey",
-        element: lazy_(<WorkflowPlaceholderPage />),
-      },
-
       // Configuration hub
       { path: "config", element: lazy_(<ConfigHomePage />) },
       {
@@ -1371,6 +1764,30 @@ export const router = createBrowserRouter([
         element: lazy_(
           <PermissionGuard resource="company_profile" action="read">
             <CompanyProfilePage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "config/ai-assistant",
+        element: lazy_(
+          <PermissionGuard resource="company_profile" action="read">
+            <AIAssistantConfigPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "config/automation",
+        element: lazy_(
+          <PermissionGuard resource="automation" action="read">
+            <AutomationPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "config/automation/deliveries",
+        element: lazy_(
+          <PermissionGuard resource="automation" action="read">
+            <DeliveryLogPage />
           </PermissionGuard>,
         ),
       },
@@ -1464,6 +1881,14 @@ export const router = createBrowserRouter([
           </PermissionGuard>,
         ),
       },
+      {
+        path: "customer/onboarding/:tenantId",
+        element: lazy_(
+          <PermissionGuard platformAdminOnly>
+            <TenantDetailPage />
+          </PermissionGuard>,
+        ),
+      },
 
       // Platform-owner only: cross-tenant support ticket queue.
       {
@@ -1482,11 +1907,30 @@ export const router = createBrowserRouter([
           </PermissionGuard>,
         ),
       },
+      {
+        path: "platform/ai",
+        element: lazy_(
+          <PermissionGuard platformAdminOnly>
+            <PlatformAIPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "platform/automation",
+        element: lazy_(
+          <PermissionGuard platformAdminOnly>
+            <PlatformAutomationPage />
+          </PermissionGuard>,
+        ),
+      },
+        ],
+      },
     ],
   },
   {
     path: "/auth",
     element: <AuthLayout />,
+    errorElement: <RouteErrorPage />,
     children: [
       { path: "login", element: lazy_(<LoginPage />) },
       { path: "forgot-password", element: lazy_(<ForgotPasswordPage />) },
@@ -1496,10 +1940,6 @@ export const router = createBrowserRouter([
   },
   {
     path: "*",
-    element: (
-      <div className="p-8">
-        <h1>404 - Not Found</h1>
-      </div>
-    ),
+    element: <RouteErrorPage notFound />,
   },
 ]);

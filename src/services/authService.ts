@@ -4,10 +4,12 @@ import type {
   LoginCredentials,
   RegisterData,
   AuthResponse,
-  RefreshResponse,
   UserProfile,
   IdentifyResult,
+  MfaCodeSent,
+  MfaStatus,
   PortalWorkspace,
+  SessionStatusResponse,
 } from '@/types/auth';
 import type { SAMLProvider } from '@/types/tenant';
 
@@ -39,6 +41,61 @@ export const authService = {
     return response.data;
   },
 
+  // Confirms "end my other session and continue here" after a sign-in was
+  // answered 409 active_session. The single-use ticket is the HttpOnly cookie
+  // that answer set, so nothing is sent; the reply is a normal login response.
+  takeoverSession: async (): Promise<AuthResponse> => {
+    const response = await apiClient.post<AuthResponse>('/auth/session/takeover');
+    return response.data;
+  },
+
+  // Whether this browser's session is still the live one -- polled so a
+  // session another sign-in took over can show its countdown.
+  getSessionStatus: async (): Promise<SessionStatusResponse> => {
+    const response = await apiClient.get<SessionStatusResponse>('/auth/session');
+    return response.data;
+  },
+
+  // Second sign-in step for an account with two-step verification on: trades
+  // the emailed code (and the challenge token login returned) for the same
+  // response login gives when there is no code step.
+  verifyMfa: async (challengeToken: string, code: string): Promise<AuthResponse> => {
+    const response = await apiClient.post<AuthResponse>('/auth/mfa/verify', { challengeToken, code });
+    return response.data;
+  },
+
+  // Emails a fresh code for a sign-in challenge. Refused (429) until the
+  // cooldown from the last send has passed.
+  resendMfa: async (challengeToken: string): Promise<MfaCodeSent> => {
+    const response = await apiClient.post<MfaCodeSent>('/auth/mfa/resend', { challengeToken });
+    return response.data;
+  },
+
+  // Account Settings: whether two-step verification is on for the signed-in
+  // staff user, and whether it can be (not for single sign-on accounts).
+  getMfaStatus: async (): Promise<MfaStatus> => {
+    const response = await apiClient.get<MfaStatus>('/auth/mfa');
+    return response.data;
+  },
+
+  // Emails the code that confirms turning two-step verification on. Calling it
+  // again sends a fresh code and retires the previous one.
+  startEnableMfa: async (): Promise<MfaCodeSent> => {
+    const response = await apiClient.post<MfaCodeSent>('/auth/mfa/enable/start');
+    return response.data;
+  },
+
+  confirmEnableMfa: async (code: string): Promise<{ success: boolean; enabled: boolean }> => {
+    const response = await apiClient.post('/auth/mfa/enable/confirm', { code });
+    return response.data;
+  },
+
+  // Needs the current password so a session left open can't drop the second step.
+  disableMfa: async (currentPassword: string): Promise<{ success: boolean; enabled: boolean }> => {
+    const response = await apiClient.post('/auth/mfa/disable', { currentPassword });
+    return response.data;
+  },
+
   register: async (data: RegisterData): Promise<AuthResponse> => {
     const response = await apiClient.post<AuthResponse>('/auth/register', data);
     return response.data;
@@ -46,13 +103,6 @@ export const authService = {
 
   getCurrentUser: async (): Promise<{ success: boolean; user: UserProfile }> => {
     const response = await apiClient.get('/auth/me');
-    return response.data;
-  },
-
-  // Exchange the refresh_token httpOnly cookie for a new access token.
-  // Called by useSessionTimer ("Stay") and by the Axios 401 interceptor.
-  refreshSession: async (): Promise<RefreshResponse> => {
-    const response = await apiClient.post<RefreshResponse>('/auth/refresh');
     return response.data;
   },
 
@@ -82,6 +132,17 @@ export const authService = {
   changePassword: async (currentPassword: string, newPassword: string): Promise<{ success: boolean; message: string }> => {
     const path = isPortalSession() ? '/portal/auth/change-password' : '/auth/change-password';
     const response = await apiClient.post(path, { currentPassword, newPassword });
+    return response.data;
+  },
+
+  // Rename the signed-in user themselves. Staff hit a self-service route that
+  // needs no user:update permission (PATCH /tenant/users/{id} does, and can
+  // also change status); a portal customer edits the same field on their own
+  // /portal/me profile. Either way the caller can only ever reach their own
+  // record — the target comes from the token, never from the request.
+  updateMyName: async (fullName: string): Promise<{ success: boolean }> => {
+    const path = isPortalSession() ? '/portal/me' : '/tenant/users/me';
+    const response = await apiClient.patch(path, { fullName });
     return response.data;
   },
 

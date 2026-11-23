@@ -41,7 +41,7 @@ export function MaterialConsumption({
   return (
     <WidgetCard title="Material consumption" subtitle={subtitle}>
       {data.materials.length === 0 ? (
-        <p className="text-xs text-stone-400">No material has been consumed yet.</p>
+        <p className="text-xs text-stone-500">No material has been consumed yet.</p>
       ) : (
         <>
           <div className="flex flex-col gap-[13px]">

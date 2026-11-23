@@ -1,4 +1,4 @@
-import { Building2, TrendingUp, Truck, Landmark, Boxes } from 'lucide-react';
+import { Building2, TrendingUp, Truck, Landmark, Boxes, Warehouse } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
 /**
@@ -100,6 +100,20 @@ export const WORKFLOW_GROUPS: WorkflowGroup[] = [
     // a workflow record) — cash_transfer (Journal Entry) is the only Finance
     // module with one.
     keys: ['cash_transfer'],
+  },
+  {
+    id: 'inventory',
+    label: 'Inventory',
+    description: 'Stock movement — Bin Transfers move slabs between bins, with an optional approval chain.',
+    icon: Warehouse,
+    accent: {
+      chip: 'bg-violet-100 text-violet-700 dark:bg-violet-400/15 dark:text-violet-300',
+      rail: 'bg-violet-300 dark:bg-violet-400/40',
+      count: 'bg-violet-100 text-violet-700 dark:bg-violet-400/15 dark:text-violet-300',
+    },
+    // Transfer, Adjustment and Count are plain stock documents with no workflow
+    // row; Bin Transfer is the one inventory module with an approver chain.
+    keys: ['bin_transfer'],
   },
 ];
 

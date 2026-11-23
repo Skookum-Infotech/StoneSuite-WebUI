@@ -1,6 +1,7 @@
 import type { Ref } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { cn } from '@/lib/utils';
+import { TAB_LIST_CLASS, tabClass } from '@/components/ui/tabStyles';
 import { ModernSection, ModernFieldShell } from '@/components/crm/FormPrimitives';
 import { EditableFilesPanel, type EditableFilesPanelHandle } from '@/components/crm/CrmSubTabsPanel';
 import { readonlyCls } from '@/components/crm/formUtils';
@@ -8,11 +9,14 @@ import { DynamicFieldInput } from '@/components/tenant/DynamicFieldInput';
 import { workflowService } from '@/services/tenantServices';
 import { activeCustomFields } from '@/lib/customFields';
 import { VendorPicker, type VendorRef } from '@/pages/purchases/purchase-order/components/VendorPicker';
+import { PurchaseOrderPicker } from './PurchaseOrderPicker';
 import { VendorBillSectionGrid } from './VendorBillFormFields';
 import { VendorBillSummaryCard } from './VendorBillSummaryCard';
+import { currencyCodeFor } from '@/lib/formatMoney';
 import { VendorBillItemsTab } from './VendorBillItemsTab';
 import { VendorBillAuditTab } from './VendorBillAuditTab';
 import type { CrmLookups } from '@/services/lookupService';
+import type { VendorBillPurchaseOrderRef } from '@/types/vendorBill';
 import {
   PRIMARY_INFO_FIELDS, PAGE_TABS, type PageTab, type VendorBillLineItem,
 } from '@/lib/vendorBillForm';
@@ -25,6 +29,7 @@ export function VendorBillFormBody({
   activeTab, setActiveTab, vendorBillId,
   data, set, lineItems, setLineItems,
   vendor, setVendor, vendorLocked = false, onCreateVendor,
+  purchaseOrder, setPurchaseOrder, purchaseOrderItemsError,
   customFieldValues, setCustomField,
   lookups, subtotal, discountAmt, taxTotal, adjustment, total, filesPanelRef,
 }: {
@@ -46,6 +51,15 @@ export function VendorBillFormBody({
    *  doesn't have (see useRecordCreateReturn). Omitted on Edit (the vendor is
    *  locked there anyway) or when the user can't create vendors. */
   onCreateVendor?: (name: string) => void;
+  /** The optional Purchase Order link. With `setPurchaseOrder` (Add) it is an
+   *  editable picker scoped to the chosen vendor; without it (Edit — the link
+   *  is fixed at creation, like the vendor) it shows read-only, and only when
+   *  the bill actually has one. */
+  purchaseOrder: VendorBillPurchaseOrderRef | null;
+  setPurchaseOrder?: (v: VendorBillPurchaseOrderRef | null) => void;
+  /** Set when picking a purchase order failed to load its items into the
+   *  table below — Add mode only; Edit never fetches (the link is fixed). */
+  purchaseOrderItemsError?: string;
   customFieldValues: Record<string, unknown>;
   setCustomField: (key: string, value: unknown) => void;
   lookups?: CrmLookups;
@@ -53,6 +67,7 @@ export function VendorBillFormBody({
   adjustment: number; total: number;
   filesPanelRef?: Ref<EditableFilesPanelHandle>;
 }) {
+  const currencyCode = currencyCodeFor(lookups, data.currency_id as string | number | undefined);
   const headerTaxPercent = parseFloat(String(data.sales_tax_pct ?? '')) || 0;
 
   const { data: allWorkflows = [] } = useQuery({ queryKey: ['workflows'], queryFn: workflowService.list });
@@ -67,22 +82,19 @@ export function VendorBillFormBody({
   return (
     <>
       {/* Page-level tab bar */}
-      <div className="flex shrink-0 overflow-x-auto overflow-y-hidden border-b border-stone-200 bg-white px-5 3xl:px-10 4xl:px-16 modal-scrollbar">
-        {PAGE_TABS.map((tab) => (
-          <button
-            key={tab.key}
-            type="button"
-            onClick={() => setActiveTab(tab.key)}
-            className={cn(
-              'flex shrink-0 items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 -mb-px transition-colors whitespace-nowrap',
-              activeTab === tab.key
-                ? 'border-stone-800 text-stone-900'
-                : 'border-transparent text-stone-400 hover:text-stone-600 hover:border-stone-300',
-            )}
-          >
-            {tab.label}
-          </button>
-        ))}
+      <div className="flex shrink-0 overflow-x-auto overflow-y-hidden border-b border-stone-200 bg-white px-5 3xl:px-10 4xl:px-16 modal-scrollbar py-2.5">
+        <div role="tablist" className={TAB_LIST_CLASS}>
+          {PAGE_TABS.map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setActiveTab(tab.key)}
+              className={tabClass(activeTab === tab.key)}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Scrollable content */}
@@ -98,7 +110,7 @@ export function VendorBillFormBody({
                       <ModernFieldShell label="Vendor" required={!vendorLocked}>
                         {vendorLocked ? (
                           <div className={cn(readonlyCls, 'cursor-not-allowed select-none')}>
-                            {vendor?.name || <span className="text-stone-400">—</span>}
+                            {vendor?.name || <span className="text-stone-500">—</span>}
                           </div>
                         ) : (
                           <VendorPicker value={vendor} onChange={setVendor} required onCreateNew={onCreateVendor} />
@@ -107,6 +119,20 @@ export function VendorBillFormBody({
                       <ModernFieldShell label="Vendor Bill Status">
                         <div className={cn(readonlyCls, 'cursor-not-allowed select-none')}>Draft</div>
                       </ModernFieldShell>
+                      {(setPurchaseOrder || purchaseOrder) && (
+                        <ModernFieldShell label="Purchase Order">
+                          {setPurchaseOrder ? (
+                            <PurchaseOrderPicker vendor={vendor} value={purchaseOrder} onChange={setPurchaseOrder} />
+                          ) : (
+                            <div className={cn(readonlyCls, 'cursor-not-allowed select-none')}>
+                              {purchaseOrder?.number}
+                            </div>
+                          )}
+                          {purchaseOrderItemsError && (
+                            <p role="alert" className="mt-1 text-2xs text-destructive">{purchaseOrderItemsError}</p>
+                          )}
+                        </ModernFieldShell>
+                      )}
                     </div>
                     <VendorBillSectionGrid
                       fields={PRIMARY_INFO_FIELDS.filter((f) => f.key !== 'vb_status' && (f.key !== 'vb_doc_num' || Boolean(vendorBillId)))}
@@ -116,7 +142,7 @@ export function VendorBillFormBody({
                   <div className="w-full lg:w-56 shrink-0">
                     <VendorBillSummaryCard
                       subtotal={subtotal} discountAmt={discountAmt} taxTotal={taxTotal}
-                      adjustment={adjustment} total={total}
+                      adjustment={adjustment} total={total} currencyCode={currencyCode}
                     />
                   </div>
                 </div>
@@ -136,7 +162,7 @@ export function VendorBillFormBody({
                 </ModernSection>
               )}
               <ModernSection title="Items" index={2}>
-                <VendorBillItemsTab items={lineItems} onUpdate={setLineItems} headerTaxPercent={headerTaxPercent} />
+                <VendorBillItemsTab items={lineItems} onUpdate={setLineItems} headerTaxPercent={headerTaxPercent} currencyCode={currencyCode} />
               </ModernSection>
             </>
           )}

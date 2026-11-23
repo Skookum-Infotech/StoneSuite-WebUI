@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useCallback, useEffect } from 'react';
+import { useState, useMemo, useRef, useCallback, useEffect, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { ShoppingCart, AlertCircle, Loader2, Save } from 'lucide-react';
@@ -13,7 +13,7 @@ import { UnsavedChangesPrompt } from '@/components/UnsavedChangesPrompt';
 import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
 import { type EditableFilesPanelHandle } from '@/components/crm/CrmSubTabsPanel';
 import { type CustomerRef } from './components/CustomerPicker';
-import { customerDefaultFields, BILL_ADDRESS_KEYS } from '@/lib/customerDefaults';
+import { mergeCustomerDefaults } from '@/lib/customerDefaults';
 import { shipSameAsBillFields } from '@/lib/shipToDefaults';
 import { defaultCountryId, defaultCurrencyId } from '@/lib/lookupDefaults';
 import { statusToastLabel } from '@/lib/statusToast';
@@ -21,10 +21,25 @@ import { InventoryItemReturnContext, useInventoryItemReturn } from '@/hooks/useI
 import { useRecordCreateReturn } from '@/hooks/useRecordCreateReturn';
 import { useScrollToError } from '@/hooks/useScrollToError';
 import { SalesOrderFormBody } from './components/SalesOrderFormBody';
+import { DocumentReviewShell } from '@/components/tenant/documentReview/DocumentReviewShell';
+import { SALES_ORDER_REVIEW_FIELDS } from '@/lib/reviewFieldConfigs';
+import { ReviewDialogs } from '@/components/tenant/documentReview/ReviewDialogs';
+import { ReviewFooter } from '@/components/tenant/documentReview/ReviewFooter';
+import { DocumentFailedNotice } from '@/components/tenant/documentReview/DocumentFailedNotice';
+import { DocumentUsedNotice } from '@/components/tenant/documentReview/DocumentUsedNotice';
+import { useSalesOrderReviewMode, type ReviewPatch } from '@/hooks/useSalesOrderReviewMode';
+import { shortageToastMessage, uncoveredShortages } from '@/lib/stockShortage';
 import {
-  soDefaults, toCreatePayload, PAGE_TABS, SO_STATUS_CODES, type PageTab,
+  soDefaults, toCreatePayload, PAGE_TABS, SO_STATUS_CODES, BILL_TO_FIELDS, SHIP_TO_FIELDS, type PageTab,
   type SOLineItem, type SODrawing,
 } from '@/lib/salesOrderForm';
+import { firstInvalidPhoneLabel } from '@/lib/phoneValidation';
+import { installDateError } from '@/lib/salesOrderSchedule';
+import { PLANNER_QUERY_KEY } from '@/lib/plannerCalendar';
+import { CopySeedGate } from '@/components/tenant/CopySeedGate';
+import { fromOrderForCopy } from '@/lib/salesOrderCopy';
+import { copySubtitle } from '@/lib/recordCopy';
+import type { SalesOrder } from '@/types/salesOrder';
 
 /** Unsaved form state carried across an "Add to Inventory" round trip. */
 interface SalesOrderDraft {
@@ -36,7 +51,16 @@ interface SalesOrderDraft {
   customFieldValues: Record<string, unknown>;
 }
 
+/** `?copyFrom=<id>` opens the form pre-filled from that order (see CopySeedGate). */
 export default function AddSalesOrderPage() {
+  return (
+    <CopySeedGate queryKey="sales-order" load={(id) => salesOrderService.getOrder(id)}>
+      {(source) => <AddSalesOrderForm source={source} />}
+    </CopySeedGate>
+  );
+}
+
+function AddSalesOrderForm({ source }: { source?: SalesOrder }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const panelRef = useRef<EditableFilesPanelHandle>(null);
@@ -45,13 +69,16 @@ export default function AddSalesOrderPage() {
     'customer', '/crm/customer/new', { resource: 'customer', action: 'create' },
   );
   const restored = inventoryReturn.restored ?? customerReturn.restored;
+  const seed = useMemo(() => (source ? fromOrderForCopy(source) : null), [source]);
 
   const [activeTab, setActiveTab] = useState<PageTab>(restored?.activeTab ?? PAGE_TABS[0].key);
-  const [data, setData] = useState<Record<string, unknown>>(() => restored?.data ?? soDefaults());
-  const [lineItems, setLineItems] = useState<SOLineItem[]>(restored?.lineItems ?? []);
+  const [data, setData] = useState<Record<string, unknown>>(() => restored?.data ?? seed?.data ?? soDefaults());
+  const [lineItems, setLineItems] = useState<SOLineItem[]>(restored?.lineItems ?? seed?.lineItems ?? []);
   const [drawings, setDrawings] = useState<SODrawing[]>(restored?.drawings ?? []);
-  const [customer, setCustomer] = useState<CustomerRef | null>(restored?.customer ?? null);
-  const [customFieldValues, setCustomFieldValues] = useState<Record<string, unknown>>(restored?.customFieldValues ?? {});
+  const [customer, setCustomer] = useState<CustomerRef | null>(restored?.customer ?? seed?.customer ?? null);
+  const [customFieldValues, setCustomFieldValues] = useState<Record<string, unknown>>(
+    restored?.customFieldValues ?? seed?.customFieldValues ?? {},
+  );
 
   const set = useCallback((key: string, value: unknown) => {
     setData((d) => {
@@ -68,13 +95,7 @@ export default function AddSalesOrderPage() {
 
   const handleCustomerChange = useCallback((next: CustomerRef | null) => {
     setCustomer(next);
-    if (next) {
-      const defaults = customerDefaultFields(next);
-      setData((d) => ({
-        ...d,
-        ...Object.fromEntries(Object.entries(defaults).filter(([k]) => !d[k] || BILL_ADDRESS_KEYS.has(k))),
-      }));
-    }
+    if (next) setData((d) => mergeCustomerDefaults(d, next, { shipTo: true }));
   }, []);
 
   // Applies the customer created via the round trip exactly as if it had
@@ -108,10 +129,31 @@ export default function AddSalesOrderPage() {
     };
   }, [data, lookups]);
 
+  // "Create from document" review mode (?fromDocument=<id>) — inert otherwise.
+  const applyReviewForm = useCallback((next: ReviewPatch) => {
+    if (next.data) setData(next.data);
+    if (next.lineItems) setLineItems(next.lineItems);
+    if (next.customer !== undefined) setCustomer(next.customer);
+    if (next.customFieldValues) setCustomFieldValues(next.customFieldValues);
+  }, []);
+  const geo = useMemo(() => (lookups ? { countries: lookups.countries, states: lookups.states } : undefined), [lookups]);
+  const review = useSalesOrderReviewMode({
+    form: { data, lineItems, customer, customFieldValues },
+    apply: applyReviewForm,
+    onCustomerChange: handleCustomerChange,
+    geo,
+  });
+
+  // A document-prefilled form is unsaved work from the start, so leaving prompts
+  // — except for a document that was already used or couldn't be read, which
+  // shows no form at all. A copy is unsaved work from the start too.
+  const documentUsed = review.active && review.phase === 'used';
+  const documentFailed = review.active && review.phase === 'failed';
   const guard = useUnsavedChangesGuard(
     { data, lineItems, drawings, customer, customFieldValues },
-    true,
-    inventoryReturn.isRestored || customerReturn.isRestored,
+    !review.active || review.hydrated,
+    inventoryReturn.isRestored || customerReturn.isRestored || Boolean(seed)
+      || (review.active && !documentUsed && !documentFailed),
   );
 
   const { subtotal, discountAmt, taxTotal, total } = useMemo(() => {
@@ -129,11 +171,19 @@ export default function AddSalesOrderPage() {
   const { startCreate: startCreateCustomer } = customerReturn.provide(draft, guard.markClean);
 
   const { mutate: save, isPending, error: saveError } = useMutation({
-    mutationFn: () => {
+    mutationFn: (opts?: { allowDuplicate?: boolean }) => {
       if (!customer) throw new Error('A billing customer is required.');
-      const payload = toCreatePayload({ ...formData, customer_uuid: customer.id }, lineItems, customFieldValues);
+      const badPhone = firstInvalidPhoneLabel([...BILL_TO_FIELDS, ...SHIP_TO_FIELDS], formData);
+      if (badPhone) throw new Error(`Enter a valid phone number for ${badPhone}.`);
+      const badInstallDate = installDateError(formData.scheduled_install_date);
+      if (badInstallDate) throw new Error(badInstallDate);
+      const payload = {
+        ...toCreatePayload({ ...formData, customer_uuid: customer.id }, lineItems, customFieldValues),
+        ...review.payloadExtras(Boolean(opts?.allowDuplicate)),
+      };
       return salesOrderService.createOrder(payload);
     },
+    onError: (err) => { review.handleSaveError(err, () => save({ allowDuplicate: true })); },
     onSuccess: async (order) => {
       const panel = panelRef.current;
       const hadStagedFiles = panel?.hasStagedFiles() ?? false;
@@ -161,52 +211,68 @@ export default function AddSalesOrderPage() {
           }
         } catch { /* non-fatal — order was created; it just stays in Draft */ }
       }
-      if (!autoSubmitted) toast.success('Sales order created.');
+      // Short stock never stops the save: warn, and open the order so its
+      // "items short" banner (with Order shortage items) is the next thing seen.
+      const short = uncoveredShortages(order.stockShortages ?? []);
+      if (short.length > 0) toast.warning(shortageToastMessage(order.salesOrderNumber, 'created', short));
+      if (review.active) await review.afterCreate(order);
+      else if (!autoSubmitted && short.length === 0) toast.success('Sales order created.');
 
       queryClient.invalidateQueries({ queryKey: ['sales-orders'] });
+      // A new order plans a schedule, which the Activity Planner lists.
+      queryClient.invalidateQueries({ queryKey: [PLANNER_QUERY_KEY] });
       guard.markClean();
-      navigate('/sales/sales_order');
+      navigate(short.length > 0 ? `/sales/sales_order/${order.id}` : '/sales/sales_order');
     },
   });
   const errorRef = useScrollToError<HTMLDivElement>(saveError);
+  const withReviewShell = (body: ReactNode) => (
+    review.active ? <DocumentReviewShell review={review} fields={SALES_ORDER_REVIEW_FIELDS}>{body}</DocumentReviewShell> : body
+  );
 
   return (
-    <div className="flex flex-col flex-1 min-h-0 bg-stone-50">
+    <div className="flex flex-col flex-1 min-h-0 bg-stone-50 dark:bg-stone-950">
       <UnsavedChangesPrompt guard={guard} />
-      <form onSubmit={(e) => { e.preventDefault(); save(); }} className="flex flex-col flex-1 min-h-0">
+      <form onSubmit={(e) => { e.preventDefault(); if (review.blockedReason) review.focusFirstPending(); else save({}); }} className="flex flex-col flex-1 min-h-0">
         <CrmPageHeader
           backLabel="Sales Orders"
           onBack={() => navigate('/sales/sales_order')}
           icon={ShoppingCart}
-          title="New Sales Order"
-          subtitle="Fields marked * are required."
-          actions={(
+          title={review.active ? 'New Sales Order from Document' : 'New Sales Order'}
+          subtitle={source ? copySubtitle(source.salesOrderNumber) : 'Fields marked * are required.'}
+          actions={review.active ? undefined : (
             <button type="submit" disabled={isPending}
               className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3.5 py-1.5 text-xs font-semibold text-stone-900 hover:bg-brand-hover disabled:opacity-50 transition-all shadow-sm">
-              {isPending ? <Loader2 className="size-3 animate-spin" /> : <Save className="size-3" />}
+              {isPending ? <Loader2 className="size-3 motion-safe:animate-spin" aria-hidden="true" /> : <Save className="size-3" />}
               {isPending ? 'Saving…' : 'Save Order'}
             </button>
           )}
         />
 
-        {saveError && (
+        {saveError && !review.duplicate && (
           <div
             ref={errorRef}
             tabIndex={-1}
             role="alert"
-            className="shrink-0 flex items-start gap-3 border-b border-red-200 bg-red-50 px-5 py-2.5 focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-inset"
+            className="shrink-0 flex items-start gap-3 border-b border-red-200 dark:border-red-500/30 bg-red-50 dark:bg-red-500/10 px-5 py-2.5 focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-inset"
           >
-            <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-red-100">
-              <AlertCircle className="size-3 text-red-600" />
+            <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-red-100 dark:bg-red-500/20">
+              <AlertCircle className="size-3 text-red-600 dark:text-red-400" />
             </span>
-            <p className="text-xs text-red-700">
+            <p className="text-xs text-red-700 dark:text-red-300">
               <span className="font-bold">Error: </span>
               {apiErrorMessage(saveError, 'Failed to save sales order.')}
             </p>
           </div>
         )}
 
+        {documentUsed ? (
+          <DocumentUsedNotice fileName={review.fileName} usedRecordUuid={review.banner.usedRecordUuid} docType="sales_order" />
+        ) : documentFailed ? (
+          <DocumentFailedNotice fileName={review.fileName} reason={review.banner.failureMessage} docType="sales_order" />
+        ) : (<>
         <InventoryItemReturnContext.Provider value={inventoryReturn.provide(draft, guard.markClean)}>
+          {withReviewShell(
           <SalesOrderFormBody
             activeTab={activeTab}
             setActiveTab={setActiveTab}
@@ -217,7 +283,7 @@ export default function AddSalesOrderPage() {
             drawings={drawings}
             setDrawings={setDrawings}
             customer={customer}
-            setCustomer={handleCustomerChange}
+            setCustomer={review.active ? review.pickCustomer : handleCustomerChange}
             onCreateCustomer={startCreateCustomer}
             customFieldValues={customFieldValues}
             setCustomField={setCustomField}
@@ -227,14 +293,23 @@ export default function AddSalesOrderPage() {
             taxTotal={taxTotal}
             total={total}
             filesPanelRef={panelRef}
-          />
+          />,
+          )}
         </InventoryItemReturnContext.Provider>
 
-        <FormActionBar
-          onCancel={() => navigate('/sales/sales_order')}
-          isPending={isPending}
-          submitLabel="Save Order"
-        />
+        {review.active ? (
+          <>
+            <ReviewFooter reason={review.blockedReason} isPending={isPending} onDiscard={review.requestDiscard} />
+            <ReviewDialogs review={review} onCreateAnyway={() => save({ allowDuplicate: true })} markClean={guard.markClean} />
+          </>
+        ) : (
+          <FormActionBar
+            onCancel={() => navigate('/sales/sales_order')}
+            isPending={isPending}
+            submitLabel="Save Order"
+          />
+        )}
+        </>)}
       </form>
     </div>
   );

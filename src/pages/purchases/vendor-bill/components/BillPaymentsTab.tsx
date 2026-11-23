@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Wallet, Plus, Undo2 } from 'lucide-react';
@@ -5,14 +6,13 @@ import { Spinner } from '@/components/tenant/ui';
 import { vendorBillService } from '@/services/vendorBillService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
-
-function currency(n: number | undefined): string {
-  return (n ?? 0).toLocaleString(undefined, { style: 'currency', currency: 'USD' });
-}
+import { ApplyExistingPaymentDialog } from './ApplyExistingPaymentDialog';
+import { formatDateValue } from '@/lib/dateUtils';
+import { formatMoney } from '@/lib/formatMoney';
 
 function fmtDate(iso?: string): string {
   if (!iso) return '—';
-  return new Date(iso).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+  return formatDateValue(iso, undefined, { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
 // The bill's AP reconciliation view — GET /vendor-bills/{id}/payments, which
@@ -24,13 +24,20 @@ function fmtDate(iso?: string): string {
 // transaction. So there's nothing to record or remove here — the action is
 // "record a vendor payment", which is why the empty state links out to it
 // rather than opening a dialog.
-export function BillPaymentsTab({ vendorBillId, balanceDue }: {
+export function BillPaymentsTab({ vendorBillId, balanceDue, vendor, currencyCode }: {
   vendorBillId?: string;
   balanceDue: number;
+  vendor?: { id: string; name: string };
+  /** ISO currency code of the bill; falls back to the default currency. */
+  currencyCode?: string;
 }) {
+  const currency = (n: number | undefined) => formatMoney(n, currencyCode);
+  const [applyOpen, setApplyOpen] = useState(false);
   const navigate = useNavigate();
   const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
   const canCreatePayment = permissionsLoading || hasPermission('vendor_payment', 'create');
+  const canApplyPayment = permissionsLoading
+    || (hasPermission('vendor_payment', 'update') && hasPermission('vendor_bill', 'update'));
 
   const { data: ledger, isLoading, error } = useQuery({
     queryKey: ['vendor-bill-payments', vendorBillId],
@@ -39,25 +46,37 @@ export function BillPaymentsTab({ vendorBillId, balanceDue }: {
   });
 
   if (!vendorBillId) {
-    return <p className="py-12 text-center text-sm text-stone-400">Payments will be available after saving the vendor bill.</p>;
+    return <p className="py-12 text-center text-sm text-stone-500">Payments will be available after saving the vendor bill.</p>;
   }
 
   const payments = ledger?.payments ?? [];
   const refunds = ledger?.refunds ?? [];
+  const billPayments = ledger?.billPayments ?? [];
 
   return (
     <div className="space-y-4">
-      {canCreatePayment && balanceDue > 0 && (
-        <div className="flex justify-end">
-          <button
+      {balanceDue > 0 && (canCreatePayment || (canApplyPayment && vendor)) && (
+        <div className="flex justify-end gap-2">
+          {canApplyPayment && vendor && (
+            <button
+              type="button"
+              onClick={() => setApplyOpen(true)}
+              aria-label="Apply an existing vendor payment to this bill"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-semibold text-stone-700 hover:bg-stone-50 transition-all"
+            >
+              <Wallet className="size-3.5" />
+              Apply existing payment
+            </button>
+          )}
+          {canCreatePayment && <button
             type="button"
-            onClick={() => navigate('/purchases/vendor_payment/new')}
+            onClick={() => navigate(`/purchases/vendor_payment/new?fromBill=${encodeURIComponent(vendorBillId)}`)}
             aria-label="Record a vendor payment for this bill"
             className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-stone-900 hover:bg-brand-hover transition-all"
           >
             <Plus className="size-3.5" />
             Record vendor payment
-          </button>
+          </button>}
         </div>
       )}
 
@@ -69,11 +88,11 @@ export function BillPaymentsTab({ vendorBillId, balanceDue }: {
         </p>
       ) : (
         <>
-          {payments.length === 0 ? (
+          {payments.length === 0 && billPayments.length === 0 ? (
             <div className="flex flex-col items-center gap-2 py-12 text-center">
-              <Wallet className="size-6 text-stone-300" aria-hidden="true" />
-              <p className="text-sm text-stone-400">No vendor payments applied to this bill yet.</p>
-              <p className="text-xs text-stone-400">
+              <Wallet className="size-6 text-stone-400" aria-hidden="true" />
+              <p className="text-sm text-stone-500">No vendor payments applied to this bill yet.</p>
+              <p className="text-xs text-stone-500">
                 Bills are settled by applying a vendor payment — an approved bill with a balance due can be paid from the Vendor Payments module.
               </p>
             </div>
@@ -100,7 +119,14 @@ export function BillPaymentsTab({ vendorBillId, balanceDue }: {
                         </button>
                       </td>
                       <td className="px-3 py-2.5 font-semibold text-stone-900 tabular-nums whitespace-nowrap">{currency(entry.amount)}</td>
-                      <td className="px-3 py-2.5 text-stone-400 tabular-nums whitespace-nowrap">{fmtDate(entry.appliedAt)}</td>
+                      <td className="px-3 py-2.5 text-stone-500 tabular-nums whitespace-nowrap">{fmtDate(entry.appliedAt)}</td>
+                    </tr>
+                  ))}
+                  {billPayments.map((entry) => (
+                    <tr key={entry.id} className="hover:bg-stone-50/50 transition-colors">
+                      <td className="px-3 py-2.5 text-stone-600">{entry.memo || entry.method || 'Recorded on bill'}</td>
+                      <td className="px-3 py-2.5 font-semibold text-stone-900 tabular-nums whitespace-nowrap">{currency(entry.amount)}</td>
+                      <td className="px-3 py-2.5 text-stone-500 tabular-nums whitespace-nowrap">{fmtDate(entry.paidAt)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -137,7 +163,7 @@ export function BillPaymentsTab({ vendorBillId, balanceDue }: {
                         </td>
                         <td className="px-3 py-2.5 font-semibold text-stone-900 tabular-nums whitespace-nowrap">{currency(entry.amount)}</td>
                         <td className="px-3 py-2.5 text-stone-500 max-w-[220px] truncate">{entry.reason || '—'}</td>
-                        <td className="px-3 py-2.5 text-stone-400 tabular-nums whitespace-nowrap">{fmtDate(entry.refundedAt)}</td>
+                        <td className="px-3 py-2.5 text-stone-500 tabular-nums whitespace-nowrap">{fmtDate(entry.refundedAt)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -146,6 +172,15 @@ export function BillPaymentsTab({ vendorBillId, balanceDue }: {
             </div>
           )}
         </>
+      )}
+      {applyOpen && vendor && (
+        <ApplyExistingPaymentDialog
+          vendorBillId={vendorBillId}
+          vendor={vendor}
+          balanceDue={balanceDue}
+          currencyCode={currencyCode}
+          onClose={() => setApplyOpen(false)}
+        />
       )}
     </div>
   );

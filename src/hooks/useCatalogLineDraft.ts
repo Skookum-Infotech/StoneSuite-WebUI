@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, type Dispatch, type SetStateAction } from 'react';
-import type { InventoryItem } from '@/types/inventory';
+import type { InventoryItem, InventoryKit } from '@/types/inventory';
 import { applyReturnedLine, type LineDraftStash } from '@/lib/inventoryItemReturn';
 import { useInventoryItemReturnContext } from '@/hooks/useInventoryItemReturn';
 
@@ -19,6 +19,10 @@ export interface CatalogLineDraftFields {
  * (useInventoryItemReturn). When the page was restored from that round trip,
  * the row the user left re-opens with the created item already picked, via
  * the table's own `applyItem`.
+ *
+ * Kits take the same trip: `addNewKit` goes to New Kit, and a kit created
+ * there comes back as `returnedKit` for useAddKitLines to turn into lines.
+ * `reportLineError` is how that hook says why a kit added nothing.
  */
 export function useCatalogLineDraft<D extends CatalogLineDraftFields>(
   emptyDraft: D,
@@ -37,6 +41,9 @@ export function useCatalogLineDraft<D extends CatalogLineDraftFields>(
   const [editId, setEditId] = useState<string | null>(initial?.editId ?? null);
   const [isAdding, setIsAdding] = useState(initial?.isAdding ?? false);
   const [lineError, setLineError] = useState<string | null>(null);
+  // Captured at mount like `initial`, because consuming the pending line (just
+  // below) clears it on the next render.
+  const [returnedKit] = useState<InventoryKit | null>(() => pending?.createdKit ?? null);
 
   // Re-open the returned row once — switching page tabs remounts this table,
   // and that should start clean like it always has.
@@ -64,5 +71,15 @@ export function useCatalogLineDraft<D extends CatalogLineDraftFields>(
     ? (itemName: string) => startAddToInventory(itemName, { draft, editId })
     : undefined;
 
-  return { draft, setDraft, editId, setEditId, isAdding, setIsAdding, lineError, requireCatalogItem, addToInventory };
+  const startAddKit = inventoryReturn?.startAddKit;
+  const addNewKit = startAddKit
+    ? (kitName: string) => startAddKit(kitName, { draft, editId })
+    : undefined;
+
+  const reportLineError = useCallback((message: string) => setLineError(message), []);
+
+  return {
+    draft, setDraft, editId, setEditId, isAdding, setIsAdding, lineError, requireCatalogItem, addToInventory,
+    addNewKit, returnedKit, reportLineError,
+  };
 }

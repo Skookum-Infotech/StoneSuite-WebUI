@@ -1,6 +1,7 @@
 import type { Ref, ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { cn } from '@/lib/utils';
+import { TAB_LIST_CLASS, tabClass } from '@/components/ui/tabStyles';
 import { ModernSection, ModernFieldShell } from '@/components/crm/FormPrimitives';
 import { EditableFilesPanel, type EditableFilesPanelHandle } from '@/components/crm/CrmSubTabsPanel';
 import { DynamicFieldInput } from '@/components/tenant/DynamicFieldInput';
@@ -13,6 +14,7 @@ import { InvoiceSummaryCard } from './InvoiceSummaryCard';
 import { InvoiceItemsTab } from './InvoiceItemsTab';
 import { InvoiceAuditTab } from './InvoiceAuditTab';
 import type { CrmLookups } from '@/services/lookupService';
+import { currencyCodeFor } from '@/lib/formatMoney';
 import {
   PRIMARY_INFO_FIELDS, BILL_TO_FIELDS, SHIP_TO_FIELDS, SALES_INFO_FIELDS,
   PAGE_TABS, type PageTab, type InvoiceLineItem,
@@ -57,6 +59,7 @@ export function InvoiceFormBody({
    *  display. */
   statusControl?: ReactNode;
 }) {
+  const currencyCode = currencyCodeFor(lookups, data.currency_id as string | number | undefined);
   const headerTaxPercent = parseFloat(String(data.sales_tax_pct ?? '')) || 0;
 
   const { data: allWorkflows = [] } = useQuery({ queryKey: ['workflows'], queryFn: workflowService.list });
@@ -71,22 +74,19 @@ export function InvoiceFormBody({
   return (
     <>
       {/* Page-level tab bar */}
-      <div className="flex shrink-0 overflow-x-auto overflow-y-hidden border-b border-stone-200 bg-white px-5 3xl:px-10 4xl:px-16 modal-scrollbar">
-        {PAGE_TABS.map((tab) => (
-          <button
-            key={tab.key}
-            type="button"
-            onClick={() => setActiveTab(tab.key)}
-            className={cn(
-              'flex shrink-0 items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 -mb-px transition-colors whitespace-nowrap',
-              activeTab === tab.key
-                ? 'border-stone-800 text-stone-900'
-                : 'border-transparent text-stone-400 hover:text-stone-600 hover:border-stone-300',
-            )}
-          >
-            {tab.label}
-          </button>
-        ))}
+      <div className="flex shrink-0 overflow-x-auto overflow-y-hidden border-b border-stone-200 bg-white px-5 3xl:px-10 4xl:px-16 modal-scrollbar py-2.5">
+        <div role="tablist" className={TAB_LIST_CLASS}>
+          {PAGE_TABS.map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setActiveTab(tab.key)}
+              className={tabClass(activeTab === tab.key)}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Scrollable content */}
@@ -111,7 +111,7 @@ export function InvoiceFormBody({
                     />
                   </div>
                   <div className="w-full lg:w-56 shrink-0">
-                    <InvoiceSummaryCard subtotal={subtotal} discountAmt={discountAmt} taxTotal={taxTotal} total={total} amountPaid={amountPaid} />
+                    <InvoiceSummaryCard subtotal={subtotal} discountAmt={discountAmt} taxTotal={taxTotal} total={total} amountPaid={amountPaid} currencyCode={currencyCode} />
                   </div>
                 </div>
               </ModernSection>
@@ -120,7 +120,7 @@ export function InvoiceFormBody({
                   <ModernFieldShell label="Billing Customer" required={!customerLocked}>
                     {customerLocked ? (
                       <div className={cn(readonlyCls, 'cursor-not-allowed select-none')}>
-                        {customer?.name || <span className="text-stone-400">—</span>}
+                        {customer?.name || <span className="text-stone-500">—</span>}
                       </div>
                     ) : (
                       <CustomerPicker value={customer} onChange={setCustomer} required onCreateNew={onCreateCustomer} />

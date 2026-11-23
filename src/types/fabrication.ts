@@ -7,6 +7,7 @@
 // allocation and a 16-step checklist. Served from
 // `/api/tenant/fabrication-jobs*` and `/api/tenant/inventory/slabs*` — a
 // relational sibling of Sales Order, not the generic JSONB CRM router.
+import type { WorkflowBlock } from '@/types/workflow';
 import type { FilterClause, RecordApprover, SortKey } from '@/types/tenant';
 
 export interface FabricationCustomerRef {
@@ -42,12 +43,14 @@ export interface FabricationJobPiece {
 }
 
 /** One row of the 16-step checklist. Piece-grain steps (templating, cutting,
- *  edging, etc.) are seeded once per piece — the backend returns one row per
- *  (step code, piece) with no piece id on the row, so several rows can share
- *  a code. `PATCH .../steps/{stepCode}` updates every row sharing that code
- *  in one call; there is no way to target a single piece's row yet. */
+ *  edging, etc.) are seeded once per piece, so several rows can share a code;
+ *  `pieceUuid` tells them apart. `PATCH .../steps/{stepCode}` must send it for
+ *  a piece-grain step (the server rejects an ambiguous update) and omit it for
+ *  a whole-job step, which has none. */
 export interface FabricationJobStep {
   code: string;
+  /** Present on piece-grain rows only. */
+  pieceUuid?: string;
   sequence: number;
   status: 'pending' | 'in_progress' | 'blocked' | 'skipped' | 'completed';
   notes?: string;
@@ -95,12 +98,19 @@ export interface FabricationJobFields {
 
 export interface FabricationJobCreatePayload extends FabricationJobFields {
   salesOrderUuid: string;
+  /** Idempotency key: a retry carrying the same key for the same order returns
+   *  the job the first attempt made instead of opening a duplicate. */
+  requestId?: string;
   pieces?: FabricationJobPieceInput[];
 }
 
 export type FabricationJobUpdatePayload = FabricationJobFields;
 
 export interface FabricationJob {
+  /** End-to-end flow this record belongs to; see BACKEND_SPEC_workflow_links.md. */
+  workflow?: WorkflowBlock;
+  workflowVersion?: number;
+  version?: number;
   id: string;
   jobNumber: string;
   status: string;
@@ -154,6 +164,30 @@ export interface FabricationJobPage {
   scope: string;
 }
 
+/** One slab-tracked material on a job: what the sales order calls for, what the
+ *  blueprint (the pieces) needs, and the slab area allocated to cover it. */
+export interface FabricationMaterial {
+  /** inventory_item uuid */
+  itemId: string;
+  sku: string;
+  name: string;
+  unitCode: string;
+  /** What the sales order asks for. */
+  ordered: number;
+  /** What cutting must be covered for: the pieces drawn for this material, or the
+   *  ordered quantity while there are none (see `basis`). */
+  needed: number;
+  basis: 'blueprint' | 'order';
+  pieceCount: number;
+  /** Slab area held for this job (reserved or already cut). */
+  allocated: number;
+  consumed: number;
+  /** Slab area of this material on the shelf and free to allocate. */
+  inStock: number;
+  /** needed - allocated, never negative. */
+  shortfall: number;
+}
+
 /** A serialized physical slab (inventory_slab). */
 export interface FabricationSlab {
   id: string;
@@ -200,11 +234,14 @@ export type SlabDisposition = 'recovered' | 'scrapped' | 'delivered';
 
 /** Declares the fate of one consumed slab while a job is cancel-requested
  *  (§4.4.1). Write-once per slab; `recovered` mints a child offcut capped at
- *  the parent's remaining area, so `recoveredArea` is required for it. */
+ *  the parent's remaining area, so it requires `recoveredArea`, all three
+ *  dimensions, and the bin the offcut is put away in (same location as the
+ *  slab). The server rejects a recovered disposition missing any of them. */
 export interface SlabDispositionInput {
   disposition: SlabDisposition;
   recoveredArea?: number;
   lengthMm?: number;
   widthMm?: number;
   thicknessMm?: number;
+  destinationBinUuid?: string;
 }

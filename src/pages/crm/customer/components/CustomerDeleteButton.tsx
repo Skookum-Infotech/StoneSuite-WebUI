@@ -63,7 +63,7 @@ export function CustomerDeleteButton({
                 <li key={u.id} className="flex items-center gap-2 px-3 py-2 text-xs text-stone-700">
                   <KeyRound className="size-3.5 shrink-0 text-stone-400" />
                   <span className="truncate">{u.email}</span>
-                  <span className="ml-auto shrink-0 text-stone-400 capitalize">{u.status}</span>
+                  <span className="ml-auto shrink-0 text-stone-500 capitalize">{u.status}</span>
                 </li>
               ))}
             </ul>

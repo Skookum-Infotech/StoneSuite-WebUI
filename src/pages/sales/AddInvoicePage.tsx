@@ -10,17 +10,20 @@ import { FormActionBar } from '@/components/crm/FormPrimitives';
 import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
 import { type EditableFilesPanelHandle } from '@/components/crm/CrmSubTabsPanel';
 import { type CustomerRef } from './components/CustomerPicker';
-import { customerDefaultFields, BILL_ADDRESS_KEYS } from '@/lib/customerDefaults';
+import { mergeCustomerDefaults } from '@/lib/customerDefaults';
 import { shipSameAsBillFields } from '@/lib/shipToDefaults';
 import { defaultCountryId, defaultCurrencyId } from '@/lib/lookupDefaults';
 import { InventoryItemReturnContext, useInventoryItemReturn } from '@/hooks/useInventoryItemReturn';
 import { useRecordCreateReturn } from '@/hooks/useRecordCreateReturn';
 import { useScrollToError } from '@/hooks/useScrollToError';
+import { UnsavedChangesPrompt } from '@/components/UnsavedChangesPrompt';
+import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
 import { InvoiceFormBody } from './components/InvoiceFormBody';
 import {
-  invoiceDefaults, toCreatePayload, PAGE_TABS, type PageTab,
+  invoiceDefaults, toCreatePayload, PAGE_TABS, BILL_TO_FIELDS, SHIP_TO_FIELDS, type PageTab,
   type InvoiceLineItem,
 } from '@/lib/invoiceForm';
+import { firstInvalidPhoneLabel } from '@/lib/phoneValidation';
 
 /** Unsaved form state carried across an "Add to Inventory" round trip. */
 interface InvoiceDraft {
@@ -62,13 +65,7 @@ export default function AddInvoicePage() {
 
   const handleCustomerChange = useCallback((next: CustomerRef | null) => {
     setCustomer(next);
-    if (next) {
-      const defaults = customerDefaultFields(next);
-      setData((d) => ({
-        ...d,
-        ...Object.fromEntries(Object.entries(defaults).filter(([k]) => !d[k] || BILL_ADDRESS_KEYS.has(k))),
-      }));
-    }
+    if (next) setData((d) => mergeCustomerDefaults(d, next, { shipTo: true }));
   }, []);
 
   // Applies the customer created via the round trip exactly as if it had
@@ -101,9 +98,17 @@ export default function AddInvoicePage() {
     };
   }, [data, lookups]);
 
+  // A draft restored from a return trip is unsaved work from the start, so
+  // leaving it must still prompt.
+  const guard = useUnsavedChangesGuard(
+    { data, lineItems, customer, customFieldValues },
+    true,
+    inventoryReturn.isRestored || customerReturn.isRestored,
+  );
+
   // Shared by both return-trip hooks — either one may stash and restore it.
   const draft: InvoiceDraft = { activeTab, data, lineItems, customer, customFieldValues };
-  const { startCreate: startCreateCustomer } = customerReturn.provide(draft);
+  const { startCreate: startCreateCustomer } = customerReturn.provide(draft, guard.markClean);
 
   const headerTaxPercent = parseFloat(String(data.sales_tax_pct ?? '')) || 0;
 
@@ -120,6 +125,8 @@ export default function AddInvoicePage() {
   const { mutate: save, isPending, error: saveError } = useMutation({
     mutationFn: () => {
       if (!customer) throw new Error('A billing customer is required.');
+      const badPhone = firstInvalidPhoneLabel([...BILL_TO_FIELDS, ...SHIP_TO_FIELDS], formData);
+      if (badPhone) throw new Error(`Enter a valid phone number for ${badPhone}.`);
       const payload = toCreatePayload({ ...formData, customer_uuid: customer.id }, lineItems, customFieldValues);
       return invoiceService.createInvoice(payload);
     },
@@ -129,6 +136,7 @@ export default function AddInvoicePage() {
       if (panelRef.current?.hasStagedFiles()) {
         try { await panelRef.current.uploadStagedTo(invoice.id); } catch { /* non-fatal */ }
       }
+      guard.markClean();
       navigate('/sales/invoice');
     },
   });
@@ -136,6 +144,7 @@ export default function AddInvoicePage() {
 
   return (
     <div className="flex flex-col flex-1 min-h-0 bg-stone-50">
+      <UnsavedChangesPrompt guard={guard} />
       <form onSubmit={(e) => { e.preventDefault(); save(); }} className="flex flex-col flex-1 min-h-0">
         <CrmPageHeader
           backLabel="Invoices"
@@ -169,7 +178,7 @@ export default function AddInvoicePage() {
           </div>
         )}
 
-        <InventoryItemReturnContext.Provider value={inventoryReturn.provide(draft)}>
+        <InventoryItemReturnContext.Provider value={inventoryReturn.provide(draft, guard.markClean)}>
           <InvoiceFormBody
             activeTab={activeTab}
             setActiveTab={setActiveTab}

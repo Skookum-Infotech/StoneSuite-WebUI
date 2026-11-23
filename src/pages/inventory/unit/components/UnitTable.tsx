@@ -1,18 +1,23 @@
+import { Select } from '@/components/ui/select';
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { Link } from 'react-router-dom';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
-  Search, X, Layers, ChevronLeft, ChevronRight, Download, Loader2, ArrowLeftRight, Scissors, AlertTriangle, CheckCircle2,
+  Search, X, Layers, ChevronLeft, ChevronRight, Download, Loader2, Scissors, AlertTriangle, CheckCircle2, UserCheck, UserX,
 } from 'lucide-react';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { inventoryUnitService } from '@/services/inventoryUnitService';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { exportPagedCsv } from '@/lib/csvExport';
-import { UNIT_STATUS_AVAILABLE, UNIT_STATUS_RESERVED, UNIT_STATUS_CONSUMED, UNIT_STATUS_SCRAPPED, UNIT_STATUS_IN_TRANSIT } from '@/types/inventory';
+import { customerReservationOf, isAllocated } from '@/lib/unitAllocation';
+import { formatUnitArea, usageOf } from '@/lib/unitConsumption';
+import { UNIT_STATUS_AVAILABLE, UNIT_STATUS_RESERVED, UNIT_STATUS_CONSUMED, UNIT_STATUS_SCRAPPED, UNIT_STATUS_IN_TRANSIT, UNIT_STATUS_ON_ORDER, UNIT_STATUS_RECEIVED } from '@/types/inventory';
 import type { InventoryUnit, UnitSearchRequest } from '@/types/inventory';
-import { MoveUnitDialog } from './MoveUnitDialog';
 import { ScrapUnitDialog } from './ScrapUnitDialog';
 import { CutUnitDialog } from './CutUnitDialog';
+import { ReserveUnitDialog } from './ReserveUnitDialog';
+import { UnitAllocationChips } from './UnitAllocationChips';
+import { UnitConsumptionCell } from './UnitConsumptionCell';
 
 const EXPORT_PAGE_SIZE = 200;
 const PAGE_SIZE = 25;
@@ -20,23 +25,27 @@ const PAGE_SIZE = 25;
 const STATUS_OPTIONS = [
   { value: '', label: 'Any status' },
   { value: UNIT_STATUS_AVAILABLE, label: 'Available' },
+  { value: UNIT_STATUS_RECEIVED, label: 'Received' },
   { value: UNIT_STATUS_RESERVED, label: 'Reserved' },
   { value: UNIT_STATUS_CONSUMED, label: 'Consumed' },
   { value: UNIT_STATUS_SCRAPPED, label: 'Scrapped' },
   { value: UNIT_STATUS_IN_TRANSIT, label: 'In Transit' },
+  { value: UNIT_STATUS_ON_ORDER, label: 'On Order' },
 ];
 
 const STATUS_COLORS: Record<string, string> = {
   available: '#22c55e',
+  received: '#06b6d4',
   reserved: '#f59e0b',
   consumed: '#64748b',
   scrapped: '#ef4444',
   in_transit: '#6366f1',
+  on_order: '#8b5cf6',
 };
 
 export function UnitTable() {
-  const navigate = useNavigate();
   const topRef = useRef<HTMLDivElement>(null);
+  const queryClient = useQueryClient();
   const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
   const canUpdate = permissionsLoading || hasPermission('inventory_unit', 'update');
 
@@ -49,10 +58,20 @@ export function UnitTable() {
   const [isExporting, setIsExporting] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
 
-  const [moveTarget, setMoveTarget] = useState<InventoryUnit | null>(null);
   const [scrapTarget, setScrapTarget] = useState<InventoryUnit | null>(null);
   const [cutTarget, setCutTarget] = useState<InventoryUnit | null>(null);
   const [cutMessage, setCutMessage] = useState<string | null>(null);
+  const [reserveTarget, setReserveTarget] = useState<InventoryUnit | null>(null);
+  const [reserveMessage, setReserveMessage] = useState<string | null>(null);
+
+  const { mutate: releaseReservation, isPending: isReleasing, error: releaseError } = useMutation({
+    mutationFn: (unit: InventoryUnit) => inventoryUnitService.release(unit.id),
+    onSuccess: (_data, unit) => {
+      queryClient.invalidateQueries({ queryKey: ['inventory-units'] });
+      queryClient.invalidateQueries({ queryKey: ['inventory-unit', unit.id] });
+      setReserveMessage(`${unit.serial} is available again.`);
+    },
+  });
 
   useEffect(() => {
     const t = setTimeout(() => { setDebounced(term.trim()); setCursor(''); setPrevCursors([]); }, 300);
@@ -94,8 +113,13 @@ export function UnitTable() {
     try {
       await exportPagedCsv(
         (exportCursor) => inventoryUnitService.searchUnits({ ...req, limit: EXPORT_PAGE_SIZE, cursor: exportCursor }),
-        ['Serial', 'Item', 'Kind', 'Status', 'Area', 'Warehouse', 'Bin'],
-        (u) => [u.serial, u.inventoryItemName ?? '', u.kind, u.status, u.area.toFixed(2), u.warehouseName ?? '', u.binPath ?? ''],
+        ['Serial', 'Item', 'Kind', 'Status', 'Sales Order', 'Fabrication Job', 'Area', 'Unit', 'Used', 'Recovered', 'Location', 'Bin'],
+        (u) => [
+          u.serial, u.inventoryItemName ?? '', u.kind, u.status,
+          usageOf(u).salesOrderNumber ?? '', usageOf(u).jobNumber ?? '',
+          u.area.toFixed(2), u.areaUnitCode ?? '',
+          usageOf(u).usedArea.toFixed(2), usageOf(u).recoveredArea.toFixed(2), u.warehouseName ?? '', u.binPath ?? '',
+        ],
         'Inventory Unit',
       );
     } catch (err) {
@@ -110,16 +134,16 @@ export function UnitTable() {
       <div className="flex flex-wrap items-center gap-2">
         <div className="relative w-full sm:w-64">
           <Search className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-stone-400" />
-          <input type="text" placeholder="Search serial, barcode, lot, SKU…" value={term} onChange={(e) => setTerm(e.target.value)} className="h-8 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-3 text-xs text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all" />
+          <input type="text" placeholder="Search serial, barcode, lot, SKU…" value={term} onChange={(e) => setTerm(e.target.value)} className="h-8 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-3 text-xs text-stone-900 placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all" />
         </div>
-        <select value={status} onChange={(e) => { setStatus(e.target.value); setCursor(''); setPrevCursors([]); }} aria-label="Filter by status" className="h-8 rounded-lg border border-stone-200 bg-white px-2.5 text-xs text-stone-600">
+        <Select value={status} onChange={(e) => { setStatus(e.target.value); setCursor(''); setPrevCursors([]); }} aria-label="Filter by status" className="h-8 rounded-lg border border-stone-200 bg-white px-2.5 text-xs text-stone-600">
           {STATUS_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-        </select>
-        <select value={kind} onChange={(e) => { setKind(e.target.value); setCursor(''); setPrevCursors([]); }} aria-label="Filter by kind" className="h-8 rounded-lg border border-stone-200 bg-white px-2.5 text-xs text-stone-600">
+        </Select>
+        <Select value={kind} onChange={(e) => { setKind(e.target.value); setCursor(''); setPrevCursors([]); }} aria-label="Filter by kind" className="h-8 rounded-lg border border-stone-200 bg-white px-2.5 text-xs text-stone-600">
           <option value="">Any kind</option>
           <option value="slab">Slab</option>
           <option value="remnant">Remnant</option>
-        </select>
+        </Select>
         {hasFilters && (
           <button onClick={clearFilters} className="flex items-center gap-1 rounded-lg border border-stone-200 bg-white px-2.5 h-8 text-xs text-stone-500 hover:bg-stone-50 transition-colors">
             <X className="size-3" /> Clear
@@ -135,6 +159,16 @@ export function UnitTable() {
 
       {isError && <p className="text-xs text-red-500">{apiErrorMessage(error, 'Failed to load units.')}</p>}
       {exportError && <p className="text-xs text-red-500">Failed to export CSV: {exportError}</p>}
+      {releaseError && <p role="alert" className="text-xs text-red-500">{apiErrorMessage(releaseError, 'Failed to release the reservation.')}</p>}
+      {reserveMessage && (
+        <div className="flex items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
+          <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-emerald-600" />
+          <p className="flex-1 text-xs text-emerald-700">{reserveMessage}</p>
+          <button type="button" onClick={() => setReserveMessage(null)} aria-label="Dismiss" className="shrink-0 rounded p-0.5 text-emerald-500 hover:bg-emerald-100">
+            <X className="size-3.5" />
+          </button>
+        </div>
+      )}
       {cutMessage && (
         <div className="flex items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
           <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-emerald-600" />
@@ -147,14 +181,16 @@ export function UnitTable() {
 
       <div className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm">
         <div className="overflow-x-auto modal-scrollbar">
-          <table className="w-full min-w-[900px] text-left text-xs">
+          <table className="w-full min-w-[1180px] text-left text-xs">
             <thead className="border-b border-stone-200 bg-table-header">
               <tr>
                 <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Serial</th>
                 <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Item</th>
                 <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Kind</th>
                 <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Status</th>
+                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Allocated To</th>
                 <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right">Area</th>
+                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Consumption</th>
                 <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Location</th>
                 {canUpdate && <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right">Actions</th>}
               </tr>
@@ -162,16 +198,24 @@ export function UnitTable() {
             <tbody className="divide-y divide-stone-100">
               {isLoading ? (
                 Array.from({ length: 5 }, (_, i) => (
-                  <tr key={i}>{Array.from({ length: canUpdate ? 7 : 6 }, (_, j) => <td key={j} className="px-4 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-16" /></td>)}</tr>
+                  <tr key={i}>{Array.from({ length: canUpdate ? 9 : 8 }, (_, j) => <td key={j} className="px-4 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-16" /></td>)}</tr>
                 ))
               ) : records.length > 0 ? (
                 records.map((u) => {
                   const inTransit = u.status === UNIT_STATUS_IN_TRANSIT;
-                  const disabledReason = inTransit ? 'This unit is in transit between warehouses.' : u.status !== UNIT_STATUS_AVAILABLE ? `Unit is ${u.status}.` : undefined;
+                  const received = u.status === UNIT_STATUS_RECEIVED;
+                  const heldForCustomer = customerReservationOf(u) !== null;
+                  const disabledReason = inTransit
+                    ? 'This unit is in transit between locations.'
+                    : received
+                      ? 'This unit has no bin yet — move it to a bin first.'
+                      : u.status !== UNIT_STATUS_AVAILABLE ? `Unit is ${u.status.replace('_', ' ')}.` : undefined;
+                  // A slab that has arrived but has no bin can still be written off.
+                  const scrapDisabledReason = received ? undefined : disabledReason;
                   return (
                     <tr key={u.id} className="group hover:bg-accent/10 transition-colors duration-150">
                       <td className="px-4 py-3.5">
-                        <button type="button" onClick={() => navigate(`/inventory/unit/${u.id}`)} className="font-mono text-xs font-semibold text-stone-900 hover:text-accent-foreground transition-colors">{u.serial}</button>
+                        <Link to={`/inventory/unit/${u.id}`} className="font-mono text-xs font-semibold whitespace-nowrap text-stone-900 hover:text-accent-foreground transition-colors">{u.serial}</Link>
                       </td>
                       <td className="px-4 py-3.5 text-xs text-stone-700 truncate max-w-[180px]">{u.inventoryItemName ?? '—'}</td>
                       <td className="px-4 py-3.5 text-xs text-stone-500 capitalize">{u.kind}</td>
@@ -181,18 +225,28 @@ export function UnitTable() {
                           {u.status.replace('_', ' ')}
                         </span>
                       </td>
-                      <td className="px-4 py-3.5 text-xs text-stone-700 tabular-nums text-right">{u.area.toFixed(2)}</td>
+                      <td className="px-4 py-3.5">
+                        {isAllocated(u) ? <UnitAllocationChips unit={u} /> : <span className="text-stone-500" aria-label="Not allocated">—</span>}
+                      </td>
+                      <td className="px-4 py-3.5 text-xs text-stone-700 tabular-nums text-right whitespace-nowrap">{formatUnitArea(u.area, u.areaUnitCode)}</td>
+                      <td className="px-4 py-3.5"><UnitConsumptionCell unit={u} /></td>
                       <td className="px-4 py-3.5 text-xs text-stone-500 truncate max-w-[160px]">{u.binPath || u.warehouseName || '—'}</td>
                       {canUpdate && (
                         <td className="px-4 py-3.5">
                           <div className="flex items-center justify-end gap-1.5">
-                            <button type="button" disabled={Boolean(disabledReason)} onClick={() => setMoveTarget(u)} aria-label={`Move ${u.serial}`} title={disabledReason ? `Move — ${disabledReason}` : 'Move'} className="inline-flex items-center justify-center rounded-lg border border-stone-200 bg-white p-2 text-stone-500 hover:bg-accent hover:border-accent hover:text-accent-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
-                              <ArrowLeftRight className="size-3.5" />
-                            </button>
+                            {heldForCustomer ? (
+                              <button type="button" disabled={isReleasing} onClick={() => releaseReservation(u)} aria-label={`Release reservation on ${u.serial}`} title="Give this slab back to available stock" className="inline-flex items-center gap-1 rounded-lg border border-stone-200 bg-white px-2 py-1.5 text-2xs font-semibold text-stone-600 hover:bg-amber-50 hover:border-amber-200 hover:text-amber-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+                                <UserX className="size-3.5" /> Release
+                              </button>
+                            ) : (
+                              <button type="button" disabled={u.status !== UNIT_STATUS_AVAILABLE} onClick={() => setReserveTarget(u)} aria-label={`Reserve ${u.serial} for a customer`} title={u.status === UNIT_STATUS_AVAILABLE ? 'Reserve for a customer' : `Reserve — ${disabledReason ?? `unit is ${u.status.replace('_', ' ')}`}`} className="inline-flex items-center gap-1 rounded-lg border border-stone-200 bg-white px-2 py-1.5 text-2xs font-semibold text-stone-600 hover:bg-accent hover:border-accent hover:text-accent-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
+                                <UserCheck className="size-3.5" /> Reserve
+                              </button>
+                            )}
                             <button type="button" disabled={Boolean(disabledReason) || u.kind !== 'slab' && u.kind !== 'remnant'} onClick={() => setCutTarget(u)} aria-label={`Cut ${u.serial}`} title={disabledReason ? `Cut — ${disabledReason}` : u.kind !== 'slab' && u.kind !== 'remnant' ? 'Cut — only available for slabs and remnants' : 'Cut'} className="inline-flex items-center justify-center rounded-lg border border-stone-200 bg-white p-2 text-stone-500 hover:bg-accent hover:border-accent hover:text-accent-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
                               <Scissors className="size-3.5" />
                             </button>
-                            <button type="button" disabled={Boolean(disabledReason)} onClick={() => setScrapTarget(u)} aria-label={`Scrap ${u.serial}`} title={disabledReason ? `Scrap — ${disabledReason}` : 'Scrap'} className="inline-flex items-center justify-center rounded-lg border border-stone-200 bg-white p-2 text-stone-500 hover:bg-destructive/10 hover:border-destructive/30 hover:text-destructive disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
+                            <button type="button" disabled={Boolean(scrapDisabledReason)} onClick={() => setScrapTarget(u)} aria-label={`Scrap ${u.serial}`} title={scrapDisabledReason ? `Scrap — ${scrapDisabledReason}` : 'Scrap'} className="inline-flex items-center justify-center rounded-lg border border-stone-200 bg-white p-2 text-stone-500 hover:bg-destructive/10 hover:border-destructive/30 hover:text-destructive disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
                               <AlertTriangle className="size-3.5" />
                             </button>
                           </div>
@@ -203,10 +257,10 @@ export function UnitTable() {
                 })
               ) : (
                 <tr>
-                  <td colSpan={6 + (canUpdate ? 1 : 0)} className="py-16 text-center">
+                  <td colSpan={8 + (canUpdate ? 1 : 0)} className="py-16 text-center">
                     <div className="flex flex-col items-center gap-3">
                       <div className="rounded-2xl bg-stone-100 p-4"><Layers className="size-6 text-stone-400" /></div>
-                      <p className="text-sm font-semibold text-stone-700">{hasFilters ? 'No units match the current search.' : 'No units received yet.'}</p>
+                      <p className="text-sm font-semibold text-stone-700">{hasFilters ? 'No units match the current search.' : 'No slabs in stock yet — receive a purchase order to add some.'}</p>
                     </div>
                   </td>
                 </tr>
@@ -225,7 +279,13 @@ export function UnitTable() {
         )}
       </div>
 
-      {moveTarget && <MoveUnitDialog unit={moveTarget} onClose={() => setMoveTarget(null)} onMoved={() => {}} />}
+      {reserveTarget && (
+        <ReserveUnitDialog
+          unit={reserveTarget}
+          onClose={() => setReserveTarget(null)}
+          onReserved={(customerName) => setReserveMessage(`${reserveTarget.serial} is reserved for ${customerName}.`)}
+        />
+      )}
       {scrapTarget && <ScrapUnitDialog unit={scrapTarget} onClose={() => setScrapTarget(null)} onScrapped={() => {}} />}
       {cutTarget && (
         <CutUnitDialog

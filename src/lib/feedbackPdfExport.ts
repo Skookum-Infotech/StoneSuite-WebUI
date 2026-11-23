@@ -1,3 +1,4 @@
+import { toast } from "sonner";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import {
@@ -171,4 +172,5 @@ export async function buildFeedbackTicketPdf(params: FeedbackExportParams): Prom
 export async function exportFeedbackTicketToPdf(params: FeedbackExportParams): Promise<void> {
   const doc = await buildFeedbackTicketPdf(params);
   doc.save(buildFeedbackExportFilename(params.ticketNumber));
+  toast.success("Downloaded successfully!");
 }

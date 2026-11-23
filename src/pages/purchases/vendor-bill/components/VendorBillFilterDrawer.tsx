@@ -1,3 +1,4 @@
+import { Select } from '@/components/ui/select';
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -66,7 +67,7 @@ export function VendorBillFilterDrawer({ onClose, value, onApply }: {
             type="button"
             onClick={onClose}
             aria-label="Close filters"
-            className="rounded p-1 text-stone-400 hover:bg-stone-100 hover:text-stone-600 transition-colors"
+            className="rounded p-1 text-stone-500 hover:bg-stone-100 hover:text-stone-600 transition-colors"
           >
             <X className="size-4" />
           </button>
@@ -107,12 +108,12 @@ export function VendorBillFilterDrawer({ onClose, value, onApply }: {
           </FilterField>
 
           <FilterField label="Owner">
-            <select value={draft.ownerId} onChange={(e) => set('ownerId', e.target.value)} className={fieldCls} aria-label="Owner">
+            <Select value={draft.ownerId} onChange={(e) => set('ownerId', e.target.value)} className={fieldCls} aria-label="Owner">
               <option value="">— Any —</option>
               {(lookups?.employees ?? []).map((emp) => (
                 <option key={emp.id} value={emp.id}>{emp.name}</option>
               ))}
-            </select>
+            </Select>
           </FilterField>
 
           {customFieldDefs.length > 0 && (

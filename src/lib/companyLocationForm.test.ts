@@ -14,7 +14,7 @@ describe('companyLocationSchema', () => {
 
   const valid = {
     name: 'Main Office',
-    phone: '555-0100',
+    phone: '415-555-0100',
     address,
   };
 

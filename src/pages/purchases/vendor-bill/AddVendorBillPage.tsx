@@ -1,9 +1,10 @@
-import { useState, useMemo, useRef, useCallback, useEffect } from 'react';
+import { useState, useMemo, useRef, useCallback, useEffect, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { FileCheck, AlertCircle, Loader2, Save } from 'lucide-react';
 import { toast } from 'sonner';
 import { vendorBillService } from '@/services/vendorBillService';
+import { purchaseOrderService } from '@/services/purchaseOrderService';
 import { lookupService } from '@/services/lookupService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { FormActionBar } from '@/components/crm/FormPrimitives';
@@ -17,10 +18,32 @@ import { InventoryItemReturnContext, useInventoryItemReturn } from '@/hooks/useI
 import { useRecordCreateReturn } from '@/hooks/useRecordCreateReturn';
 import { useScrollToError } from '@/hooks/useScrollToError';
 import { VendorBillFormBody } from './components/VendorBillFormBody';
+import { DocumentReviewShell } from '@/components/tenant/documentReview/DocumentReviewShell';
+import { ReviewDialogs } from '@/components/tenant/documentReview/ReviewDialogs';
+import { ReviewFooter } from '@/components/tenant/documentReview/ReviewFooter';
+import { DocumentFailedNotice } from '@/components/tenant/documentReview/DocumentFailedNotice';
+import { DocumentUsedNotice } from '@/components/tenant/documentReview/DocumentUsedNotice';
+import { useVendorBillReviewMode } from '@/hooks/useVendorBillReviewMode';
+import type { VendorBillReviewPatch } from '@/hooks/purchaseReviewTypes';
+import { VENDOR_BILL_REVIEW_FIELDS } from '@/lib/reviewFieldConfigs';
+import type { VendorBillPurchaseOrderRef } from '@/types/vendorBill';
+import { duplicateFrom, type DuplicateConflict } from '@/lib/salesOrderDuplicate';
+import { DuplicateCreateDialog } from '@/components/tenant/documentReview/DuplicateCreateDialog';
 import {
-  vendorBillDefaults, toCreatePayload, calcHeaderTotals, PAGE_TABS, type PageTab,
+  vendorBillDefaults, toCreatePayload, calcHeaderTotals, vendorBillLinesFromPurchaseOrder, PAGE_TABS, type PageTab,
   type VendorBillLineItem,
 } from '@/lib/vendorBillForm';
+import { CopySeedGate } from '@/components/tenant/CopySeedGate';
+import { fromVendorBillForCopy } from '@/lib/vendorBillCopy';
+import { copySubtitle } from '@/lib/recordCopy';
+import type { VendorBill } from '@/types/vendorBill';
+
+const MANUAL_DUPLICATE_MESSAGE = 'A bill with this vendor invoice number already exists for this vendor.';
+
+/** Clears every line's link to a purchase-order line. */
+function unlinkPoLines(lines: VendorBillLineItem[]): VendorBillLineItem[] {
+  return lines.some((l) => l.purchaseOrderItemId) ? lines.map((l) => ({ ...l, purchaseOrderItemId: undefined })) : lines;
+}
 
 /** Unsaved form state carried across an "Add to Inventory" round trip. */
 interface VendorBillDraft {
@@ -28,10 +51,20 @@ interface VendorBillDraft {
   data: Record<string, unknown>;
   lineItems: VendorBillLineItem[];
   vendor: VendorRef | null;
+  purchaseOrder: VendorBillPurchaseOrderRef | null;
   customFieldValues: Record<string, unknown>;
 }
 
+/** `?copyFrom=<id>` opens the form pre-filled from that bill (see CopySeedGate). */
 export default function AddVendorBillPage() {
+  return (
+    <CopySeedGate queryKey="vendor-bill" load={(id) => vendorBillService.getVendorBill(id)}>
+      {(source) => <AddVendorBillForm source={source} />}
+    </CopySeedGate>
+  );
+}
+
+function AddVendorBillForm({ source }: { source?: VendorBill }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const panelRef = useRef<EditableFilesPanelHandle>(null);
@@ -40,12 +73,60 @@ export default function AddVendorBillPage() {
     'vendor', '/purchases/vendor/new', { resource: 'vendor', action: 'create' },
   );
   const restored = inventoryReturn.restored ?? vendorReturn.restored;
+  const seed = useMemo(() => (source ? fromVendorBillForCopy(source) : null), [source]);
 
   const [activeTab, setActiveTab] = useState<PageTab>(restored?.activeTab ?? PAGE_TABS[0].key);
-  const [data, setData] = useState<Record<string, unknown>>(() => restored?.data ?? vendorBillDefaults());
-  const [lineItems, setLineItems] = useState<VendorBillLineItem[]>(restored?.lineItems ?? []);
-  const [vendor, setVendor] = useState<VendorRef | null>(restored?.vendor ?? null);
-  const [customFieldValues, setCustomFieldValues] = useState<Record<string, unknown>>(restored?.customFieldValues ?? {});
+  const [data, setData] = useState<Record<string, unknown>>(() => restored?.data ?? seed?.data ?? vendorBillDefaults());
+  const [lineItems, setLineItems] = useState<VendorBillLineItem[]>(restored?.lineItems ?? seed?.lineItems ?? []);
+  const [vendor, setVendor] = useState<VendorRef | null>(restored?.vendor ?? seed?.vendor ?? null);
+  const [purchaseOrder, setPurchaseOrder] = useState<VendorBillPurchaseOrderRef | null>(restored?.purchaseOrder ?? null);
+  const [customFieldValues, setCustomFieldValues] = useState<Record<string, unknown>>(
+    restored?.customFieldValues ?? seed?.customFieldValues ?? {},
+  );
+  const [manualDuplicate, setManualDuplicate] = useState<DuplicateConflict | null>(null);
+  const [poItemsError, setPoItemsError] = useState<string>();
+
+  const headerTaxPercent = parseFloat(String(data.sales_tax_pct ?? '')) || 0;
+  const adjustment = parseFloat(String(data.adjustment ?? '')) || 0;
+
+  // A linked purchase order must belong to the bill's vendor, so switching (or
+  // clearing) the vendor drops the link rather than leaving a stale one the
+  // server would reject.
+  // A line billed against the old order's line goes with the link, or the
+  // server would refuse a line link without (or to another) order.
+  const vendorIdRef = useRef(vendor?.id);
+  useEffect(() => { vendorIdRef.current = vendor?.id; }, [vendor]);
+  const changeVendor = useCallback((next: VendorRef | null) => {
+    if (next?.id !== vendorIdRef.current) {
+      setPurchaseOrder(null);
+      setLineItems((ls) => unlinkPoLines(ls));
+    }
+    vendorIdRef.current = next?.id;
+    setVendor(next);
+  }, []);
+  // Guards a stale response from overwriting a faster, later pick's items.
+  const poFetchRef = useRef(0);
+  const changePurchaseOrder = useCallback((next: VendorBillPurchaseOrderRef | null) => {
+    setPurchaseOrder(next);
+    setPoItemsError(undefined);
+    if (!next) {
+      setLineItems((ls) => unlinkPoLines(ls));
+      return;
+    }
+    // Picking an order fills the items table with its own lines — same
+    // values, ready to edit before saving — rather than leave the user to
+    // re-type what the order already states.
+    const requestId = ++poFetchRef.current;
+    purchaseOrderService.getPurchaseOrder(next.id)
+      .then((po) => {
+        if (poFetchRef.current !== requestId) return;
+        setLineItems(vendorBillLinesFromPurchaseOrder(po.items, headerTaxPercent));
+      })
+      .catch((err: unknown) => {
+        if (poFetchRef.current !== requestId) return;
+        setPoItemsError(apiErrorMessage(err, "Failed to load the purchase order's items."));
+      });
+  }, [headerTaxPercent]);
 
   const set = useCallback((key: string, value: unknown) => setData((d) => ({ ...d, [key]: value })), []);
   const setCustomField = useCallback(
@@ -58,11 +139,25 @@ export default function AddVendorBillPage() {
   useEffect(() => {
     if (vendorReturn.createdRef) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
-      setVendor(vendorReturn.createdRef);
+      changeVendor(vendorReturn.createdRef);
       vendorReturn.consumeCreated();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [vendorReturn.createdRef]);
+
+  // "Create from document" review mode (?fromDocument=<id>) — inert otherwise.
+  const applyReviewForm = useCallback((next: VendorBillReviewPatch) => {
+    if (next.data) setData(next.data);
+    if (next.lineItems) setLineItems(next.lineItems);
+    if (next.vendor !== undefined) { vendorIdRef.current = next.vendor?.id; setVendor(next.vendor); }
+    if (next.purchaseOrder !== undefined) setPurchaseOrder(next.purchaseOrder);
+    if (next.customFieldValues) setCustomFieldValues(next.customFieldValues);
+  }, []);
+  const review = useVendorBillReviewMode({
+    form: { data, lineItems, vendor, purchaseOrder, customFieldValues },
+    apply: applyReviewForm,
+    onVendorChange: changeVendor,
+  });
 
   const { data: lookups } = useQuery({
     queryKey: ['crm-lookups'],
@@ -78,14 +173,16 @@ export default function AddVendorBillPage() {
     return { ...data, currency_id: data.currency_id || defaultCurrencyId(lookups.currencies) };
   }, [data, lookups]);
 
+  // A document-prefilled form is unsaved work from the start — except for a
+  // document that was already used or couldn't be read, which shows no form.
+  const documentUsed = review.active && review.phase === 'used';
+  const documentFailed = review.active && review.phase === 'failed';
   const guard = useUnsavedChangesGuard(
-    { data, lineItems, vendor, customFieldValues },
-    true,
-    inventoryReturn.isRestored || vendorReturn.isRestored,
+    { data, lineItems, vendor, purchaseOrder, customFieldValues },
+    !review.active || review.hydrated,
+    inventoryReturn.isRestored || vendorReturn.isRestored || Boolean(seed)
+      || (review.active && !documentUsed && !documentFailed),
   );
-
-  const headerTaxPercent = parseFloat(String(data.sales_tax_pct ?? '')) || 0;
-  const adjustment = parseFloat(String(data.adjustment ?? '')) || 0;
 
   const { subtotal, discountAmt, taxTotal, total } = useMemo(
     () => calcHeaderTotals(lineItems, headerTaxPercent, adjustment),
@@ -93,38 +190,58 @@ export default function AddVendorBillPage() {
   );
 
   // Shared by both return-trip hooks — either one may stash and restore it.
-  const draft: VendorBillDraft = { activeTab, data, lineItems, vendor, customFieldValues };
+  const draft: VendorBillDraft = { activeTab, data, lineItems, vendor, purchaseOrder, customFieldValues };
   const { startCreate: startCreateVendor } = vendorReturn.provide(draft, guard.markClean);
 
   const { mutate: save, isPending, error: saveError } = useMutation({
-    mutationFn: () => {
+    mutationFn: (opts?: { allowDuplicate?: boolean }) => {
       if (!vendor) throw new Error('A vendor is required.');
-      const payload = toCreatePayload({ ...formData, vendor_uuid: vendor.id }, lineItems, customFieldValues);
+      const payload = {
+        ...toCreatePayload(
+          { ...formData, vendor_uuid: vendor.id, purchase_order_uuid: purchaseOrder?.id },
+          lineItems,
+          customFieldValues,
+        ),
+        // A manual create answers the same 409; its "Create anyway" resends with this flag.
+        ...(opts?.allowDuplicate && !review.active ? { allowDuplicate: true } : {}),
+        ...review.payloadExtras(Boolean(opts?.allowDuplicate)),
+      };
       return vendorBillService.createVendorBill(payload);
     },
+    onError: (err) => {
+      if (!review.handleSaveError(err, () => save({ allowDuplicate: true }))) {
+        const dup = duplicateFrom(err, MANUAL_DUPLICATE_MESSAGE);
+        if (dup) setManualDuplicate(dup);
+      }
+    },
     onSuccess: async (bill) => {
-      toast.success('Vendor bill created.');
+      if (!review.active) toast.success('Vendor bill created.');
       queryClient.invalidateQueries({ queryKey: ['vendor-bills'] });
       if (panelRef.current?.hasStagedFiles()) {
         try { await panelRef.current.uploadStagedTo(bill.id); } catch { /* non-fatal */ }
       }
+      if (review.active) await review.afterCreate(bill);
       guard.markClean();
       navigate('/purchases/vendor_bill');
     },
   });
   const errorRef = useScrollToError<HTMLDivElement>(saveError);
+  const duplicate = review.duplicate ?? manualDuplicate;
+  const withReviewShell = (body: ReactNode) => (
+    review.active ? <DocumentReviewShell review={review} fields={VENDOR_BILL_REVIEW_FIELDS}>{body}</DocumentReviewShell> : body
+  );
 
   return (
     <div className="flex flex-col flex-1 min-h-0 bg-stone-50">
       <UnsavedChangesPrompt guard={guard} />
-      <form onSubmit={(e) => { e.preventDefault(); save(); }} className="flex flex-col flex-1 min-h-0">
+      <form onSubmit={(e) => { e.preventDefault(); if (review.blockedReason) review.focusFirstPending(); else save({}); }} className="flex flex-col flex-1 min-h-0">
         <CrmPageHeader
           backLabel="Vendor Bills"
           onBack={() => navigate('/purchases/vendor_bill')}
           icon={FileCheck}
-          title="New Vendor Bill"
-          subtitle="Fields marked * are required."
-          actions={(
+          title={review.active ? 'New Vendor Bill from Document' : 'New Vendor Bill'}
+          subtitle={source ? copySubtitle(source.vendorBillNumber) : 'Fields marked * are required.'}
+          actions={review.active ? undefined : (
             <button type="submit" disabled={isPending}
               className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3.5 py-1.5 text-xs font-semibold text-stone-900 hover:bg-brand-hover disabled:opacity-50 transition-all shadow-sm">
               {isPending ? <Loader2 className="size-3 animate-spin" /> : <Save className="size-3" />}
@@ -133,7 +250,7 @@ export default function AddVendorBillPage() {
           )}
         />
 
-        {saveError && (
+        {saveError && !duplicate && (
           <div
             ref={errorRef}
             tabIndex={-1}
@@ -150,7 +267,13 @@ export default function AddVendorBillPage() {
           </div>
         )}
 
+        {documentUsed ? (
+          <DocumentUsedNotice fileName={review.fileName} usedRecordUuid={review.banner.usedRecordUuid} docType="vendor_bill" />
+        ) : documentFailed ? (
+          <DocumentFailedNotice fileName={review.fileName} reason={review.banner.failureMessage} docType="vendor_bill" />
+        ) : (<>
         <InventoryItemReturnContext.Provider value={inventoryReturn.provide(draft, guard.markClean)}>
+          {withReviewShell(
           <VendorBillFormBody
             activeTab={activeTab}
             setActiveTab={setActiveTab}
@@ -159,8 +282,11 @@ export default function AddVendorBillPage() {
             lineItems={lineItems}
             setLineItems={setLineItems}
             vendor={vendor}
-            setVendor={setVendor}
+            setVendor={review.active ? review.pickParty : changeVendor}
             onCreateVendor={startCreateVendor}
+            purchaseOrder={purchaseOrder}
+            setPurchaseOrder={changePurchaseOrder}
+            purchaseOrderItemsError={poItemsError}
             customFieldValues={customFieldValues}
             setCustomField={setCustomField}
             lookups={lookups}
@@ -170,14 +296,32 @@ export default function AddVendorBillPage() {
             adjustment={adjustment}
             total={total}
             filesPanelRef={panelRef}
-          />
+          />,
+          )}
         </InventoryItemReturnContext.Provider>
 
-        <FormActionBar
-          onCancel={() => navigate('/purchases/vendor_bill')}
-          isPending={isPending}
-          submitLabel="Save Vendor Bill"
-        />
+        {review.active ? (
+          <>
+            <ReviewFooter reason={review.blockedReason} isPending={isPending} onDiscard={review.requestDiscard} saveLabel="Save Vendor Bill" />
+            <ReviewDialogs review={review} onCreateAnyway={() => save({ allowDuplicate: true })} markClean={guard.markClean} />
+          </>
+        ) : (
+          <FormActionBar
+            onCancel={() => navigate('/purchases/vendor_bill')}
+            isPending={isPending}
+            submitLabel="Save Vendor Bill"
+          />
+        )}
+        {!review.active && manualDuplicate && (
+          <DuplicateCreateDialog
+            conflict={manualDuplicate}
+            docType="vendor_bill"
+            onOpenExisting={(uuid) => { setManualDuplicate(null); guard.markClean(); navigate(`/purchases/vendor_bill/${uuid}`); }}
+            onCreateAnyway={() => { setManualDuplicate(null); save({ allowDuplicate: true }); }}
+            onCancel={() => setManualDuplicate(null)}
+          />
+        )}
+        </>)}
       </form>
     </div>
   );

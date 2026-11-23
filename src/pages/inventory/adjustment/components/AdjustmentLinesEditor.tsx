@@ -32,7 +32,7 @@ export function AdjustmentLinesEditor({ lines, onChange, warehouseId }: {
         return (
           <div key={line.key} className="rounded-lg border border-stone-200 p-3 space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-2xs font-semibold text-stone-400">Line {i + 1}</span>
+              <span className="text-2xs font-semibold text-stone-500">Line {i + 1}</span>
               <button type="button" onClick={() => remove(line.key)} aria-label={`Remove line ${i + 1}`} className="text-stone-400 hover:text-destructive"><Trash2 className="size-3.5" /></button>
             </div>
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">

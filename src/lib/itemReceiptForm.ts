@@ -7,8 +7,16 @@ import type { CrmLookups } from '@/services/lookupService';
 import type { PurchaseOrder, PurchaseOrderLine } from '@/types/purchaseOrder';
 import type {
   ItemReceipt, ItemReceiptCreatePayload, ItemReceiptUpdatePayload,
-  ItemReceiptLineInput, ItemReceiptLine, ItemReceiptStatusCode,
+  ItemReceiptLineInput, ItemReceiptLine, ItemReceiptStatusCode, OnOrderSlab,
 } from '@/types/itemReceipt';
+import { TRACKING_SERIALIZED } from '@/types/inventory';
+import { dimensionToMm } from '@/lib/lineDimensions';
+import {
+  draftSlabFromLine, slabsTotalArea, slabProblem, toSlabInput, type ItemReceiptDraftSlab,
+} from '@/lib/itemReceiptSlabs';
+import {
+  arrivedArea, arrivedSlabs, onOrderDraftsForLine, onOrderSlabProblem, toOnOrderInput, type OnOrderSlabDraft,
+} from '@/lib/onOrderSlabs';
 
 export const PAGE_TABS = [
   { key: 'details', label: 'Details' },
@@ -20,7 +28,7 @@ export type PageTab = (typeof PAGE_TABS)[number]['key'];
 export interface ItemReceiptFormField {
   key: string;
   label: string;
-  type: 'text' | 'textarea' | 'select' | 'date' | 'readonly';
+  type: 'text' | 'textarea' | 'select' | 'date' | 'readonly' | 'warehouse';
   required?: boolean;
   lookupKey?: keyof CrmLookups;
   placeholder?: string;
@@ -34,7 +42,7 @@ export interface ItemReceiptFormField {
 export const RECEIPT_HEADER_FIELDS: ItemReceiptFormField[] = [
   { key: 'ir_status', label: 'Item Receipt Status', type: 'readonly', placeholder: 'Pending' },
   { key: 'ir_doc_num', label: 'Item Receipt #', type: 'readonly', placeholder: 'Auto-generated' },
-  { key: 'warehouse_name', label: 'Warehouse', type: 'readonly', hint: 'Defaults to the tenant’s default warehouse.' },
+  { key: 'warehouse_id', label: 'Location', type: 'warehouse', required: true, hint: 'Where the received goods are stored. Slab bins are chosen from this location.' },
   { key: 'receipt_date', label: 'Receipt Date', type: 'date', required: true },
   { key: 'packing_slip', label: 'Packing Slip #', type: 'text', placeholder: 'Enter a packing slip number' },
   { key: 'carrier', label: 'Carrier', type: 'text', placeholder: 'e.g. FedEx, UPS' },
@@ -98,10 +106,51 @@ export interface ItemReceiptDraftLine {
   qtyReceived: string;
   qtyRejected: string;
   lineNotes: string;
+  /** The item's tracking mode, from the PO line. A `serialized` line is
+   *  received slab by slab: `slabs` drives the quantity and `qtyReceived` /
+   *  `qtyRejected` are unused. */
+  tracking: string;
+  slabs: ItemReceiptDraftSlab[];
+  /** The slabs this line's order put on order and that have not arrived, each with
+   *  a tick for "arrived" (lib/onOrderSlabs.ts). When there are any, the receiver
+   *  ticks them instead of typing slab rows; a ticked slab counts toward the
+   *  line's quantity exactly like a typed one. */
+  onOrder?: OnOrderSlabDraft[];
+  /** The buyer's slab count for this line, when the order states one. */
+  expectedSlabs?: number | null;
+  /** Slabs earlier receipts have already brought in against the order line. */
+  slabsReceived?: number;
+  /** The slab size the order line was priced from, in millimetres — what
+   *  "Generate rows" seeds each new slab with. Absent when the line did not state one. */
+  defaultLengthMm?: number;
+  defaultWidthMm?: number;
+  /** The unit the item is measured in (the order line's snapshot of it), which
+   *  slab sizes are shown and typed in until the item itself has loaded. */
+  dimensionUnit?: string;
 }
 
 function outstandingFor(ordered: number, alreadyReceived: number): number {
   return Math.max(ordered - alreadyReceived, 0);
+}
+
+/** Whether a line is received slab by slab rather than by typed quantity. */
+export function isSerializedLine(line: Pick<ItemReceiptDraftLine, 'tracking'>): boolean {
+  return line.tracking === TRACKING_SERIALIZED;
+}
+
+/** A line's On Order checklist rows, none when it has no such slabs. */
+export function onOrderOf(line: Pick<ItemReceiptDraftLine, 'onOrder'>): OnOrderSlabDraft[] {
+  return line.onOrder ?? [];
+}
+
+/** The size of one ordered slab in millimetres, or nothing when the order line
+ *  gives no length and width. */
+function orderedSlabSizeMm(po: PurchaseOrderLine): Pick<ItemReceiptDraftLine, 'defaultLengthMm' | 'defaultWidthMm'> {
+  if (!(po.length && po.width && po.length > 0 && po.width > 0)) return {};
+  return {
+    defaultLengthMm: dimensionToMm(po.length, po.dimensionUnit),
+    defaultWidthMm: dimensionToMm(po.width, po.dimensionUnit),
+  };
 }
 
 /** Builds the editable line set for a receipt draft: every line on the
@@ -113,10 +162,12 @@ function outstandingFor(ordered: number, alreadyReceived: number): number {
 export function mergeReceiptLines(
   poLines: PurchaseOrderLine[],
   existingLines: ItemReceiptLine[] = [],
+  onOrderSlabs: OnOrderSlab[] = [],
 ): ItemReceiptDraftLine[] {
   return poLines.map((po, i) => {
     const existing = existingLines.find((l) => l.purchaseOrderItemId === po.id);
     const outstanding = outstandingFor(po.quantity, po.qtyReceived);
+    const serialized = po.tracking === TRACKING_SERIALIZED;
     return {
       purchaseOrderItemId: po.id,
       lineNumber: i + 1,
@@ -127,9 +178,18 @@ export function mergeReceiptLines(
       unitCode: existing?.unitCode || po.unitCode,
       qtyOrdered: po.quantity,
       qtyAlreadyReceived: po.qtyReceived,
-      qtyReceived: existing ? String(existing.qtyReceived) : (outstanding > 0 ? String(outstanding) : ''),
-      qtyRejected: existing ? String(existing.qtyRejected) : '0',
+      // A slab line has no typed quantity to default: the receiver adds slabs.
+      qtyReceived: serialized ? '' : existing ? String(existing.qtyReceived) : (outstanding > 0 ? String(outstanding) : ''),
+      qtyRejected: existing && !serialized ? String(existing.qtyRejected) : '0',
       lineNotes: existing?.lineNotes ?? '',
+      tracking: po.tracking ?? '',
+      // A slab the saved receipt ticked is a checklist row, not a typed one.
+      slabs: serialized ? (existing?.slabs ?? []).filter((s) => !s.onOrderSlabId).map(draftSlabFromLine) : [],
+      onOrder: serialized ? onOrderDraftsForLine(onOrderSlabs, po.id, existing?.slabs) : [],
+      expectedSlabs: serialized ? (po.expectedSlabs ?? null) : null,
+      slabsReceived: serialized ? (po.slabsReceived ?? 0) : 0,
+      dimensionUnit: po.dimensionUnit ?? undefined,
+      ...(serialized ? orderedSlabSizeMm(po) : {}),
     };
   });
 }
@@ -139,11 +199,42 @@ function parsedQty(raw: string): number {
   return Number.isFinite(n) ? n : 0;
 }
 
-/** Lines the user has actually entered a received quantity for — the ones
- *  that make it into the submitted payload (itemreceipt/store_create.go
- *  requires qtyReceived > 0 per included line). */
+/** How far past the ordered quantity a line may be received without an
+ *  over-receipt reason, as a percentage. Must match
+ *  itemreceipt.OverReceiptTolerancePercent on the server. */
+export const OVER_RECEIPT_TOLERANCE_PERCENT = 5
+
+/** Whether receiving this line would pass the server's over-receipt tolerance,
+ *  counting what earlier receipts already brought in. The odd thousandth that
+ *  rounding slab areas adds is well inside it. */
+export function exceedsOverReceiptTolerance(
+  line: Pick<ItemReceiptDraftLine, 'qtyOrdered' | 'qtyAlreadyReceived' | 'qtyReceived' | 'tracking' | 'slabs' | 'onOrder' | 'unitCode'>,
+): boolean {
+  const incoming = receivingQty(line as ItemReceiptDraftLine)
+  if (incoming <= 0) return false
+  if (line.qtyOrdered <= 0) return true
+  return line.qtyAlreadyReceived + incoming > line.qtyOrdered * (1 + OVER_RECEIPT_TOLERANCE_PERCENT / 100)
+}
+
+const QTY_SCALE = 1000;
+
+/** What a line is receiving: the sum of its slabs' areas for a slab line (the
+ *  ticked On Order slabs and any typed in), the typed quantity for any other. */
+export function receivingQty(line: ItemReceiptDraftLine): number {
+  if (!isSerializedLine(line)) return parsedQty(line.qtyReceived);
+  const total = slabsTotalArea(line.slabs, line.unitCode) + arrivedArea(onOrderOf(line), line.unitCode);
+  return Math.round(total * QTY_SCALE) / QTY_SCALE;
+}
+
+/** Lines the user has actually entered something to receive for — the ones
+ *  that make it into the submitted payload. A quantity line needs a quantity
+ *  above zero (itemreceipt/store_create.go); a slab line needs at least one
+ *  slab row, even an unfinished one, or one ticked On Order slab, so it is
+ *  validated rather than dropped. */
 export function includedReceiptLines(lines: ItemReceiptDraftLine[]): ItemReceiptDraftLine[] {
-  return lines.filter((l) => parsedQty(l.qtyReceived) > 0);
+  return lines.filter((l) => (
+    isSerializedLine(l) ? l.slabs.length > 0 || arrivedSlabs(onOrderOf(l)).length > 0 : parsedQty(l.qtyReceived) > 0
+  ));
 }
 
 /** A single line's validation failure, keyed back to the PO line it belongs
@@ -160,6 +251,26 @@ export interface ReceiptLineError {
 export function validateReceiptLineErrors(lines: ItemReceiptDraftLine[]): ReceiptLineError[] {
   const errors: ReceiptLineError[] = [];
   for (const line of includedReceiptLines(lines)) {
+    if (isSerializedLine(line)) {
+      // A ticked On Order slab still needs a thickness when the order left it out.
+      for (const ticked of onOrderOf(line)) {
+        const problem = onOrderSlabProblem(ticked);
+        if (problem) {
+          errors.push({ purchaseOrderItemId: line.purchaseOrderItemId, lineNumber: line.lineNumber, message: problem });
+        }
+      }
+      // One entry per unfinished slab; there is no rejected quantity to check.
+      line.slabs.forEach((slab, i) => {
+        const problem = slabProblem(slab);
+        if (problem) {
+          errors.push({
+            purchaseOrderItemId: line.purchaseOrderItemId, lineNumber: line.lineNumber,
+            message: `slab ${i + 1}: ${problem}`,
+          });
+        }
+      });
+      continue;
+    }
     const received = parsedQty(line.qtyReceived);
     const rejected = parsedQty(line.qtyRejected);
     if (rejected < 0) {
@@ -189,6 +300,12 @@ export function validateReceiptLines(lines: ItemReceiptDraftLine[]): string[] {
   return errors;
 }
 
+/** Header-level checks the line validators can't see. The warehouse is
+ *  mandatory: it's where the received goods (and every slab's bin) live. */
+export function validateReceiptHeader(data: Record<string, unknown>): string[] {
+  return toStr(data.warehouse_id).trim() ? [] : ['A location is required.'];
+}
+
 // ── Payload mapping (UI form state -> backend create/update contract) ────────
 
 function toStr(v: unknown): string {
@@ -203,6 +320,22 @@ function toIntOrNull(v: unknown): number | null {
 }
 
 function toLineInput(line: ItemReceiptDraftLine, lineNo: number): ItemReceiptLineInput {
+  if (isSerializedLine(line)) {
+    // The server computes the quantity from the slabs and refuses a rejected
+    // quantity on a slab line, so neither is asked of the user — `qtyReceived`
+    // is only the form's own preview of what the server will work out.
+    return {
+      lineNumber: lineNo,
+      purchaseOrderItemUuid: line.purchaseOrderItemId,
+      qtyReceived: receivingQty(line),
+      lineNotes: line.lineNotes.trim() || undefined,
+      // The slabs ticked off the order's list first, then any typed in.
+      slabs: [
+        ...arrivedSlabs(onOrderOf(line)).map((d) => toOnOrderInput(d)),
+        ...line.slabs.map(toSlabInput),
+      ],
+    };
+  }
   return {
     lineNumber: lineNo,
     purchaseOrderItemUuid: line.purchaseOrderItemId,
@@ -213,6 +346,7 @@ function toLineInput(line: ItemReceiptDraftLine, lineNo: number): ItemReceiptLin
 }
 
 interface ReceiptHeaderFields {
+  warehouseId?: number;
   receiptDate?: string;
   packingSlip?: string;
   carrier?: string;
@@ -229,8 +363,10 @@ function toHeaderFields(
   data: Record<string, unknown>,
   lines: ItemReceiptDraftLine[],
   customFields: Record<string, unknown>,
+  warehouseId?: number | null,
 ): ReceiptHeaderFields {
   return {
+    warehouseId: warehouseId && warehouseId > 0 ? warehouseId : undefined,
     receiptDate: toStr(data.receipt_date) || undefined,
     packingSlip: toStr(data.packing_slip) || undefined,
     carrier: toStr(data.carrier) || undefined,
@@ -245,15 +381,18 @@ function toHeaderFields(
 }
 
 /** Maps the Receive form's state to the backend's `ItemReceiptCreatePayload`.
- *  `warehouseId` is intentionally never sent — no lookup endpoint exists to
- *  offer an override yet, so every receipt takes the server's tenant default. */
+ *  `options.warehouseId` is the receiving warehouse's numeric id (the form
+ *  holds its uuid; see toNumericWarehouseId) — the server requires it whenever a
+ *  slab line is present. */
 export function toCreatePayload(
   purchaseOrderUuid: string,
   data: Record<string, unknown>,
   lines: ItemReceiptDraftLine[],
   customFields: Record<string, unknown> = {},
+  options?: Pick<ItemReceiptCreatePayload, 'post' | 'overReceiptReason' | 'warehouseId'>,
 ): ItemReceiptCreatePayload {
-  return { purchaseOrderUuid, ...toHeaderFields(data, lines, customFields) };
+  const { warehouseId, ...posting } = options ?? {};
+  return { purchaseOrderUuid, ...toHeaderFields(data, lines, customFields, warehouseId), ...posting };
 }
 
 /** Maps the Edit form's state to the backend's `ItemReceiptUpdatePayload`. */
@@ -261,8 +400,9 @@ export function toUpdatePayload(
   data: Record<string, unknown>,
   lines: ItemReceiptDraftLine[],
   customFields: Record<string, unknown> = {},
+  warehouseId?: number | null,
 ): ItemReceiptUpdatePayload {
-  return toHeaderFields(data, lines, customFields);
+  return toHeaderFields(data, lines, customFields, warehouseId);
 }
 
 function idOrEmpty(id: number | null | undefined): string {
@@ -281,7 +421,6 @@ export function fromItemReceipt(ir: ItemReceipt): {
     data: {
       ir_status: ir.status,
       ir_doc_num: ir.itemReceiptNumber,
-      warehouse_name: ir.warehouseName ?? '',
       receipt_date: ir.receiptDate,
       packing_slip: ir.packingSlip ?? '',
       carrier: ir.carrier ?? '',
@@ -300,9 +439,13 @@ export function itemReceiptDefaults(): Record<string, unknown> {
   return { receipt_date: today };
 }
 
-/** Purchase orders that can be received against — SENT/PART only
- *  (itemreceipt/store.go receivableStatusCodes). Drives which rows the PO
- *  picker offers vs. shows disabled. */
+/** PO status codes that can be received against — SENT/PART only
+ *  (itemreceipt/store.go receivableStatusCodes). The PO picker sends these as a
+ *  server-side `status_code` filter so it only ever lists usable orders. */
+export const RECEIVABLE_PO_STATUS_CODES: readonly string[] = ['SENT', 'PART'];
+
+/** Whether a purchase order can be received against — gates the PO detail
+ *  page's Receive action and the receive-items page. */
 export function isPurchaseOrderReceivable(po: Pick<PurchaseOrder, 'statusCode'>): boolean {
-  return po.statusCode === 'SENT' || po.statusCode === 'PART';
+  return RECEIVABLE_PO_STATUS_CODES.includes(po.statusCode);
 }

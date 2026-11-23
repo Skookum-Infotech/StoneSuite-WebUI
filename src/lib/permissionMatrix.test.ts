@@ -18,6 +18,18 @@ describe('buildPermModules', () => {
     expect(leadRows[0]?.label).toBe('Leads');
   });
 
+  // The Activity Planner is a view over order schedules and reuses
+  // sales_order:read for its sidebar gating. It must stay a gate only — not a
+  // second row, and not the row's owner (Sales is listed first, so it wins).
+  it('keeps "Sales Orders" for sales_order, not the Calendar link that reuses it for sidebar gating', () => {
+    const modules = buildPermModules();
+    const orderRows = modules.flatMap((m) => m.rows).filter((r) => r.resource === 'sales_order');
+
+    expect(orderRows).toHaveLength(1);
+    expect(orderRows[0]?.label).toBe('Sales Orders');
+    expect(modules.find((m) => m.id === 'calendar')?.rows.map((r) => r.resource)).not.toContain('sales_order');
+  });
+
   it('drops the Default Accounts row once chart_of_account is already covered by Chart of Accounts', () => {
     const modules = buildPermModules();
     const coaRows = modules
@@ -26,5 +38,15 @@ describe('buildPermModules', () => {
 
     expect(coaRows).toHaveLength(1);
     expect(coaRows[0]?.label).toBe('Chart of Accounts');
+  });
+});
+
+describe('buildPermModules install schedule', () => {
+  it('lists install_appointment once, as "Install Schedule" under Calendar', () => {
+    const modules = buildPermModules();
+    const rows = modules.flatMap((m) => m.rows).filter((r) => r.resource === 'install_appointment');
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.label).toBe('Install Schedule');
+    expect(modules.find((m) => m.id === 'calendar')?.rows.map((r) => r.resource)).toContain('install_appointment');
   });
 });

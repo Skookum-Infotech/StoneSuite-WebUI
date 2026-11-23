@@ -2,21 +2,22 @@ import { cn } from '@/lib/utils';
 
 // Mirrors InvoiceSummaryCard, extended with adjustment and applied/unapplied
 // (Credit Memo tracks cross-invoice applications instead of a single
-// amountPaid/balanceDue pair).
-export function CreditMemoSummaryCard({ subtotal, discountAmt, taxTotal, adjustment, total, appliedTotal }: {
-  subtotal: number; discountAmt: number; taxTotal: number; adjustment: number; total: number;
+// amountPaid/balanceDue pair). A credit memo is one Amount, so there is no
+// discount row: the Sub Total is the Amount itself.
+export function CreditMemoSummaryCard({ subtotal, taxTotal, adjustment, total, appliedTotal, currencyCode = 'USD' }: {
+  subtotal: number; taxTotal: number; adjustment: number; total: number;
   /** Read-only — only apply/unapply (via CreditMemoService) change this;
    *  there's no free-text "applied" field in the form. */
   appliedTotal: number;
+  currencyCode?: string;
 }) {
-  const fmt = (n: number) =>
-    '$' + n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  const fmt = (value: number) =>
+    value.toLocaleString(undefined, { style: 'currency', currency: currencyCode });
 
   const unappliedAmount = total - appliedTotal;
 
   const rows = [
     { label: 'Sub Total', value: fmt(subtotal), muted: true },
-    { label: 'Discount', value: fmt(discountAmt), muted: true },
     { label: 'Tax Total', value: fmt(taxTotal), muted: true },
     { label: 'Adjustment', value: fmt(adjustment), muted: true },
     { label: 'Total', value: fmt(total), muted: false },

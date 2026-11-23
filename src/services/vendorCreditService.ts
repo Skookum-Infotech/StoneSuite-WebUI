@@ -1,4 +1,5 @@
 import { tenantClient } from '@/api/tenantClient';
+import type { ApprovalRejection } from '@/types/tenant';
 import type { AuditEntry } from '@/services/crmService';
 import type {
   VendorCredit,
@@ -36,7 +37,7 @@ export const vendorCreditService = {
       .get<{
         success: boolean; vendorCredit: VendorCredit; approval?: {
           gated?: boolean; approvers?: VendorCredit['approvers']; requiredApprovals?: number; approvedCount?: number;
-          canApprove?: boolean; isOverride?: boolean; callerAlreadyApproved?: boolean;
+          canApprove?: boolean; isOverride?: boolean; callerAlreadyApproved?: boolean; canReject?: boolean; rejection?: ApprovalRejection;
         };
       }>(`${BASE}/${uuid}`)
       .then((r) => {
@@ -50,6 +51,8 @@ export const vendorCreditService = {
           canApprove: a?.canApprove ?? false,
           isOverride: a?.isOverride ?? false,
           callerAlreadyApproved: a?.callerAlreadyApproved ?? false,
+          canReject: a?.canReject ?? false,
+          rejection: a?.rejection,
         };
       }),
 
@@ -74,6 +77,16 @@ export const vendorCreditService = {
   approve: (uuid: string): Promise<VendorCredit> =>
     tenantClient
       .post<{ success: boolean; vendorCredit: VendorCredit }>(`${BASE}/${uuid}/approve`, {})
+      .then((r) => r.data.vendorCredit),
+
+  // An approver's veto: rejects the vendor credit while it awaits approval (a reason
+  // is required) and flags it rejected in place until it is edited. Rejected with 403 if the caller isn't a
+  // configured approver (and isn't a super admin), 409 if it isn't awaiting
+  // approval, 400 without a reason. The POST response has no approval overlay, so
+  // callers invalidate the record's query to pick up the rejection banner.
+  reject: (uuid: string, reason: string): Promise<VendorCredit> =>
+    tenantClient
+      .post<{ success: boolean; vendorCredit: VendorCredit }>(`${BASE}/${uuid}/reject`, { reason })
       .then((r) => r.data.vendorCredit),
 
   // Blocked (409) while any live application references the credit — reverse

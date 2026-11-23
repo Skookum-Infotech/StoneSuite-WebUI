@@ -19,6 +19,12 @@ const FOCUSABLE = [
  */
 export function useModalDialog(onClose: () => void) {
   const contentRef = useRef<HTMLDivElement>(null);
+  // Held in a ref so a caller passing a new callback identity each render does
+  // not re-run the effect below (which would steal focus back to the first control).
+  const closeRef = useRef(onClose);
+  useEffect(() => {
+    closeRef.current = onClose;
+  }, [onClose]);
 
   useEffect(() => {
     const opener = document.activeElement as HTMLElement | null;
@@ -31,7 +37,7 @@ export function useModalDialog(onClose: () => void) {
     function handleKey(e: KeyboardEvent) {
       if (e.key === 'Escape') {
         e.stopPropagation();
-        onClose();
+        closeRef.current();
         return;
       }
       if (e.key !== 'Tab' || !contentRef.current) return;
@@ -55,7 +61,7 @@ export function useModalDialog(onClose: () => void) {
       document.removeEventListener('keydown', handleKey);
       opener?.focus?.();
     };
-  }, [onClose]);
+  }, []);
 
   return contentRef;
 }

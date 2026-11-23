@@ -1,12 +1,10 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
 import { RecentRecordsTable } from './RecentRecordsTable';
 import type { RecentRecord } from '@/types/dashboardData';
 
-const navigateMock = vi.fn();
-vi.mock('react-router-dom', () => ({
-  useNavigate: () => navigateMock,
+vi.mock('react-router-dom', async () => ({
+  Link: (await import('@/test/routerLinkStub')).RouterLinkStub,
 }));
 
 function makeRecord(overrides: Partial<RecentRecord> = {}): RecentRecord {
@@ -18,8 +16,6 @@ function makeRecord(overrides: Partial<RecentRecord> = {}): RecentRecord {
 }
 
 describe('RecentRecordsTable', () => {
-  beforeEach(() => navigateMock.mockClear());
-
   it('shows a loading state while the query is in flight', () => {
     render(<RecentRecordsTable records={undefined} isLoading={true} isError={false} />);
     expect(screen.getByText(/loading/i)).toBeInTheDocument();
@@ -68,13 +64,10 @@ describe('RecentRecordsTable', () => {
     expect(dashes.length).toBeGreaterThan(0);
   });
 
-  it('navigates to the record detail route when a row is activated', async () => {
-    const user = userEvent.setup();
+  it('links the record number to the record detail route', () => {
     render(<RecentRecordsTable records={[makeRecord()]} isLoading={false} isError={false} />);
 
-    await user.click(screen.getByRole('button', { name: /SO-1042/i }));
-
-    expect(navigateMock).toHaveBeenCalledWith('/sales/sales_order/so-1');
+    expect(screen.getByRole('link', { name: /SO-1042/i })).toHaveAttribute('href', '/sales/sales_order/so-1');
   });
 
   it('shows a "more records" hint when the backend reports hasMore', () => {

@@ -3,5 +3,5 @@
 // its row-mates and break the grid's alignment.
 export function MoreHint({ count, label }: { count: number; label: string }) {
   if (count <= 0) return null;
-  return <p className="pt-2 text-2xs font-medium text-stone-400">+{count} {label}</p>;
+  return <p className="pt-2 text-2xs font-medium text-stone-500">+{count} {label}</p>;
 }

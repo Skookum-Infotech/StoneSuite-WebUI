@@ -1,8 +1,20 @@
+import { Fragment } from 'react';
 import { Plus, Pencil, Trash2, Copy, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { LINE_ACTIONS_HEAD_CLS, LINE_ACTIONS_CELL_CLS, LINE_ACTIONS_EDIT_CELL_CLS } from '@/lib/lineActionsColumn';
 import { InventoryItemPicker, type InventoryItemPickerHandlers } from './InventoryItemPicker';
 import type { InventoryItem } from '@/types/inventory';
 import { useCatalogLineDraft } from '@/hooks/useCatalogLineDraft';
+import { useAddKitLines } from '@/hooks/useAddKitLines';
+import { useItemUnitCode } from '@/hooks/useItemUnitCode';
+import { LineSizeInputCells, LineSizeViewCells } from '@/components/inventory/LineSizeCells';
+import { SALES_SIZE_COLS, sizeFromItemMm, thicknessFromItemMm } from '@/lib/lineThickness';
+import {
+  clampDimensionField, itemDimensionUnit, isSized, withoutUnsupportedSize, withSizedQuantity,
+} from '@/lib/lineDimensions';
+import { blockEnterSubmit } from '@/lib/lineEntryKeys';
+import { KitHeadingRow, KIT_ROW_CLS } from '@/components/inventory/KitHeadingRow';
+import { kitHeadings, labelWithKit, removeKitRun } from '@/lib/kitLines';
 import { Badge } from '@/components/tenant/ui';
 import {
   EMPTY_LINE_ITEM, calcLineItem, clampPercent, FULFILLMENT_STATUS_LABELS, FULFILLMENT_STATUS_COLORS,
@@ -10,7 +22,7 @@ import {
 } from '@/lib/salesOrderForm';
 
 const inlineCls =
-  'w-full rounded border border-stone-200 bg-white px-2 py-1 text-xs text-stone-800 outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-900/5 placeholder:text-stone-300 transition-all';
+  'w-full rounded border border-stone-200 bg-white px-2 py-1 text-xs text-stone-800 outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-900/5 placeholder:text-stone-500 transition-all no-spinner';
 
 let rowCounter = 0;
 function genId() { rowCounter += 1; return `li-${rowCounter}`; }
@@ -23,7 +35,8 @@ const ITEM_COLS = [
   { label: 'Item Name *', w: 'min-w-[130px]' },
   { label: 'Description', w: 'min-w-[140px]' },
   { label: 'SKU', w: 'min-w-[100px]' },
-  { label: 'Qty', w: 'w-16', right: true },
+  ...SALES_SIZE_COLS,
+  { label: 'Qty', w: 'w-20', right: true },
   { label: 'Units', w: 'w-16' },
   { label: 'Unit Price', w: 'w-20', right: true },
   { label: 'Disc %', w: 'w-16', right: true },
@@ -31,33 +44,59 @@ const ITEM_COLS = [
   { label: 'Tax %', w: 'w-16', right: true },
   { label: 'Total', w: 'w-20', right: true },
   { label: 'Fulfillment', w: 'w-24' },
-  { label: '', w: 'w-8' },
+  { label: '', w: LINE_ACTIONS_HEAD_CLS },
 ];
 
 export function SalesOrderItemsTab({ items, onUpdate }: { items: SOLineItem[]; onUpdate: (v: SOLineItem[]) => void }) {
   // Picking an inventory item snapshots its display fields into the draft;
   // the server re-snapshots authoritatively from inventoryItemUuid at save time.
+  const unitCodeFor = useItemUnitCode();
   const applyCatalogItem = (prev: Omit<SOLineItem, 'id' | 'lineNo'>, item: InventoryItem) => {
-    const next = {
+    // Length x width x slabs, when stated, IS the quantity — worked out before
+    // the amount is, so the two can never disagree.
+    const units = unitCodeFor(item);
+    const dimensionUnit = itemDimensionUnit(item);
+    const next = withSizedQuantity(withoutUnsupportedSize({
       ...prev,
+      // Thickness, length and width start at the item's own standard slab, in the
+      // unit the line will be measured in; blank when the item states none.
+      thickness: thicknessFromItemMm(item.thicknessMm, dimensionUnit, units),
+      length: sizeFromItemMm(item.lengthMm, dimensionUnit, units),
+      width: sizeFromItemMm(item.widthMm, dimensionUnit, units),
       itemName: item.name,
+      units,
       itemSku: item.sku,
       itemDescription: item.description,
       unitPrice: String(item.unitPrice),
       inventoryItemUuid: item.id,
-    };
+      dimensionUnit,
+    }));
     const { amount, total } = calcLineItem(next);
     return { ...next, amount, total };
   };
 
   const {
     draft, setDraft, editId, setEditId, isAdding, setIsAdding, lineError, requireCatalogItem, addToInventory,
+    addNewKit, returnedKit, reportLineError,
   } = useCatalogLineDraft(EMPTY_LINE_ITEM, applyCatalogItem);
 
+  // Picking a kit appends its items as lines under the kit's heading.
+  const { addKit, isAddingKit } = useAddKitLines({
+    items,
+    onUpdate,
+    emptyDraft: EMPTY_LINE_ITEM,
+    applyItem: applyCatalogItem,
+    label: labelWithKit,
+    newId: genId,
+    onAdded: () => { setDraft(EMPTY_LINE_ITEM); setIsAdding(false); },
+    onError: reportLineError,
+    returnedKit,
+  });
+
   const updateDraft = (key: keyof typeof draft, val: string) => {
-    const nextVal = key === 'discount' || key === 'tax' ? clampPercent(val) : val;
+    const nextVal = key === 'discount' || key === 'tax' ? clampPercent(val) : clampDimensionField(key, val, draft.dimensionUnit);
     setDraft((prev) => {
-      const next = { ...prev, [key]: nextVal };
+      const next = withSizedQuantity({ ...prev, [key]: nextVal });
       const { amount, total } = calcLineItem(next);
       return { ...next, amount, total };
     });
@@ -67,7 +106,7 @@ export function SalesOrderItemsTab({ items, onUpdate }: { items: SOLineItem[]; o
   // picked inventory item — a fresh pick is required before the line can be saved.
   const onItemNameText = (text: string) => {
     setDraft((prev) => {
-      const next = { ...prev, itemName: text, inventoryItemUuid: undefined };
+      const next = withSizedQuantity(withoutUnsupportedSize({ ...prev, itemName: text, inventoryItemUuid: undefined }));
       const { amount, total } = calcLineItem(next);
       return { ...next, amount, total };
     });
@@ -77,6 +116,9 @@ export function SalesOrderItemsTab({ items, onUpdate }: { items: SOLineItem[]; o
     onTextChange: onItemNameText,
     onPick: (item) => setDraft((prev) => applyCatalogItem(prev, item)),
     onAddToInventory: addToInventory,
+    // Kits only join a new line; an existing row being edited stays an item.
+    onPickKit: editId ? undefined : (kit) => { void addKit(kit); },
+    onAddKit: editId ? undefined : addNewKit,
   };
 
   const commitAdd = () => {
@@ -107,21 +149,30 @@ export function SalesOrderItemsTab({ items, onUpdate }: { items: SOLineItem[]; o
     if (editId === id) { setEditId(null); setDraft(EMPTY_LINE_ITEM); }
   };
 
+  // Takes a kit's whole run out at once (its heading's remove button).
+  const removeRun = (firstId: string) => {
+    const next = removeKitRun(items, firstId);
+    onUpdate(next);
+    if (editId && !next.some((r) => r.id === editId)) { setEditId(null); setDraft(EMPTY_LINE_ITEM); }
+  };
+
   const copyPrev = () => {
     if (!items.length) return;
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { id, lineNo, ...rest } = items[items.length - 1];
-    setDraft(rest);
+    // A copy is a new line of its own, not another member of the kit.
+    setDraft({ ...rest, kitId: undefined, kitName: undefined });
     setIsAdding(true);
     setEditId(null);
   };
 
+  const headings = kitHeadings(items);
   const activeDraft = isAdding || editId !== null;
 
   return (
     <div className="rounded-lg border border-stone-200 bg-white overflow-hidden">
       <div className="overflow-x-auto modal-scrollbar">
-        <table className="w-full text-left text-xs">
+        <table className="w-full text-left text-xs" onKeyDown={blockEnterSubmit}>
           <thead className="bg-stone-50 border-b border-stone-200">
             <tr className="divide-x divide-stone-200">
               {ITEM_COLS.map((c) => (
@@ -132,25 +183,35 @@ export function SalesOrderItemsTab({ items, onUpdate }: { items: SOLineItem[]; o
             </tr>
           </thead>
           <tbody className="divide-y divide-stone-100">
-            {items.map((row) =>
-              editId === row.id ? (
-                <tr key={row.id} className="bg-brand/5 divide-x divide-stone-100">
+            {items.map((row) => (
+              <Fragment key={row.id}>
+                {headings.get(row.id) && (
+                  <KitHeadingRow
+                    name={headings.get(row.id)?.kitName ?? ''}
+                    count={headings.get(row.id)?.count ?? 0}
+                    colSpan={ITEM_COLS.length}
+                    onRemove={() => removeRun(row.id)}
+                  />
+                )}
+              {editId === row.id ? (
+                <tr className="bg-brand/5 divide-x divide-stone-100">
                   <InlineItemRow lineNo={row.lineNo} draft={draft} onChange={updateDraft} picker={picker} />
                   <td className="px-2 py-1.5">
                     <FulfillmentBadge status={row.status} />
                   </td>
-                  <td className="px-2 py-1.5">
-                    <button type="button" onClick={() => remove(row.id)} className="text-stone-300 hover:text-destructive transition-colors" aria-label="Remove">
+                  <td className={LINE_ACTIONS_EDIT_CELL_CLS}>
+                    <button type="button" onClick={() => remove(row.id)} className="text-stone-500 hover:text-destructive transition-colors" aria-label="Remove">
                       <Trash2 className="size-3.5" />
                     </button>
                   </td>
                 </tr>
               ) : (
-                <tr key={row.id} className="hover:bg-stone-50/70 transition-colors group divide-x divide-stone-100">
-                  <td className="px-2.5 py-2.5 text-stone-400 tabular-nums">{row.lineNo}</td>
-                  <td className="px-2.5 py-2.5 font-medium text-stone-800">{row.itemName || <span className="text-stone-300">—</span>}</td>
+                <tr className={cn('hover:bg-stone-50/70 transition-colors group divide-x divide-stone-100', row.kitId && KIT_ROW_CLS)}>
+                  <td className="px-2.5 py-2.5 text-stone-500 tabular-nums">{row.lineNo}</td>
+                  <td className="px-2.5 py-2.5 font-medium text-stone-800">{row.itemName || <span className="text-stone-500">—</span>}</td>
                   <td className="px-2.5 py-2.5 text-stone-500 max-w-[140px] truncate">{row.itemDescription}</td>
                   <td className="px-2.5 py-2.5 text-stone-500 font-mono text-2xs">{row.itemSku}</td>
+                  <LineSizeViewCells size={row} unit={row.dimensionUnit} units={row.units} />
                   <td className="px-2.5 py-2.5 tabular-nums text-right text-stone-600">{row.quantity}</td>
                   <td className="px-2.5 py-2.5 text-stone-500">{row.units}</td>
                   <td className="px-2.5 py-2.5 tabular-nums text-right text-stone-600">{row.unitPrice ? `$${parseFloat(row.unitPrice).toFixed(2)}` : '—'}</td>
@@ -159,24 +220,25 @@ export function SalesOrderItemsTab({ items, onUpdate }: { items: SOLineItem[]; o
                   <td className="px-2.5 py-2.5 tabular-nums text-right text-stone-500">{row.tax ? `${row.tax}%` : '0%'}</td>
                   <td className="px-2.5 py-2.5 tabular-nums text-right text-stone-800 font-semibold">{row.total ? `$${row.total}` : '—'}</td>
                   <td className="px-2.5 py-2.5"><FulfillmentBadge status={row.status} /></td>
-                  <td className="px-2 py-2.5">
-                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100">
-                      <button type="button" onClick={() => startEdit(row)} className="text-stone-300 hover:text-stone-600 transition-colors" aria-label={`Edit line ${row.itemName || row.lineNo}`}>
+                  <td className={LINE_ACTIONS_CELL_CLS}>
+                    <div className="flex items-center gap-1">
+                      <button type="button" onClick={() => startEdit(row)} className="text-stone-500 hover:text-stone-600 transition-colors" aria-label={`Edit line ${row.itemName || row.lineNo}`}>
                         <Pencil className="size-3.5" />
                       </button>
-                      <button type="button" onClick={() => remove(row.id)} className="text-stone-300 hover:text-destructive transition-colors" aria-label={`Remove line ${row.itemName || row.lineNo}`}>
+                      <button type="button" onClick={() => remove(row.id)} className="text-stone-500 hover:text-destructive transition-colors" aria-label={`Remove line ${row.itemName || row.lineNo}`}>
                         <Trash2 className="size-3.5" />
                       </button>
                     </div>
                   </td>
                 </tr>
-              ),
-            )}
+              )}
+              </Fragment>
+            ))}
             {isAdding && (
               <tr className="bg-brand/5 divide-x divide-stone-100">
                 <InlineItemRow lineNo={items.length + 1} draft={draft} onChange={updateDraft} picker={picker} />
                 <td className="px-2 py-1.5"><FulfillmentBadge status={draft.status} /></td>
-                <td className="px-2 py-1.5" />
+                <td className={LINE_ACTIONS_EDIT_CELL_CLS} />
               </tr>
             )}
           </tbody>
@@ -185,8 +247,8 @@ export function SalesOrderItemsTab({ items, onUpdate }: { items: SOLineItem[]; o
 
       {items.length === 0 && !isAdding && (
         <div className="flex flex-col items-center gap-1.5 py-8 text-center">
-          <p className="text-xs text-stone-400">No line items yet.</p>
-          <p className="text-2xs text-stone-300">Click <strong className="text-stone-500">+ Add Line</strong> to add an item.</p>
+          <p className="text-xs text-stone-500">No line items yet.</p>
+          <p className="text-2xs text-stone-500">Click <strong className="text-stone-500">+ Add Line</strong> to add an item.</p>
         </div>
       )}
 
@@ -219,6 +281,7 @@ export function SalesOrderItemsTab({ items, onUpdate }: { items: SOLineItem[]; o
           className="inline-flex items-center gap-1.5 rounded-md border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-40 transition-colors">
           <Trash2 className="size-3" /> Remove Last
         </button>
+        {isAddingKit && <p role="status" className="text-xs text-stone-500">Adding kit…</p>}
         {lineError && <p role="alert" className="text-xs font-medium text-destructive">{lineError}</p>}
       </div>
     </div>
@@ -241,20 +304,29 @@ function InlineItemRow({ lineNo, draft, onChange, picker }: {
   onChange: (key: keyof typeof draft, val: string) => void;
   picker: InventoryItemPickerHandlers;
 }) {
+  // Quantity is worked out from the dimensions while they are stated, so it is
+  // shown but not editable.
+  const sized = isSized(draft, draft.units);
   return (
     <>
-      <td className="px-2.5 py-1.5 text-stone-400 tabular-nums">{lineNo}</td>
+      <td className="px-2.5 py-1.5 text-stone-500 tabular-nums">{lineNo}</td>
       <td className="px-2 py-1.5">
         <InventoryItemPicker {...picker} value={draft.itemName} className="min-w-[130px]" />
       </td>
       <td className="px-2 py-1.5"><input type="text" value={draft.itemDescription} onChange={(e) => onChange('itemDescription', e.target.value)} placeholder="Description" className={cn(inlineCls, 'min-w-[120px]')} aria-label="Description" /></td>
       <td className="px-2 py-1.5"><input type="text" value={draft.itemSku} onChange={(e) => onChange('itemSku', e.target.value)} placeholder="SKU-0000" className={cn(inlineCls, 'w-24 font-mono')} aria-label="SKU" /></td>
-      <td className="px-2 py-1.5"><input type="number" min="0" value={draft.quantity} onChange={(e) => onChange('quantity', e.target.value)} placeholder="0" className={cn(inlineCls, 'w-14 text-right')} aria-label="Quantity" /></td>
+      <LineSizeInputCells
+        dims={{ length: draft.length ?? '', width: draft.width ?? '', slabs: draft.slabs ?? '', thickness: draft.thickness ?? '' }}
+        dimensionUnit={draft.dimensionUnit}
+        units={draft.units}
+        onChange={onChange}
+      />
+      <td className="px-2 py-1.5"><input type="number" min="0" step="any" value={draft.quantity} readOnly={sized} title={sized ? 'Worked out from length × width × slabs' : undefined} onChange={(e) => onChange('quantity', e.target.value)} placeholder="0" className={cn(inlineCls, 'w-16 text-right', sized && 'cursor-default bg-stone-50 text-stone-500')} aria-label="Quantity" /></td>
       <td className="px-2 py-1.5"><input type="text" value={draft.units} onChange={(e) => onChange('units', e.target.value)} placeholder="ea" className={cn(inlineCls, 'w-14')} aria-label="Units" /></td>
       <td className="px-2 py-1.5"><input type="number" min="0" step="0.01" value={draft.unitPrice} onChange={(e) => onChange('unitPrice', e.target.value)} placeholder="0.00" className={cn(inlineCls, 'w-20 text-right')} aria-label="Unit Price" /></td>
-      <td className="px-2 py-1.5"><input type="number" min="0" max="100" value={draft.discount} onChange={(e) => onChange('discount', e.target.value)} placeholder="0" className={cn(inlineCls, 'w-14 text-right')} aria-label="Discount %" /></td>
+      <td className="px-2 py-1.5"><input type="number" min="0" max="100" step="any" value={draft.discount} onChange={(e) => onChange('discount', e.target.value)} placeholder="0" className={cn(inlineCls, 'w-14 text-right')} aria-label="Discount %" /></td>
       <td className="px-2 py-1.5"><input type="text" readOnly value={draft.amount ? `$${draft.amount}` : ''} className={cn(inlineCls, 'w-20 bg-stone-50 text-stone-500 cursor-default text-right')} aria-label="Amount" /></td>
-      <td className="px-2 py-1.5"><input type="number" min="0" max="100" value={draft.tax} onChange={(e) => onChange('tax', e.target.value)} placeholder="0" className={cn(inlineCls, 'w-14 text-right')} aria-label="Tax %" /></td>
+      <td className="px-2 py-1.5"><input type="number" min="0" max="100" step="any" value={draft.tax} onChange={(e) => onChange('tax', e.target.value)} placeholder="0" className={cn(inlineCls, 'w-14 text-right')} aria-label="Tax %" /></td>
       <td className="px-2 py-1.5"><input type="text" readOnly value={draft.total ? `$${draft.total}` : ''} className={cn(inlineCls, 'w-20 bg-stone-50 text-stone-800 font-semibold cursor-default text-right')} aria-label="Total" /></td>
     </>
   );

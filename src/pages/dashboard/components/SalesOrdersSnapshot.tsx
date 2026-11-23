@@ -57,7 +57,7 @@ export function SalesOrdersSnapshot({
           <div className={cn('mt-1 text-sm font-bold tabular-nums sm:text-base lg:text-lg', data.lateCount > 0 ? 'text-warning' : 'text-stone-950')}>
             {data.lateCount}
           </div>
-          {data.lateCount > 0 && <div className="text-2xs text-stone-400 tabular-nums">{currency(data.lateValue)}</div>}
+          {data.lateCount > 0 && <div className="text-2xs text-stone-500 tabular-nums">{currency(data.lateValue)}</div>}
         </div>
       </div>
 
@@ -73,7 +73,7 @@ export function SalesOrdersSnapshot({
       )}
 
       {data.atRisk.length === 0 ? (
-        <div className="mt-4 flex-1 rounded-xl border border-dashed border-stone-300 p-4 text-center text-sm text-stone-400">
+        <div className="mt-4 flex-1 rounded-xl border border-dashed border-stone-300 p-4 text-center text-sm text-stone-500">
           No open sales orders to show.
         </div>
       ) : (
@@ -97,7 +97,7 @@ export function SalesOrdersSnapshot({
                   <div className="shrink-0 text-right">
                     <div className="text-xs font-bold text-stone-950 tabular-nums">{currency(o.value)}</div>
                     <div className="text-2xs text-stone-500">{o.status}</div>
-                    <div className={cn('text-2xs font-medium', due.warn ? 'text-warning' : 'text-stone-400')}>{due.text}</div>
+                    <div className={cn('text-2xs font-medium', due.warn ? 'text-warning' : 'text-stone-500')}>{due.text}</div>
                   </div>
                 </div>
               );

@@ -20,6 +20,7 @@ import { Switch } from '@/components/ui/switch';
 import { AccountFilterDrawer } from './AccountFilterDrawer';
 import { BulkActionBar } from './BulkActionBar';
 import { AccountFormDrawer } from './AccountFormDrawer';
+import { formatDateValue, LIST_DATE_OPTIONS } from '@/lib/dateUtils';
 
 const EXPORT_PAGE_SIZE = 200;
 const PAGE_SIZE = 25;
@@ -45,7 +46,7 @@ const SORT_KEY: Record<SortField, string> = {
 
 function fmtDate(iso?: string): string {
   if (!iso) return '—';
-  return new Date(iso).toLocaleDateString(undefined, { year: '2-digit', month: 'short', day: 'numeric' });
+  return formatDateValue(iso, undefined, LIST_DATE_OPTIONS);
 }
 
 export function AccountTableView() {
@@ -201,7 +202,7 @@ export function AccountTableView() {
             placeholder="Search code or name…"
             value={term}
             onChange={(e) => setTerm(e.target.value)}
-            className="h-8 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-3 text-xs text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150"
+            className="h-8 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-3 text-xs text-stone-900 placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150"
             aria-label="Search accounts by code or name"
           />
         </div>
@@ -231,7 +232,7 @@ export function AccountTableView() {
         <div className="h-5 w-px bg-stone-200" aria-hidden="true" />
 
         <div className="flex items-center gap-1.5">
-          <span className="text-2xs font-semibold uppercase tracking-wider text-stone-400 pr-0.5">Sort:</span>
+          <span className="text-2xs font-semibold uppercase tracking-wider text-stone-500 pr-0.5">Sort:</span>
           {(Object.entries(SORT_LABELS) as [SortField, string][]).map(([field, label]) => (
             <button
               key={field}
@@ -340,14 +341,14 @@ export function AccountTableView() {
                       <button
                         type="button"
                         onClick={(e) => { e.stopPropagation(); navigate(`/finance/chart-of-accounts/${a.id}`); }}
-                        className="font-mono text-xs font-semibold text-stone-900 hover:text-accent-foreground transition-colors"
+                        className="font-mono text-xs font-semibold whitespace-nowrap text-stone-900 hover:text-accent-foreground transition-colors"
                       >
                         {a.code}
                       </button>
                     </td>
                     <td className="px-4 py-3.5 text-xs text-stone-700 truncate max-w-[220px]">
-                      <span className={cn(!a.isActive && 'italic text-stone-400')}>{a.name}</span>
-                      {a.isSystem && <span className="ml-1.5 text-2xs font-semibold text-stone-400">SYS</span>}
+                      <span className={cn(!a.isActive && 'italic text-stone-500')}>{a.name}</span>
+                      {a.isSystem && <span className="ml-1.5 text-2xs font-semibold text-stone-500">SYS</span>}
                     </td>
                     <td className="px-4 py-3.5 text-xs text-stone-500 whitespace-nowrap">{ACCOUNT_TYPE_LABELS[a.type]}</td>
                     <td className="px-4 py-3.5 text-xs text-stone-500 truncate max-w-[180px]">
@@ -356,12 +357,12 @@ export function AccountTableView() {
                     <td className="px-4 py-3.5 text-xs text-stone-500">{a.bsPnl}</td>
                     <td className="px-4 py-3.5">
                       <div className="flex items-center gap-1.5">
-                        {!a.isActive && <span className="text-2xs font-semibold text-stone-400">Inactive</span>}
-                        {!a.isVisible && <span className="text-2xs font-semibold text-stone-400">Hidden</span>}
+                        {!a.isActive && <span className="text-2xs font-semibold text-stone-500">Inactive</span>}
+                        {!a.isVisible && <span className="text-2xs font-semibold text-stone-500">Hidden</span>}
                         {a.isActive && a.isVisible && <span className="text-2xs font-semibold text-emerald-600">Active</span>}
                       </div>
                     </td>
-                    <td className="px-4 py-3.5 text-xs text-stone-400 tabular-nums whitespace-nowrap">
+                    <td className="px-4 py-3.5 text-xs text-stone-500 tabular-nums whitespace-nowrap">
                       {fmtDate(a.updatedAt)}
                     </td>
                     {canUpdate && (
@@ -394,7 +395,7 @@ export function AccountTableView() {
                           <Search className="size-6 text-stone-400" />
                         </div>
                         <p className="text-sm font-semibold text-stone-700">No accounts match the current search.</p>
-                        <p className="text-xs text-stone-400">Try adjusting your search or filters.</p>
+                        <p className="text-xs text-stone-500">Try adjusting your search or filters.</p>
                       </div>
                     )}
                   </td>

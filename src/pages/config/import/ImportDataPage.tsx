@@ -1,3 +1,4 @@
+import { Select } from '@/components/ui/select';
 import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { CheckCircle2, RotateCcw } from 'lucide-react';
@@ -8,6 +9,7 @@ import { workflowService } from '@/services/tenantServices';
 import { importService } from '@/services/importService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import type { ImportSummary } from '@/types/import';
+import { importJobPollInterval, isImportJobFailed } from '@/lib/importJobStatus';
 import { ImportUploadStep } from './ImportUploadStep';
 import { ImportReviewStep } from './ImportReviewStep';
 
@@ -62,12 +64,12 @@ export default function ImportDataPage() {
     queryFn: () => importService.getJob(jobId ?? ''),
     enabled: Boolean(jobId) && step === 'staging',
     refetchInterval: (query) => {
-      const status = query.state.data?.status;
-      return status === 'succeeded' || status === 'failed' ? false : 1500;
+      return importJobPollInterval(query.state.data?.status);
     },
   });
 
   const job = jobQuery.data;
+  const jobFailed = isImportJobFailed(job?.status);
   const showReview = step === 'staging' && job?.status === 'succeeded';
 
   const reset = () => {
@@ -98,7 +100,7 @@ export default function ImportDataPage() {
             <label htmlFor="import-workflow" className="text-xs font-semibold text-stone-600 dark:text-stone-300">
               Import into
             </label>
-            <select
+            <Select
               id="import-workflow"
               value={workflowKey}
               disabled={step !== 'upload'}
@@ -110,7 +112,7 @@ export default function ImportDataPage() {
                   {workflowsQuery.data?.find((w) => w.key === key)?.name ?? humanizeKey(key)}
                 </option>
               ))}
-            </select>
+            </Select>
           </div>
 
           <div className="rounded-2xl border border-stone-200 bg-white p-5 dark:border-stone-800 dark:bg-stone-900">
@@ -128,14 +130,14 @@ export default function ImportDataPage() {
               <div className="space-y-3">
                 <Spinner
                   label={
-                    job?.status === 'failed'
+                    jobFailed
                       ? 'Import failed'
                       : job?.progress?.total
                         ? `Staging rows… ${job.progress.staged ?? 0} / ${job.progress.total}`
                         : 'Parsing your file…'
                   }
                 />
-                {job?.status === 'failed' && (
+                {job && jobFailed && (
                   <>
                     <ErrorNote>{job.lastError ?? 'The import job failed.'}</ErrorNote>
                     <button
@@ -143,7 +145,7 @@ export default function ImportDataPage() {
                       onClick={reset}
                       className="inline-flex items-center gap-1.5 rounded-xl border border-stone-200 px-3 py-1.5 text-xs font-semibold text-stone-600 hover:bg-stone-50 dark:border-stone-700 dark:text-stone-300 dark:hover:bg-white/5"
                     >
-                      <RotateCcw className="size-3.5" /> Try again
+                      <RotateCcw className="size-3.5" /> Start a new import
                     </button>
                   </>
                 )}
@@ -181,7 +183,7 @@ export default function ImportDataPage() {
           </div>
 
           {workflowsQuery.isError && (
-            <p className="text-2xs text-stone-400">
+            <p className="text-2xs text-stone-500">
               {apiErrorMessage(
                 workflowsQuery.error,
                 'Custom-field mapping suggestions are unavailable — you can still import using core fields.',

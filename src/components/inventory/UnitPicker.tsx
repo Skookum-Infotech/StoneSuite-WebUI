@@ -79,7 +79,7 @@ export function UnitPicker({
         <Layers className="size-3.5 shrink-0 text-stone-400" aria-hidden="true" />
         <span className="min-w-0 flex-1">
           <span className="block truncate font-medium text-stone-800">{value.serial}</span>
-          <span className="block truncate text-2xs text-stone-400">
+          <span className="block truncate text-2xs text-stone-500">
             {value.area.toFixed(2)} sq · {value.binPath || 'Unbinned'}
           </span>
         </span>
@@ -87,7 +87,7 @@ export function UnitPicker({
           type="button"
           onClick={() => onChange(null)}
           aria-label="Change unit"
-          className="shrink-0 rounded p-0.5 text-stone-400 hover:bg-stone-100 hover:text-stone-600 transition-colors"
+          className="shrink-0 rounded p-0.5 text-stone-500 hover:bg-stone-100 hover:text-stone-600 transition-colors"
         >
           <X className="size-3.5" />
         </button>
@@ -117,7 +117,7 @@ export function UnitPicker({
       {open && (
         <div className="absolute z-20 mt-1 w-full rounded-lg border border-stone-200 bg-white py-1 shadow-lg max-h-64 overflow-y-auto modal-scrollbar">
           {results.length === 0 && !isFetching && (
-            <p className="px-3 py-2 text-xs text-stone-400">{itemId ? 'No available units for this item.' : 'No available units found.'}</p>
+            <p className="px-3 py-2 text-xs text-stone-500">{itemId ? 'No available units for this item.' : 'No available units found.'}</p>
           )}
           {results.map((unit) => (
             <button
@@ -129,7 +129,7 @@ export function UnitPicker({
               <Layers className="mt-0.5 size-3.5 shrink-0 text-stone-400" aria-hidden="true" />
               <span className="min-w-0">
                 <span className="block truncate text-xs font-medium text-stone-800">{unit.serial}</span>
-                <span className="block truncate text-2xs text-stone-400">
+                <span className="block truncate text-2xs text-stone-500">
                   {unit.area.toFixed(2)} sq · {unit.binPath || 'Unbinned'}
                 </span>
               </span>

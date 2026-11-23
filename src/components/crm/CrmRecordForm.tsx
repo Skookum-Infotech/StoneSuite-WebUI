@@ -1,3 +1,5 @@
+import { Select } from '@/components/ui/select';
+import { lookupFlagAttrs } from '@/lib/flags';
 import { useQuery } from '@tanstack/react-query';
 import { lookupService, type LookupItem } from '@/services/lookupService';
 import { CRM_CORE_SECTIONS, CRM_CUSTOMER_BALANCE_SECTION, type CrmCoreField } from '@/lib/crmFields';
@@ -81,7 +83,7 @@ export function CrmRecordForm({ core, custom, statusNode, owner, showCustomerBal
             )}
             {idx === 0 && owner && (
               <ModernFieldShell label="CRM Account Owner">
-                <select
+                <Select
                   value={owner.userId}
                   onChange={(e) => owner.onChange(e.target.value)}
                   className={fieldCls}
@@ -93,7 +95,7 @@ export function CrmRecordForm({ core, custom, statusNode, owner, showCustomerBal
                       {u.fullName || u.email}
                     </option>
                   ))}
-                </select>
+                </Select>
               </ModernFieldShell>
             )}
             {section.fields.map((field) => {
@@ -244,7 +246,7 @@ function CrmFieldInput({
   if (field.type === 'lookup-select') {
     return (
       <ModernFieldShell label={field.label} required={field.required}>
-        <select
+        <Select
           required={field.required}
           disabled={disabled}
           value={str}
@@ -254,11 +256,11 @@ function CrmFieldInput({
         >
           <option value="">— Select —</option>
           {options.map((opt) => (
-            <option key={opt.id} value={String(opt.id)}>
+            <option key={opt.id} value={String(opt.id)} {...lookupFlagAttrs(field.lookupKey, opt)}>
               {opt.name}
             </option>
           ))}
-        </select>
+        </Select>
       </ModernFieldShell>
     );
   }

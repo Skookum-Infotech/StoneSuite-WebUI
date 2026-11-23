@@ -6,7 +6,8 @@
 // sibling of Invoice — a money ledger with cross-invoice application — served
 // from /api/tenant/payments*, distinct from the generic WorkflowRecord JSONB
 // CRM router.
-import type { FilterClause, RecordApprover, SortKey } from '@/types/tenant';
+import type { WorkflowBlock } from '@/types/workflow';
+import type { FilterClause, RecordApprover, SortKey, ApprovalRejection } from '@/types/tenant';
 
 // ── Create / update inputs (client → server) ─────────────────────────────────
 
@@ -54,6 +55,8 @@ export interface PaymentApplication {
 }
 
 export interface Payment {
+  /** End-to-end flow this record belongs to; see BACKEND_SPEC_workflow_links.md. */
+  workflow?: WorkflowBlock;
   id: string;
   paymentNumber: string;
   status: string;              // human label, e.g. "Pending"
@@ -66,6 +69,8 @@ export interface Payment {
   canApprove: boolean;
   isOverride: boolean;
   callerAlreadyApproved: boolean;
+  canReject?: boolean;            // whether the requesting user can reject it right now (configured approver OR super admin, while it awaits approval)
+  rejection?: ApprovalRejection;  // who rejected it and why -- present while it still sits in the status the rejection left it in
   customer: PaymentCustomerRef;
   ownerEmployeeId?: number | null;
   methodId: number;
@@ -78,6 +83,9 @@ export interface Payment {
   amount: number;
   appliedTotal: number;
   unappliedAmount: number;
+  /** The part of the overpayment already turned into credit memos issued from
+   *  this payment — no longer free to apply or refund. Absent on older payloads. */
+  creditedTotal?: number;
   customFields?: Record<string, unknown>;
   applications: PaymentApplication[];
   createdAt?: string;
@@ -91,7 +99,7 @@ export type PaymentSummary = Pick<
   Payment,
   | 'id' | 'paymentNumber' | 'status' | 'statusCode' | 'approvalStatus' | 'customer'
   | 'paymentDate' | 'amount' | 'unappliedAmount' | 'createdAt' | 'updatedAt'
->;
+> & Partial<Pick<Payment, 'applications'>>;
 
 export interface PaymentSearchRequest {
   filters?: FilterClause[];

@@ -17,7 +17,7 @@ colors:
   destructive: "#d94f36"
 typography:
   display:
-    fontFamily: "All Round Gothic, Nunito, sans-serif"
+    fontFamily: "All Round Gothic, Geist Variable, sans-serif"
     fontSize: "1.875rem"
     fontWeight: 400
     lineHeight: 1.2
@@ -141,7 +141,7 @@ A restrained two-tone system: warm stone neutrals carry the structure; one lime 
 
 ## 3. Typography
 
-**Display Font:** All Round Gothic (with Nunito fallback, then sans-serif)
+**Display Font:** All Round Gothic (with Geist Variable fallback, then sans-serif)
 **Body/UI Font:** Geist Variable (with system-ui, sans-serif fallbacks)
 **Mono Font:** IBM Plex Mono (with Geist Mono, ui-monospace fallbacks)
 

@@ -79,7 +79,7 @@ export function LookupVocabularyTable({ kind, label }: { kind: LookupKind; label
 
   return (
     <div className="space-y-3">
-      {!writable && <p className="text-xs text-stone-400">{label} is a read-only vocabulary — it can&apos;t be edited here.</p>}
+      {!writable && <p className="text-xs text-stone-500">{label} is a read-only vocabulary — it can&apos;t be edited here.</p>}
       {(saveError || removeError) && <p className="text-xs text-destructive">{apiErrorMessage(saveError ?? removeError, `Failed to save ${label.toLowerCase()}.`)}</p>}
       {error && <p className="text-xs text-destructive">{apiErrorMessage(error, `Failed to load ${label.toLowerCase()}.`)}</p>}
 
@@ -96,9 +96,9 @@ export function LookupVocabularyTable({ kind, label }: { kind: LookupKind; label
           </thead>
           <tbody className="divide-y divide-stone-100">
             {isLoading ? (
-              <tr><td colSpan={colCount} className="px-4 py-6 text-center text-stone-400">Loading…</td></tr>
+              <tr><td colSpan={colCount} className="px-4 py-6 text-center text-stone-500">Loading…</td></tr>
             ) : items.length === 0 && editingId !== 'new' ? (
-              <tr><td colSpan={colCount} className="px-4 py-6 text-center text-stone-400">No {label.toLowerCase()} yet.</td></tr>
+              <tr><td colSpan={colCount} className="px-4 py-6 text-center text-stone-500">No {label.toLowerCase()} yet.</td></tr>
             ) : (
               items.map((item) => {
                 const itemHex = typeof item.extra?.hex === 'string' ? item.extra.hex : '';
@@ -125,7 +125,7 @@ export function LookupVocabularyTable({ kind, label }: { kind: LookupKind; label
                     <td className="px-4 py-2.5 font-medium text-stone-800">{item.name}</td>
                     <td className="px-4 py-2.5 font-mono text-stone-500">{item.code}</td>
                     <td className="px-4 py-2.5">
-                      <span className={item.isActive ? 'text-emerald-600 font-semibold' : 'text-stone-400'}>{item.isActive ? 'Active' : 'Inactive'}</span>
+                      <span className={item.isActive ? 'text-emerald-600 font-semibold' : 'text-stone-500'}>{item.isActive ? 'Active' : 'Inactive'}</span>
                     </td>
                     {writable && (
                       <td className="px-4 py-2.5 text-right">

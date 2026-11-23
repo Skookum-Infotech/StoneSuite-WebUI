@@ -1,5 +1,8 @@
+import type { WorkflowBlock } from '@/types/workflow';
 import { tenantClient } from '@/api/tenantClient';
+import type { ApprovalRejection } from '@/types/tenant';
 import type { AuditEntry } from '@/services/crmService';
+import type { DocumentSendResult } from '@/services/documentService';
 import type {
   PurchaseOrder,
   PurchaseOrderCreatePayload,
@@ -15,6 +18,9 @@ import type { VendorBill } from '@/types/vendorBill';
 // JWT via `tenantClient`; the server enforces tenancy, RBAC (`purchase_order:*`),
 // scope, and IDOR.
 const BASE = '/tenant/purchase-orders';
+
+/** A transitioned purchase order plus the vendor-email outcome of a move to SENT. */
+export type PurchaseOrderTransitionResult = PurchaseOrder & { emailSent?: boolean; emailError?: string };
 
 export const purchaseOrderService = {
   // Full filter + sort + global search + keyset pagination. Cursors are
@@ -35,15 +41,16 @@ export const purchaseOrderService = {
   getPurchaseOrder: (uuid: string): Promise<PurchaseOrder> =>
     tenantClient
       .get<{
-        success: boolean; purchaseOrder: PurchaseOrder; approval?: {
+        success: boolean; workflow?: WorkflowBlock; purchaseOrder: PurchaseOrder; approval?: {
           gated?: boolean; approvers?: PurchaseOrder['approvers']; requiredApprovals?: number; approvedCount?: number;
-          canApprove?: boolean; isOverride?: boolean; callerAlreadyApproved?: boolean;
+          canApprove?: boolean; isOverride?: boolean; callerAlreadyApproved?: boolean; canReject?: boolean; rejection?: ApprovalRejection;
         };
       }>(`${BASE}/${uuid}`)
       .then((r) => {
         const a = r.data.approval;
         return {
           ...r.data.purchaseOrder,
+          workflow: r.data.workflow ?? r.data.purchaseOrder.workflow,
           gated: a?.gated ?? false,
           approvers: a?.approvers ?? [],
           requiredApprovals: a?.requiredApprovals ?? 0,
@@ -51,6 +58,8 @@ export const purchaseOrderService = {
           canApprove: a?.canApprove ?? false,
           isOverride: a?.isOverride ?? false,
           callerAlreadyApproved: a?.callerAlreadyApproved ?? false,
+          canReject: a?.canReject ?? false,
+          rejection: a?.rejection,
         };
       }),
 
@@ -71,13 +80,32 @@ export const purchaseOrderService = {
 
   // Status change validated against the server-side transition map; a denied
   // move returns 409 (surface as a blocked-transition message, not a failure).
-  transition: (uuid: string, toStatusCode: string): Promise<PurchaseOrder> =>
+  // A move to SENT ("Send to Vendor") also emails the vendor server-side and,
+  // without `force`, only actually lands once that email is confirmed sent —
+  // a failed send rejects the whole call (surface its message; the order
+  // wasn't moved). `force` (the admin status dropdown only — the backend
+  // drops it from anyone else) moves it regardless; the result then carries
+  // emailSent (and emailError when delivery failed) either way.
+  transition: (uuid: string, toStatusCode: string, opts?: { force?: boolean }): Promise<PurchaseOrderTransitionResult> =>
     tenantClient
-      .post<{ success: boolean; purchaseOrder: PurchaseOrder }>(
+      .post<{ success: boolean; purchaseOrder: PurchaseOrder; emailSent?: boolean; emailError?: string }>(
         `${BASE}/${uuid}/transition`,
-        { toStatusCode },
+        { toStatusCode, ...(opts?.force ? { force: true } : {}) },
       )
-      .then((r) => r.data.purchaseOrder),
+      .then((r) => ({ ...r.data.purchaseOrder, emailSent: r.data.emailSent, emailError: r.data.emailError })),
+
+  // Emails the order to its vendor again without changing its status. Only an
+  // order the vendor already holds (Sent, Partially Received, Received) may be
+  // resent -- anything earlier is refused with 409. RBAC: purchase_order:transition.
+  resendToVendor: (uuid: string): Promise<DocumentSendResult> =>
+    tenantClient
+      .post<{ success: boolean } & DocumentSendResult>(`${BASE}/${uuid}/resend`, {})
+      .then((r) => ({
+        sendId: r.data.sendId,
+        sentTo: r.data.sentTo,
+        emailSent: r.data.emailSent,
+        emailError: r.data.emailError,
+      })),
 
   // Records one configured approver's sign-off on the PO's current status
   // (AD-6). Rejected with 409 if the status has no approvers configured, or
@@ -85,6 +113,16 @@ export const purchaseOrderService = {
   approve: (uuid: string): Promise<PurchaseOrder> =>
     tenantClient
       .post<{ success: boolean; purchaseOrder: PurchaseOrder }>(`${BASE}/${uuid}/approve`, {})
+      .then((r) => r.data.purchaseOrder),
+
+  // An approver's veto: rejects the purchase order while it awaits approval (a reason
+  // is required) and sends it back to Draft. Rejected with 403 if the caller isn't a
+  // configured approver (and isn't a super admin), 409 if it isn't awaiting
+  // approval, 400 without a reason. The POST response has no approval overlay, so
+  // callers invalidate the record's query to pick up the rejection banner.
+  reject: (uuid: string, reason: string): Promise<PurchaseOrder> =>
+    tenantClient
+      .post<{ success: boolean; purchaseOrder: PurchaseOrder }>(`${BASE}/${uuid}/reject`, { reason })
       .then((r) => r.data.purchaseOrder),
 
   getAudit: (uuid: string): Promise<AuditEntry[]> =>

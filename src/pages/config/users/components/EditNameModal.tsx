@@ -76,7 +76,7 @@ export function EditNameModal({
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="rounded-lg p-1.5 text-stone-400 transition hover:bg-stone-100"
+            className="rounded-lg p-1.5 text-stone-500 transition hover:bg-stone-100"
           >
             <X className="size-4" />
           </button>

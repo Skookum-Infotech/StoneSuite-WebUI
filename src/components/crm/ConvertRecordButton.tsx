@@ -1,100 +1,75 @@
-import { useState } from 'react';
-import { ArrowRight, AlertTriangle } from 'lucide-react';
 import { useMutation } from '@tanstack/react-query';
-import { crmService, CRM_WORKFLOW_KEYS } from '@/services/crmService';
+import { ArrowRightLeft, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
+import { crmService, CRM_WORKFLOW_KEYS, type CRMWorkflowKey } from '@/services/crmService';
 import { apiErrorMessage } from '@/api/tenantClient';
+import type { WorkflowRecord } from '@/types/tenant';
 
-const TARGET_MAP = {
-  [CRM_WORKFLOW_KEYS.LEAD]: CRM_WORKFLOW_KEYS.PROSPECT,
-  [CRM_WORKFLOW_KEYS.PROSPECT]: CRM_WORKFLOW_KEYS.CUSTOMER,
-} as const;
-
-const LABEL_MAP = {
-  [CRM_WORKFLOW_KEYS.LEAD]: { from: 'Lead', to: 'Prospect' },
-  [CRM_WORKFLOW_KEYS.PROSPECT]: { from: 'Prospect', to: 'Customer' },
-};
+/** The workflows a record is converted FROM — each hop copies it into the next stage. */
+type ConvertibleWorkflow = typeof CRM_WORKFLOW_KEYS.LEAD | typeof CRM_WORKFLOW_KEYS.PROSPECT;
 
 type Props = {
   recordId: string;
-  sourceWorkflowKey: 'lead' | 'prospect';
-  onConverted: (newRecordId: string) => void;
+  /** The workflow the record is in; it decides what the button converts it into. */
+  sourceKey: ConvertibleWorkflow;
+  /** Called with the new record once the source is converted — or, on a repeat
+   *  click, with the record the earlier conversion made. */
+  onConverted: (record: WorkflowRecord) => void;
 };
 
-export function ConvertRecordButton({ recordId, sourceWorkflowKey, onConverted }: Props) {
-  const [open, setOpen] = useState(false);
+interface ConvertAction {
+  target: CRMWorkflowKey;
+  label: string;
+  done: string;
+  failed: string;
+}
 
-  const labels = LABEL_MAP[sourceWorkflowKey];
-  const targetWorkflowKey = TARGET_MAP[sourceWorkflowKey];
+const CONVERT_ACTIONS: Record<ConvertibleWorkflow, ConvertAction> = {
+  lead: {
+    target: CRM_WORKFLOW_KEYS.PROSPECT,
+    label: 'Convert to Prospect',
+    done: 'Converted to prospect.',
+    failed: 'Failed to convert lead.',
+  },
+  prospect: {
+    target: CRM_WORKFLOW_KEYS.CUSTOMER,
+    label: 'Convert to Customer',
+    done: 'Converted to customer.',
+    failed: 'Failed to convert prospect.',
+  },
+};
 
+// Header action for a Qualified Lead ("Convert to Prospect") or a Pending
+// Conversion Prospect ("Convert to Customer"): copies the record into the next
+// stage. Same shape as Estimate's "Convert to Quote" — a header button with no
+// confirm dialog, because converting only ever ADDS a record and leaves the
+// source untouched. Idempotent server-side: clicking again on an
+// already-converted record resolves to the existing one instead of a
+// duplicate, so a repeat click is just navigation. Render it as the direct
+// child of CrmPageHeader's `actions` slot. Styled as the header's primary
+// action (solid brand button) — it's the one move that advances the record.
+export function ConvertRecordButton({ recordId, sourceKey, onConverted }: Props) {
+  const action = CONVERT_ACTIONS[sourceKey];
   const convert = useMutation({
-    mutationFn: () => crmService.convertRecord(recordId, targetWorkflowKey, undefined, sourceWorkflowKey),
-    onSuccess: ({ record }) => {
-      setOpen(false);
-      onConverted(record.id);
+    mutationFn: () => crmService.convertRecord(recordId, action.target, undefined, sourceKey),
+    onSuccess: ({ record, created }) => {
+      // On a repeat click the record may have moved on (a prospect that became a
+      // customer), so name what we are actually opening.
+      toast.success(created ? action.done : `Already converted — opening the ${record.workflowId}.`);
+      onConverted(record);
     },
+    onError: (err) => toast.error(apiErrorMessage(err, action.failed)),
   });
 
   return (
-    <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="inline-flex items-center gap-1.5 rounded border border-stone-300 bg-white px-3 py-1.5 text-xs font-semibold text-stone-700 transition hover:bg-stone-50"
-      >
-        <ArrowRight className="size-3.5" />
-        Convert to {labels.to}
-      </button>
-
-      {open && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="convert-dialog-title"
-        >
-          <div className="mx-4 w-full max-w-sm rounded-xl bg-white p-6 shadow-xl">
-            <div className="mb-4 flex items-center gap-3">
-              <div className="flex size-9 flex-shrink-0 items-center justify-center rounded-full bg-amber-100">
-                <AlertTriangle className="size-4 text-amber-600" />
-              </div>
-              <h3 id="convert-dialog-title" className="text-sm font-bold text-stone-900">
-                Convert to {labels.to}?
-              </h3>
-            </div>
-
-            <p className="text-xs text-stone-600">
-              This {labels.from} will be converted to a <span className="font-semibold">{labels.to}</span>.
-              The original record will remain unchanged.
-            </p>
-
-            {convert.error && (
-              <p className="mt-3 text-xs text-red-600">
-                {apiErrorMessage(convert.error, 'Failed to convert record.')}
-              </p>
-            )}
-
-            <div className="mt-6 flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => setOpen(false)}
-                disabled={convert.isPending}
-                className="rounded border border-stone-300 bg-white px-3 py-1.5 text-xs font-semibold text-stone-600 hover:bg-stone-50 disabled:opacity-50"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={() => convert.mutate()}
-                disabled={convert.isPending}
-                className="inline-flex items-center gap-1 rounded bg-brand px-3 py-1.5 text-xs font-semibold text-stone-950 hover:bg-brand/80 disabled:opacity-50"
-              >
-                <ArrowRight className="size-3.5" />
-                {convert.isPending ? 'Converting…' : `Convert to ${labels.to}`}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </>
+    <button
+      type="button"
+      onClick={() => convert.mutate()}
+      disabled={convert.isPending}
+      className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-stone-900 shadow-sm transition-colors hover:bg-brand-hover disabled:opacity-50"
+    >
+      {convert.isPending ? <Loader2 className="size-3.5 animate-spin" /> : <ArrowRightLeft className="size-3.5" />}
+      {action.label}
+    </button>
   );
 }

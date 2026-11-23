@@ -1,6 +1,6 @@
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import {
-  PO_STATUS_CODES, PO_ALLOWED_TRANSITIONS, PO_STATUS_COLORS, isPoTransitionBlocked, poTransitionLabel,
+  PO_STATUS_CODES, PO_ALLOWED_TRANSITIONS, PO_STATUS_COLORS, isPoTransitionBlocked, poNextCodes, poTransitionLabel,
 } from '@/lib/purchaseOrderForm';
 import { StatusSelect } from '@/pages/sales/components/StatusSelect';
 
@@ -14,12 +14,14 @@ import { StatusSelect } from '@/pages/sales/components/StatusSelect';
 // `nextStatusCodes` (when loaded) wins over the static map: with nobody
 // configured to approve, the backend collapses the PAPV checkpoint and
 // Approved out of Draft's moves, so Draft is offered "Send to Vendor"
-// directly.
-export function PurchaseOrderStatusControl({ order, onChange, disabled, variant }: {
+// directly. `excludeCodes` drops targets from the list — the Detail page uses
+// it to leave out the moves it renders as header buttons instead.
+export function PurchaseOrderStatusControl({ order, onChange, disabled, variant, excludeCodes }: {
   order: { statusCode: string; approvalStatus: string; gated?: boolean; nextStatusCodes?: string[] };
   onChange: (code: string) => void;
   disabled?: boolean;
   variant?: 'field' | 'pill';
+  excludeCodes?: readonly string[];
 }) {
   const { hasPermission, isLoading } = useUserPermissions();
   const guard = (code: string) => {
@@ -39,7 +41,7 @@ export function PurchaseOrderStatusControl({ order, onChange, disabled, variant 
       disabled={disabled}
       statuses={PO_STATUS_CODES}
       allowedTransitions={PO_ALLOWED_TRANSITIONS}
-      nextCodes={order.nextStatusCodes}
+      nextCodes={excludeCodes ? poNextCodes(order).filter((code) => !excludeCodes.includes(code)) : order.nextStatusCodes}
       guard={guard}
       variant={variant}
       colorFor={(s) => PO_STATUS_COLORS[s.code] ?? '#a8a29e'}

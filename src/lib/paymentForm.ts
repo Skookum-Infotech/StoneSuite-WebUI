@@ -3,6 +3,7 @@
 
 import type { CrmLookups } from '@/services/lookupService';
 import type { Payment, PaymentCreatePayload, PaymentUpdatePayload } from '@/types/payment';
+import type { Invoice } from '@/types/invoice';
 import { PAYMENT_METHODS } from './paymentMethods';
 
 export const PAGE_TABS = [
@@ -90,6 +91,21 @@ export function needsApproval(payment: Pick<Payment, 'approvalStatus'> & { gated
   return payment.gated ?? payment.approvalStatus === 'pending';
 }
 
+export const PAYMENT_DEPOSITED_CODE = 'DEPO';
+export const PAYMENT_VOID_CODE = 'VOID';
+/** The final moves the detail page offers as header buttons (each confirmed first). */
+export type PaymentHeaderCode = typeof PAYMENT_DEPOSITED_CODE | typeof PAYMENT_VOID_CODE;
+
+/** Which of Deposited / Void the header offers right now: the legal next moves
+ *  among them, none while the payment waits on approval. */
+export function paymentHeaderTransitions(
+  payment: Pick<Payment, 'statusCode' | 'approvalStatus'> & { gated?: boolean },
+): PaymentHeaderCode[] {
+  if (needsApproval(payment)) return [];
+  const next = PAYMENT_ALLOWED_TRANSITIONS[payment.statusCode] ?? [];
+  return ([PAYMENT_DEPOSITED_CODE, PAYMENT_VOID_CODE] as const).filter((c) => next.includes(c));
+}
+
 /** Statuses that block apply/unapply (backend AD-7: applying is allowed at
  *  PEND/APPV/DEPO, blocked only at VOID — looser than Invoice's payable-
  *  status gate since this module records money in, not out). */
@@ -101,6 +117,25 @@ export function paymentDefaults(): Record<string, unknown> {
   const today = new Date().toISOString().split('T')[0];
   return {
     payment_date: today,
+  };
+}
+
+export function fromSourceInvoice(invoice: Pick<Invoice, 'id' | 'invoiceNumber' | 'balanceDue' | 'currencyId' | 'customer'>): {
+  data: Record<string, unknown>;
+  customer: { id: string; name: string };
+  pendingInvoice: { id: string; number: string; balanceDue: number };
+} {
+  return {
+    data: {
+      amount: invoice.balanceDue,
+      currency_id: invoice.currencyId ?? '',
+    },
+    customer: { id: invoice.customer.id, name: invoice.customer.name },
+    pendingInvoice: {
+      id: invoice.id,
+      number: invoice.invoiceNumber,
+      balanceDue: invoice.balanceDue,
+    },
   };
 }
 

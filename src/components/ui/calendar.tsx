@@ -25,15 +25,16 @@ function Calendar({ className, classNames, ...props }: DayPickerProps) {
         ),
         month_grid: "w-full border-collapse",
         weekdays: "flex",
-        weekday: "w-8 text-2xs font-medium text-stone-400",
+        weekday: "w-8 text-2xs font-medium text-stone-500",
         week: "flex w-full mt-1",
         day: "size-8 p-0 text-center text-sm",
         day_button: cn(
           "size-8 rounded-md font-normal text-stone-700 transition hover:bg-stone-100",
+          "disabled:cursor-not-allowed disabled:hover:bg-transparent",
           "aria-selected:bg-brand aria-selected:font-semibold aria-selected:text-stone-950 aria-selected:hover:bg-brand-hover"
         ),
         today: "font-semibold text-brand-hover",
-        outside: "text-stone-300",
+        outside: "text-stone-500",
         disabled: "text-stone-300 opacity-50",
         hidden: "invisible",
         ...classNames,

@@ -1,8 +1,15 @@
-import axios, { type AxiosRequestConfig } from 'axios';
+import axios, { isAxiosError, type AxiosRequestConfig } from 'axios';
 import { useAuthStore } from '@/store/useAuthStore';
+import { setAuthNotice, workspaceUnavailableMessage } from '@/lib/authNotice';
+import { isSessionReplacedBody, isSessionReplacedError } from '@/lib/singleSession';
+import type { ReplacedSessionInfo } from '@/types/auth';
+
+/** Base URL every API call goes to — shared by apiClient and by `fetch`-based
+ *  callers that can't go through axios (aiService's streaming ask). */
+export const API_BASE_URL: string = (import.meta.env.VITE_API_BASE_URL as string | undefined) || '/api';
 
 export const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
+  baseURL: API_BASE_URL,
   headers: { 'Content-Type': 'application/json' },
   // Send httpOnly cookies (auth_token + refresh_token) automatically on every request.
   withCredentials: true,
@@ -11,7 +18,10 @@ export const apiClient = axios.create({
 // Reads a cookie by name. Only useful for non-httpOnly cookies — csrf_token
 // is deliberately not httpOnly so this can read it (see backend
 // middleware/csrf.go for why the header must echo the cookie's value).
-function readCookie(name: string): string | null {
+// Exported so a `fetch`-based caller that bypasses apiClient entirely (e.g.
+// aiService's streaming ask, which axios's buffering XHR adapter can't do)
+// can still echo the same CSRF header without reimplementing cookie parsing.
+export function readCookie(name: string): string | null {
   const match = document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]*)`));
   return match ? decodeURIComponent(match[1]) : null;
 }
@@ -20,21 +30,70 @@ function readCookie(name: string): string | null {
 // that do not support cookies (e.g. React Native, some CORS configurations),
 // and echo the csrf_token cookie back as a header (double-submit CSRF check —
 // a no-op on the backend unless it's running with SameSite=None cookies).
-apiClient.interceptors.request.use((config) => {
+/** The Authorization fallback and CSRF echo every request carries — the same
+ *  headers for apiClient's interceptor and for `fetch`-based callers. */
+export function authHeaders(): Record<string, string> {
+  const headers: Record<string, string> = {};
   const token = useAuthStore.getState().token;
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
+  if (token) headers.Authorization = `Bearer ${token}`;
   const csrfToken = readCookie('csrf_token');
-  if (csrfToken) {
-    config.headers['X-CSRF-Token'] = csrfToken;
+  if (csrfToken) headers['X-CSRF-Token'] = csrfToken;
+  return headers;
+}
+
+apiClient.interceptors.request.use((config) => {
+  for (const [name, value] of Object.entries(authHeaders())) {
+    config.headers[name] = value;
   }
   return config;
 });
 
 // Track whether a token refresh is already in flight so concurrent 401s
 // don't each spawn a separate refresh request.
-let refreshPromise: Promise<boolean> | null = null;
+let refreshPromise: Promise<RefreshOutcome> | null = null;
+
+/** How a refresh attempt ended. Only `rejected` means the server said the
+ *  session is over; `transient` means we could not find out (network error,
+ *  timeout, 5xx — e.g. a Fly/Neon cold start) and the session may be fine.
+ *  `replaced` means another sign-in took this session over: callers must not
+ *  log out themselves — the countdown overlay does that at 0:00. */
+export type RefreshOutcome = 'ok' | 'rejected' | 'transient' | 'replaced';
+
+/** BroadcastChannel message telling other tabs this session was replaced. */
+export const SESSION_REPLACED_MESSAGE = 'SESSION_REPLACED';
+
+/**
+ * Records that another sign-in took over this session, which shows the
+ * countdown overlay, and tells this browser's other tabs. Only the first
+ * report counts, so the countdown is never restarted.
+ */
+export function reportSessionReplaced(info: ReplacedSessionInfo, broadcast = true): void {
+  const store = useAuthStore.getState();
+  if (store.replacedSession || !store.isAuthenticated) return;
+  store.markSessionReplaced(info);
+  if (!broadcast) return;
+  try {
+    const ch = new BroadcastChannel('session-sync');
+    ch.postMessage({ type: SESSION_REPLACED_MESSAGE, info });
+    ch.close();
+  } catch {
+    // BroadcastChannel not available — each tab still learns it from its own poll.
+  }
+}
+
+// Waits between retries of a transient refresh failure. Sized to outlast a
+// scale-to-zero cold start (~1-2s) so a reload that lands on a stopped backend
+// recovers instead of logging the user out.
+const TRANSIENT_RETRY_DELAYS_MS = [1000, 2000, 4000];
+
+/** True when a failed refresh call is the server definitively refusing the
+ *  session (401/403 or another non-retryable 4xx), as opposed to a failure to
+ *  reach or complete the request. */
+export function isRefreshRejection(err: unknown): boolean {
+  if (!isAxiosError(err) || !err.response) return false;
+  const { status } = err.response;
+  return status >= 400 && status < 500 && status !== 408 && status !== 429;
+}
 
 // Track whether a logout is already in progress so multiple concurrent 401s
 // each hitting the logout path don't each fire window.location redirects.
@@ -42,73 +101,149 @@ let isLoggingOut = false;
 
 // Exported so notifyClient can reuse the exact same refresh (one shared
 // in-flight promise via refreshPromise) instead of racing it with a second
-// /auth/refresh of its own.
-export async function attemptRefresh(): Promise<boolean> {
+// /auth/refresh of its own. Retries transient failures before giving up, so a
+// `transient` result means the backend stayed unreachable for the whole window.
+export async function attemptRefresh(): Promise<RefreshOutcome> {
   // Only one refresh at a time — share the promise across concurrent callers.
   if (!refreshPromise) {
-    refreshPromise = (async () => {
-      try {
-        const { kind, activeTenantId } = useAuthStore.getState();
-        // A customer-portal session refreshes at a different endpoint and
-        // must resend the active workspace's tenantId: the access token is
-        // already expired by the time refresh runs, so the server has
-        // nothing else to recover which workspace to resume (see
-        // controllers/portal_auth.go's Refresh). Omitting it would silently
-        // resume the customer's first linked workspace instead of the one
-        // they were actually using.
-        if (kind === 'portal') {
-          if (!activeTenantId) return false;
-          const res = await apiClient.post<{
-            success: boolean; token?: string; expiresAt?: number; tenantId?: string;
-          }>('/portal/auth/refresh', { tenantId: activeTenantId });
-          if (res.data.success && res.data.token && res.data.expiresAt) {
-            useAuthStore.getState().applyWorkspaceSwitch(
-              res.data.tenantId ?? activeTenantId,
-              res.data.token,
-              res.data.expiresAt,
-            );
-            broadcastSessionExtended(res.data.expiresAt);
-          }
-          return res.data.success === true;
-        }
-
-        // Goes through apiClient so the request interceptor still attaches the
-        // Authorization fallback and X-CSRF-Token. Safe from recursion: the
-        // response interceptor below skips 401 handling for /auth/refresh.
-        //
-        // Re-sends the caller's selected role (if any) so a silent refresh
-        // doesn't quietly widen an intentionally-narrowed session back to
-        // the full aggregate of every role held — RefreshSession otherwise
-        // has no way to know a role was ever selected, since the old token
-        // isn't decoded client-side. selectedRoleId is the right source: set
-        // on login, updated on every switch-role, and persisted across a
-        // reload (unlike the in-memory token itself).
-        const { user } = useAuthStore.getState();
-        const res = await apiClient.post<{ success: boolean; token?: string; expiresAt?: number }>(
-          '/auth/refresh',
-          user?.selectedRoleId ? { activeRoleId: user.selectedRoleId } : undefined,
-        );
-        if (res.data.success && res.data.expiresAt) {
-          // /auth/refresh re-issues the access token (RefreshSession returns
-          // it in the body). Store it, not just the expiry — cross-origin
-          // clients (notifyClient) have no cookie to fall back on and would
-          // otherwise stay unauthenticated until the next full login.
-          if (res.data.token) {
-            useAuthStore.getState().setSession(res.data.token, res.data.expiresAt);
-          } else {
-            useAuthStore.getState().setSessionExpiry(res.data.expiresAt);
-          }
-          broadcastSessionExtended(res.data.expiresAt);
-        }
-        return res.data.success === true;
-      } catch {
-        return false;
-      } finally {
-        refreshPromise = null;
+    refreshPromise = withCrossTabRefreshLock(async () => {
+      let outcome = await refreshOnce();
+      for (const delay of TRANSIENT_RETRY_DELAYS_MS) {
+        if (outcome !== 'transient') break;
+        await new Promise((resolve) => setTimeout(resolve, delay));
+        outcome = await refreshOnce();
       }
-    })();
+      return outcome;
+    }).finally(() => {
+      refreshPromise = null;
+    });
   }
   return refreshPromise;
+}
+
+// Bumped whenever the session is deliberately ended. A refresh that was already
+// in flight compares its starting epoch and discards its result, so a slow
+// refresh can never resurrect a session the user (or another tab) just logged
+// out of.
+let sessionEpoch = 0;
+
+/** Marks the current session as ended; any refresh still in flight is discarded. */
+export function invalidateSession(): void {
+  sessionEpoch += 1;
+}
+
+const REFRESH_LOCK_NAME = 'stonesuite-session-refresh';
+
+// Serializes refreshes across browser tabs (Web Locks), so two tabs never
+// rotate the same refresh token at once. After waiting for the lock, a tab
+// whose session another tab already extended skips its own refresh. Where Web
+// Locks is unavailable (old browsers, jsdom) the in-tab single-flight above is
+// all there is.
+async function withCrossTabRefreshLock(run: () => Promise<RefreshOutcome>): Promise<RefreshOutcome> {
+  const locks = typeof navigator === 'undefined' ? undefined : navigator.locks;
+  if (!locks) return run();
+  const expiryBefore = useAuthStore.getState().sessionExpiresAt ?? 0;
+  try {
+    return await locks.request(REFRESH_LOCK_NAME, async () => {
+      const expiryNow = useAuthStore.getState().sessionExpiresAt ?? 0;
+      if (expiryNow > expiryBefore && expiryNow > Date.now()) return 'ok' as const;
+      return run();
+    });
+  } catch {
+    return run();
+  }
+}
+
+/** True while a refresh is running in this tab or any other tab. The expiry
+ *  failsafe uses it to avoid logging out (which revokes the refresh token with
+ *  no grace) underneath a refresh that is about to succeed. */
+export async function isRefreshInFlight(): Promise<boolean> {
+  if (refreshPromise) return true;
+  try {
+    const snapshot = await navigator.locks?.query();
+    const named = (l: { name?: string }) => l.name === REFRESH_LOCK_NAME;
+    return Boolean(snapshot?.held?.some(named) || snapshot?.pending?.some(named));
+  } catch {
+    return false;
+  }
+}
+
+// A single refresh request, classified into a RefreshOutcome.
+async function refreshOnce(): Promise<RefreshOutcome> {
+  const epoch = sessionEpoch;
+  try {
+    const { kind, activeTenantId } = useAuthStore.getState();
+    // A customer-portal session refreshes at a different endpoint and
+    // must resend the active workspace's tenantId: the access token is
+    // already expired by the time refresh runs, so the server has
+    // nothing else to recover which workspace to resume (see
+    // controllers/portal_auth.go's Refresh). Omitting it would silently
+    // resume the customer's first linked workspace instead of the one
+    // they were actually using.
+    if (kind === 'portal') {
+      if (!activeTenantId) return 'rejected';
+      const res = await apiClient.post<{
+        success: boolean; token?: string; expiresAt?: number; tenantId?: string;
+      }>('/portal/auth/refresh', { tenantId: activeTenantId });
+      if (epoch !== sessionEpoch) return 'rejected'; // logged out while in flight
+      if (res.data.success && res.data.token && res.data.expiresAt) {
+        useAuthStore.getState().applyWorkspaceSwitch(
+          res.data.tenantId ?? activeTenantId,
+          res.data.token,
+          res.data.expiresAt,
+        );
+        broadcastSessionExtended(res.data.expiresAt);
+      }
+      return res.data.success === true ? 'ok' : 'rejected';
+    }
+
+    // Goes through apiClient so the request interceptor still attaches the
+    // Authorization fallback and X-CSRF-Token. Safe from recursion: the
+    // response interceptor below skips 401 handling for /auth/refresh.
+    //
+    // Re-sends the caller's selected role (if any) so a silent refresh
+    // doesn't quietly widen an intentionally-narrowed session back to
+    // the full aggregate of every role held — RefreshSession otherwise
+    // has no way to know a role was ever selected, since the old token
+    // isn't decoded client-side. selectedRoleId is the right source: set
+    // on login, updated on every switch-role, and persisted across a
+    // reload (unlike the in-memory token itself).
+    const { user } = useAuthStore.getState();
+    const res = await apiClient.post<{ success: boolean; token?: string; expiresAt?: number }>(
+      '/auth/refresh',
+      user?.selectedRoleId ? { activeRoleId: user.selectedRoleId } : undefined,
+    );
+    if (epoch !== sessionEpoch) return 'rejected'; // logged out while in flight
+    if (res.data.success && res.data.expiresAt) {
+      // /auth/refresh re-issues the access token (RefreshSession returns
+      // it in the body). Store it, not just the expiry — cross-origin
+      // clients (notifyClient) have no cookie to fall back on and would
+      // otherwise stay unauthenticated until the next full login.
+      if (res.data.token) {
+        useAuthStore.getState().setSession(res.data.token, res.data.expiresAt);
+      } else {
+        useAuthStore.getState().setSessionExpiry(res.data.expiresAt);
+      }
+      broadcastSessionExtended(res.data.expiresAt);
+    }
+    return res.data.success === true ? 'ok' : 'rejected';
+  } catch (err) {
+    // Another sign-in took this session over: the overlay handles sign-out.
+    if (isSessionReplacedError(err)) {
+      reportSessionReplaced({});
+      return 'replaced';
+    }
+    // Only an explicit refusal ends the session. A network error, timeout or
+    // 5xx says nothing about the refresh token, so it must not log anyone out.
+    if (!isRefreshRejection(err)) return 'transient';
+
+    // A refresh refused because the workspace itself is suspended or deleted:
+    // remember why, so the login page the caller is about to be sent to can
+    // say so instead of looking like a silent expiry.
+    const notice = workspaceUnavailableMessage(isAxiosError(err) ? err.response?.data : undefined);
+    if (notice) setAuthNotice(notice);
+    return 'rejected';
+  }
 }
 
 // Broadcasts the new expiry to all other tabs. Shared by both the staff and
@@ -124,11 +259,23 @@ function broadcastSessionExtended(expiresAt: number): void {
   }
 }
 
-function forceLogout(): void {
+/** How long a logout that waits for the server waits before redirecting anyway. */
+const LOGOUT_AWAIT_MS = 2000;
+
+export interface ForceLogoutOptions {
+  /** Wait (up to LOGOUT_AWAIT_MS) for the server to end the session before
+   *  redirecting. The redirect otherwise cancels the request in flight. */
+  awaitServer?: boolean;
+}
+
+// Exported so a `fetch`-based caller (aiService's stream) whose 401 survives a
+// refresh ends the session exactly the way apiClient does.
+export function forceLogout(notice?: string, options: ForceLogoutOptions = {}): void {
   // Guard: only one logout in flight — multiple concurrent 401s must not each
   // fire a redirect. isLoggingOut resets on hard navigation (page reload).
   if (isLoggingOut) return;
   isLoggingOut = true;
+  invalidateSession();
 
   // Read before logout() clears it — a customer session's server-side
   // cookies live at /api/portal/auth/logout, not /api/auth/logout, and
@@ -137,10 +284,13 @@ function forceLogout(): void {
   const wasPortal = useAuthStore.getState().kind === 'portal';
   useAuthStore.getState().logout();
 
+  // Shown on the login page the redirect below lands on.
+  if (notice) setAuthNotice(notice);
+
   // Clear server-side cookies (fire-and-forget). Uses apiClient so the request
   // still carries X-CSRF-Token; isLoggingOut above stops the response
   // interceptor from reacting to a 401 on this call.
-  apiClient.post(wasPortal ? '/portal/auth/logout' : '/auth/logout').catch(() => undefined);
+  const logoutRequest = apiClient.post(wasPortal ? '/portal/auth/logout' : '/auth/logout').catch(() => undefined);
 
   try {
     const ch = new BroadcastChannel('session-sync');
@@ -151,8 +301,21 @@ function forceLogout(): void {
   }
 
   // Hard redirect — resets all in-flight state including isLoggingOut.
-  window.location.href = '/auth/login';
+  const redirect = () => {
+    window.location.href = '/auth/login';
+  };
+  if (!options.awaitServer) {
+    redirect();
+    return;
+  }
+  void Promise.race([logoutRequest, new Promise((resolve) => setTimeout(resolve, LOGOUT_AWAIT_MS))]).then(redirect);
 }
+
+// Sign-in and refresh report a refused workspace themselves (the form shows the
+// message inline; attemptRefresh stores it), so the 403 handler below skips them.
+// '/auth/refresh' also matches '/portal/auth/refresh'. The emailed-code step
+// finishes a sign-in too, and re-checks the workspace when it does.
+const WORKSPACE_NOTICE_SKIP_URLS = ['/auth/tenant-login', '/auth/mfa/verify', '/auth/refresh', '/auth/session/takeover'];
 
 // Response interceptor: on 401, silently attempt one token refresh and retry
 // the original request. If the refresh also fails, perform a full logout.
@@ -160,6 +323,28 @@ apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config as AxiosRequestConfig & { _retried?: boolean };
+
+    // This session was taken over by a sign-in elsewhere (409 for a write
+    // during the handover, 401 after it). A refresh cannot help — it is
+    // refused the same way — so show the countdown overlay instead.
+    if (isSessionReplacedBody(error.response?.data) && !isLoggingOut) {
+      reportSessionReplaced({});
+      return Promise.reject(error as Error);
+    }
+
+    // A 403 whose body says the workspace itself is unusable (suspended, deleted,
+    // ...) means every further request will fail the same way. End the session
+    // and say why on the login page, rather than leaving the user on a dashboard
+    // that silently shows nothing.
+    const workspaceNotice =
+      error.response?.status === 403 ? workspaceUnavailableMessage(error.response?.data) : null;
+    if (
+      workspaceNotice &&
+      !isLoggingOut &&
+      !WORKSPACE_NOTICE_SKIP_URLS.some((skip) => originalRequest.url?.includes(skip))
+    ) {
+      forceLogout(workspaceNotice);
+    }
 
     // Only intercept 401s on first attempt. Skip both refresh endpoints
     // themselves to prevent an infinite loop when the refresh token is also
@@ -171,17 +356,21 @@ apiClient.interceptors.response.use(
       !originalRequest.url?.includes('/auth/refresh') &&
       !originalRequest.url?.includes('/portal/auth/refresh') &&
       !originalRequest.url?.includes('/auth/tenant-login') &&
+      !originalRequest.url?.includes('/auth/session/takeover') &&
       !originalRequest.url?.includes('/auth/register') &&
       !isLoggingOut
     ) {
       originalRequest._retried = true;
 
-      const refreshed = await attemptRefresh();
-      if (refreshed) {
+      const outcome = await attemptRefresh();
+      if (outcome === 'ok') {
         return apiClient(originalRequest);
       }
 
-      forceLogout();
+      // Log out only when the server refused the refresh. If it could not be
+      // reached (outcome 'transient'), the session may still be valid — fail
+      // this one request and leave the user signed in to retry.
+      if (outcome === 'rejected') forceLogout();
     }
 
     return Promise.reject(error as Error);

@@ -15,11 +15,11 @@ import { Spinner, ErrorNote } from '@/components/tenant/ui';
 import { UnsavedChangesPrompt } from '@/components/UnsavedChangesPrompt';
 import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
 import { useScrollToError } from '@/hooks/useScrollToError';
-import { crmCoreDefaults, primaryAddressFields } from '@/lib/crmFields';
+import { crmCoreDefaults, applyAddressMirroring } from '@/lib/crmFields';
 import { validateCrmRecord, type CrmFieldError } from '@/lib/crmValidation';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
-import { cn } from '@/lib/utils';
+import { TAB_LIST_CLASS, tabClass } from '@/components/ui/tabStyles';
 import type { FieldDefinition } from '@/types/tenant';
 
 const TABS = [
@@ -77,6 +77,9 @@ export default function EditLeadPage() {
     onSuccess: (updated) => {
       setLocalStateId(updated.currentStateId);
       queryClient.invalidateQueries({ queryKey: ['crm-record', id] });
+      // The status is applied optimistically (localStateId), so the dropdown may
+      // already have fetched its moves before this commit landed — refetch them.
+      queryClient.invalidateQueries({ queryKey: ['crm-transitions', id] });
       queryClient.invalidateQueries({ queryKey: ['crm-records', 'lead'] });
       const newType = updated.workflowId?.toLowerCase();
       if (newType && newType !== 'lead' && routeMap[newType]) {
@@ -115,13 +118,7 @@ export default function EditLeadPage() {
     if (validationErrors.length > 0) setValidationErrors([]);
     setLocalCoreFields((prev) => {
       const current = prev ?? { ...crmCoreDefaults(), ...record?.coreFields };
-      if (key === 'customer_is_bill_as_primary' && value === true) {
-        return { ...current, ...primaryAddressFields(current, 'bill'), [key]: value };
-      }
-      if (key === 'customer_is_ship_as_primary' && value === true) {
-        return { ...current, ...primaryAddressFields(current, 'ship'), [key]: value };
-      }
-      return { ...current, [key]: value };
+      return applyAddressMirroring(current, key, value);
     });
   };
 
@@ -240,22 +237,19 @@ export default function EditLeadPage() {
         )}
 
         {/* Tab bar */}
-        <div className="flex shrink-0 border-b border-stone-200 bg-white px-5 3xl:px-12 4xl:px-16">
-          {TABS.map((tab) => (
-            <button
-              key={tab.key}
-              type="button"
-              onClick={() => setActiveTab(tab.key)}
-              className={cn(
-                'px-4 py-3 text-sm font-medium border-b-2 -mb-px transition-colors',
-                activeTab === tab.key
-                  ? 'border-stone-800 text-stone-900'
-                  : 'border-transparent text-stone-400 hover:text-stone-600 hover:border-stone-300',
-              )}
-            >
-              {tab.label}
-            </button>
-          ))}
+        <div className="flex shrink-0 border-b border-stone-200 bg-white px-5 3xl:px-12 4xl:px-16 py-2.5">
+          <div role="tablist" className={TAB_LIST_CLASS}>
+            {TABS.map((tab) => (
+              <button
+                key={tab.key}
+                type="button"
+                onClick={() => setActiveTab(tab.key)}
+                className={tabClass(activeTab === tab.key)}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Two-column body — browser scrolls, not an inner div */}
@@ -276,7 +270,6 @@ export default function EditLeadPage() {
                 statusNode={(
                   <StatusDropdown
                     workflowKey="lead"
-                    mode="transitions"
                     recordId={id}
                     value={currentStateId}
                     onChange={handleStatusChange}

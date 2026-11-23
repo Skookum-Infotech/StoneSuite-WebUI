@@ -1,9 +1,10 @@
 import { useState, useMemo, useRef, useCallback, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Wallet, AlertCircle, Loader2, Save, Plus, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { vendorPaymentService } from '@/services/vendorPaymentService';
+import { vendorBillService } from '@/services/vendorBillService';
 import { lookupService } from '@/services/lookupService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { fieldCls } from '@/components/crm/formUtils';
@@ -19,7 +20,7 @@ import { VendorBillPicker, type VendorBillRef } from './components/VendorBillPic
 import { useRecordCreateReturn } from '@/hooks/useRecordCreateReturn';
 import { useScrollToError } from '@/hooks/useScrollToError';
 import {
-  PRIMARY_INFO_FIELDS, vendorPaymentDefaults, toCreatePayload, PAGE_TABS, type PageTab,
+  PRIMARY_INFO_FIELDS, vendorPaymentDefaults, toCreatePayload, fromSourceBill, PAGE_TABS, type PageTab,
 } from '@/lib/vendorPaymentForm';
 import type { VendorPaymentApplicationInput } from '@/types/vendorPayment';
 
@@ -39,6 +40,10 @@ interface VendorPaymentDraft {
 
 export default function AddVendorPaymentPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  // "Record Payment" on a vendor bill lands here with ?fromBill=<bill uuid>.
+  const fromBillId = searchParams.get('fromBill') ?? '';
+  const returnPath = fromBillId ? `/purchases/vendor_bill/${encodeURIComponent(fromBillId)}` : '/purchases/vendor_payment';
   const queryClient = useQueryClient();
   const panelRef = useRef<EditableFilesPanelHandle>(null);
   const vendorReturn = useRecordCreateReturn<VendorPaymentDraft, VendorRef>(
@@ -67,6 +72,26 @@ export default function AddVendorPaymentPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [vendorReturn.createdRef]);
 
+  const { data: sourceBill, isLoading: sourceBillLoading, error: sourceBillError } = useQuery({
+    queryKey: ['vendor-bill', fromBillId],
+    queryFn: () => vendorBillService.getVendorBill(fromBillId),
+    enabled: Boolean(fromBillId),
+  });
+  const billPrefill = useMemo(() => (sourceBill ? fromSourceBill(sourceBill) : null), [sourceBill]);
+  const sourceBillUnavailable = Boolean(fromBillId && !sourceBillLoading && !sourceBillError && !billPrefill);
+
+  // Seeds the form once from the source bill, unless a "Create Vendor" round
+  // trip already restored the user's own draft.
+  const prefilled = useRef(false);
+  useEffect(() => {
+    if (!billPrefill || prefilled.current || restored) return;
+    prefilled.current = true;
+    setData(billPrefill.data);
+    setVendor(billPrefill.vendor);
+    setApplications([billPrefill.application]);
+    setAppliedBillNumbers({ [billPrefill.application.vendorBillUuid]: billPrefill.billNumber });
+  }, [billPrefill, restored]);
+
   const set = useCallback((key: string, value: unknown) => setData((d) => ({ ...d, [key]: value })), []);
   const setCustomField = useCallback(
     (key: string, value: unknown) => setCustomFieldValues((v) => ({ ...v, [key]: value })),
@@ -94,6 +119,23 @@ export default function AddVendorPaymentPage() {
     { activeTab, data, vendor, customFieldValues, applications, appliedBillNumbers },
     guard.markClean,
   );
+
+  // Picking a bill pre-fills what's knowable: the application amount (capped at
+  // the payment's not-yet-allocated amount when one is entered) and, while the
+  // payment amount is still blank, the payment amount itself.
+  function pickPendingBill(bill: VendorBillRef | null) {
+    setPendingBill(bill);
+    if (!bill) return;
+    const paymentAmount = parseFloat(String(data.amount ?? ''));
+    if (!Number.isFinite(paymentAmount) || paymentAmount <= 0) {
+      setData((d) => ({ ...d, amount: String(bill.balanceDue) }));
+      setPendingAmount(String(bill.balanceDue));
+      return;
+    }
+    const allocated = applications.reduce((sum, a) => sum + a.amount, 0);
+    const remaining = Math.max(0, Math.round((paymentAmount - allocated) * 100) / 100);
+    setPendingAmount(String(Math.min(remaining, bill.balanceDue)));
+  }
 
   function addApplication() {
     if (!pendingBill) return;
@@ -127,7 +169,9 @@ export default function AddVendorPaymentPage() {
         try { await panelRef.current.uploadStagedTo(payment.id); } catch { /* non-fatal */ }
       }
       guard.markClean();
-      navigate('/purchases/vendor_payment');
+      if (fromBillId) queryClient.invalidateQueries({ queryKey: ['vendor-bill', fromBillId] });
+      queryClient.invalidateQueries({ queryKey: ['vendor-bill-payments'] });
+      navigate(returnPath);
     },
   });
   const errorRef = useScrollToError<HTMLDivElement>(saveError);
@@ -137,8 +181,8 @@ export default function AddVendorPaymentPage() {
       <UnsavedChangesPrompt guard={guard} />
       <form onSubmit={(e) => { e.preventDefault(); save(); }} className="flex flex-col flex-1 min-h-0">
         <CrmPageHeader
-          backLabel="Vendor Payments"
-          onBack={() => navigate('/purchases/vendor_payment')}
+          backLabel={fromBillId ? 'Vendor Bill' : 'Vendor Payments'}
+          onBack={() => navigate(returnPath)}
           icon={Wallet}
           title="New Vendor Payment"
           subtitle="Fields marked * are required."
@@ -168,6 +212,19 @@ export default function AddVendorPaymentPage() {
           </div>
         )}
 
+        {fromBillId && sourceBillLoading && (
+          <div role="status" className="flex shrink-0 items-center gap-2 border-b border-stone-200 bg-white px-5 py-2 text-xs text-stone-600">
+            <Loader2 className="size-3.5 animate-spin" /> Loading source vendor bill…
+          </div>
+        )}
+        {fromBillId && (sourceBillError || sourceBillUnavailable) && (
+          <p role="alert" className="shrink-0 border-b border-amber-200 bg-amber-50 px-5 py-2 text-xs text-amber-800">
+            {sourceBillError
+              ? apiErrorMessage(sourceBillError, 'Failed to load the source vendor bill.')
+              : 'That vendor bill is not payable right now (it must be approved with a balance due), so nothing was prefilled.'}
+          </p>
+        )}
+
         <VendorPaymentFormBody
           shell={{ activeTab, setActiveTab }}
           form={{
@@ -190,7 +247,7 @@ export default function AddVendorPaymentPage() {
                           type="button"
                           onClick={() => removeApplication(app.vendorBillUuid)}
                           aria-label={`Remove application to ${appliedBillNumbers[app.vendorBillUuid]}`}
-                          className="rounded p-0.5 text-stone-400 hover:bg-stone-200 hover:text-stone-600 transition-colors"
+                          className="rounded p-0.5 text-stone-500 hover:bg-stone-200 hover:text-stone-600 transition-colors"
                         >
                           <X className="size-3.5" />
                         </button>
@@ -205,7 +262,7 @@ export default function AddVendorPaymentPage() {
                   <VendorBillPicker
                     vendor={vendor}
                     value={pendingBill}
-                    onChange={setPendingBill}
+                    onChange={pickPendingBill}
                     excludeIds={applications.map((a) => a.vendorBillUuid)}
                   />
                 </div>
@@ -230,7 +287,7 @@ export default function AddVendorPaymentPage() {
                 </button>
               </div>
 
-              <p className="text-2xs text-stone-400">
+              <p className="text-2xs text-stone-500">
                 {vendor
                   ? 'Only this vendor’s approved bills with a balance due can be paid. Each application is recorded after the payment itself saves — if one is rejected, the payment still exists and can be applied again from its detail page.'
                   : 'Select a vendor above to apply this payment to their bills.'}
@@ -240,7 +297,7 @@ export default function AddVendorPaymentPage() {
         </VendorPaymentFormBody>
 
         <FormActionBar
-          onCancel={() => navigate('/purchases/vendor_payment')}
+          onCancel={() => navigate(returnPath)}
           isPending={isPending}
           submitLabel="Save Vendor Payment"
         />

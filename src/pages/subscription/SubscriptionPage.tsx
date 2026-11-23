@@ -3,6 +3,7 @@ import { CreditCard, LayoutGrid, Receipt, Wallet, CheckCircle2 } from 'lucide-re
 import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/store/useAuthStore'
 import { CurrentPlanCard } from './components/CurrentPlanCard'
+import { UsagePanel } from './components/UsagePanel'
 import { PlanCard, type PlanAction } from './components/PlanCard'
 import { BillingHistory } from './components/BillingHistory'
 import { PaymentMethodCard } from './components/PaymentMethod'
@@ -11,6 +12,7 @@ import { UpgradePlanDialog } from './components/UpgradePlanDialog'
 import { CancelPlanDialog } from './components/CancelPlanDialog'
 import { ContactSalesDialog } from './components/ContactSalesDialog'
 import { toPaymentMethodInput } from '@/lib/subscriptionForm'
+import { DEFAULT_COUNTRY_NAME } from '@/lib/lookupDefaults'
 import type {
   PlanTier, CurrentPlan, PaymentMethod as PaymentMethodType, BillingContact, CancelReason,
 } from '@/types/subscription'
@@ -80,7 +82,7 @@ const INITIAL_BILLING_CONTACT: BillingContact = {
   city: 'San Francisco',
   state: 'CA',
   postalCode: '94105',
-  country: 'United States',
+  country: DEFAULT_COUNTRY_NAME,
 }
 
 const TIER_ORDER: Record<PlanTier['id'], number> = { starter: 0, pro: 1, enterprise: 2 }
@@ -227,6 +229,7 @@ export default function SubscriptionPage() {
               onUpgrade={() => nextTier && setUpgradeTarget(nextTier)}
               onCancel={() => setCancelling(true)}
             />
+            <UsagePanel />
             <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
               {PLAN_TIERS.map((tier) => {
                 const action = actionFor(tier, currentPlan.tier.id)

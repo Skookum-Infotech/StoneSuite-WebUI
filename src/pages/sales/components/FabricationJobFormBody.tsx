@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { ShoppingCart } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { TAB_LIST_CLASS, tabClass } from '@/components/ui/tabStyles';
 import { ModernSection, ModernFieldShell } from '@/components/crm/FormPrimitives';
 import { EditableFilesPanel, type EditableFilesPanelHandle } from '@/components/crm/CrmSubTabsPanel';
 import { DynamicFieldInput } from '@/components/tenant/DynamicFieldInput';
@@ -14,7 +15,7 @@ import { FabricationSourceOrderPicker, type FabricationSourceOrder } from './Fab
 import { FabricationPiecesEditor } from './FabricationPiecesEditor';
 import { FabricationPiecesEditableTab } from './FabricationPiecesEditableTab';
 import { FabricationPiecesTable } from './FabricationPiecesTable';
-import { FabricationSlabsTab } from './FabricationSlabsTab';
+import { FabricationMaterialsTab } from './FabricationMaterialsTab';
 import { FabricationStepsTab } from './FabricationStepsTab';
 import type { CrmLookups } from '@/services/lookupService';
 import type { FabricationJob } from '@/types/fabrication';
@@ -86,22 +87,19 @@ export function FabricationJobFormBody({
 
   return (
     <>
-      <div className="flex shrink-0 overflow-x-auto overflow-y-hidden border-b border-stone-200 bg-white px-5 3xl:px-10 4xl:px-16 modal-scrollbar">
-        {PAGE_TABS.map((tab) => (
-          <button
-            key={tab.key}
-            type="button"
-            onClick={() => setActiveTab(tab.key)}
-            className={cn(
-              'flex shrink-0 items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 -mb-px transition-colors whitespace-nowrap',
-              activeTab === tab.key
-                ? 'border-stone-800 text-stone-900'
-                : 'border-transparent text-stone-400 hover:text-stone-600 hover:border-stone-300',
-            )}
-          >
-            {tab.label}
-          </button>
-        ))}
+      <div className="flex shrink-0 overflow-x-auto overflow-y-hidden border-b border-stone-200 bg-white px-5 3xl:px-10 4xl:px-16 modal-scrollbar py-2.5">
+        <div role="tablist" className={TAB_LIST_CLASS}>
+          {PAGE_TABS.map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setActiveTab(tab.key)}
+              className={tabClass(activeTab === tab.key)}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto modal-scrollbar">
@@ -179,16 +177,16 @@ export function FabricationJobFormBody({
               : <FabricationPiecesEditor pieces={pieces} onUpdate={(v) => setPieces?.(v)} sourceOrderItems={sourceOrderItems} />
           )}
 
-          {activeTab === 'slabs' && (
+          {activeTab === 'materials' && (
             isEdit && job
-              ? <FabricationSlabsTab jobId={jobId!} pieces={job.pieces ?? []} canAllocate={canAllocateSlabs} />
-              : <p className="py-8 text-center text-xs text-stone-400">Slab allocation will be available after saving the job.</p>
+              ? <FabricationMaterialsTab jobId={jobId!} pieces={job.pieces ?? []} canAllocate={canAllocateSlabs} />
+              : <p className="py-8 text-center text-xs text-stone-500">Material allocation will be available after saving the job.</p>
           )}
 
           {activeTab === 'checklist' && (
             isEdit && job
               ? <FabricationStepsTab jobId={jobId!} steps={job.steps ?? []} canEdit={canEditSteps} />
-              : <p className="py-8 text-center text-xs text-stone-400">The checklist is seeded once the job is saved.</p>
+              : <p className="py-8 text-center text-xs text-stone-500">The checklist is seeded once the job is saved.</p>
           )}
 
           <div className={activeTab === 'files' ? '' : 'hidden'}>

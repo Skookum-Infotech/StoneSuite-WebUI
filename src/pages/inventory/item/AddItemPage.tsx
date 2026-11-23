@@ -9,24 +9,45 @@ import { apiErrorMessage } from '@/api/tenantClient';
 import { FormActionBar } from '@/components/crm/FormPrimitives';
 import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
 import { UnsavedChangesPrompt } from '@/components/UnsavedChangesPrompt';
+import { DuplicateRecordDialog } from '@/components/DuplicateRecordDialog';
 import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
 import { itemDefaults, toItemPayload, validateItem } from '@/lib/inventoryItemForm';
 import { defaultCountryId, defaultCurrencyId, defaultUnitId } from '@/lib/lookupDefaults';
 import {
   ITEM_NAME_PARAM, RETURN_TO_PARAM, isSafeReturnPath, returnRouterState,
 } from '@/lib/inventoryItemReturn';
+import { findDuplicateMatch, type DuplicateCandidate, type DuplicateMatchStatus } from '@/lib/duplicateRecordCheck';
 import { useInventoryLookups } from '@/hooks/useInventoryLookups';
 import { useScrollToError } from '@/hooks/useScrollToError';
 import type { InventoryItem } from '@/types/inventory';
+import { CopySeedGate } from '@/components/tenant/CopySeedGate';
+import { fromItemForCopy } from '@/lib/inventoryItemCopy';
+import { copySubtitle } from '@/lib/recordCopy';
 import { ItemFormBody } from './components/ItemFormBody';
 
 const ITEM_LIST_PATH = '/inventory/item';
 
+interface ItemDuplicate {
+  id: string;
+  name: string;
+  status: DuplicateMatchStatus;
+  statusLabel: string;
+}
+
+/** `?copyFrom=<id>` opens the form pre-filled from that item (see CopySeedGate). */
 export default function AddItemPage() {
+  return (
+    <CopySeedGate queryKey="inventory-item" load={(id) => inventoryService.getItem(id)}>
+      {(source) => <AddItemForm source={source} />}
+    </CopySeedGate>
+  );
+}
+
+function AddItemForm({ source }: { source?: InventoryItem }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { lookups } = useInventoryLookups();
-  const warehouses = lookups?.warehouses ?? [];
+  const warehouses = useMemo(() => lookups?.warehouses ?? [], [lookups]);
 
   // Opened from a document's item picker ("Add to Inventory"): the typed name
   // is prefilled, and saving or cancelling returns to that document, which
@@ -35,11 +56,20 @@ export default function AddItemPage() {
   const returnParam = searchParams.get(RETURN_TO_PARAM);
   const returnTo = isSafeReturnPath(returnParam) ? returnParam : null;
 
-  const [data, setData] = useState<Record<string, unknown>>(
-    () => ({ ...itemDefaults(), name: searchParams.get(ITEM_NAME_PARAM) ?? '' }),
+  // A copy's warehouse can only be resolved once the lookups load, so the
+  // starting state is derived (as on the Edit page) and edits shadow it.
+  const nameParam = searchParams.get(ITEM_NAME_PARAM) ?? '';
+  const base = useMemo(
+    () => (source ? fromItemForCopy(source, warehouses) : { ...itemDefaults(), name: nameParam }),
+    [source, warehouses, nameParam],
   );
+  const [localData, setLocalData] = useState<Record<string, unknown> | null>(null);
+  const data = localData ?? base;
   const [fieldErrors, setFieldErrors] = useState<string[]>([]);
-  const set = (key: string, value: unknown) => setData((d) => ({ ...d, [key]: value }));
+  const [duplicate, setDuplicate] = useState<ItemDuplicate | null>(null);
+  const [isCheckingDuplicate, setIsCheckingDuplicate] = useState(false);
+  const [duplicateCheckError, setDuplicateCheckError] = useState<string | null>(null);
+  const set = (key: string, value: unknown) => setLocalData((d) => ({ ...(d ?? base), [key]: value }));
 
   const { data: crmLookups } = useQuery({
     queryKey: ['crm-lookups'],
@@ -57,7 +87,7 @@ export default function AddItemPage() {
     unit_id: data.unit_id || (lookups ? defaultUnitId(lookups.units) : ''),
   }), [data, crmLookups, lookups]);
 
-  const guard = useUnsavedChangesGuard(data);
+  const guard = useUnsavedChangesGuard(data, true, Boolean(source));
 
   const leave = (createdItem: InventoryItem | null) => {
     if (returnTo) navigate(returnTo, { state: returnRouterState(createdItem) });
@@ -70,21 +100,57 @@ export default function AddItemPage() {
       toast.success(returnTo ? 'Item created and added to your line. Click Save Line to keep it.' : 'Item created.');
       queryClient.invalidateQueries({ queryKey: ['inventory-items'] });
       queryClient.invalidateQueries({ queryKey: ['inventory-item-picker'] });
+      // The item may have joined kits: their item counts and contents changed.
+      queryClient.invalidateQueries({ queryKey: ['inventory-kits'] });
+      queryClient.invalidateQueries({ queryKey: ['inventory-kit'] });
       guard.markClean();
       leave(item);
     },
   });
-  const errorRef = useScrollToError<HTMLDivElement>(saveError || fieldErrors.length > 0);
+  const errorRef = useScrollToError<HTMLDivElement>(saveError || fieldErrors.length > 0 || duplicateCheckError);
+
+  // Runs after field validation passes and before the create call, so an
+  // item already in the catalog — active or not — is flagged instead of
+  // duplicated (see lib/duplicateRecordCheck.ts). Unlike Customer/Vendor,
+  // an inactive item can't be reactivated from here yet — the backend has no
+  // endpoint for it — so this only ever blocks, never offers Activate & Use.
+  async function checkDuplicateThenCreate() {
+    const name = String(data.name ?? '').trim();
+    setDuplicateCheckError(null);
+    setIsCheckingDuplicate(true);
+    try {
+      const { records } = await inventoryService.searchItems({ search: name, limit: 25 });
+      const candidates: (DuplicateCandidate & { statusLabel: string })[] = records.map((item) => ({
+        id: item.id,
+        name: item.name,
+        isUsable: item.isActive,
+        statusLabel: item.isActive ? 'Active' : 'Inactive',
+      }));
+      const match = findDuplicateMatch(candidates, name);
+      if (match) {
+        setDuplicate({
+          id: match.candidate.id, name: match.candidate.name, status: match.status, statusLabel: match.candidate.statusLabel,
+        });
+        return;
+      }
+    } catch (err) {
+      setDuplicateCheckError(apiErrorMessage(err, "Couldn't check for an existing item with this name. Please try again."));
+      return;
+    } finally {
+      setIsCheckingDuplicate(false);
+    }
+    save();
+  }
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const errors = validateItem(data);
+    const errors = validateItem(formData);
     if (errors.length > 0) {
       setFieldErrors(errors.map((er) => er.label));
       return;
     }
     setFieldErrors([]);
-    save();
+    void checkDuplicateThenCreate();
   }
 
   return (
@@ -96,19 +162,21 @@ export default function AddItemPage() {
           onBack={() => leave(null)}
           icon={Package}
           title="New Inventory Item"
-          subtitle={returnTo
-            ? "Fields marked * are required. You'll go back to your document after saving."
-            : 'Fields marked * are required.'}
+          subtitle={source
+            ? copySubtitle(source.sku || source.name)
+            : returnTo
+              ? "Fields marked * are required. You'll go back to your document after saving."
+              : 'Fields marked * are required.'}
           actions={(
-            <button type="submit" disabled={isPending}
+            <button type="submit" disabled={isPending || isCheckingDuplicate}
               className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3.5 py-1.5 text-xs font-semibold text-stone-900 hover:bg-brand-hover disabled:opacity-50 transition-all shadow-sm">
-              {isPending ? <Loader2 className="size-3 animate-spin" /> : <Save className="size-3" />}
-              {isPending ? 'Saving…' : 'Save Item'}
+              {(isPending || isCheckingDuplicate) ? <Loader2 className="size-3 animate-spin" /> : <Save className="size-3" />}
+              {isPending ? 'Saving…' : isCheckingDuplicate ? 'Checking…' : 'Save Item'}
             </button>
           )}
         />
 
-        {(saveError || fieldErrors.length > 0) && (
+        {(saveError || fieldErrors.length > 0 || duplicateCheckError) && (
           <div
             ref={errorRef}
             tabIndex={-1}
@@ -120,7 +188,9 @@ export default function AddItemPage() {
             </span>
             <p className="text-xs text-red-700">
               <span className="font-bold">Error: </span>
-              {saveError ? apiErrorMessage(saveError, 'Failed to save item.') : `Missing required field(s): ${fieldErrors.join(', ')}.`}
+              {saveError
+                ? apiErrorMessage(saveError, 'Failed to save item.')
+                : duplicateCheckError ?? `Missing required field(s): ${fieldErrors.join(', ')}.`}
             </p>
           </div>
         )}
@@ -131,8 +201,16 @@ export default function AddItemPage() {
           </div>
         </div>
 
-        <FormActionBar onCancel={() => leave(null)} isPending={isPending} submitLabel="Save Item" />
+        <FormActionBar onCancel={() => leave(null)} isPending={isPending || isCheckingDuplicate} submitLabel="Save Item" />
       </form>
+      {duplicate && (
+        <DuplicateRecordDialog
+          entity="item"
+          match={duplicate}
+          isActivating={false}
+          onCancel={() => setDuplicate(null)}
+        />
+      )}
     </div>
   );
 }

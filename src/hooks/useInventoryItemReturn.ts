@@ -1,21 +1,30 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { useLocation, useNavigate, useNavigationType } from 'react-router-dom';
 import { toast } from 'sonner';
-import type { InventoryItem } from '@/types/inventory';
+import type { InventoryItem, InventoryKit } from '@/types/inventory';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import {
-  clearReturnStash, newInventoryItemPath, readReturnStash, resolveInventoryReturn, writeReturnStash,
+  clearReturnStash, newInventoryItemPath, newInventoryKitPath, readReturnStash,
+  resolveInventoryReturn, writeReturnStash,
   type LineDraftStash,
 } from '@/lib/inventoryItemReturn';
 
 export interface InventoryItemReturnContextValue {
-  /** The items-table row to re-open after coming back from New Item. Null
+  /** The items-table row to re-open after coming back from New Item (or New
+   *  Kit — then `createdKit` is set and the table adds the kit's lines). Null
    *  once the table has consumed it, or when nothing was restored. */
-  pendingLine: { line: LineDraftStash | null; createdItem: InventoryItem | null } | null;
+  pendingLine: {
+    line: LineDraftStash | null;
+    createdItem: InventoryItem | null;
+    createdKit: InventoryKit | null;
+  } | null;
   consumePendingLine: () => void;
   /** Stashes the document and goes to Inventory → New Item. Undefined when
    *  the user can't create inventory items — the picker then only warns. */
   startAddToInventory?: (itemName: string, line: LineDraftStash) => void;
+  /** The same for Inventory → New Kit. Kits are catalogue data under the same
+   *  grant as items, so it is offered to whoever may create items. */
+  startAddKit?: (kitName: string, line: LineDraftStash) => void;
 }
 
 export const InventoryItemReturnContext = createContext<InventoryItemReturnContextValue | null>(null);
@@ -62,19 +71,24 @@ export function useInventoryItemReturn<P>(): InventoryItemReturn<P> {
   const consumePendingLine = useCallback(() => setLineConsumed(true), []);
   const canCreateItems = hasPermission('inventory_item', 'create');
 
-  const provide = (snapshot: P, onLeave?: () => void): InventoryItemReturnContextValue => ({
-    pendingLine: restored && !lineConsumed ? { line: restored.line, createdItem: restored.createdItem } : null,
-    consumePendingLine,
-    startAddToInventory: canCreateItems
-      ? (itemName, line) => {
-        if (!writeReturnStash({ returnTo: currentPath, page: snapshot, line })) {
-          toast.error(STASH_FAILED_MESSAGE);
-          return;
-        }
-        onLeave?.();
-        navigate(newInventoryItemPath(currentPath, itemName));
+  // Both trips stash the page the same way and differ only in where they go.
+  const leaveFor = (path: (returnTo: string, name: string) => string, snapshot: P, onLeave?: () => void) =>
+    (name: string, line: LineDraftStash) => {
+      if (!writeReturnStash({ returnTo: currentPath, page: snapshot, line })) {
+        toast.error(STASH_FAILED_MESSAGE);
+        return;
       }
-      : undefined,
+      onLeave?.();
+      navigate(path(currentPath, name));
+    };
+
+  const provide = (snapshot: P, onLeave?: () => void): InventoryItemReturnContextValue => ({
+    pendingLine: restored && !lineConsumed
+      ? { line: restored.line, createdItem: restored.createdItem, createdKit: restored.createdKit }
+      : null,
+    consumePendingLine,
+    startAddToInventory: canCreateItems ? leaveFor(newInventoryItemPath, snapshot, onLeave) : undefined,
+    startAddKit: canCreateItems ? leaveFor(newInventoryKitPath, snapshot, onLeave) : undefined,
   });
 
   return { restored: restored?.page ?? null, isRestored: restored !== null, provide };

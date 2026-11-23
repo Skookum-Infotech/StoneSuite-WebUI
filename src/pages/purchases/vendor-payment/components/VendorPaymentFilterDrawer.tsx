@@ -1,9 +1,9 @@
+import { Select } from '@/components/ui/select';
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useQuery } from '@tanstack/react-query';
 import { X, Filter } from 'lucide-react';
 import { fieldCls, fieldLabelCls } from '@/components/crm/formUtils';
-import { lookupService } from '@/services/lookupService';
 import { workflowService } from '@/services/tenantServices';
 import { activeCustomFields } from '@/lib/customFields';
 import { useModalDialog } from '@/hooks/useModalDialog';
@@ -35,12 +35,6 @@ export function VendorPaymentFilterDrawer({ onClose, value, onApply }: {
   const [draft, setDraft] = useState<VendorPaymentFilterState>(value);
   const contentRef = useModalDialog(onClose);
 
-  const { data: lookups } = useQuery({
-    queryKey: ['crm-lookups'],
-    queryFn: lookupService.getCrmLookups,
-    staleTime: 10 * 60 * 1000,
-  });
-
   const { data: allWorkflows = [] } = useQuery({ queryKey: ['workflows'], queryFn: workflowService.list });
   const vpWorkflow = allWorkflows.find((wf) => wf.key.toLowerCase() === 'vendor_payment');
   const { data: vpDef } = useQuery({
@@ -71,7 +65,7 @@ export function VendorPaymentFilterDrawer({ onClose, value, onApply }: {
             type="button"
             onClick={onClose}
             aria-label="Close filters"
-            className="rounded p-1 text-stone-400 hover:bg-stone-100 hover:text-stone-600 transition-colors"
+            className="rounded p-1 text-stone-500 hover:bg-stone-100 hover:text-stone-600 transition-colors"
           >
             <X className="size-4" />
           </button>
@@ -112,30 +106,21 @@ export function VendorPaymentFilterDrawer({ onClose, value, onApply }: {
           </FilterField>
 
           <FilterField label="Payment Method">
-            <select value={draft.methodId} onChange={(e) => set('methodId', e.target.value)} className={fieldCls} aria-label="Payment method">
+            <Select value={draft.methodId} onChange={(e) => set('methodId', e.target.value)} className={fieldCls} aria-label="Payment method">
               <option value="">— Any —</option>
               {PAYMENT_METHODS.map((method) => (
                 <option key={method.id} value={method.id}>{method.name}</option>
               ))}
-            </select>
+            </Select>
           </FilterField>
 
           <FilterField label="Approval">
-            <select value={draft.approvalStatus} onChange={(e) => set('approvalStatus', e.target.value)} className={fieldCls} aria-label="Approval status">
+            <Select value={draft.approvalStatus} onChange={(e) => set('approvalStatus', e.target.value)} className={fieldCls} aria-label="Approval status">
               <option value="">— Any —</option>
               {APPROVAL_OPTIONS.map((opt) => (
                 <option key={opt.value} value={opt.value}>{opt.label}</option>
               ))}
-            </select>
-          </FilterField>
-
-          <FilterField label="Owner">
-            <select value={draft.ownerId} onChange={(e) => set('ownerId', e.target.value)} className={fieldCls} aria-label="Owner">
-              <option value="">— Any —</option>
-              {(lookups?.employees ?? []).map((emp) => (
-                <option key={emp.id} value={emp.id}>{emp.name}</option>
-              ))}
-            </select>
+            </Select>
           </FilterField>
 
           {customFieldDefs.length > 0 && (

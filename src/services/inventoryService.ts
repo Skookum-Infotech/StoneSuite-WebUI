@@ -1,7 +1,7 @@
 import { tenantClient } from '@/api/tenantClient';
 import type {
   InventoryItem, InventoryItemInput, InventoryItemPage, InventoryItemSearchRequest,
-  InventoryItemHistoryEntry,
+  InventoryItemHistoryEntry, InventoryKit, KitInput, KitPage, KitSearchRequest,
 } from '@/types/inventory';
 
 // Inventory item catalogue. Served from `/api/tenant/inventory/items*`,
@@ -13,6 +13,8 @@ import type {
 // InventoryItemInput) — always send the whole object via `updateItem`, never
 // a partial patch.
 const BASE = '/tenant/inventory/items';
+// Kits: named groups of items, under the same `inventory_item` grant.
+const KITS_BASE = '/tenant/inventory/kits';
 
 export const inventoryService = {
   searchItems: (req: InventoryItemSearchRequest): Promise<InventoryItemPage> =>
@@ -49,4 +51,35 @@ export const inventoryService = {
     tenantClient
       .get<{ success: boolean; history: InventoryItemHistoryEntry[] }>(`${BASE}/${uuid}/history`)
       .then((r) => r.data.history ?? []),
+
+  // ── Kits ───────────────────────────────────────────────────────────────────
+  // Rows carry `itemCount`; only `getKit` carries `members` (the full item
+  // records), so a picker fetches the kit once it is chosen.
+  searchKits: (req: KitSearchRequest): Promise<KitPage> =>
+    tenantClient
+      .post<{
+        success: boolean; records: InventoryKit[]; nextCursor: string; hasMore: boolean;
+      }>(`${KITS_BASE}/search`, req)
+      .then((r) => ({
+        records: r.data.records ?? [],
+        nextCursor: r.data.nextCursor ?? '',
+        hasMore: Boolean(r.data.hasMore),
+      })),
+
+  getKit: (uuid: string): Promise<InventoryKit> =>
+    tenantClient
+      .get<{ success: boolean; kit: InventoryKit }>(`${KITS_BASE}/${uuid}`)
+      .then((r) => ({ ...r.data.kit, members: r.data.kit.members ?? [] })),
+
+  createKit: (payload: KitInput): Promise<InventoryKit> =>
+    tenantClient
+      .post<{ success: boolean; kit: InventoryKit }>(KITS_BASE, payload)
+      .then((r) => ({ ...r.data.kit, members: r.data.kit.members ?? [] })),
+
+  // Whole-object write; `members` omitted leaves the kit's items alone.
+  updateKit: (uuid: string, payload: KitInput): Promise<void> =>
+    tenantClient.patch(`${KITS_BASE}/${uuid}`, payload).then(() => undefined),
+
+  deleteKit: (uuid: string): Promise<void> =>
+    tenantClient.delete(`${KITS_BASE}/${uuid}`).then(() => undefined),
 };

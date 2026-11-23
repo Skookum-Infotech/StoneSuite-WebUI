@@ -1,12 +1,12 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Building2, AlertCircle, ChevronRight, Loader2, Save, ShieldAlert } from 'lucide-react';
+import { Building2, AlertCircle, ChevronRight, Info, Loader2, Save, ShieldAlert } from 'lucide-react';
 import { crmService } from '@/services/crmService';
 import { workflowService } from '@/services/tenantServices';
 import { activeCustomFields } from '@/lib/customFields';
 import { apiErrorMessage } from '@/api/tenantClient';
-import { StatusDropdown } from '@/components/crm/StatusDropdown';
+import { CurrentStatusField } from '@/components/crm/CurrentStatusField';
 import { ApprovalBanner } from '@/components/tenant/ApprovalBanner';
 import { CrmRecordForm } from '@/components/crm/CrmRecordForm';
 import { FormActionBar } from '@/components/crm/FormPrimitives';
@@ -15,11 +15,12 @@ import { Spinner, ErrorNote } from '@/components/tenant/ui';
 import { UnsavedChangesPrompt } from '@/components/UnsavedChangesPrompt';
 import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
 import { useScrollToError } from '@/hooks/useScrollToError';
-import { crmCoreDefaults, primaryAddressFields } from '@/lib/crmFields';
+import { crmCoreDefaults, applyAddressMirroring } from '@/lib/crmFields';
 import { validateCrmRecord, type CrmFieldError } from '@/lib/crmValidation';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
-import { cn } from '@/lib/utils';
+import { customerEditNotice } from '@/lib/crmStatusFlow';
+import { TAB_LIST_CLASS, tabClass } from '@/components/ui/tabStyles';
 import type { FieldDefinition } from '@/types/tenant';
 
 const TABS = [
@@ -28,6 +29,8 @@ const TABS = [
 ] as const;
 
 type Tab = (typeof TABS)[number]['key'];
+
+const STATUS_CATALOG_STALE_MS = 10 * 60 * 1000;
 
 export default function EditCustomerPage() {
   const { id = '' } = useParams();
@@ -40,7 +43,6 @@ export default function EditCustomerPage() {
 
   const [localCoreFields, setLocalCoreFields] = useState<Record<string, unknown> | null>(null);
   const [localCustomFields, setLocalCustomFields] = useState<Record<string, unknown> | null>(null);
-  const [localStateId, setLocalStateId] = useState<string | null>(null);
   const [validationErrors, setValidationErrors] = useState<CrmFieldError[]>([]);
 
   const { data: record, isLoading, error: loadError } = useQuery({
@@ -51,10 +53,9 @@ export default function EditCustomerPage() {
 
   const coreFields = localCoreFields ?? { ...crmCoreDefaults(), ...record?.coreFields };
   const customFieldValues = localCustomFields ?? record?.customFields ?? {};
-  const currentStateId = localStateId ?? record?.currentStateId ?? '';
 
-  // Status is excluded: a transition is persisted the moment it is picked, so it
-  // is never an unsaved edit.
+  // Status is not part of the form: a customer's status changes only with the
+  // Quick Action buttons on its detail page, so it is never an unsaved edit.
   const guard = useUnsavedChangesGuard({ coreFields, customFieldValues }, Boolean(record));
 
   const { data: allWorkflows = [] } = useQuery({ queryKey: ['workflows'], queryFn: workflowService.list });
@@ -66,38 +67,13 @@ export default function EditCustomerPage() {
   });
   const customFieldDefs: FieldDefinition[] = activeCustomFields(customerDef);
 
-  const routeMap: Record<string, string> = {
-    lead: '/crm/lead',
-    prospect: '/crm/prospect',
-    customer: '/crm/customer',
-  };
-
-  const transition = useMutation({
-    mutationFn: (toStateId: string) => crmService.transitionRecord(id, toStateId, 'customer'),
-    onSuccess: (updated) => {
-      setLocalStateId(updated.currentStateId);
-      queryClient.invalidateQueries({ queryKey: ['crm-record', id] });
-      queryClient.invalidateQueries({ queryKey: ['crm-records', 'customer'] });
-      const newType = updated.workflowId?.toLowerCase();
-      if (newType && newType !== 'customer' && routeMap[newType]) {
-        queryClient.invalidateQueries({ queryKey: ['crm-records', newType] });
-        guard.markClean();
-        navigate(`${routeMap[newType]}/${updated.id}`);
-      }
-    },
+  // Same query key as CurrentStatusField, so a cache hit — used to know the
+  // record's status code for the "saving returns it to Draft" notice.
+  const { data: statusData } = useQuery({
+    queryKey: ['crm-statuses-workflow', 'customer'],
+    queryFn: () => crmService.getWorkflowStatuses('customer'),
+    staleTime: STATUS_CATALOG_STALE_MS,
   });
-
-  const handleStatusChange = useCallback(
-    (toStateId: string) => {
-      if (toStateId !== currentStateId) {
-        setLocalStateId(toStateId);
-        transition.mutate(toStateId);
-      }
-    },
-    // transition.mutate is a stable reference from TanStack Query; transition object is not
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [currentStateId, transition.mutate],
-  );
 
   const save = useMutation({
     mutationFn: () =>
@@ -105,23 +81,20 @@ export default function EditCustomerPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['crm-record', id] });
       queryClient.invalidateQueries({ queryKey: ['crm-records', 'customer'] });
+      // Saving an edit puts the customer back in Draft, so it drops out of the
+      // Sales customer picker straight away.
+      queryClient.invalidateQueries({ queryKey: ['customer-picker'] });
       guard.markClean();
       navigate('/crm/customer');
     },
   });
-  const errorRef = useScrollToError<HTMLDivElement>(save.error ?? transition.error);
+  const errorRef = useScrollToError<HTMLDivElement>(save.error);
 
   const set = (key: string, value: unknown) => {
     if (validationErrors.length > 0) setValidationErrors([]);
     setLocalCoreFields((prev) => {
       const current = prev ?? { ...crmCoreDefaults(), ...record?.coreFields };
-      if (key === 'customer_is_bill_as_primary' && value === true) {
-        return { ...current, ...primaryAddressFields(current, 'bill'), [key]: value };
-      }
-      if (key === 'customer_is_ship_as_primary' && value === true) {
-        return { ...current, ...primaryAddressFields(current, 'ship'), [key]: value };
-      }
-      return { ...current, [key]: value };
+      return applyAddressMirroring(current, key, value);
     });
   };
 
@@ -139,7 +112,7 @@ export default function EditCustomerPage() {
     return <div className="p-6"><ErrorNote>{apiErrorMessage(loadError, 'Failed to load customer.')}</ErrorNote></div>;
 
   const company = String(coreFields.customer_name ?? '—');
-  const saveError = save.error ?? transition.error;
+  const saveError = save.error;
   const approval = record.approval;
   // A record awaiting approval is locked server-side (UpdateRecord returns
   // 409) — the Save button is disabled here too so the click never round-
@@ -148,6 +121,8 @@ export default function EditCustomerPage() {
   // active-approver count server-side, so removing the last configured
   // approver unlocks an already-pending record instead of stranding it.
   const locked = approval?.gated && approval?.status === 'pending';
+  const statusCode = statusData?.statuses.find((s) => s.stateId === record.currentStateId)?.stateKey;
+  const editNotice = locked ? null : customerEditNotice(statusCode, (approval?.requiredApprovals ?? 0) > 0);
 
   return (
     <div className="flex flex-col flex-1 min-h-0 bg-stone-50">
@@ -192,6 +167,12 @@ export default function EditCustomerPage() {
               <span className="font-semibold">Locked</span> — this record is awaiting approval and cannot be edited
               until it is approved.
             </p>
+          </div>
+        )}
+        {editNotice && (
+          <div role="status" className="shrink-0 flex items-center gap-2 border-b border-amber-200 bg-amber-50 px-5 py-2.5">
+            <Info className="size-4 shrink-0 text-amber-500" aria-hidden="true" />
+            <p className="text-xs font-medium text-amber-800">{editNotice}</p>
           </div>
         )}
         {approval?.status === 'rejected' && (
@@ -239,22 +220,19 @@ export default function EditCustomerPage() {
         )}
 
         {/* Tab bar */}
-        <div className="flex shrink-0 border-b border-stone-200 bg-white px-5 3xl:px-12 4xl:px-16">
-          {TABS.map((tab) => (
-            <button
-              key={tab.key}
-              type="button"
-              onClick={() => setActiveTab(tab.key)}
-              className={cn(
-                'px-4 py-3 text-sm font-medium border-b-2 -mb-px transition-colors',
-                activeTab === tab.key
-                  ? 'border-stone-800 text-stone-900'
-                  : 'border-transparent text-stone-400 hover:text-stone-600 hover:border-stone-300',
-              )}
-            >
-              {tab.label}
-            </button>
-          ))}
+        <div className="flex shrink-0 border-b border-stone-200 bg-white px-5 3xl:px-12 4xl:px-16 py-2.5">
+          <div role="tablist" className={TAB_LIST_CLASS}>
+            {TABS.map((tab) => (
+              <button
+                key={tab.key}
+                type="button"
+                onClick={() => setActiveTab(tab.key)}
+                className={tabClass(activeTab === tab.key)}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Two-column body — browser scrolls, not an inner div */}
@@ -273,17 +251,7 @@ export default function EditCustomerPage() {
                 }}
                 showCustomerBalances
                 invalidKeys={validationErrors.length > 0 ? new Set(validationErrors.map((e) => e.key)) : undefined}
-                statusNode={(
-                  <StatusDropdown
-                    workflowKey="customer"
-                    mode="transitions"
-                    recordId={id}
-                    value={currentStateId}
-                    onChange={handleStatusChange}
-                    disabled={transition.isPending}
-                    gated={approval?.gated}
-                  />
-                )}
+                statusNode={<CurrentStatusField workflowKey="customer" statusId={record.currentStateId} />}
               />
             )}
             {/* Always mounted so upload state is preserved across tab switches */}

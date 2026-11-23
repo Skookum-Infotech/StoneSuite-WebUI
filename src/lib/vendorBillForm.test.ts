@@ -1,17 +1,21 @@
 import { describe, it, expect } from 'vitest'
 import {
-  VB_ALLOWED_TRANSITIONS, isVbTransitionBlocked, vbTransitionLabel, vbStatusLabel,
-  calcLineItem, calcHeaderTotals, toCreatePayload, validateVendorBillCustomFields,
+  VB_ALLOWED_TRANSITIONS, VB_HEADER_TRANSITION_CODES, VB_VOID_CODE, VB_CONFIRMED_TRANSITION_CODES,
+  isVbTransitionBlocked, vbTransitionLabel, vbStatusLabel,
+  vbNextCodes, vbCanVoid, vbDropdownTransitions, isVbConfirmedTransition,
+  calcLineItem, calcHeaderTotals, toCreatePayload, fromVendorBill, validateVendorBillCustomFields,
 } from './vendorBillForm'
 import type { FieldDefinition } from '@/types/tenant'
+import type { VendorBill } from '@/types/vendorBill'
 
 describe('VB_ALLOWED_TRANSITIONS', () => {
   it.each([
     ['DRFT', ['PAPV', 'VOID']],
     ['PAPV', ['APPV', 'DRFT', 'VOID']],
-    ['APPV', ['PART', 'PAID', 'ODUE', 'VOID']],
-    ['PART', ['PAID', 'ODUE', 'VOID']],
-    ['ODUE', ['PART', 'PAID', 'VOID']],
+    ['APPV', ['PINI', 'PART', 'PAID', 'ODUE', 'VOID']],
+    ['PINI', ['PART', 'PAID', 'ODUE', 'VOID']],
+    ['PART', ['PINI', 'PAID', 'ODUE', 'VOID']],
+    ['ODUE', ['PINI', 'PART', 'PAID', 'VOID']],
     ['PAID', []],
     ['VOID', []],
   ])('from(%p) -> %p', (code, expected) => {
@@ -157,6 +161,117 @@ describe('toCreatePayload line item description mapping', () => {
   })
 })
 
+describe('toCreatePayload optional purchase order link', () => {
+  const baseData: Record<string, unknown> = { vendor_uuid: 'vnd-1', bill_date: '2026-08-11' }
+
+  it.each([
+    ['a picked order', 'po-1', 'po-1'],
+    ['no order chosen (undefined)', undefined, undefined],
+    ['a cleared order (empty string)', '', undefined],
+    ['a null order', null, undefined],
+  ])('maps %s to purchaseOrderUuid', (_label, formValue, expected) => {
+    const payload = toCreatePayload({ ...baseData, purchase_order_uuid: formValue }, [])
+    expect(payload.purchaseOrderUuid).toBe(expected)
+  })
+
+  it('leaves the field out of the serialized body when nothing is linked', () => {
+    const body = JSON.parse(JSON.stringify(toCreatePayload(baseData, [])))
+    expect(body).not.toHaveProperty('purchaseOrderUuid')
+  })
+})
+
+describe('fromVendorBill purchase order link', () => {
+  const bill: VendorBill = {
+    id: 'vb-1', vendorBillNumber: 'VB-1001', status: 'Draft', statusCode: 'DRFT',
+    approvalStatus: 'none', gated: false, approvers: [], requiredApprovals: 0, approvedCount: 0,
+    canApprove: false, isOverride: false, callerAlreadyApproved: false,
+    vendor: { id: 'v-1', name: 'Marble Supply Co' },
+    vendorInvoiceNumber: '', referenceNumber: '', billDate: '2026-08-11',
+    paymentTermsId: null, currencyId: null, exchangeRate: 1, salesTaxPercent: 0,
+    memo: '', notes: '', internalNotes: '', termsConditions: '',
+    subtotal: 0, discountTotal: 0, taxTotal: 0, adjustment: 0, grandTotal: 0, amountPaid: 0, balanceDue: 0,
+    items: [],
+  }
+
+  it('returns the linked order so Edit can show it read-only', () => {
+    const linked = { ...bill, purchaseOrder: { id: 'po-1', number: 'PORD-000042' } }
+    expect(fromVendorBill(linked).purchaseOrder).toEqual({ id: 'po-1', number: 'PORD-000042' })
+  })
+
+  it('returns null when the bill has no linked order', () => {
+    expect(fromVendorBill(bill).purchaseOrder).toBeNull()
+  })
+
+  it('does not leak the link into form data, so an Edit save never re-sends it', () => {
+    const linked = { ...bill, purchaseOrder: { id: 'po-1', number: 'PORD-000042' } }
+    const { data } = fromVendorBill(linked)
+    expect(toCreatePayload(data, []).purchaseOrderUuid).toBeUndefined()
+  })
+})
+
+describe('where each status move lives on the detail page', () => {
+  const statuses = Object.keys(VB_ALLOWED_TRANSITIONS)
+
+  it.each([
+    ['DRFT', true], ['PAPV', true], ['APPV', true], ['PART', true], ['ODUE', true],
+    ['PAID', false], ['VOID', false],
+  ])('%s can void: %s', (statusCode, want) => {
+    expect(vbCanVoid({ statusCode })).toBe(want)
+  })
+
+  it.each([
+    ['DRFT', ['PAPV']],
+    ['PAPV', ['APPV', 'DRFT']],
+    ['APPV', []],
+    ['PART', []],
+    ['ODUE', []],
+    ['PAID', []],
+    ['VOID', []],
+  ])('%s leaves the sidebar pill %j — only the approval moves', (statusCode, want) => {
+    expect(vbDropdownTransitions({ statusCode })).toEqual(want)
+  })
+
+  it("prefers the backend's own next-moves over the static map", () => {
+    // With nobody configured to approve, the backend collapses the PAPV
+    // checkpoint out of Draft and offers Approved directly.
+    const draft = { statusCode: 'DRFT', nextStatusCodes: ['APPV', 'VOID'] }
+    expect(vbNextCodes(draft)).toEqual(['APPV', 'VOID'])
+    expect(vbDropdownTransitions(draft)).toEqual(['APPV'])
+    expect(vbCanVoid(draft)).toBe(true)
+    expect(vbCanVoid({ statusCode: 'DRFT', nextStatusCodes: ['APPV'] })).toBe(false)
+  })
+
+  it('treats an unknown status as having no moves rather than throwing', () => {
+    expect(vbNextCodes({ statusCode: 'NOPE' })).toEqual([])
+    expect(vbCanVoid({ statusCode: 'NOPE' })).toBe(false)
+  })
+
+  it.each(statuses)('%s: every legal move is Void, a pill move, or a settlement move with no button', (statusCode) => {
+    const order = { statusCode }
+    const homes = [
+      ...(vbCanVoid(order) ? [VB_VOID_CODE] : []),
+      ...vbDropdownTransitions(order),
+    ]
+    const settlement = vbNextCodes(order).filter((c) => VB_HEADER_TRANSITION_CODES.includes(c))
+    expect([...homes, ...settlement].sort()).toEqual([...vbNextCodes(order)].sort())
+  })
+
+  it('confirms exactly the terminal statuses — those no legal move leaves', () => {
+    const terminal = statuses.filter((s) => VB_ALLOWED_TRANSITIONS[s].length === 0).sort()
+    expect([...VB_CONFIRMED_TRANSITION_CODES].sort()).toEqual(terminal)
+  })
+
+  it.each([
+    ['PAID', true], ['VOID', true], ['PART', false], ['ODUE', false], ['PAPV', false], ['', false],
+  ])('isVbConfirmedTransition(%j) = %s', (code, want) => {
+    expect(isVbConfirmedTransition(code)).toBe(want)
+  })
+
+  it('never puts a terminal move in the header except Paid, whose confirm the page owns', () => {
+    expect(VB_HEADER_TRANSITION_CODES.filter((c) => VB_ALLOWED_TRANSITIONS[c].length === 0)).toEqual(['PAID'])
+  })
+})
+
 describe('validateVendorBillCustomFields', () => {
   const defs: FieldDefinition[] = [
     { id: '1', workflowId: 'wf', key: 'cost_center', label: 'Cost Center', dataType: 'string', required: true, options: [], validation: {}, sortOrder: 0 },
@@ -173,5 +288,34 @@ describe('validateVendorBillCustomFields', () => {
 
   it('ignores optional fields entirely', () => {
     expect(validateVendorBillCustomFields(defs, { cost_center: 'CC-100', notes: '' })).toEqual([])
+  })
+})
+
+describe('toCreatePayload line thickness', () => {
+  const baseData: Record<string, unknown> = { vendor_uuid: 'vnd-1', bill_date: '2026-08-11' }
+  const line = { id: 't', lineNo: 1, itemName: 'Slab', itemDescription: '', quantity: '50', unitPrice: '10', discount: '0', amount: '500.00', total: '500.00', inventoryItemUuid: 'inv-1', length: '120', width: '60', dimensionUnit: 'in' }
+
+  it.each([
+    { name: 'sends the thickness of an area-unit line', units: 'SQFT', thickness: '1.25', want: 1.25 },
+    { name: 'drops a thickness on a per-piece line', units: 'EA', thickness: '1.25', want: undefined },
+    { name: 'sends none when the line states none', units: 'SQFT', thickness: '', want: undefined },
+  ])('$name', ({ units, thickness, want }) => {
+    const payload = toCreatePayload(baseData, [{ ...line, units, thickness }])
+    expect(payload.items[0].thickness).toBe(want)
+  })
+})
+
+describe('toCreatePayload line kit label', () => {
+  const baseData: Record<string, unknown> = { vendor_uuid: 'vnd-1', bill_date: '2026-08-11' }
+  const line = { id: 'k', lineNo: 1, itemName: 'Sink', itemDescription: '', quantity: '1', unitPrice: '10', discount: '0', amount: '10.00', total: '10.00', inventoryItemUuid: 'inv-1' }
+
+  it('sends the kit a line was added from', () => {
+    const payload = toCreatePayload(baseData, [{ ...line, kitId: 'kit-1', kitName: 'Kitchen' }])
+    expect(payload.items[0]).toMatchObject({ kitUuid: 'kit-1', kitName: 'Kitchen' })
+  })
+
+  it('sends no kit for an ordinary line', () => {
+    const payload = toCreatePayload(baseData, [line])
+    expect(payload.items[0]).not.toHaveProperty('kitUuid')
   })
 })

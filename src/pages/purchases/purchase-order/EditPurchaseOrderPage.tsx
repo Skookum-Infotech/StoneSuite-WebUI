@@ -14,9 +14,10 @@ import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { PurchaseOrderFormBody } from './components/PurchaseOrderFormBody';
 import type { VendorRef } from './components/VendorPicker';
 import {
-  fromPurchaseOrder, toCreatePayload, calcHeaderTotals, PAGE_TABS, type PageTab,
+  fromPurchaseOrder, toCreatePayload, calcHeaderTotals, PAGE_TABS, SHIP_TO_FIELDS, type PageTab,
   type PurchaseOrderLineItem, PO_NON_DRAFT_LOCKED,
 } from '@/lib/purchaseOrderForm';
+import { firstInvalidPhoneLabel } from '@/lib/phoneValidation';
 import { InventoryItemReturnContext, useInventoryItemReturn } from '@/hooks/useInventoryItemReturn';
 import { useScrollToError } from '@/hooks/useScrollToError';
 
@@ -107,7 +108,11 @@ export default function EditPurchaseOrderPage() {
   );
 
   const save = useMutation({
-    mutationFn: () => purchaseOrderService.updatePurchaseOrder(id, toCreatePayload(data, lineItems, customFieldValues)),
+    mutationFn: () => {
+      const badPhone = firstInvalidPhoneLabel(SHIP_TO_FIELDS, data);
+      if (badPhone) throw new Error(`Enter a valid phone number for ${badPhone}.`);
+      return purchaseOrderService.updatePurchaseOrder(id, toCreatePayload(data, lineItems, customFieldValues));
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['purchase-order', id] });
       queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
@@ -132,11 +137,11 @@ export default function EditPurchaseOrderPage() {
           subtitle={po.vendor.name}
         />
         <div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 text-center">
-          <Lock className="size-8 text-stone-300" aria-hidden="true" />
+          <Lock className="size-8 text-stone-400" aria-hidden="true" />
           <p className="text-sm font-semibold text-stone-700">
             This purchase order is {po.status} and can no longer be edited.
           </p>
-          <p className="text-xs text-stone-400">Recall it to Draft from the detail page to make changes.</p>
+          <p className="text-xs text-stone-500">Recall it to Draft from the detail page to make changes.</p>
           <button
             type="button"
             onClick={() => navigate(`/purchases/purchase_order/${id}`)}

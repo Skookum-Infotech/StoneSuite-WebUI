@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { FilePlus } from 'lucide-react';
 import { vendorCreditService } from '@/services/vendorCreditService';
 import { apiErrorMessage } from '@/api/tenantClient';
@@ -8,10 +8,8 @@ import { useModalDialog } from '@/hooks/useModalDialog';
 import { fieldCls, fieldLabelCls } from '@/components/crm/formUtils';
 import { VendorBillPicker, type VendorBillRef } from '@/pages/purchases/vendor-payment/components/VendorBillPicker';
 import type { VendorCredit } from '@/types/vendorCredit';
-
-function currency(n: number): string {
-  return n.toLocaleString(undefined, { style: 'currency', currency: 'USD' });
-}
+import { formatMoney, currencyCodeFor } from '@/lib/formatMoney';
+import { lookupService } from '@/services/lookupService';
 
 // Applies part of a vendor credit's unapplied balance to one vendor bill.
 // Reuses VendorBillPicker (vendor-payment/components) rather than
@@ -30,7 +28,11 @@ export function ApplyToBillDialog({ credit, onClose, onApplied }: {
   onApplied: (updated: VendorCredit) => void;
 }) {
   const contentRef = useModalDialog(onClose);
+  const { data: lookups } = useQuery({ queryKey: ['crm-lookups'], queryFn: lookupService.getCrmLookups, staleTime: 10 * 60 * 1000 });
   const [bill, setBill] = useState<VendorBillRef | null>(null);
+  // A vendor credit carries no currency of its own; it is applied in the bill's.
+  const currencyCode = currencyCodeFor(lookups, bill?.currencyId);
+  const currency = (n: number) => formatMoney(n, currencyCode);
   const [amount, setAmount] = useState('');
 
   const apply = useMutation({
@@ -60,7 +62,7 @@ export function ApplyToBillDialog({ credit, onClose, onApplied }: {
             <h3 id="apply-vendor-credit-dialog-title" className="text-sm font-bold text-stone-900">
               Apply to vendor bill
             </h3>
-            <p className="text-xs text-stone-400 mt-0.5">
+            <p className="text-xs text-stone-500 mt-0.5">
               Unapplied balance: {currency(credit.unappliedAmount)}
             </p>
           </div>
@@ -93,7 +95,7 @@ export function ApplyToBillDialog({ credit, onClose, onApplied }: {
               aria-label="Application amount"
             />
             {bill && (
-              <p className="mt-1 text-2xs text-stone-400">
+              <p className="mt-1 text-2xs text-stone-500">
                 At most {currency(cap)} — the smaller of this credit's unapplied balance and the bill's balance due.
               </p>
             )}

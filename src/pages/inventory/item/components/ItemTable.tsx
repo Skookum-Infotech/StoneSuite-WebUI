@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
   Search, ArrowUp, ArrowDown, ArrowUpDown, X, Package, Pencil, Filter,
@@ -10,6 +10,7 @@ import { apiErrorMessage } from '@/api/tenantClient';
 import { inventoryService } from '@/services/inventoryService';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { exportPagedCsv } from '@/lib/csvExport';
+import { itemPrice } from '@/lib/itemPrice';
 import { TRACKING_SERIALIZED } from '@/types/inventory';
 import { EMPTY_FILTER_STATE, hasActiveFilters, toFilterClauses, type InventoryItemFilterState } from '@/lib/inventoryItemFilters';
 import { ItemFilterDrawer } from './ItemFilterDrawer';
@@ -128,8 +129,12 @@ export function ItemTable() {
     try {
       await exportPagedCsv(
         (exportCursor) => inventoryService.searchItems({ ...req, limit: EXPORT_PAGE_SIZE, cursor: exportCursor }),
-        ['SKU', 'Name', 'Tracking', 'Unit Price', 'Barcode', 'Active'],
-        (it) => [it.sku, it.name, it.tracking, it.unitPrice.toFixed(2), it.barcode ?? '', it.isActive ? 'Yes' : 'No'],
+        ['SKU', 'Name', 'Tracking', 'Purchasing Unit Price', 'Selling Unit Price', 'Barcode', 'Active'],
+        (it) => [
+          it.sku, it.name, it.tracking,
+          itemPrice(it, 'purchasing').toFixed(2), itemPrice(it, 'selling').toFixed(2),
+          it.barcode ?? '', it.isActive ? 'Yes' : 'No',
+        ],
         'Inventory Item',
       );
     } catch (err) {
@@ -149,7 +154,7 @@ export function ItemTable() {
             placeholder="Search SKU or name…"
             value={term}
             onChange={(e) => setTerm(e.target.value)}
-            className="h-8 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-3 text-xs text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150"
+            className="h-8 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-3 text-xs text-stone-900 placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150"
           />
         </div>
 
@@ -167,7 +172,7 @@ export function ItemTable() {
         <div className="h-5 w-px bg-stone-200" aria-hidden="true" />
 
         <div className="flex items-center gap-1.5">
-          <span className="text-2xs font-semibold uppercase tracking-wider text-stone-400 pr-0.5">Sort:</span>
+          <span className="text-2xs font-semibold uppercase tracking-wider text-stone-500 pr-0.5">Sort:</span>
           {(Object.entries(SORT_LABELS) as [SortField, string][]).map(([field, label]) => (
             <button
               key={field}
@@ -215,7 +220,8 @@ export function ItemTable() {
                 <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">SKU</th>
                 <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Name</th>
                 <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Tracking</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right">Unit Price</th>
+                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right">Purchasing Price</th>
+                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right">Selling Price</th>
                 <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Status</th>
                 {canEdit && <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right">Actions</th>}
               </tr>
@@ -224,7 +230,7 @@ export function ItemTable() {
               {isLoading ? (
                 Array.from({ length: 5 }, (_, i) => (
                   <tr key={i}>
-                    {Array.from({ length: canEdit ? 6 : 5 }, (_, j) => (
+                    {Array.from({ length: canEdit ? 7 : 6 }, (_, j) => (
                       <td key={j} className="px-4 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-16" /></td>
                     ))}
                   </tr>
@@ -233,15 +239,16 @@ export function ItemTable() {
                 records.map((it) => (
                   <tr key={it.id} className="group hover:bg-accent/10 transition-colors duration-150">
                     <td className="px-4 py-3.5">
-                      <button type="button" onClick={() => navigate(`/inventory/item/${it.id}`)} className="font-mono text-xs font-semibold text-stone-900 hover:text-accent-foreground transition-colors">
+                      <Link to={`/inventory/item/${it.id}`} className="font-mono text-xs font-semibold whitespace-nowrap text-stone-900 hover:text-accent-foreground transition-colors">
                         {it.sku}
-                      </button>
+                      </Link>
                     </td>
                     <td className="px-4 py-3.5 text-xs text-stone-700 truncate max-w-[220px]">{it.name}</td>
                     <td className="px-4 py-3.5 text-xs text-stone-500">
                       {it.tracking === TRACKING_SERIALIZED ? 'Serialized' : 'Quantity'}
                     </td>
-                    <td className="px-4 py-3.5 text-xs text-stone-700 tabular-nums text-right">${it.unitPrice.toFixed(2)}</td>
+                    <td className="px-4 py-3.5 text-xs text-stone-700 tabular-nums text-right">${itemPrice(it, 'purchasing').toFixed(2)}</td>
+                    <td className="px-4 py-3.5 text-xs text-stone-700 tabular-nums text-right">${itemPrice(it, 'selling').toFixed(2)}</td>
                     <td className="px-4 py-3.5">
                       <span className={cn('inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-semibold whitespace-nowrap', it.isActive ? 'bg-emerald-50 text-emerald-700' : 'bg-stone-100 text-stone-500')}>
                         <span className={cn('size-1.5 shrink-0 rounded-full', it.isActive ? 'bg-emerald-500' : 'bg-stone-400')} aria-hidden="true" />
@@ -272,7 +279,7 @@ export function ItemTable() {
                       <p className="text-sm font-semibold text-stone-700">
                         {hasFilters ? 'No items match the current search.' : 'No inventory items added yet.'}
                       </p>
-                      <p className="text-xs text-stone-400">{hasFilters ? 'Try adjusting your search or filters.' : 'Add your first item to get started.'}</p>
+                      <p className="text-xs text-stone-500">{hasFilters ? 'Try adjusting your search or filters.' : 'Add your first item to get started.'}</p>
                     </div>
                   </td>
                 </tr>

@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
-import { Repeat, Pencil, Trash2, Truck } from 'lucide-react';
+import { Repeat, Pencil, Truck } from 'lucide-react';
 import { inventoryTransferService } from '@/services/inventoryTransferService';
+import { DangerZoneCard, DangerZoneAction } from '@/components/tenant/DangerZoneCard';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { Spinner, ErrorNote, Badge } from '@/components/tenant/ui';
 import { ModernSection } from '@/components/crm/FormPrimitives';
@@ -80,14 +81,14 @@ export default function TransferDetailPage() {
           {isInTransit && (
             <div className="flex items-start gap-3 rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-3">
               <Truck className="mt-0.5 size-4 shrink-0 text-indigo-500" />
-              <p className="text-xs text-indigo-700">This transfer has shipped — stock shows in neither warehouse until it is received. This is expected, not missing stock.</p>
+              <p className="text-xs text-indigo-700">This transfer has shipped — stock shows in neither location until it is received. This is expected, not missing stock.</p>
             </div>
           )}
 
           <ModernSection title="Header" index={0}>
             <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
-              <ReadonlyField label="From Warehouse" value={t.fromWarehouseName} />
-              <ReadonlyField label="To Warehouse" value={t.toWarehouseName} />
+              <ReadonlyField label="From Location" value={t.fromWarehouseName} />
+              <ReadonlyField label="To Location" value={t.toWarehouseName} />
               <ReadonlyField label="To Bin" value={t.toBinPath} />
               <ReadonlyField label="Date" value={t.date} />
               <ReadonlyField label="Expected Date" value={t.expectedDate ?? undefined} />
@@ -145,12 +146,13 @@ export default function TransferDetailPage() {
           )}
 
           {canDelete && isDraft && (
-            <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-0.5 mb-4">
-              <p className="text-xs font-semibold text-red-400 mb-2">Danger Zone</p>
-              <button type="button" onClick={() => remove()} className="flex items-center gap-2.5 hover:bg-destructive/5 rounded-lg px-3 py-2 text-xs text-destructive w-full transition-colors text-left">
-                <Trash2 className="size-4 shrink-0" /> Delete transfer
-              </button>
-            </div>
+            <DangerZoneCard>
+              <DangerZoneAction
+                description="Delete this transfer permanently."
+                buttonLabel="Delete transfer"
+                onClick={() => remove()}
+              />
+            </DangerZoneCard>
           )}
         </SalesDetailSidebar>
       </div>
@@ -162,7 +164,7 @@ function ReadonlyField({ label, value }: { label: string; value?: string }) {
   return (
     <div className="space-y-1">
       <label className={fieldLabelCls}>{label}</label>
-      <div className={readonlyCls}>{value || <span className="text-stone-400">—</span>}</div>
+      <div className={readonlyCls}>{value || <span className="text-stone-500">—</span>}</div>
     </div>
   );
 }

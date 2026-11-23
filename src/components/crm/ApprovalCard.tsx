@@ -32,7 +32,7 @@ export function ApprovalCard({
 
   return (
     <div className={cardCls}>
-      <p className="text-xs font-semibold text-stone-400">Approval</p>
+      <p className="text-xs font-semibold text-stone-500">Approval</p>
 
       <div className={rowCls}>
         <span className="text-stone-500">Status</span>

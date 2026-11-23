@@ -12,7 +12,10 @@ import { WarehouseSelect } from '@/components/inventory/WarehouseSelect';
 import { toNumericWarehouseId } from '@/lib/inventoryWarehouse';
 import { BinPicker } from '@/components/inventory/BinPicker';
 import { useInventoryLookups } from '@/hooks/useInventoryLookups';
+import { useDefaultLocation } from '@/hooks/useDefaultLocation';
 import { useScrollToError } from '@/hooks/useScrollToError';
+import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
+import { UnsavedChangesPrompt } from '@/components/UnsavedChangesPrompt';
 import { useQuery } from '@tanstack/react-query';
 import { inventoryBinService } from '@/services/inventoryBinService';
 
@@ -21,11 +24,15 @@ export default function AddCountPage() {
   const queryClient = useQueryClient();
   const { lookups } = useInventoryLookups();
 
-  const [warehouseId, setWarehouseId] = useState('');
+  const [warehouseId, setWarehouseId] = useDefaultLocation(lookups?.warehouses ?? []);
   const [binId, setBinId] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [notes, setNotes] = useState('');
   const [fieldError, setFieldError] = useState<string | null>(null);
+
+  // The default location is derived once the lookups arrive, so the snapshot
+  // waits for them rather than baselining on an empty location.
+  const guard = useUnsavedChangesGuard({ warehouseId, binId, date, notes }, Boolean(lookups));
 
   const { data: bins = [] } = useQuery({
     queryKey: ['inventory-bins-tree', warehouseId],
@@ -47,6 +54,7 @@ export default function AddCountPage() {
     onSuccess: (count) => {
       toast.success('Count created.');
       queryClient.invalidateQueries({ queryKey: ['inventory-counts'] });
+      guard.markClean();
       navigate(`/inventory/count/${count.id}`);
     },
   });
@@ -54,13 +62,14 @@ export default function AddCountPage() {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!warehouseId) { setFieldError('A warehouse is required.'); return; }
+    if (!warehouseId) { setFieldError('A location is required.'); return; }
     setFieldError(null);
     save();
   }
 
   return (
     <div className="flex flex-col flex-1 min-h-0 bg-stone-50">
+      <UnsavedChangesPrompt guard={guard} />
       <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
         <CrmPageHeader
           backLabel="Counts"
@@ -92,11 +101,11 @@ export default function AddCountPage() {
           <div className="px-4 py-3 pb-24 space-y-2 3xl:px-10 3xl:py-5 4xl:px-16 4xl:py-8">
             <ModernSection title="Scope" index={0}>
               <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
-                <ModernFieldShell label="Warehouse" required>
+                <ModernFieldShell label="Location" required>
                   <WarehouseSelect warehouses={lookups?.warehouses ?? []} value={warehouseId} onChange={handleWarehouseChange} required />
                 </ModernFieldShell>
                 <ModernFieldShell label="Bin (optional)">
-                  <BinPicker bins={bins} value={binId} onChange={setBinId} label="Bin" allowEmpty emptyLabel="— Whole warehouse —" />
+                  <BinPicker bins={bins} value={binId} onChange={setBinId} label="Bin" allowEmpty emptyLabel="— Whole location —" />
                 </ModernFieldShell>
                 <ModernFieldShell label="Date" required>
                   <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className={fieldCls} aria-label="Date" required />

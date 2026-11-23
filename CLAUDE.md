@@ -142,9 +142,47 @@ Two separate, deliberately non-overlapping feedback mechanisms — don't conflat
 
 ## PDF Export Convention
 Detail-page "Export PDF" button (Quick Actions card, lazy-imported exporter) — one
-`lib/*PdfExport.ts` per domain (`salesPdfExport`, `crmPdfExport`, `purchasesPdfExport`),
-all built on shared `lib/pdfBranding.ts`. New domain → new sibling file, don't add a
-list-page bulk export.
+`lib/*PdfExport.ts` per domain (`salesPdfExport`, `crmPdfExport`, `purchasesPdfExport`,
+`inventoryPdfExport`, plus `financePdfExport`/`feedbackPdfExport`). New domain → new
+sibling file, don't add a list-page bulk export. Every domain file is built on three
+shared, domain-agnostic layers — **new sections must use them, not hand-roll their own
+layout**:
+- `lib/pdfBranding.ts` — masthead (`drawMasthead`, both logos left + doc type/record
+  number/status right) and footer (`drawFooterOnAllPages`). Chrome only.
+- `lib/pdfDocumentBlocks.ts` — `drawCompanyBlock` (tenant's own name+address, self-fetched
+  from Company Info — for a document going out to a counterparty) **or**
+  `drawRecordTitle` (the record's own name — for a profile record that *is* the subject,
+  not a document exchanged with one) paired with `drawDateAmountHeader` (Issue/Due-style
+  date pair + optional lime key-amount badge) on the right; `drawAddressRow` (up to two
+  labeled address cards side by side — Bill To/Ship To, Billing/Shipping Address, Vendor/
+  Ship To — pass `{ customerName }` alone for a name-only line, e.g. Payment's
+  "Customer" or a CRM record's "Account Owner"); `drawTotalsCard` +
+  `drawEmphasisBar` (a totals breakdown card and the one figure worth repeating in the
+  header badge, e.g. Balance Due — never put that figure in the card too).
+- `lib/pdfTextBlocks.ts` — `drawTextCard` (a labeled paragraph card — real content, or
+  `{ placeholder: true }` for "coming soon" copy) and `makeItemDescriptionHooks` (renders
+  an items-table row's optional `descriptions[i]` as a small gray line under the item
+  name — column index 1 — instead of its own column).
+
+**Decide per record type**, don't apply every block everywhere:
+- `keyAmount` only for a record with a genuine "remaining balance" distinct from its own
+  Grand Total (Invoice/Vendor Bill's Balance Due, Payment/Credit's Unapplied). A doc
+  that's just a Grand Total (Sales Order, PO, Quote) skips it — the totals card's own
+  bold row is emphasis enough; don't show the same number three times.
+- **Money/counterparty documents** (Sales, Purchases) get the **Terms & Conditions** and
+  **Payment Details** footer cards on every record type in the domain, even a non-money
+  one (Fabrication Job, Vendor) — use `drawTextCard(..., { placeholder: true })` with
+  "will be available in a future update" copy when the record has no real terms/bank
+  field, real content when it does (e.g. a Purchase Order's own `termsConditions`).
+  **Profile-only domains** (CRM, Inventory) skip both entirely — they aren't documents
+  and the cards would look like a mistake, not polish.
+- A real free-text field (memo/notes) promotes to a `drawTextCard` "Notes" card instead
+  of sitting in the generic Field/Value grid — but only one field per record; if a page
+  has several (memo *and* notes *and* internal notes), promote the most customer-facing
+  one and leave the rest in the grid.
+- Never show the same figure in more than two places (header badge + emphasis bar is the
+  one sanctioned pair). If a value is already in the totals card, it doesn't also get a
+  `keyAmount`.
 
 ## Code Quality
 1. No magic strings or numbers. All values > 1 are constants.

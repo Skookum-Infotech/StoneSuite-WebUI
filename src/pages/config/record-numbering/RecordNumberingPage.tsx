@@ -73,8 +73,8 @@ export default function RecordNumberingPage(): React.JSX.Element {
           workflows.length === 0 &&
           !workflowsQ.isError && (
             <div className="flex flex-col items-center justify-center h-40 text-center">
-              <Hash className="size-8 text-stone-300 mb-2" />
-              <p className="text-sm text-stone-400">No workflows found.</p>
+              <Hash className="size-8 text-stone-400 mb-2" />
+              <p className="text-sm text-stone-500">No workflows found.</p>
             </div>
           )}
         {workflows.length > 0 && (
@@ -83,7 +83,7 @@ export default function RecordNumberingPage(): React.JSX.Element {
               <div style={{ minWidth: '720px' }}>
                 {/* Table header */}
                 <div
-                  className="grid items-center px-5 py-3 bg-stone-50 border-b border-stone-200 gap-3 text-2xs font-bold uppercase tracking-widest text-stone-400 select-none"
+                  className="grid items-center px-5 py-3 bg-stone-50 border-b border-stone-200 gap-3 text-2xs font-bold uppercase tracking-widest text-stone-500 select-none"
                   style={{
                     gridTemplateColumns:
                       "minmax(120px,1.2fr) 72px minmax(100px,1fr) minmax(100px,1fr) 90px 106px minmax(140px,1.4fr) 88px",
@@ -209,11 +209,11 @@ function WorkflowRow({
   const cellInput = (hasError: boolean, disabled: boolean) =>
     cn(
       "w-full rounded-lg border bg-transparent px-2.5 py-1.5 text-xs font-mono text-stone-800",
-      "placeholder:text-stone-300 transition-colors focus:outline-none",
+      "placeholder:text-stone-500 transition-colors focus:outline-none",
       hasError
         ? "border-red-300 bg-red-50/60 focus:border-red-400 focus:ring-1 focus:ring-red-200"
         : disabled
-          ? "border-transparent text-stone-400 cursor-default"
+          ? "border-transparent text-stone-500 cursor-default"
           : "border-stone-200 hover:border-stone-300 focus:border-brand focus:ring-1 focus:ring-brand/25",
     );
 
@@ -229,10 +229,10 @@ function WorkflowRow({
         className={cn(rowBase, "flex items-center justify-start")}
         style={{ gridTemplateColumns: "unset", display: "flex" }}
       >
-        <div className="flex items-center gap-2.5 text-xs text-stone-400 py-1">
+        <div className="flex items-center gap-2.5 text-xs text-stone-500 py-1">
           <Loader2 className="size-3.5 animate-spin" />
           <span className="font-semibold">{workflow.name}</span>
-          <span className="text-stone-300">—</span>
+          <span className="text-stone-500">—</span>
           <span>Loading config…</span>
         </div>
       </div>
@@ -253,7 +253,7 @@ function WorkflowRow({
         <p className="text-xs font-semibold text-stone-800 truncate">
           {workflow.name}
         </p>
-        <p className="font-mono text-2xs text-stone-400 mt-0.5 truncate">
+        <p className="font-mono text-2xs text-stone-500 mt-0.5 truncate">
           {workflow.key}
         </p>
       </div>
@@ -359,13 +359,13 @@ function WorkflowRow({
             <span className="font-mono text-xs font-bold text-brand-dark bg-brand/8 rounded-md px-2 py-0.5 truncate shrink-0 max-w-[100px]">
               {preview}
             </span>
-            <ChevronRight className="size-3 text-stone-300 shrink-0" />
-            <span className="font-mono text-2xs text-stone-400 truncate">
+            <ChevronRight className="size-3 text-stone-400 shrink-0" />
+            <span className="font-mono text-2xs text-stone-500 truncate">
               {previewNext}
             </span>
           </div>
         ) : (
-          <span className="text-2xs text-stone-300 italic">—</span>
+          <span className="text-2xs text-stone-500 italic">—</span>
         )}
       </div>
 

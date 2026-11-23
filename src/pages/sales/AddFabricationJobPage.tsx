@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { Wrench, AlertCircle, Loader2, Save } from 'lucide-react';
 import { toast } from 'sonner';
+import { useIdempotencyKey } from '@/hooks/useIdempotencyKey';
 import { fabricationService } from '@/services/fabricationService';
 import { salesOrderService } from '@/services/salesOrderService';
 import { lookupService } from '@/services/lookupService';
@@ -14,8 +15,11 @@ import type { FabricationSourceOrder } from './components/FabricationSourceOrder
 import { useScrollToError } from '@/hooks/useScrollToError';
 import { FabricationJobFormBody } from './components/FabricationJobFormBody';
 import {
-  fjDefaults, toJobFields, toPieceInput, PAGE_TABS, type PageTab, type FJPieceRow,
+  fjDefaults, toJobFields, toPieceInput, PAGE_TABS, SITE_FIELDS, type PageTab, type FJPieceRow,
 } from '@/lib/fabricationForm';
+import { firstInvalidPhoneLabel } from '@/lib/phoneValidation';
+import { UnsavedChangesPrompt } from '@/components/UnsavedChangesPrompt';
+import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
 
 export default function AddFabricationJobPage() {
   const navigate = useNavigate();
@@ -52,21 +56,31 @@ export default function AddFabricationJobPage() {
     label: `#${line.lineNumber} ${line.itemName || line.description || ''}`.trim(),
   }));
 
+  const guard = useUnsavedChangesGuard({ data, pieces, sourceOrder, customFieldValues });
+
+  const createKey = useIdempotencyKey();
   const { mutate: save, isPending, error: saveError } = useMutation({
     mutationFn: () => {
       if (!sourceOrder) throw new Error('A sales order is required to open a fabrication job.');
-      return fabricationService.createJob({
+      const badPhone = firstInvalidPhoneLabel(SITE_FIELDS, data);
+      if (badPhone) throw new Error(`Enter a valid phone number for ${badPhone}.`);
+      const payload = {
         salesOrderUuid: sourceOrder.id,
         ...toJobFields(data, customFieldValues),
         pieces: pieces.map(toPieceInput),
-      });
+      };
+      // A retry of the same form (e.g. after a timeout) reuses the key, so the
+      // server returns the job the first attempt made instead of a duplicate.
+      return fabricationService.createJob({ ...payload, requestId: createKey.keyFor(JSON.stringify(payload)) });
     },
     onSuccess: async (job) => {
+      createKey.reset();
       toast.success('Fabrication job created.');
       queryClient.invalidateQueries({ queryKey: ['fabrication-jobs'] });
       if (panelRef.current?.hasStagedFiles()) {
         try { await panelRef.current.uploadStagedTo(job.id); } catch { /* non-fatal */ }
       }
+      guard.markClean();
       navigate('/sales/installation');
     },
   });
@@ -74,6 +88,7 @@ export default function AddFabricationJobPage() {
 
   return (
     <div className="flex flex-col flex-1 min-h-0 bg-stone-50">
+      <UnsavedChangesPrompt guard={guard} />
       <form onSubmit={(e) => { e.preventDefault(); save(); }} className="flex flex-col flex-1 min-h-0">
         <CrmPageHeader
           backLabel="Installation / Fabrication"

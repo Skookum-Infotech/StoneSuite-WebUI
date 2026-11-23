@@ -55,6 +55,41 @@ export interface AuthResponse {
   // since the expired access token can no longer be decoded to recover it.
   tenantId?: string;
   workspaces?: PortalWorkspace[];
+  // Present instead of token/user when the password was right but the account
+  // has two-step verification on: a code was emailed, and the session starts
+  // only once POST /auth/mfa/verify accepts it. See lib/mfa.ts's toMfaChallenge.
+  mfaRequired?: boolean;
+  challengeToken?: string;
+  maskedEmail?: string;
+  codeLength?: number;
+  expiresInSeconds?: number;
+  resendAfterSeconds?: number;
+}
+
+// A code was just emailed (sign-in resend, or turning two-step verification
+// on). The timings drive the code-entry screens; the code itself never
+// reaches the browser.
+export interface MfaCodeSent {
+  success: boolean;
+  maskedEmail: string;
+  codeLength: number;
+  expiresInSeconds: number;
+  resendAfterSeconds: number;
+}
+
+// The sign-in's second step: a code sent plus the token that names the
+// challenge it belongs to.
+export interface MfaChallenge extends MfaCodeSent {
+  challengeToken: string;
+}
+
+// GET /auth/mfa. `available` is false for an account with no password step to
+// add a code to (single sign-on).
+export interface MfaStatus {
+  success: boolean;
+  enabled: boolean;
+  available: boolean;
+  maskedEmail: string;
 }
 
 export interface RefreshResponse {
@@ -82,4 +117,34 @@ export interface RegisterData {
   email: string;
   password: string;
   fullName: string;
+}
+
+// A sign-in held back because the account is signed in on another browser
+// (409 active_session). Confirming posts /auth/session/takeover -- the
+// ticket is an HttpOnly cookie the 409 set -- which ends the other session
+// and signs in here.
+export interface ActiveSessionPrompt {
+  deviceLabel: string;
+  // Unix ms the other session was last seen, or null when unknown.
+  lastSeenAt: number | null;
+}
+
+// GET /api/auth/session: whether this browser's session is still the live one.
+export interface SessionStatusResponse {
+  success: boolean;
+  status: 'active' | 'replacing' | 'ended';
+  // Unix ms the server stops honouring a replaced session (server clock).
+  endsAt?: number;
+  // The same, relative to the moment of the answer: what the countdown uses.
+  endsInMs?: number;
+  replacedBy?: { at: number; deviceLabel: string };
+}
+
+// Set once this browser learns another sign-in replaced its session; drives
+// the "signed in on another computer" countdown overlay.
+export interface ReplacedSessionInfo {
+  deviceLabel?: string;
+  // Unix ms on this browser's own clock when the server stops honouring the
+  // session (derived from endsInMs, never the server's absolute time).
+  endsAt?: number;
 }

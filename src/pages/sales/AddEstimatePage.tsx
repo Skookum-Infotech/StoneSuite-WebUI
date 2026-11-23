@@ -10,7 +10,7 @@ import { FormActionBar } from '@/components/crm/FormPrimitives';
 import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
 import { type EditableFilesPanelHandle } from '@/components/crm/CrmSubTabsPanel';
 import { type CustomerRef } from './components/CustomerPicker';
-import { customerDefaultFields, BILL_ADDRESS_KEYS } from '@/lib/customerDefaults';
+import { mergeCustomerDefaults } from '@/lib/customerDefaults';
 import { shipSameAsBillFields } from '@/lib/shipToDefaults';
 import { defaultCountryId, defaultCurrencyId } from '@/lib/lookupDefaults';
 import { InventoryItemReturnContext, useInventoryItemReturn } from '@/hooks/useInventoryItemReturn';
@@ -18,9 +18,16 @@ import { useRecordCreateReturn } from '@/hooks/useRecordCreateReturn';
 import { useScrollToError } from '@/hooks/useScrollToError';
 import { EstimateFormBody } from './components/EstimateFormBody';
 import {
-  estimateDefaults, toCreatePayload, PAGE_TABS, type PageTab,
+  estimateDefaults, toCreatePayload, PAGE_TABS, BILL_TO_FIELDS, SHIP_TO_FIELDS, type PageTab,
   type EstimateLineItem,
 } from '@/lib/estimateForm';
+import { firstInvalidPhoneLabel } from '@/lib/phoneValidation';
+import { CopySeedGate } from '@/components/tenant/CopySeedGate';
+import { UnsavedChangesPrompt } from '@/components/UnsavedChangesPrompt';
+import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
+import { fromEstimateForCopy } from '@/lib/estimateCopy';
+import { copySubtitle } from '@/lib/recordCopy';
+import type { Estimate } from '@/types/estimate';
 
 /** Unsaved form state carried across an "Add to Inventory" round trip. */
 interface EstimateDraft {
@@ -31,7 +38,16 @@ interface EstimateDraft {
   customFieldValues: Record<string, unknown>;
 }
 
+/** `?copyFrom=<id>` opens the form pre-filled from that estimate (see CopySeedGate). */
 export default function AddEstimatePage() {
+  return (
+    <CopySeedGate queryKey="estimate" load={(id) => estimateService.getEstimate(id)}>
+      {(source) => <AddEstimateForm source={source} />}
+    </CopySeedGate>
+  );
+}
+
+function AddEstimateForm({ source }: { source?: Estimate }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const panelRef = useRef<EditableFilesPanelHandle>(null);
@@ -40,12 +56,15 @@ export default function AddEstimatePage() {
     'customer', '/crm/customer/new', { resource: 'customer', action: 'create' },
   );
   const restored = inventoryReturn.restored ?? customerReturn.restored;
+  const seed = useMemo(() => (source ? fromEstimateForCopy(source) : null), [source]);
 
   const [activeTab, setActiveTab] = useState<PageTab>(restored?.activeTab ?? PAGE_TABS[0].key);
-  const [data, setData] = useState<Record<string, unknown>>(() => restored?.data ?? estimateDefaults());
-  const [lineItems, setLineItems] = useState<EstimateLineItem[]>(restored?.lineItems ?? []);
-  const [customer, setCustomer] = useState<CustomerRef | null>(restored?.customer ?? null);
-  const [customFieldValues, setCustomFieldValues] = useState<Record<string, unknown>>(restored?.customFieldValues ?? {});
+  const [data, setData] = useState<Record<string, unknown>>(() => restored?.data ?? seed?.data ?? estimateDefaults());
+  const [lineItems, setLineItems] = useState<EstimateLineItem[]>(restored?.lineItems ?? seed?.lineItems ?? []);
+  const [customer, setCustomer] = useState<CustomerRef | null>(restored?.customer ?? seed?.customer ?? null);
+  const [customFieldValues, setCustomFieldValues] = useState<Record<string, unknown>>(
+    restored?.customFieldValues ?? seed?.customFieldValues ?? {},
+  );
 
   const set = useCallback((key: string, value: unknown) => {
     setData((d) => {
@@ -62,13 +81,7 @@ export default function AddEstimatePage() {
 
   const handleCustomerChange = useCallback((next: CustomerRef | null) => {
     setCustomer(next);
-    if (next) {
-      const defaults = customerDefaultFields(next);
-      setData((d) => ({
-        ...d,
-        ...Object.fromEntries(Object.entries(defaults).filter(([k]) => !d[k] || BILL_ADDRESS_KEYS.has(k))),
-      }));
-    }
+    if (next) setData((d) => mergeCustomerDefaults(d, next, { shipTo: true }));
   }, []);
 
   // Applies the customer created via the round trip exactly as if it had
@@ -101,9 +114,13 @@ export default function AddEstimatePage() {
     };
   }, [data, lookups]);
 
+  // Estimates carry no guard of their own; a copy is unsaved work from the
+  // start, so only then does leaving prompt.
+  const guard = useUnsavedChangesGuard({ data, lineItems, customer, customFieldValues }, Boolean(seed), Boolean(seed));
+
   // Shared by both return-trip hooks — either one may stash and restore it.
   const draft: EstimateDraft = { activeTab, data, lineItems, customer, customFieldValues };
-  const { startCreate: startCreateCustomer } = customerReturn.provide(draft);
+  const { startCreate: startCreateCustomer } = customerReturn.provide(draft, guard.markClean);
 
   const headerTaxPercent = parseFloat(String(data.sales_tax_pct ?? '')) || 0;
 
@@ -120,6 +137,8 @@ export default function AddEstimatePage() {
   const { mutate: save, isPending, error: saveError } = useMutation({
     mutationFn: () => {
       if (!customer) throw new Error('A billing customer is required.');
+      const badPhone = firstInvalidPhoneLabel([...BILL_TO_FIELDS, ...SHIP_TO_FIELDS], formData);
+      if (badPhone) throw new Error(`Enter a valid phone number for ${badPhone}.`);
       const payload = toCreatePayload({ ...formData, customer_uuid: customer.id }, lineItems, customFieldValues);
       return estimateService.createEstimate(payload);
     },
@@ -129,6 +148,7 @@ export default function AddEstimatePage() {
       if (panelRef.current?.hasStagedFiles()) {
         try { await panelRef.current.uploadStagedTo(estimate.id); } catch { /* non-fatal */ }
       }
+      guard.markClean();
       navigate('/sales/estimate');
     },
   });
@@ -136,13 +156,14 @@ export default function AddEstimatePage() {
 
   return (
     <div className="flex flex-col flex-1 min-h-0 bg-stone-50">
+      <UnsavedChangesPrompt guard={guard} />
       <form onSubmit={(e) => { e.preventDefault(); save(); }} className="flex flex-col flex-1 min-h-0">
         <CrmPageHeader
           backLabel="Estimates"
           onBack={() => navigate('/sales/estimate')}
           icon={FileSpreadsheet}
           title="New Estimate"
-          subtitle="Fields marked * are required."
+          subtitle={source ? copySubtitle(source.estimateNumber) : 'Fields marked * are required.'}
           actions={(
             <button type="submit" disabled={isPending}
               className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3.5 py-1.5 text-xs font-semibold text-stone-900 hover:bg-brand-hover disabled:opacity-50 transition-all shadow-sm">
@@ -169,7 +190,7 @@ export default function AddEstimatePage() {
           </div>
         )}
 
-        <InventoryItemReturnContext.Provider value={inventoryReturn.provide(draft)}>
+        <InventoryItemReturnContext.Provider value={inventoryReturn.provide(draft, guard.markClean)}>
           <EstimateFormBody
             activeTab={activeTab}
             setActiveTab={setActiveTab}

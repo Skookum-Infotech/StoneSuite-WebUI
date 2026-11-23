@@ -15,7 +15,7 @@ export function FeedbackStatsTiles({ stats }: { stats: FeedbackStats | undefined
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
       {tiles.map((t) => (
         <div key={t.label} className="rounded-xl border border-stone-200 bg-white px-4 py-3 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
-          <p className="text-2xs font-semibold uppercase tracking-wider text-stone-400">{t.label}</p>
+          <p className="text-2xs font-semibold uppercase tracking-wider text-stone-500">{t.label}</p>
           <p className={`mt-1 text-2xl font-bold tabular-nums ${t.accent}`}>{t.value}</p>
         </div>
       ))}

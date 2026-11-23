@@ -1,13 +1,22 @@
+import { Select } from '@/components/ui/select';
+import { flagAttrs } from '@/lib/flags';
 import { useQuery } from '@tanstack/react-query';
 import { cn } from '@/lib/utils';
 import { ModernSection, ModernFieldShell } from '@/components/crm/FormPrimitives';
 import { fieldCls, fieldLabelCls, checkboxLabelCls } from '@/components/crm/formUtils';
 import { LookupSelect } from '@/components/inventory/LookupSelect';
+import { KitSelect } from '@/components/inventory/KitSelect';
 import { WarehouseSelect } from '@/components/inventory/WarehouseSelect';
 import { useInventoryLookups } from '@/hooks/useInventoryLookups';
 import { lookupService } from '@/services/lookupService';
-import { findUnit, requiresDimensions } from '@/lib/inventoryUnits';
-import { TRACKING_OPTIONS } from '@/lib/inventoryItemForm';
+import { findUnit, requiresDimensions, trackingForUnit } from '@/lib/inventoryUnits';
+import { TRACKING_SERIALIZED, type KitRef } from '@/types/inventory';
+import {
+  DIMENSION_UNITS, DIMENSION_UNIT_LABELS, dimensionToMm, normalizeUnit,
+} from '@/lib/lineDimensions';
+import { mmToFormText } from '@/lib/inventoryItemForm';
+
+const switchTileCls = 'flex flex-col gap-1 rounded-lg border border-stone-200 bg-stone-50/60 px-3 py-2.5';
 
 // Shared field layout for Add/Edit Item — the item form is small enough
 // (no line items, no tabs) that a single body component covers both modes,
@@ -17,6 +26,17 @@ export function ItemFormBody({ data, set }: {
   set: (key: string, value: unknown) => void;
 }) {
   const { lookups } = useInventoryLookups();
+
+  // Changing a unit re-expresses the number already typed, so the physical size
+  // stays the same (300 cm becomes 3000 mm) instead of silently changing meaning.
+  const changeUnit = (valueKey: string, unitKey: string, nextUnit: string) => {
+    const typed = parseFloat(String(data[valueKey] ?? ''));
+    if (Number.isFinite(typed) && typed > 0) {
+      const mm = dimensionToMm(typed, String(data[unitKey] ?? ''));
+      set(valueKey, mmToFormText(mm, nextUnit));
+    }
+    set(unitKey, nextUnit);
+  };
   const { data: crmLookups } = useQuery({
     queryKey: ['crm-lookups'],
     queryFn: lookupService.getCrmLookups,
@@ -26,6 +46,9 @@ export function ItemFormBody({ data, set }: {
   const units = lookups?.units ?? [];
   const selectedUnit = findUnit(units, Number(data.unit_id) || undefined);
   const showDimensions = requiresDimensions(selectedUnit);
+  // A square unit makes the item a slab, whatever an older save recorded. A slab
+  // item always has stock to run out of, so its switch is on and fixed.
+  const slabTracked = trackingForUnit(selectedUnit) === TRACKING_SERIALIZED;
 
   return (
     <div className="space-y-2">
@@ -58,25 +81,42 @@ export function ItemFormBody({ data, set }: {
               kind="units"
               items={units}
               value={String(data.unit_id ?? '')}
-              onChange={(v) => set('unit_id', v)}
+              onChange={(v) => {
+                set('unit_id', v);
+                set('tracking', trackingForUnit(findUnit(units, Number(v) || undefined)));
+              }}
               label="Unit"
               required
             />
           </ModernFieldShell>
-          <ModernFieldShell label="Unit Price">
+          <ModernFieldShell label="Purchasing Unit Price" required>
+            <input
+              type="number"
+              min={0}
+              step="0.01"
+              value={String(data.purchase_unit_price ?? '')}
+              onChange={(e) => set('purchase_unit_price', e.target.value)}
+              placeholder="0.00 — what you pay"
+              className={fieldCls}
+              aria-label="Purchasing Unit Price"
+              required
+            />
+          </ModernFieldShell>
+          <ModernFieldShell label="Selling Unit Price" required>
             <input
               type="number"
               min={0}
               step="0.01"
               value={String(data.unit_price ?? '')}
               onChange={(e) => set('unit_price', e.target.value)}
-              placeholder="0.00"
+              placeholder="0.00 — what you charge"
               className={fieldCls}
-              aria-label="Unit Price"
+              aria-label="Selling Unit Price"
+              required
             />
           </ModernFieldShell>
           <ModernFieldShell label="Currency">
-            <select
+            <Select
               value={String(data.currency_id ?? '')}
               onChange={(e) => set('currency_id', e.target.value)}
               className={fieldCls}
@@ -86,7 +126,7 @@ export function ItemFormBody({ data, set }: {
               {(crmLookups?.currencies ?? []).map((c) => (
                 <option key={c.id} value={c.id}>{c.name}</option>
               ))}
-            </select>
+            </Select>
           </ModernFieldShell>
           <ModernFieldShell label="Tax Rate">
             <LookupSelect
@@ -107,23 +147,72 @@ export function ItemFormBody({ data, set }: {
               aria-label="Barcode"
             />
           </ModernFieldShell>
-          <ModernFieldShell label="Default Warehouse">
+          <ModernFieldShell label="Default Location">
             <WarehouseSelect
               warehouses={lookups?.warehouses ?? []}
               value={String(data.default_warehouse_id ?? '')}
               onChange={(v) => set('default_warehouse_id', v)}
-              label="Default Warehouse"
+              label="Default Location"
             />
           </ModernFieldShell>
-          <div className="flex items-center gap-2 pt-6">
-            <input
-              type="checkbox"
-              id="item-is-active"
-              checked={Boolean(data.is_active)}
-              onChange={(e) => set('is_active', e.target.checked)}
-              className="size-4 rounded border-stone-300 text-brand focus:ring-brand/30"
+          <ModernFieldShell label="Kit/Packages">
+            <KitSelect
+              value={Array.isArray(data.kits) ? (data.kits as KitRef[]) : []}
+              onChange={(kits) => set('kits', kits)}
             />
-            <label htmlFor="item-is-active" className={checkboxLabelCls}>Active</label>
+          </ModernFieldShell>
+          {/* The unit length and width are measured in everywhere this item is used.
+              Always shown: which unit applies doesn't depend on the Unit chosen above. */}
+          <ModernFieldShell label="Length / Width Unit">
+            <Select
+              value={normalizeUnit(String(data.dimension_unit ?? ''))}
+              onChange={(e) => {
+                const next = e.target.value;
+                changeUnit('length', 'dimension_unit', next);
+                changeUnit('width', 'dimension_unit', next);
+              }}
+              className={fieldCls}
+              aria-label="Length / Width Unit"
+            >
+              {DIMENSION_UNITS.map((u) => (
+                <option key={u} value={u}>{DIMENSION_UNIT_LABELS[u]}</option>
+              ))}
+            </Select>
+          </ModernFieldShell>
+          {/* The two on/off switches sit together on a row of their own, each in a tile,
+              on the same three-column rhythm as the fields above. */}
+          <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:col-span-2 sm:grid-cols-2 lg:col-span-3 lg:grid-cols-3">
+            <div className={switchTileCls}>
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="item-is-active"
+                  checked={Boolean(data.is_active)}
+                  onChange={(e) => set('is_active', e.target.checked)}
+                  className="size-4 rounded border-stone-300 text-brand focus:ring-brand/30"
+                />
+                <label htmlFor="item-is-active" className={checkboxLabelCls}>Active</label>
+              </div>
+            </div>
+            <div className={cn(switchTileCls, 'lg:col-span-2')}>
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="item-track-stock"
+                  aria-describedby="item-track-stock-hint"
+                  checked={slabTracked || data.track_stock !== false}
+                  disabled={slabTracked}
+                  onChange={(e) => set('track_stock', e.target.checked)}
+                  className="size-4 rounded border-stone-300 text-brand focus:ring-brand/30 disabled:opacity-60"
+                />
+                <label htmlFor="item-track-stock" className={checkboxLabelCls}>Track stock</label>
+              </div>
+              <p id="item-track-stock-hint" className="pl-6 text-2xs text-stone-500">
+                {slabTracked
+                  ? 'Slab items are always tracked: a sales order for one is checked against the slabs in stock.'
+                  : 'Sales orders for this item are checked against stock and hold it. Turn off for a service, delivery or labour charge.'}
+              </p>
+            </div>
           </div>
         </div>
         <label className={cn(fieldLabelCls, 'mt-4')}>Description</label>
@@ -140,16 +229,9 @@ export function ItemFormBody({ data, set }: {
       <ModernSection title="Stone Attributes" index={1}>
         <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
           <ModernFieldShell label="Tracking">
-            <select
-              value={String(data.tracking ?? '')}
-              onChange={(e) => set('tracking', e.target.value)}
-              className={fieldCls}
-              aria-label="Tracking"
-            >
-              {TRACKING_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>{o.label}</option>
-              ))}
-            </select>
+            <p data-testid="item-tracking" className="flex h-9 items-center text-xs text-stone-700">
+              {slabTracked ? 'Slab — tracked one by one (set by the square unit)' : 'Quantity — counted per location'}
+            </p>
           </ModernFieldShell>
           <ModernFieldShell label="Material">
             <LookupSelect
@@ -183,21 +265,63 @@ export function ItemFormBody({ data, set }: {
             />
           </ModernFieldShell>
           {showDimensions && (
-            <ModernFieldShell label="Thickness (mm)">
+            <ModernFieldShell label="Length">
               <input
                 type="number"
                 min={0}
-                step="1"
-                value={String(data.thickness_mm ?? '0')}
-                onChange={(e) => set('thickness_mm', e.target.value)}
-                placeholder="0 = n/a — typically 20 or 30"
+                step="any"
+                value={String(data.length ?? '0')}
+                onChange={(e) => set('length', e.target.value)}
+                placeholder="0 = n/a — a standard slab length"
                 className={fieldCls}
-                aria-label="Thickness (mm)"
+                aria-label="Length"
               />
             </ModernFieldShell>
           )}
+          {showDimensions && (
+            <ModernFieldShell label="Width">
+              <input
+                type="number"
+                min={0}
+                step="any"
+                value={String(data.width ?? '0')}
+                onChange={(e) => set('width', e.target.value)}
+                placeholder="0 = n/a — a standard slab width"
+                className={fieldCls}
+                aria-label="Width"
+              />
+            </ModernFieldShell>
+          )}
+          {showDimensions && (
+            <ModernFieldShell label="Thickness">
+              <input
+                type="number"
+                min={0}
+                step="any"
+                value={String(data.thickness ?? '0')}
+                onChange={(e) => set('thickness', e.target.value)}
+                placeholder="0 = n/a — typically 20 or 30 mm"
+                className={fieldCls}
+                aria-label="Thickness"
+              />
+            </ModernFieldShell>
+          )}
+          {showDimensions && (
+            <ModernFieldShell label="Thickness Unit">
+              <Select
+                value={normalizeUnit(String(data.thickness_unit ?? ''))}
+                onChange={(e) => changeUnit('thickness', 'thickness_unit', e.target.value)}
+                className={fieldCls}
+                aria-label="Thickness Unit"
+              >
+                {DIMENSION_UNITS.map((u) => (
+                  <option key={u} value={u}>{DIMENSION_UNIT_LABELS[u]}</option>
+                ))}
+              </Select>
+            </ModernFieldShell>
+          )}
           <ModernFieldShell label="Origin Country">
-            <select
+            <Select
               value={String(data.origin_country_id ?? '')}
               onChange={(e) => set('origin_country_id', e.target.value)}
               className={fieldCls}
@@ -205,9 +329,9 @@ export function ItemFormBody({ data, set }: {
             >
               <option value="">— Select Country —</option>
               {(crmLookups?.countries ?? []).map((c) => (
-                <option key={c.id} value={c.id}>{c.name}</option>
+                <option key={c.id} value={c.id} {...flagAttrs('country', c.code)}>{c.name}</option>
               ))}
-            </select>
+            </Select>
           </ModernFieldShell>
         </div>
       </ModernSection>

@@ -1,0 +1,483 @@
+// The editor's SVG viewport: grid, pan/zoom, every piece + its dimension
+// lines for the active area, the editing handles on the selected piece, and
+// the keyboard shortcuts that act on the current selection. See this task's
+// plan brief for the pixel/world convention: viewBox "0 0 800 600", origin
+// centered at (400,300), 1 SVG unit = 1mm before the zoom scale.
+
+import { useMemo, useRef, useState } from 'react';
+import { toast } from 'sonner';
+import type { Point } from '@/types/drawing';
+import { bounds, isClockwise, transformOutline } from '@/lib/drawing/geometry';
+import { areaLetter, nextPieceLabel } from '@/lib/drawing/labels';
+import { validateOutline } from '@/lib/drawing/validation';
+import {
+  ARROW_KEY_STEP_MM, CANVAS_EXTENT_MM, CLOSE_POLYGON_HIT_PX, DEFAULT_PIECE_THICKNESS_MM, SHIFT_ARROW_KEY_STEP_MM, VIEWPORT_HEIGHT, VIEWPORT_WIDTH, ZOOM_STEP,
+} from '@/lib/drawing/constants';
+import { pixelDeltaToViewboxUnits, screenPointToMm } from '@/lib/drawing/viewport';
+import { DragPreviewContext, type DragPreview } from './DragPreviewContext';
+import { useDrawingEditor, type EditorTool } from './DrawingEditorContext';
+import { PieceShape } from './PieceShape';
+import { PieceHandles } from './PieceHandles';
+import { PieceDimensions } from './PieceDimensions';
+import { AttachedProfilePieces } from './AttachedProfilePieces';
+import { AnnotationLayer } from './AnnotationLayer';
+import { TextNoteLayer } from './TextNoteLayer';
+import { CanvasOverlays, type Marquee } from './CanvasOverlays';
+import { CutoutPlacementLayer } from './CutoutPlacementLayer';
+import { BorderPickLayer } from './BorderPickLayer';
+import { CornerPickLayer } from './CornerPickLayer';
+import { EdgePickLayer } from './EdgePickLayer';
+import { ProfilePickLayer } from './ProfilePickLayer';
+import { EdgeDragLayer } from './EdgeDragLayer';
+import { ToolCursorHint } from './ToolCursorHint';
+import { useAnnotationTool } from './useAnnotationTool';
+import { useDrawTool } from './useDrawTool';
+import { useEdgeDrag } from './useEdgeDrag';
+
+const VIEWPORT_CENTER_X = VIEWPORT_WIDTH / 2;
+const VIEWPORT_CENTER_Y = VIEWPORT_HEIGHT / 2;
+
+/** How close (in mm) a newly-clicked polygon point can be to the last one
+ *  before it's treated as a duplicate and dropped — a double-click (used to
+ *  finish a polygon) fires two `pointerdown`s on almost the same spot, adding
+ *  a zero-length edge. */
+const DUPLICATE_POINT_TOLERANCE_MM = 5;
+
+/** A background press whose pointer never strays more than this many screen
+ *  pixels from where it went down is a click, not a pan. */
+const CLICK_SLOP_PX = 5;
+
+const PRIMARY_MOUSE_BUTTON = 0;
+
+/** The single key that arms (or, pressed again, puts away) a rail tool. */
+const TOOL_HOTKEYS = new Map<string, EditorTool>([
+  ['b', 'border'],
+  ['c', 'corner'],
+  ['e', 'edge'],
+  ['p', 'profile'],
+  ['s', 'line'],
+  ['d', 'dimension'],
+]);
+
+export function DrawingCanvas() {
+  const {
+    state, dispatch, tool, setTool, workspace, selectNote, border, corner, toggleMap, dimensionsOn, copySelection, pasteClipboard, duplicateSelection,
+  } = useDrawingEditor();
+  const [draftPoints, setDraftPoints] = useState<Point[]>([]);
+  const [isPanning, setIsPanning] = useState(false);
+  // Where the current background press went down, the pointer's own position
+  // as of the last move (so each move's pan is the real change in that
+  // position, not the event's own movementX/Y), and the farthest the pointer
+  // has strayed from the press. Both are measured from clientX/Y rather than
+  // movementX/Y: on a scaled Windows display, Chrome reports movementX/Y in
+  // device pixels while clientX/Y stay in CSS pixels, so movementX/Y drifts
+  // from the pointer's real on-screen motion — by a little (made a click to
+  // drop a square randomly not count) or, apparently, by a lot (made
+  // panning by holding and dragging feel like it sometimes just didn't move).
+  const press = useRef<{ x: number; y: number; lastX: number; lastY: number; farthestPx: number } | null>(null);
+  const [marquee, setMarquee] = useState<Marquee | null>(null);
+  const [dragPreview, setDragPreview] = useState<DragPreview | null>(null);
+  const [hoverPoint, setHoverPoint] = useState<Point | null>(null);
+  const annotate = useAnnotationTool();
+  const draw = useDrawTool();
+  const edgeDrag = useEdgeDrag();
+
+  // Leaving the Points tool any other way than Escape (picking a different
+  // tool from the rail, the Draw bar's own pencil, switching to Cutout/
+  // Material...) used to leave an unfinished shape's points sitting in local
+  // state; arming Points again later then picked up right where that old,
+  // abandoned draft left off instead of starting fresh. Done during render
+  // (React's own "adjusting state when a prop changes" pattern, same as
+  // PieceHandles' own outlineForMenu reset), not in an effect — this repo's
+  // react-hooks/set-state-in-effect rule refuses a bare setState there.
+  const [prevTool, setPrevTool] = useState(tool);
+  if (tool !== prevTool) {
+    setPrevTool(tool);
+    if (tool !== 'polygon') {
+      setDraftPoints([]);
+      setHoverPoint(null);
+    }
+  }
+
+  const activeArea = state.present.areas.find((a) => a.id === state.activeAreaId);
+  const areaIndex = state.present.areas.findIndex((a) => a.id === state.activeAreaId);
+  const selectedIds = state.selectedPieceIds;
+  const singleSelected = selectedIds.length === 1
+    ? activeArea?.pieces.find((p) => p.id === selectedIds[0])
+    : undefined;
+  const move = (x: number, y: number) =>
+    dispatch({ type: 'movePieces', areaId: state.activeAreaId, pieceIds: selectedIds, delta: { x, y } });
+
+  const onKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    const modifier = e.ctrlKey || e.metaKey;
+    if (tool === 'polygon') {
+      if (e.key === 'Enter' && draftPoints.length >= 3) finalizePolygon();
+      else if (e.key === 'Escape') setDraftPoints([]);
+      else if (e.key === 'Backspace') setDraftPoints((points) => points.slice(0, -1));
+      return;
+    }
+    // Outside Sketch only cutouts are edited: no copying, moving, rotating or
+    // deleting pieces from the keyboard — Delete removes the selected cutout.
+    const sketching = workspace === 'sketch';
+    if (modifier) {
+      if (!sketching) return;
+      const key = e.key.toLowerCase();
+      if (key === 'c') copySelection();
+      else if (key === 'v') pasteClipboard();
+      else if (key === 'd') duplicateSelection();
+      else if (key === 'a') dispatch({ type: 'selectPieces', pieceIds: (activeArea?.pieces ?? []).map((p) => p.id) });
+      else return;
+      e.preventDefault();
+      return;
+    }
+    if (e.key === 'Escape') {
+      // A half-drawn line or dimension is what Escape is for first — only
+      // once no tool is armed does it clear the selection.
+      if (tool !== 'select') {
+        annotate.cancel();
+        edgeDrag.cancel();
+        setTool('select');
+        setHoverPoint(null);
+        return;
+      }
+      dispatch({ type: 'selectPiece', pieceId: null });
+      selectNote(null);
+      return;
+    }
+    if (e.key === 'm') {
+      toggleMap();
+      return;
+    }
+    const hotkeyTool = TOOL_HOTKEYS.get(e.key);
+    if (hotkeyTool) {
+      setTool(tool === hotkeyTool ? 'select' : hotkeyTool);
+      return;
+    }
+    if (selectedIds.length === 0) return;
+    if (!sketching && e.key !== 'Delete' && e.key !== 'Backspace') return;
+    const step = e.shiftKey ? SHIFT_ARROW_KEY_STEP_MM : ARROW_KEY_STEP_MM;
+    switch (e.key) {
+      case 'ArrowRight': e.preventDefault(); move(step, 0); break;
+      case 'ArrowLeft': e.preventDefault(); move(-step, 0); break;
+      case 'ArrowUp': e.preventDefault(); move(0, step); break;
+      case 'ArrowDown': e.preventDefault(); move(0, -step); break;
+      case 'Delete':
+      case 'Backspace': {
+        const piece = singleSelected;
+        if (piece && state.selectedCutoutId) {
+          dispatch({ type: 'deleteCutout', areaId: state.activeAreaId, pieceId: piece.id, cutoutId: state.selectedCutoutId });
+        } else if (!sketching) {
+          return;
+        } else {
+          dispatch({ type: 'deletePieces', areaId: state.activeAreaId, pieceIds: selectedIds });
+        }
+        // The deleted shape's own element held focus (it's how it got
+        // selected); removing it would otherwise drop focus to <body> with no
+        // indication where it went.
+        e.currentTarget.focus();
+        break;
+      }
+      case 'r':
+        dispatch({ type: 'rotatePiece', areaId: state.activeAreaId, pieceId: selectedIds[0], pieceIds: selectedIds });
+        break;
+      default:
+        break;
+    }
+  };
+
+  // Zooms about the mouse pointer: the point of the drawing under it stays
+  // under it. The element is the SVG's own size (it fills it), so its rect is
+  // what the screen -> drawing conversion needs.
+  const onWheel = (e: React.WheelEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    const anchor = screenPointToMm(e.clientX, e.clientY, e.currentTarget.getBoundingClientRect(), state.zoom, state.pan);
+    dispatch({ type: 'zoomAt', factor: e.deltaY < 0 ? 1 + ZOOM_STEP : 1 - ZOOM_STEP, anchor });
+  };
+
+  const pointerMm = (e: React.PointerEvent<SVGRectElement>): Point | null => {
+    const svg = e.currentTarget.ownerSVGElement;
+    return svg ? screenPointToMm(e.clientX, e.clientY, svg.getBoundingClientRect(), state.zoom, state.pan) : null;
+  };
+
+  const onBackgroundPointerDown = (e: React.PointerEvent<SVGRectElement>) => {
+    const point = pointerMm(e);
+    if (!point) return;
+    // Captured up front so a drag that leaves the viewport still delivers its
+    // pointerup here — that release is what finishes a dragged line.
+    // jsdom lacks pointer capture on SVG elements; every real browser has it.
+    e.currentTarget.setPointerCapture?.(e.pointerId);
+    if (tool === 'polygon') {
+      // Clicking back near any point already down closes the shape with the
+      // points placed so far — not just the first one. There's no separate
+      // "which point did I click" step: the outline is always implicitly
+      // closed from its last point back to its first (outlineEdges), so
+      // landing near any existing point already guarantees a closed figure
+      // with no open side, whichever one it was. Nothing else a click can
+      // land on (another piece, a different point) ever attaches to it:
+      // each click here just drops a raw coordinate, regardless of what's
+      // under it.
+      const closeHitMm = CLOSE_POLYGON_HIT_PX / state.zoom;
+      const closesHere = draftPoints.length >= 3
+        && draftPoints.some((p) => Math.hypot(point.x - p.x, point.y - p.y) < closeHitMm);
+      if (closesHere) {
+        finalizePolygon();
+        return;
+      }
+      setDraftPoints((points) => {
+        const last = points[points.length - 1];
+        // A double-click's second pointerdown lands on (nearly) the same
+        // spot as the first — drop it rather than add a zero-length edge.
+        if (last && Math.hypot(point.x - last.x, point.y - last.y) < DUPLICATE_POINT_TOLERANCE_MM) return points;
+        return [...points, point];
+      });
+      return;
+    }
+    if (annotate.place(point)) {
+      setHoverPoint(null);
+      return;
+    }
+    if (e.shiftKey) {
+      setMarquee({ from: point, to: point });
+      return;
+    }
+    setIsPanning(true);
+    press.current = { x: e.clientX, y: e.clientY, lastX: e.clientX, lastY: e.clientY, farthestPx: 0 };
+  };
+
+  const onBackgroundPointerMove = (e: React.PointerEvent<SVGRectElement>) => {
+    // The second point of a two-click tool, and the Points tool's own next
+    // point, both follow the cursor, so the user can see what they are about
+    // to draw before they commit to it. A seam or dimension tool follows it
+    // from the start, to show the spot a first click would snap to.
+    if (annotate.armed || annotate.pendingFrom || (tool === 'polygon' && draftPoints.length > 0)) setHoverPoint(pointerMm(e));
+    else if (hoverPoint) setHoverPoint(null);
+    if (marquee) {
+      const point = pointerMm(e);
+      if (point) setMarquee({ from: marquee.from, to: point });
+      return;
+    }
+    if (!isPanning) return;
+    const svg = e.currentTarget.ownerSVGElement;
+    if (!svg || !press.current) return;
+    const away = Math.hypot(e.clientX - press.current.x, e.clientY - press.current.y);
+    press.current.farthestPx = Math.max(press.current.farthestPx, away);
+    // The real change in the pointer's own position since the last move —
+    // not the event's movementX/Y, which drifts from it (see `press` above).
+    const dxPx = e.clientX - press.current.lastX;
+    const dyPx = e.clientY - press.current.lastY;
+    press.current.lastX = e.clientX;
+    press.current.lastY = e.clientY;
+    // pan is specified in the outer group's own (viewBox) coordinates, not
+    // world mm — scale by the SVG's rendered size, but don't un-zoom or
+    // y-negate it (unlike a world-space delta).
+    dispatch({ type: 'pan', delta: pixelDeltaToViewboxUnits(dxPx, dyPx, svg.getBoundingClientRect()) });
+  };
+
+  const onBackgroundPointerUp = (e: React.PointerEvent<SVGRectElement>) => {
+    // A press-drag-release on an armed line/dimension tool finishes it here;
+    // a release that barely moved is just the first click of a click-click,
+    // and leaves the pending point standing.
+    const released = pointerMm(e);
+    if (released && annotate.release(released)) {
+      setHoverPoint(null);
+      return;
+    }
+    if (marquee) {
+      const minX = Math.min(marquee.from.x, marquee.to.x);
+      const maxX = Math.max(marquee.from.x, marquee.to.x);
+      const minY = Math.min(marquee.from.y, marquee.to.y);
+      const maxY = Math.max(marquee.from.y, marquee.to.y);
+      const hit = (activeArea?.pieces ?? []).filter((p) => {
+        const b = bounds(transformOutline(p.outline, p.position, p.rotationDeg));
+        return b.maxX >= minX && b.minX <= maxX && b.maxY >= minY && b.minY <= maxY;
+      });
+      dispatch({ type: 'selectPieces', pieceIds: hit.map((p) => p.id) });
+      setMarquee(null);
+      return;
+    }
+    // With the Draw tool a click that never became a pan drops a square; a
+    // drag still pans, so the canvas stays navigable while drawing.
+    const isClick = isPanning && press.current !== null && press.current.farthestPx < CLICK_SLOP_PX;
+    press.current = null;
+    if (tool === 'draw') {
+      if (isClick && released && e.button === PRIMARY_MOUSE_BUTTON) draw.place(released);
+      setIsPanning(false);
+      return;
+    }
+    // Clicking empty board lets go of the side or corner a Border / Corner tool was holding.
+    // The Edges tool holds nothing between clicks, but likewise leaves the selection alone.
+    if (tool === 'border' || tool === 'corner' || tool === 'edge') {
+      if (isClick && tool === 'border') border.setTarget(null);
+      if (isClick && tool === 'corner') corner.setTarget(null);
+      setIsPanning(false);
+      return;
+    }
+    // A press on empty canvas that never became a pan is a click: deselect.
+    if (isClick && selectedIds.length > 0) dispatch({ type: 'selectPiece', pieceId: null });
+    if (isClick) selectNote(null);
+    setIsPanning(false);
+  };
+
+  const onBackgroundDoubleClick = () => {
+    if (tool === 'polygon' && draftPoints.length >= 3) finalizePolygon();
+  };
+
+  function finalizePolygon() {
+    if (!activeArea) return;
+    // Dimension layout and DXF export assume rectOutline's clockwise winding.
+    const outline = isClockwise(draftPoints) ? draftPoints : [...draftPoints].reverse();
+    const issues = validateOutline(outline);
+    if (issues.length > 0) {
+      // Keep the points so the user can back one out (Backspace) and retry.
+      toast.error(`That shape can't be cut: ${issues[0]}`);
+      return;
+    }
+    dispatch({
+      type: 'addPiece',
+      areaId: state.activeAreaId,
+      piece: {
+        id: crypto.randomUUID(),
+        label: nextPieceLabel(areaLetter(areaIndex), activeArea.pieces.map((p) => p.label)),
+        shape: 'polygon',
+        outline,
+        position: { x: 0, y: 0 },
+        rotationDeg: 0,
+        thicknessMm: DEFAULT_PIECE_THICKNESS_MM,
+        edges: [],
+        seams: [],
+        cutouts: [],
+      },
+    });
+    setDraftPoints([]);
+    setTool('select');
+  }
+
+  const dragPreviewValue = useMemo(() => ({ preview: dragPreview, setPreview: setDragPreview }), [dragPreview]);
+
+  return (
+    <div
+      role="application"
+      aria-label="Drawing canvas"
+      aria-describedby="drawing-canvas-shortcuts"
+      tabIndex={0}
+      onKeyDown={onKeyDown}
+      onWheel={onWheel}
+      className="relative h-full w-full outline-none"
+    >
+      {/* role="application" hands off all keystrokes to this widget, which
+          makes its shortcuts undiscoverable to assistive tech otherwise. */}
+      <p id="drawing-canvas-shortcuts" className="sr-only">
+        With pieces selected: arrow keys move them, Shift plus an arrow key
+        moves them in larger steps, R rotates them 90 degrees, Delete or
+        Backspace removes them, Control plus C, V or D copies, pastes or
+        duplicates them, and Control plus A selects every piece. Shift-click
+        adds a piece to the selection. On a selected piece, Tab reaches each
+        side and corner: arrow keys move a corner and Delete removes it. With
+        the draw tool active, click empty canvas to drop a square, then drag
+        any side to grow or shrink the piece in sixteenths of an inch; set
+        exact lengths in the inspector. With the polygon tool active, click to place points, then press Enter or
+        double-click to finish the shape once at least three points are
+        placed; Backspace removes the last point and Escape cancels. The B
+        key arms the border tool: click a side, type the numbers and apply;
+        the C key does the same for a corner; the E key arms the edges tool:
+        pick an edge type in the bar, then click a side to paint it; Escape closes any of them. With the
+        line, dimension or note tool active, click the canvas to place each
+        point — a line and a dimension take two, either by dragging from one
+        to the other or by clicking each in turn — and Escape cancels.
+      </p>
+      <svg
+        viewBox={`0 0 ${VIEWPORT_WIDTH} ${VIEWPORT_HEIGHT}`}
+        preserveAspectRatio="xMidYMid meet"
+        width="100%"
+        height="100%"
+        className="block bg-white"
+      >
+        <g transform={`translate(${VIEWPORT_CENTER_X},${VIEWPORT_CENTER_Y})`}>
+          <g transform={`translate(${state.pan.x},${state.pan.y}) scale(${state.zoom})`}>
+            <rect
+              data-testid="canvas-background"
+              x={-CANVAS_EXTENT_MM}
+              y={-CANVAS_EXTENT_MM}
+              width={CANVAS_EXTENT_MM * 2}
+              height={CANVAS_EXTENT_MM * 2}
+              fill="white"
+              onPointerDown={onBackgroundPointerDown}
+              onPointerMove={onBackgroundPointerMove}
+              onPointerUp={onBackgroundPointerUp}
+              onDoubleClick={onBackgroundDoubleClick}
+            />
+            <DragPreviewContext.Provider value={dragPreviewValue}>
+              {activeArea?.pieces.map((original) => {
+                // The side being dragged with the Draw tool is shown in its new
+                // place (and its dimensions re-measured) before it is saved.
+                const piece = edgeDrag.shown(original);
+                return (
+                  <g key={piece.id}>
+                    <PieceShape piece={piece} selected={selectedIds.includes(piece.id)} />
+                    <AttachedProfilePieces piece={piece} />
+                    {dimensionsOn && (
+                      <PieceDimensions
+                        piece={piece}
+                        displayUnit={state.present.displayUnit}
+                        fractionDenominator={state.present.fractionDenominator}
+                      />
+                    )}
+                  </g>
+                );
+              })}
+            </DragPreviewContext.Provider>
+            {/* A circle's outline is a many-point polygon approximation
+                (lib/drawing/geometry.ts circleOutline), not real corners to
+                edit — showing one drag handle per point would let it be
+                dragged into an arbitrary lumpy shape. It stays the fixed
+                size it was created at; it can still be moved, rotated as a
+                whole, and deleted like any other piece. */}
+            {singleSelected && singleSelected.shape !== 'circle' && tool === 'select' && workspace === 'sketch' && (
+              <PieceHandles piece={singleSelected} />
+            )}
+            <CanvasOverlays
+              marquee={marquee}
+              draftPoints={tool === 'polygon' ? draftPoints : []}
+              cursorPoint={tool === 'polygon' ? hoverPoint : null}
+              zoom={state.zoom}
+              dimensionsOn={dimensionsOn}
+              displayUnit={state.present.displayUnit}
+              fractionDenominator={state.present.fractionDenominator}
+            />
+            <AnnotationLayer pendingFrom={annotate.pendingFrom} snap={hoverPoint ? annotate.preview(hoverPoint) : null} />
+            <TextNoteLayer />
+            {/* While a drawing tool is armed, every click belongs to that
+                tool — including clicks over a piece, which is where a seam
+                or a note usually goes. The background rect below cannot
+                receive those: SVG delivers the event to the topmost shape
+                and it bubbles up the tree, never sideways to a sibling
+                underneath. So this transparent sheet sits above the
+                geometry and takes the clicks instead. */}
+            {tool !== 'select' && (
+              <rect
+                data-testid="tool-capture"
+                x={-CANVAS_EXTENT_MM}
+                y={-CANVAS_EXTENT_MM}
+                width={CANVAS_EXTENT_MM * 2}
+                height={CANVAS_EXTENT_MM * 2}
+                fill="transparent"
+                className="cursor-crosshair"
+                onPointerDown={onBackgroundPointerDown}
+                onPointerMove={onBackgroundPointerMove}
+                onPointerUp={onBackgroundPointerUp}
+                onDoubleClick={onBackgroundDoubleClick}
+              />
+            )}
+            {tool === 'draw' && <EdgeDragLayer edgeDrag={edgeDrag} pieces={activeArea?.pieces ?? []} />}
+            {tool === 'border' && <BorderPickLayer />}
+            {tool === 'corner' && <CornerPickLayer />}
+            {tool === 'edge' && <EdgePickLayer />}
+            {tool === 'profile' && <ProfilePickLayer />}
+            <CutoutPlacementLayer />
+          </g>
+        </g>
+      </svg>
+      <ToolCursorHint />
+    </div>
+  );
+}

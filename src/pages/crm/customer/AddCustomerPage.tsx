@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useCallback } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { Building2, AlertCircle, ChevronRight, Loader2, Save  } from 'lucide-react';
@@ -11,20 +11,22 @@ import { activeCustomFields } from '@/lib/customFields';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { CrmRecordForm } from '@/components/crm/CrmRecordForm';
 import { FormActionBar } from '@/components/crm/FormPrimitives';
-import { StatusDropdown } from '@/components/crm/StatusDropdown';
+import { InitialStatusField } from '@/components/crm/InitialStatusField';
 import { EditableFilesPanel, type EditableFilesPanelHandle } from '@/components/crm/CrmSubTabsPanel';
 import { UnsavedChangesPrompt } from '@/components/UnsavedChangesPrompt';
+import { DuplicateRecordDialog } from '@/components/DuplicateRecordDialog';
 import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
 import { useScrollToError } from '@/hooks/useScrollToError';
-import { crmCoreDefaults, primaryAddressFields } from '@/lib/crmFields';
+import { crmCoreDefaults, applyAddressMirroring } from '@/lib/crmFields';
 import { customerCoreDefaults } from '@/lib/customerDefaults';
 import type { CustomerRef } from '@/pages/sales/components/CustomerPicker';
 import { validateCrmRecord, type CrmFieldError } from '@/lib/crmValidation';
 import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
-import { cn } from '@/lib/utils';
+import { TAB_LIST_CLASS, tabClass } from '@/components/ui/tabStyles';
 import {
   NAME_PARAM, RETURN_TO_PARAM, isSafeReturnPath, returnRouterState,
 } from '@/lib/recordCreateReturn';
+import { useCustomerDuplicateCheck } from '@/hooks/useCustomerDuplicateCheck';
 import type { FieldDefinition, WorkflowRecord } from '@/types/tenant';
 
 const CUSTOMER_LIST_PATH = '/crm/customer';
@@ -67,7 +69,6 @@ export default function AddCustomerPage() {
   );
   const [customFieldValues, setCustomFieldValues] = useState<Record<string, unknown>>({});
   const [ownerUserId, setOwnerUserId] = useState('');
-  const [crmStatusId, setCrmStatusId] = useState('');
   const [isUploadingFiles, setIsUploadingFiles] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [validationErrors, setValidationErrors] = useState<CrmFieldError[]>([]);
@@ -75,16 +76,9 @@ export default function AddCustomerPage() {
   const set = (key: string, value: unknown) => {
     if (validationErrors.length > 0) setValidationErrors([]);
     setCoreFields((d) => {
-      if (key === 'customer_is_bill_as_primary' && value === true) {
-        return { ...d, ...primaryAddressFields(d, 'bill'), [key]: value };
-      }
-      if (key === 'customer_is_ship_as_primary' && value === true) {
-        return { ...d, ...primaryAddressFields(d, 'ship'), [key]: value };
-      }
-      return { ...d, [key]: value };
+      return applyAddressMirroring(d, key, value);
     });
   };
-  const handleStatusChange = useCallback((stateId: string) => setCrmStatusId(stateId), []);
 
   const { data: allWorkflows = [] } = useQuery({ queryKey: ['workflows'], queryFn: workflowService.list });
   const customerWorkflow = allWorkflows.find((wf) => wf.key.toLowerCase() === 'customer');
@@ -117,7 +111,7 @@ export default function AddCustomerPage() {
     };
   }, [coreFields, lookups]);
 
-  const guard = useUnsavedChangesGuard({ coreFields, customFieldValues, ownerUserId, crmStatusId });
+  const guard = useUnsavedChangesGuard({ coreFields, customFieldValues, ownerUserId });
 
   function leave(createdRecord: WorkflowRecord | null) {
     if (returnTo) navigate(returnTo, { state: returnRouterState(createdRecord ? toCustomerRef(createdRecord) : null) });
@@ -130,7 +124,6 @@ export default function AddCustomerPage() {
         coreFields: formCoreFields,
         customFields: customFieldValues,
         ownerUserId: ownerUserId || undefined,
-        crmStatusId: crmStatusId || undefined,
       }),
     onSuccess: async (record) => {
       toast.success(returnTo ? 'Customer created and added to your document.' : 'Customer created.');
@@ -150,7 +143,26 @@ export default function AddCustomerPage() {
       leave(record);
     },
   });
-  const errorRef = useScrollToError<HTMLDivElement>(createError);
+
+  const {
+    duplicate, dismissDuplicate, activateDuplicate, isActivating, check: checkDuplicate, isChecking: isCheckingDuplicate, checkError: duplicateCheckError,
+  } = useCustomerDuplicateCheck({
+    onActivated: (record) => {
+      toast.success(returnTo ? 'Customer activated and added to your document.' : 'Customer activated.');
+      guard.markClean();
+      leave(record);
+    },
+  });
+
+  async function checkDuplicateThenCreate() {
+    const name = String(formCoreFields.customer_name ?? '').trim();
+    const canProceed = await checkDuplicate(name);
+    if (canProceed) createCustomer();
+  }
+
+  const errorRef = useScrollToError<HTMLDivElement>(createError || duplicateCheckError);
+  const busy = isPending || isUploadingFiles || isCheckingDuplicate;
+  const saveLabel = isPending ? 'Saving…' : isUploadingFiles ? 'Uploading…' : isCheckingDuplicate ? 'Checking…' : 'Save Customer';
 
   return (
     <div className="flex flex-col flex-1 min-h-0 bg-stone-50">
@@ -161,7 +173,7 @@ export default function AddCustomerPage() {
           const errors = validateCrmRecord(formCoreFields, customFieldDefs, customFieldValues);
           if (errors.length > 0) { setValidationErrors(errors); setActiveTab('details'); return; }
           setValidationErrors([]);
-          createCustomer();
+          void checkDuplicateThenCreate();
         }}
         className="flex flex-col flex-1 min-h-0"
       >
@@ -176,21 +188,19 @@ export default function AddCustomerPage() {
             ? "Fields marked * are required. You'll go back to your document after saving."
             : 'Fields marked * are required.'}
           actions={(
-            <>
-              <button
-                type="submit"
-                disabled={isPending || isUploadingFiles}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3.5 py-1.5 text-xs font-semibold text-stone-900 hover:bg-brand-hover disabled:opacity-50 transition-all shadow-sm"
-              >
-                {(isPending || isUploadingFiles) ? <Loader2 className="size-3 animate-spin" /> : <Save className="size-3" />}
-                {isPending ? 'Saving…' : isUploadingFiles ? 'Uploading…' : 'Save Customer'}
-              </button>
-            </>
+            <button
+              type="submit"
+              disabled={busy}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3.5 py-1.5 text-xs font-semibold text-stone-900 hover:bg-brand-hover disabled:opacity-50 transition-all shadow-sm"
+            >
+              {busy ? <Loader2 className="size-3 animate-spin" /> : <Save className="size-3" />}
+              {saveLabel}
+            </button>
           )}
         />
 
         {/* Error / upload-error banners */}
-        {createError && (
+        {(createError || duplicateCheckError) && (
           <div
             ref={errorRef}
             tabIndex={-1}
@@ -202,7 +212,7 @@ export default function AddCustomerPage() {
             </span>
             <p className="text-xs text-red-700">
               <span className="font-bold">Error: </span>
-              {apiErrorMessage(createError, 'Failed to save customer.')}
+              {createError ? apiErrorMessage(createError, 'Failed to save customer.') : duplicateCheckError}
             </p>
           </div>
         )}
@@ -236,22 +246,19 @@ export default function AddCustomerPage() {
         )}
 
         {/* Tab bar */}
-        <div className="flex shrink-0 border-b border-stone-200 bg-white px-5 3xl:px-10 4xl:px-16">
-          {TABS.map((tab) => (
-            <button
-              key={tab.key}
-              type="button"
-              onClick={() => setActiveTab(tab.key)}
-              className={cn(
-                'px-4 py-3 text-sm font-medium border-b-2 -mb-px transition-colors',
-                activeTab === tab.key
-                  ? 'border-stone-800 text-stone-900'
-                  : 'border-transparent text-stone-400 hover:text-stone-600 hover:border-stone-300',
-              )}
-            >
-              {tab.label}
-            </button>
-          ))}
+        <div className="flex shrink-0 border-b border-stone-200 bg-white px-5 3xl:px-10 4xl:px-16 py-2.5">
+          <div role="tablist" className={TAB_LIST_CLASS}>
+            {TABS.map((tab) => (
+              <button
+                key={tab.key}
+                type="button"
+                onClick={() => setActiveTab(tab.key)}
+                className={tabClass(activeTab === tab.key)}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Scrollable form body */}
@@ -263,14 +270,7 @@ export default function AddCustomerPage() {
                 custom={{ defs: customFieldDefs, values: customFieldValues, onChange: (key, value) => { if (validationErrors.length > 0) setValidationErrors([]); setCustomFieldValues((prev) => ({ ...prev, [key]: value })); } }}
                 owner={{ userId: ownerUserId, onChange: setOwnerUserId, users }}
                 invalidKeys={validationErrors.length > 0 ? new Set(validationErrors.map((e) => e.key)) : undefined}
-                statusNode={(
-                  <StatusDropdown
-                    workflowKey="customer"
-                    mode="all"
-                    value={crmStatusId}
-                    onChange={handleStatusChange}
-                  />
-                )}
+                statusNode={<InitialStatusField workflowKey="customer" />}
               />
             )}
             {/* Always mounted so staged files survive tab switches and are available in onSuccess */}
@@ -282,11 +282,20 @@ export default function AddCustomerPage() {
 
         <FormActionBar
           onCancel={() => leave(null)}
-          isPending={isPending}
+          isPending={busy || isActivating}
           isUploadingFiles={isUploadingFiles}
           submitLabel="Save Customer"
         />
       </form>
+      {duplicate && (
+        <DuplicateRecordDialog
+          entity="customer"
+          match={duplicate}
+          isActivating={isActivating}
+          onCancel={dismissDuplicate}
+          onActivate={activateDuplicate}
+        />
+      )}
     </div>
   );
 }

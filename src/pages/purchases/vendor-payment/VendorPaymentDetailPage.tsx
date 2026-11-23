@@ -1,29 +1,36 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
-import { Wallet, Upload, Pencil, FileDown, Loader2, Send } from 'lucide-react';
+import { Wallet, Upload, Pencil, FileDown, Loader2, Ban } from 'lucide-react';
 import { toast } from 'sonner';
 import { vendorPaymentService } from '@/services/vendorPaymentService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { Spinner, ErrorNote, Badge } from '@/components/tenant/ui';
-import { SendToCustomerDialog } from '@/components/tenant/SendToCustomerDialog';
 import { ModernSection } from '@/components/crm/FormPrimitives';
 import { readonlyCls, fieldLabelCls } from '@/components/crm/formUtils';
 import { FilesContent } from '@/components/crm/CrmSubTabsPanel';
 import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
-import { ApprovalBanner } from '@/components/tenant/ApprovalBanner';
+import { RecordApprovalBanner } from '@/components/tenant/RecordApprovalBanner';
+import { WorkflowCard } from '@/components/tenant/WorkflowCard';
 import { SalesDetailSidebar } from '@/pages/sales/components/SalesDetailSidebar';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { cn } from '@/lib/utils';
-import { VP_STATUS_COLORS, VP_STATUS_CODES, VP_EDITABLE_STATUSES, vpTransitionTargets } from '@/lib/vendorPaymentForm';
+import { TAB_LIST_CLASS, tabClass } from '@/components/ui/tabStyles';
+import {
+  VP_STATUS_COLORS, VP_STATUS_CODES, VP_EDITABLE_STATUSES, VP_VOID_CODE,
+  isVpTransitionBlocked, vpCanVoid,
+} from '@/lib/vendorPaymentForm';
 import { statusToastLabel } from '@/lib/statusToast';
 import { VendorPaymentAuditTab } from './components/VendorPaymentAuditTab';
 import { VendorPaymentApplicationsTab } from './components/VendorPaymentApplicationsTab';
 import { VendorPaymentRefundsTab } from './components/VendorPaymentRefundsTab';
-import { VendorPaymentStatusControl } from './components/VendorPaymentStatusControl';
+import { VendorPaymentHeaderActions } from './components/VendorPaymentHeaderActions';
+import { ConfirmVendorPaymentVoidDialog } from './components/ConfirmVendorPaymentVoidDialog';
 import { DeleteVendorPaymentDialog } from './components/DeleteVendorPaymentDialog';
+import { DangerZoneCard, DangerZoneAction } from '@/components/tenant/DangerZoneCard';
 import type { VendorPayment } from '@/types/vendorPayment';
+import { formatDateValue } from '@/lib/dateUtils';
 
 const TABS = [
   { key: 'overview', label: 'Overview' },
@@ -41,7 +48,7 @@ type Tab = (typeof TABS)[number]['key'];
 
 function fmtDate(iso?: string | null): string {
   if (!iso) return '—';
-  return new Date(iso).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+  return formatDateValue(iso, undefined, { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
 function currency(n: number | undefined): string {
@@ -55,8 +62,7 @@ export default function VendorPaymentDetailPage() {
   const [activeTab, setActiveTab] = useState<Tab>('overview');
   const [exportingPdf, setExportingPdf] = useState(false);
   const [exportPdfError, setExportPdfError] = useState<string>();
-  const [sendDialogOpen, setSendDialogOpen] = useState(false);
-  const [sendSuccess, setSendSuccess] = useState<string>();
+  const [confirmVoid, setConfirmVoid] = useState(false);
 
   const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
   const canEdit = permissionsLoading || hasPermission('vendor_payment', 'update');
@@ -109,6 +115,14 @@ export default function VendorPaymentDetailPage() {
     },
   });
 
+  // An approver rejected it. The POST response carries no approval overlay, so refetch
+  // to show the rejection banner and drop it from the list's pending view.
+  const handleRejected = () => {
+    queryClient.invalidateQueries({ queryKey: ['vendor-payment', id] });
+    queryClient.invalidateQueries({ queryKey: ['vendor-payments'] });
+    toast.success('Rejected — sent back to Draft.');
+  };
+
   if (isLoading) return <div className="p-6"><Spinner label="Loading vendor payment…" /></div>;
   if (!payment)
     return <div className="p-6"><ErrorNote>{apiErrorMessage(error, 'Failed to load vendor payment.')}</ErrorNote></div>;
@@ -117,8 +131,8 @@ export default function VendorPaymentDetailPage() {
   // The backend refuses a delete while any live application references the
   // payment (409) — unapply or void it first.
   const canDeleteHere = canDelete && payment.applications.length === 0;
-  const hasTransitions = canTransition && vpTransitionTargets(payment.statusCode).length > 0;
-  const showActions = hasTransitions || Boolean(transition.error);
+  const canVoidHere = canTransition && vpCanVoid(payment);
+  const voidBlocked = isVpTransitionBlocked(VP_VOID_CODE, payment.approvalStatus, payment.gated);
   const canEditHere = canEdit && VP_EDITABLE_STATUSES.has(payment.statusCode);
 
   async function handleExportPdf() {
@@ -132,18 +146,19 @@ export default function VendorPaymentDetailPage() {
         title: payment.vendorPaymentNumber || 'Vendor Payment',
         recordNumber: payment.vendorPaymentNumber,
         statusLabel: payment.status,
+        issueDate: fmtDate(payment.paymentDate),
+        issueDateLabel: 'Payment Date',
+        dueDate: payment.scheduledDate ? fmtDate(payment.scheduledDate) : undefined,
+        dueDateLabel: 'Scheduled Date',
+        keyAmount: { label: 'Unapplied', value: currency(payment.unappliedAmount) },
         counterpartyName: payment.vendor.name,
-        createdAt: payment.createdAt,
-        updatedAt: payment.updatedAt,
+        notesText: payment.memo || undefined,
         sections: [
           {
             title: 'Primary Information',
             rows: [
               ['Payment Method', payment.method || ''],
               ['Reference #', payment.referenceNumber || ''],
-              ['Payment Date', fmtDate(payment.paymentDate)],
-              ['Scheduled Date', payment.scheduledDate ? fmtDate(payment.scheduledDate) : ''],
-              ['Memo', payment.memo || ''],
               ['Internal Notes', payment.internalNotes || ''],
             ],
           },
@@ -161,7 +176,6 @@ export default function VendorPaymentDetailPage() {
         totals: [
           { label: 'Amount', value: currency(payment.amount), bold: true },
           { label: 'Applied', value: currency(payment.appliedTotal) },
-          { label: 'Unapplied', value: currency(payment.unappliedAmount), bold: true },
         ],
       });
     } catch (err) {
@@ -181,45 +195,49 @@ export default function VendorPaymentDetailPage() {
         subtitle={payment.vendor.name}
         recordNumber={payment.vendorPaymentNumber}
         statusBadge={<Badge color={color}>{payment.status}</Badge>}
+        actions={(
+          <VendorPaymentHeaderActions
+            order={payment}
+            canTransition={canTransition}
+            onTransition={(code) => transition.mutate(code)}
+            pendingCode={transition.isPending ? transition.variables : undefined}
+          />
+        )}
       />
 
-      {payment.gated && (
-        <>
-          <ApprovalBanner
-            approverNames={payment.approvers.filter((a) => !a.approved).map((a) => a.name)}
-            canApprove={payment.canApprove}
-            isOverride={payment.isOverride}
-            requiredApprovals={payment.requiredApprovals}
-            approvedCount={payment.approvedCount}
-            callerAlreadyApproved={payment.callerAlreadyApproved}
-            onApprove={() => approve.mutate()}
-            approving={approve.isPending}
-          />
-          {approve.isError && (
-            <p role="alert" className="px-5 py-1.5 text-2xs text-destructive 3xl:px-12 4xl:px-16">
-              {apiErrorMessage(approve.error, 'Failed to approve vendor payment.')}
-            </p>
-          )}
-        </>
+      {transition.isError && (
+        <p role="alert" className="border-b border-stone-200 bg-white px-5 py-2 text-2xs text-destructive 3xl:px-12 4xl:px-16">
+          {apiErrorMessage(transition.error, 'Failed to change status.')}
+        </p>
+      )}
+
+      <RecordApprovalBanner
+        record={payment}
+        onApprove={() => approve.mutate()}
+        approving={approve.isPending}
+        reject={{ noun: 'vendor payment', run: (reason) => vendorPaymentService.reject(id, reason), onRejected: handleRejected }}
+        resubmitVia="submit"
+      />
+      {payment.gated && approve.isError && (
+        <p role="alert" className="px-5 py-1.5 text-2xs text-destructive 3xl:px-12 4xl:px-16">
+          {apiErrorMessage(approve.error, 'Failed to approve vendor payment.')}
+        </p>
       )}
 
       {/* Tab bar */}
-      <div className="flex shrink-0 overflow-x-auto overflow-y-hidden border-b border-stone-200 bg-white px-5 3xl:px-12 4xl:px-16 modal-scrollbar">
-        {TABS.map((tab) => (
-          <button
-            key={tab.key}
-            type="button"
-            onClick={() => setActiveTab(tab.key)}
-            className={cn(
-              'px-4 py-3 text-sm font-semibold border-b-2 -mb-px transition-colors duration-150 whitespace-nowrap shrink-0',
-              activeTab === tab.key
-                ? 'border-brand text-stone-950'
-                : 'border-transparent text-stone-500 hover:text-stone-700 hover:border-stone-200',
-            )}
-          >
-            {tab.label}
-          </button>
-        ))}
+      <div className="flex shrink-0 overflow-x-auto overflow-y-hidden border-b border-stone-200 bg-white px-5 3xl:px-12 4xl:px-16 modal-scrollbar py-2.5">
+        <div role="tablist" className={TAB_LIST_CLASS}>
+          {TABS.map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setActiveTab(tab.key)}
+              className={tabClass(activeTab === tab.key)}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="flex flex-col lg:flex-row gap-6 px-4 py-4 sm:px-5 sm:py-5 3xl:px-12 3xl:py-8 3xl:gap-10 4xl:px-16 4xl:py-10 4xl:gap-14">
@@ -262,8 +280,9 @@ export default function VendorPaymentDetailPage() {
 
         {/* Right sidebar */}
         <SalesDetailSidebar label="Vendor Payment Details">
+          <WorkflowCard module="vendorPayment" statusCode={payment.statusCode} statusLabel={payment.status} workflow={payment.workflow} links={{ vendorPaymentId: payment.id }} />
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-            <p className="text-xs font-semibold text-stone-400">Quick Actions</p>
+            <p className="text-xs font-semibold text-stone-500">Quick Actions</p>
             <div className="space-y-0.5">
               <button
                 type="button"
@@ -283,17 +302,7 @@ export default function VendorPaymentDetailPage() {
                   Edit vendor payment
                 </button>
               )}
-              {canEdit && (
-                <button
-                  type="button"
-                  onClick={() => setSendDialogOpen(true)}
-                  className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs text-stone-700 w-full transition-colors text-left"
-                  aria-label="Send vendor payment to vendor"
-                >
-                  <Send className="size-4 text-stone-400 shrink-0" />
-                  Send to Vendor
-                </button>
-              )}
+
               <button
                 type="button"
                 onClick={handleExportPdf}
@@ -308,36 +317,10 @@ export default function VendorPaymentDetailPage() {
             {exportPdfError && (
               <p role="alert" className="text-2xs text-destructive">{exportPdfError}</p>
             )}
-            {sendSuccess && (
-              <p role="status" className="text-2xs text-emerald-600">{sendSuccess}</p>
-            )}
           </div>
 
-          {showActions && (
-            <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-              <p className="text-xs font-semibold text-stone-400">Actions</p>
-              <VendorPaymentStatusControl
-                order={{
-                  statusCode: payment.statusCode,
-                  approvalStatus: payment.approvalStatus,
-                  gated: payment.gated,
-                  scheduledDate: payment.scheduledDate,
-                  nextStatusCodes: payment.nextStatusCodes,
-                }}
-                onChange={(toCode) => transition.mutate(toCode)}
-                disabled={transition.isPending}
-                variant="pill"
-              />
-              {transition.error && (
-                <p role="alert" className="text-2xs text-destructive">
-                  {apiErrorMessage(transition.error, 'Failed to change status.')}
-                </p>
-              )}
-            </div>
-          )}
-
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-            <p className="text-xs font-semibold text-stone-400">Status</p>
+            <p className="text-xs font-semibold text-stone-500">Status</p>
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
               <span className="text-stone-500">Status</span>
               <Badge color={color}>{payment.status}</Badge>
@@ -376,35 +359,42 @@ export default function VendorPaymentDetailPage() {
             </div>
           </div>
 
-          {canDeleteHere && (
-            <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-              <p className="text-xs font-semibold text-red-400">Danger Zone</p>
-              <DeleteVendorPaymentDialog
-                vendorPaymentId={id}
-                label={`Vendor Payment ${payment.vendorPaymentNumber}`}
-                onDeleted={() => {
-                  queryClient.invalidateQueries({ queryKey: ['vendor-payments'] });
-                  navigate('/purchases/vendor_payment');
-                }}
-              />
-            </div>
+          {(canVoidHere || canDeleteHere) && (
+            <DangerZoneCard>
+              {canVoidHere && (
+                <DangerZoneAction
+                  description="Void this vendor payment. It can no longer be scheduled, sent or edited."
+                  buttonLabel="Void vendor payment"
+                  ariaLabel={`Void Vendor Payment ${payment.vendorPaymentNumber}`}
+                  icon={Ban}
+                  onClick={() => setConfirmVoid(true)}
+                  disabled={voidBlocked || transition.isPending}
+                  hint={voidBlocked ? 'Awaiting approval sign-off' : undefined}
+                />
+              )}
+              {canDeleteHere && (
+                <DeleteVendorPaymentDialog
+                  vendorPaymentId={id}
+                  label={`Vendor Payment ${payment.vendorPaymentNumber}`}
+                  onDeleted={() => {
+                    queryClient.invalidateQueries({ queryKey: ['vendor-payments'] });
+                    navigate('/purchases/vendor_payment');
+                  }}
+                />
+              )}
+            </DangerZoneCard>
           )}
         </SalesDetailSidebar>
       </div>
 
-      <SendToCustomerDialog
-        recordId={id}
-        open={sendDialogOpen}
-        onOpenChange={setSendDialogOpen}
-        recipientEmail=""
-        recipientKind="vendor"
-        label={`Vendor Payment ${payment.vendorPaymentNumber}`}
-        onSent={(result) =>
-          setSendSuccess(
-            result.sentTo.length ? `Sent to ${result.sentTo.join(', ')}.` : 'Send completed, but no recipients were found.',
-          )
-        }
-      />
+      {confirmVoid && (
+        <ConfirmVendorPaymentVoidDialog
+          paymentNumber={payment.vendorPaymentNumber}
+          pending={transition.isPending}
+          onConfirm={() => transition.mutate(VP_VOID_CODE, { onSettled: () => setConfirmVoid(false) })}
+          onCancel={() => setConfirmVoid(false)}
+        />
+      )}
     </div>
   );
 }
@@ -413,7 +403,7 @@ function ReadonlyField({ label, value, full }: { label: string; value?: string; 
   return (
     <div className={cn('space-y-1', full && 'col-span-full')}>
       <label className={fieldLabelCls}>{label}</label>
-      <div className={readonlyCls}>{value || <span className="text-stone-400">—</span>}</div>
+      <div className={readonlyCls}>{value || <span className="text-stone-500">—</span>}</div>
     </div>
   );
 }
@@ -421,7 +411,7 @@ function ReadonlyField({ label, value, full }: { label: string; value?: string; 
 function Total({ label, value, bold }: { label: string; value: number; bold?: boolean }) {
   return (
     <div>
-      <p className="text-2xs font-semibold uppercase tracking-wide text-stone-400">{label}</p>
+      <p className="text-2xs font-semibold uppercase tracking-wide text-stone-500">{label}</p>
       <p className={cn('tabular-nums', bold ? 'text-sm font-bold text-stone-900' : 'text-xs font-semibold text-stone-600')}>
         {currency(value)}
       </p>

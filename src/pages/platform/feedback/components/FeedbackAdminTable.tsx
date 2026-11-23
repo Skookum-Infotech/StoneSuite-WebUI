@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Star } from 'lucide-react';
 import { Spinner } from '@/components/tenant/ui';
 import {
@@ -14,11 +14,10 @@ import { cn } from '@/lib/utils';
 import type { FeedbackPriority, FeedbackStatus, FeedbackTicket } from '@/types/feedback';
 
 export function FeedbackAdminTable({ tickets, isLoading }: { tickets: FeedbackTicket[]; isLoading: boolean }) {
-  const navigate = useNavigate();
 
   if (isLoading) return <div className="flex justify-center py-10"><Spinner label="Loading tickets…" /></div>;
   if (tickets.length === 0) {
-    return <p className="py-10 text-center text-xs italic text-stone-400">No feedback tickets match these filters.</p>;
+    return <p className="py-10 text-center text-xs italic text-stone-500">No feedback tickets match these filters.</p>;
   }
 
   return (
@@ -42,13 +41,12 @@ export function FeedbackAdminTable({ tickets, isLoading }: { tickets: FeedbackTi
             return (
               <tr key={ticket.id} className="transition-colors hover:bg-stone-50 dark:hover:bg-white/[0.03]">
                 <td className="px-3.5 py-2.5">
-                  <button
-                    type="button"
-                    onClick={() => navigate(`/platform/feedback/${ticket.id}`)}
+                  <Link
+                    to={`/platform/feedback/${ticket.id}`}
                     className="font-semibold text-stone-700 hover:text-brand-dark transition-colors dark:text-stone-200"
                   >
                     {ticket.ticketNumber}
-                  </button>
+                  </Link>
                 </td>
                 <td className="px-3.5 py-2.5 text-stone-600 dark:text-stone-300">{ticket.tenantName || '—'}</td>
                 <td className="px-3.5 py-2.5 text-stone-600 dark:text-stone-300">{ticket.reporterName || ticket.reporterEmail}</td>
@@ -58,7 +56,7 @@ export function FeedbackAdminTable({ tickets, isLoading }: { tickets: FeedbackTi
                     {category.label}
                   </span>
                   {ticket.area && (
-                    <span className="mt-0.5 block text-2xs text-stone-400">{feedbackAreaLabel(ticket.area)}</span>
+                    <span className="mt-0.5 block text-2xs text-stone-500">{feedbackAreaLabel(ticket.area)}</span>
                   )}
                 </td>
                 <td className="max-w-72 truncate px-3.5 py-2.5 text-stone-600 dark:text-stone-300" title={ticket.description}>
@@ -79,7 +77,7 @@ export function FeedbackAdminTable({ tickets, isLoading }: { tickets: FeedbackTi
                     {feedbackStatusLabel(ticket.status)}
                   </span>
                 </td>
-                <td className="whitespace-nowrap px-3.5 py-2.5 text-stone-400">{formatFeedbackTime(ticket.createdAt)}</td>
+                <td className="whitespace-nowrap px-3.5 py-2.5 text-stone-500">{formatFeedbackTime(ticket.createdAt)}</td>
               </tr>
             );
           })}

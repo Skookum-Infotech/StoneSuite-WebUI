@@ -4,7 +4,7 @@ import { LogOut, TriangleAlert, UserPlus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useModalDialog } from '@/hooks/useModalDialog';
 
-export type ConfirmLeaveVariant = 'unsaved-changes' | 'exit-app' | 'create-vendor';
+export type ConfirmLeaveVariant = 'unsaved-changes' | 'exit-app' | 'create-vendor' | 'discard-document';
 
 // Copy lives here rather than in props so both call sites stay consistent and the
 // component keeps a small surface (CLAUDE.md caps components at five props).
@@ -15,6 +15,13 @@ const COPY = {
       "This record has edits that haven't been saved yet. Leaving this page discards them.",
     confirmLabel: 'Discard changes',
     cancelLabel: 'Keep editing',
+  },
+  'discard-document': {
+    title: 'Discard this document?',
+    description:
+      "The uploaded file and everything read from it are deleted, along with any edits on this form. No record is created. This can't be undone.",
+    confirmLabel: 'Discard document',
+    cancelLabel: 'Keep reviewing',
   },
   'exit-app': {
     title: 'Leave Stone Suite?',
@@ -34,6 +41,7 @@ const COPY = {
 
 const ICON = {
   'unsaved-changes': TriangleAlert,
+  'discard-document': TriangleAlert,
   'exit-app': LogOut,
   'create-vendor': UserPlus,
 } as const;
@@ -43,6 +51,7 @@ const ICON = {
 // the same red "you're about to lose something" affordance as the other two.
 const CONFIRM_TONE = {
   'unsaved-changes': 'destructive',
+  'discard-document': 'destructive',
   'exit-app': 'destructive',
   'create-vendor': 'brand',
 } as const;
@@ -51,12 +60,22 @@ interface ConfirmLeaveDialogProps {
   variant: ConfirmLeaveVariant;
   onConfirm: () => void;
   onCancel: () => void;
+  /** Lower-case name of the record the page would create (e.g. "purchase
+   *  order"); names it in the 'discard-document' copy instead of "record". */
+  recordNoun?: string;
+}
+
+/** The variant's description, naming the record a discarded document won't create. */
+function describe(variant: ConfirmLeaveVariant, recordNoun?: string): string {
+  const text: string = COPY[variant].description;
+  return variant === 'discard-document' && recordNoun ? text.replace('No record', `No ${recordNoun}`) : text;
 }
 
 export function ConfirmLeaveDialog({
   variant,
   onConfirm,
   onCancel,
+  recordNoun,
 }: ConfirmLeaveDialogProps): React.JSX.Element {
   const contentRef = useModalDialog(onCancel);
   const copy = COPY[variant];
@@ -82,7 +101,7 @@ export function ConfirmLeaveDialog({
         </div>
 
         <p id="confirm-leave-desc" className="mb-5 text-xs text-stone-600">
-          {copy.description}
+          {describe(variant, recordNoun)}
         </p>
 
         <div className="flex justify-end gap-2">

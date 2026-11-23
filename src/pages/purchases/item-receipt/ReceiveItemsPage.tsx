@@ -1,7 +1,8 @@
 import { useState, useRef, useCallback, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
-import { Inbox, AlertCircle, Loader2, Save, ArrowLeft } from 'lucide-react';
+import { Inbox, AlertCircle, Loader2, PackageCheck, ArrowLeft } from 'lucide-react';
+import { toast } from 'sonner';
 import { itemReceiptService } from '@/services/itemReceiptService';
 import { purchaseOrderService } from '@/services/purchaseOrderService';
 import { lookupService } from '@/services/lookupService';
@@ -12,13 +13,24 @@ import { Spinner, ErrorNote } from '@/components/tenant/ui';
 import { UnsavedChangesPrompt } from '@/components/UnsavedChangesPrompt';
 import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
 import { useScrollToError } from '@/hooks/useScrollToError';
+import { useUserPermissions } from '@/hooks/useUserPermissions';
+import { useInventoryLookups } from '@/hooks/useInventoryLookups';
 import { type EditableFilesPanelHandle } from '@/components/crm/CrmSubTabsPanel';
 import { ItemReceiptFormBody } from './components/ItemReceiptFormBody';
+import { OverReceiptDialog } from './components/OverReceiptDialog';
+import { overReceiptDetails, type OverReceiptDetails } from '@/lib/itemReceiptErrors';
+import { defaultWarehouseUuid, toNumericWarehouseId } from '@/lib/inventoryWarehouse';
+import { INVENTORY_STOCK_QUERY_KEYS } from '@/lib/inventoryQueryKeys';
 import {
-  itemReceiptDefaults, toCreatePayload, validateReceiptLines, validateReceiptLineErrors, mergeReceiptLines,
-  isPurchaseOrderReceivable, PAGE_TABS, type PageTab, type ItemReceiptDraftLine,
+  itemReceiptDefaults, toCreatePayload, validateReceiptLines, validateReceiptLineErrors, validateReceiptHeader,
+  mergeReceiptLines, isPurchaseOrderReceivable, PAGE_TABS, type PageTab, type ItemReceiptDraftLine,
 } from '@/lib/itemReceiptForm';
 
+// Saving a new receipt posts it: the backend creates and posts in one
+// transaction, so there is no Pending receipt to come back to and post later.
+// A delivery over the ordered quantity is refused with nothing saved; the
+// over-receipt dialog then lets an approver confirm it with a reason, which
+// re-sends the whole receipt.
 export default function ReceiveItemsPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -30,6 +42,10 @@ export default function ReceiveItemsPage() {
   const [data, setData] = useState<Record<string, unknown>>(itemReceiptDefaults);
   const [lines, setLines] = useState<ItemReceiptDraftLine[] | null>(null);
   const [customFieldValues, setCustomFieldValues] = useState<Record<string, unknown>>({});
+  const [overReceipt, setOverReceipt] = useState<OverReceiptDetails | null>(null);
+
+  const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
+  const canApproveOverReceipt = !permissionsLoading && hasPermission('item_receipt', 'approve');
 
   const set = useCallback((key: string, value: unknown) => setData((d) => ({ ...d, [key]: value })), []);
   const setCustomField = useCallback(
@@ -43,34 +59,67 @@ export default function ReceiveItemsPage() {
     enabled: Boolean(purchaseOrderId),
   });
 
+  // The slabs the order put on order and that have not arrived: the checklist's rows.
+  const { data: onOrderSlabs, isLoading: onOrderLoading } = useQuery({
+    queryKey: ['po-on-order-slabs', purchaseOrderId],
+    queryFn: () => itemReceiptService.onOrderSlabs(purchaseOrderId),
+    enabled: Boolean(purchaseOrderId),
+  });
+
   const { data: lookups } = useQuery({
     queryKey: ['crm-lookups'],
     queryFn: lookupService.getCrmLookups,
     staleTime: 10 * 60 * 1000,
   });
 
-  const activeLines = useMemo(() => lines ?? (po ? mergeReceiptLines(po.items) : []), [lines, po]);
-  const validationErrors = validateReceiptLines(activeLines);
+  const { lookups: inventoryLookups } = useInventoryLookups();
+  const warehouses = inventoryLookups?.warehouses;
+  // The picker opens on the tenant's default warehouse; choosing another
+  // overrides it. It is mandatory, so it can't be left empty.
+  const receiptData = useMemo(
+    () => (data.warehouse_id ? data : { ...data, warehouse_id: defaultWarehouseUuid(warehouses ?? []) }),
+    [data, warehouses],
+  );
+
+  const activeLines = useMemo(
+    () => lines ?? (po ? mergeReceiptLines(po.items, [], onOrderSlabs ?? []) : []),
+    [lines, po, onOrderSlabs],
+  );
+  const validationErrors = [...validateReceiptHeader(receiptData), ...validateReceiptLines(activeLines)];
   const lineErrors = useMemo(() => validateReceiptLineErrors(activeLines), [activeLines]);
 
-  // Baseline once the PO has loaded — the received-quantity lines are seeded from
-  // it, so an earlier baseline would flag those defaults as user edits.
-  const guard = useUnsavedChangesGuard({ data, activeLines, customFieldValues }, Boolean(po));
+  // Baseline once the PO and the warehouse lookups have loaded — the received-
+  // quantity lines and the default warehouse are seeded from them, so an earlier
+  // baseline would flag those defaults as user edits.
+  const guard = useUnsavedChangesGuard(
+    { data: receiptData, activeLines, customFieldValues },
+    Boolean(po) && !onOrderLoading && Boolean(inventoryLookups),
+  );
 
   const { mutate: save, isPending, error: saveError } = useMutation({
-    mutationFn: () => {
+    mutationFn: (overReceiptReason?: string) => {
       if (validationErrors.length > 0) throw new Error(validationErrors[0]);
-      const payload = toCreatePayload(purchaseOrderId, data, activeLines, customFieldValues);
+      const payload = toCreatePayload(purchaseOrderId, receiptData, activeLines, customFieldValues, {
+        post: true, overReceiptReason,
+        warehouseId: toNumericWarehouseId(warehouses ?? [], String(receiptData.warehouse_id)),
+      });
       return itemReceiptService.createItemReceipt(payload);
     },
+    onError: (err) => setOverReceipt(overReceiptDetails(err)),
     onSuccess: async (ir) => {
+      setOverReceipt(null);
       queryClient.invalidateQueries({ queryKey: ['item-receipts'] });
       queryClient.invalidateQueries({ queryKey: ['purchase-order-receipts', purchaseOrderId] });
       queryClient.invalidateQueries({ queryKey: ['purchase-order', purchaseOrderId] });
+      queryClient.invalidateQueries({ queryKey: ['slab-sequence', purchaseOrderId] });
+      queryClient.invalidateQueries({ queryKey: ['po-on-order-slabs', purchaseOrderId] });
+      // Posting adds any slabs to Inventory and moves stock.
+      for (const queryKey of INVENTORY_STOCK_QUERY_KEYS) queryClient.invalidateQueries({ queryKey });
       if (panelRef.current?.hasStagedFiles()) {
         try { await panelRef.current.uploadStagedTo(ir.id); } catch { /* non-fatal */ }
       }
       guard.markClean();
+      toast.success(`Item receipt ${ir.itemReceiptNumber} posted.`);
       navigate(`/purchases/item_receipt/${ir.id}`);
     },
   });
@@ -79,7 +128,7 @@ export default function ReceiveItemsPage() {
   if (!purchaseOrderId) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 text-center">
-        <Inbox className="size-8 text-stone-300" aria-hidden="true" />
+        <Inbox className="size-8 text-stone-400" aria-hidden="true" />
         <p className="text-sm font-semibold text-stone-700">Choose a purchase order to receive against.</p>
         <button
           type="button"
@@ -93,7 +142,7 @@ export default function ReceiveItemsPage() {
     );
   }
 
-  if (isLoading) return <div className="p-6"><Spinner label="Loading purchase order…" /></div>;
+  if (isLoading || onOrderLoading) return <div className="p-6"><Spinner label="Loading purchase order…" /></div>;
   if (loadError || !po)
     return <div className="p-6"><ErrorNote>{apiErrorMessage(loadError, 'Failed to load purchase order.')}</ErrorNote></div>;
 
@@ -111,7 +160,7 @@ export default function ReceiveItemsPage() {
           <p className="text-sm font-semibold text-stone-700">
             {po.purchaseOrderNumber} is {po.status} and cannot be received against.
           </p>
-          <p className="text-xs text-stone-400">Only Sent or Partially Received purchase orders can accept a receipt.</p>
+          <p className="text-xs text-stone-500">Only Sent or Partially Received purchase orders can accept a receipt.</p>
           <button
             type="button"
             onClick={() => navigate(`/purchases/purchase_order/${po.id}`)}
@@ -127,23 +176,23 @@ export default function ReceiveItemsPage() {
   return (
     <div className="flex flex-col flex-1 min-h-0 bg-stone-50">
       <UnsavedChangesPrompt guard={guard} />
-      <form onSubmit={(e) => { e.preventDefault(); save(); }} className="flex flex-col flex-1 min-h-0">
+      <form onSubmit={(e) => { e.preventDefault(); save(undefined); }} className="flex flex-col flex-1 min-h-0">
         <CrmPageHeader
           backLabel="Item Receipts"
           onBack={() => navigate('/purchases/item_receipt')}
           icon={Inbox}
           title="New Item Receipt"
-          subtitle={`Against ${po.purchaseOrderNumber} · Fields marked * are required.`}
+          subtitle={`Against ${po.purchaseOrderNumber} · Saving posts the receipt and moves stock; ticked slabs become available in Inventory. Fields marked * are required.`}
           actions={(
             <button type="submit" disabled={isPending}
               className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3.5 py-1.5 text-xs font-semibold text-stone-900 hover:bg-brand-hover disabled:opacity-50 transition-all shadow-sm">
-              {isPending ? <Loader2 className="size-3 animate-spin" /> : <Save className="size-3" />}
-              {isPending ? 'Saving…' : 'Save Item Receipt'}
+              {isPending ? <Loader2 className="size-3 animate-spin" /> : <PackageCheck className="size-3" />}
+              {isPending ? 'Posting…' : 'Save & Post Receipt'}
             </button>
           )}
         />
 
-        {saveError && (
+        {saveError && !overReceipt && (
           <div
             ref={errorRef}
             tabIndex={-1}
@@ -155,7 +204,7 @@ export default function ReceiveItemsPage() {
             </span>
             <p className="text-xs text-red-700">
               <span className="font-bold">Error: </span>
-              {apiErrorMessage(saveError, 'Failed to save item receipt.')}
+              {apiErrorMessage(saveError, 'Failed to save and post item receipt.')}
             </p>
           </div>
         )}
@@ -163,7 +212,7 @@ export default function ReceiveItemsPage() {
         <ItemReceiptFormBody
           activeTab={activeTab}
           setActiveTab={setActiveTab}
-          data={data}
+          data={receiptData}
           set={set}
           lines={activeLines}
           setLines={setLines}
@@ -178,9 +227,19 @@ export default function ReceiveItemsPage() {
         <FormActionBar
           onCancel={() => navigate('/purchases/item_receipt')}
           isPending={isPending}
-          submitLabel="Save Item Receipt"
+          submitLabel="Save & Post Receipt"
         />
       </form>
+
+      {overReceipt && (
+        <OverReceiptDialog
+          lines={overReceipt.lines}
+          canApprove={canApproveOverReceipt}
+          isPending={isPending}
+          onConfirm={(reason) => save(reason)}
+          onClose={() => setOverReceipt(null)}
+        />
+      )}
     </div>
   );
 }

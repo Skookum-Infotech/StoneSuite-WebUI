@@ -51,7 +51,7 @@ export function StarRating({ value, onChange }: { value: number | null; onChange
           <Star
             className={cn(
               'size-6 transition-colors',
-              star <= display ? 'fill-amber-400 text-amber-400' : 'fill-none text-stone-300 dark:text-stone-600',
+              star <= display ? 'fill-amber-400 text-amber-400' : 'fill-none text-stone-500 dark:text-stone-600',
             )}
           />
         </button>

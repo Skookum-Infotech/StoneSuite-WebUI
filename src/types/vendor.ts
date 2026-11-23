@@ -86,6 +86,10 @@ export const VENDOR_STATUS_CODES: { code: string; label: string }[] = [
   { code: 'INA_', label: 'Inactive' },
 ];
 
+/** The one vendor status code usable elsewhere — same role as
+ *  CUSTOMER_USABLE_STATUS (lib/crmStatusFlow.ts). */
+export const VENDOR_USABLE_STATUS_CODE = 'ACT_';
+
 /** Status badge color, keyed by the human label returned by the API. */
 export const VENDOR_STATUS_COLORS: Record<string, string> = {
   Active: '#22c55e',

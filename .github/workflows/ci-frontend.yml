@@ -1,5 +1,10 @@
 name: Frontend CI
 
+# Least privilege: every job only checks out code and runs npm, so the
+# GITHUB_TOKEN needs read access to contents and nothing else.
+permissions:
+  contents: read
+
 on:
   pull_request:
     paths:
@@ -8,6 +13,10 @@ on:
       - 'package.json'
       - 'package-lock.json'
       - 'vite.config.*'
+      - 'vitest.config.*'
+      - 'eslint.config.*'
+      - 'tsconfig*.json'
+      - 'functions/**'
       - '.github/workflows/ci-frontend.yml'
 
   push:
@@ -20,12 +29,22 @@ on:
       - 'package.json'
       - 'package-lock.json'
       - 'vite.config.*'
+      - 'vitest.config.*'
+      - 'eslint.config.*'
+      - 'tsconfig*.json'
+      - 'functions/**'
       - '.github/workflows/ci-frontend.yml'
 
-jobs:
-  lint-test-build:
-    runs-on: ubuntu-latest
+# A newer push to the same ref makes the in-flight run obsolete; cancel it
+# instead of letting runs stack up.
+concurrency:
+  group: ci-frontend-${{ github.ref }}
+  cancel-in-progress: true
 
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
@@ -42,14 +61,121 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Lint
-        run: npm run lint
+      - name: Restore ESLint cache
+        uses: actions/cache@v4
+        with:
+          path: node_modules/.cache/eslint
+          key: eslint-${{ hashFiles('package-lock.json', 'eslint.config.js') }}-${{ github.sha }}
+          restore-keys: eslint-${{ hashFiles('package-lock.json', 'eslint.config.js') }}-
 
+      - name: Lint
+        run: npx eslint . --cache --cache-location node_modules/.cache/eslint/
+
+  test:
+    name: Test (shard ${{ matrix.shard }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: ['1/3', '2/3', '3/3']
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v7
+        with:
+          # jsdom 30 declares engines "^22.22.2 || ^24.15.0 || >=26.0.0" and its
+          # undici dependency calls worker_threads.markAsUncloneable, which does
+          # not exist on Node 20 — every jsdom test file fails to start its
+          # worker there. Node 20 is also past EOL (April 2026).
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      # `npm test` is already `vitest run`. The old `|| npm run test` fallback
+      # re-ran the whole suite on failure and masked flaky tests.
       - name: Test
-        run: npm test -- --run || npm run test
+        run: npm test -- --shard=${{ matrix.shard }}
+
+  build:
+    name: Typecheck + build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v7
+        with:
+          # jsdom 30 declares engines "^22.22.2 || ^24.15.0 || >=26.0.0" and its
+          # undici dependency calls worker_threads.markAsUncloneable, which does
+          # not exist on Node 20 — every jsdom test file fails to start its
+          # worker there. Node 20 is also past EOL (April 2026).
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Restore tsc incremental cache
+        uses: actions/cache@v4
+        with:
+          path: node_modules/.tmp
+          key: tsc-${{ hashFiles('package-lock.json', 'tsconfig*.json') }}-${{ github.sha }}
+          restore-keys: tsc-${{ hashFiles('package-lock.json', 'tsconfig*.json') }}-
 
       - name: Build
         env:
           VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL }}
           VITE_NOTIFY_BASE_URL: ${{ vars.VITE_NOTIFY_BASE_URL }}
         run: npm run build
+
+  audit:
+    name: Dependency vulnerability scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package-lock.json
+      # Production dependencies only, high/critical only. Dev-only tooling
+      # (jsdom's vendored undici, wrangler's transitive deps) carries several
+      # unfixable-without-a-major-bump high findings that never reach the
+      # shipped Vite bundle -- gating on those would make this job permanently
+      # red for risk nobody ships, exactly the "guard that fires on known-good
+      # content gets ignored" trap CLAUDE.md warns about. This mirrors
+      # govulncheck's "only fail on what's actually callable" posture in
+      # ci-backend.yml. Production-path findings ARE gated: the fast-uri SSRF
+      # chain (ajv <- @hookform/resolvers) was fixed via a package.json
+      # "overrides" pin rather than excluded.
+      - name: npm audit (production deps, high + critical)
+        run: npm audit --package-lock-only --omit=dev --audit-level=high
+
+  gitleaks:
+    name: Secret scan (gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Full history, not just the tip commit -- a secret committed and
+          # then removed a commit later is still a leak.
+          fetch-depth: 0
+      # The gitleaks CLI itself is free and unrestricted; only the gitleaks/
+      # gitleaks-action wrapper requires a paid org license (this repo is
+      # under the Skookum-Infotech org, so that wrapper would need
+      # GITLEAKS_LICENSE). Installing the CLI directly avoids that -- same
+      # approach as ci-backend.yml's gitleaks job.
+      - name: Install gitleaks
+        env:
+          GITLEAKS_VERSION: 8.30.1
+        run: |
+          curl -sSfLO "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          curl -sSfLO "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_checksums.txt"
+          sha256sum -c --ignore-missing "gitleaks_${GITLEAKS_VERSION}_checksums.txt"
+          tar -xzf "gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" gitleaks
+          sudo mv gitleaks /usr/local/bin/gitleaks
+      - name: Run gitleaks
+        run: gitleaks detect --source . --redact -v

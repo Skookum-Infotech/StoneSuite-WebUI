@@ -1,12 +1,38 @@
+import { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Package, Plus } from 'lucide-react';
+import { useAuthStore } from '@/store/useAuthStore';
+import { useAIStatus } from '@/hooks/useAIStatus';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
+import { UploadDocumentButton } from '@/components/tenant/UploadDocumentButton';
+import { CreateFromDocumentDialog } from '@/components/tenant/documentExtraction/CreateFromDocumentDialog';
+import { DropOverlay } from '@/components/tenant/documentExtraction/DropOverlay';
+import { PendingDocumentsChip } from '@/components/tenant/documentExtraction/PendingDocumentsChip';
+import { uploadDisabledReason } from '@/lib/documentUploadAvailability';
 import { PurchaseOrderTable } from './components/PurchaseOrderTable';
 
 export default function PurchaseOrderListPage() {
   const navigate = useNavigate();
+  // A customer-portal session never creates purchase orders; hide the whole flow.
+  const isCustomer = useAuthStore((s) => s.kind === 'portal');
   const { hasPermission, isLoading } = useUserPermissions();
-  const canCreate = isLoading || hasPermission('purchase_order', 'create');
+  const { data: aiStatus, isLoading: aiLoading, isError: aiFailed } = useAIStatus();
+
+  const canCreate = !isCustomer && (isLoading || hasPermission('purchase_order', 'create'));
+  const extractionOn = aiStatus?.documentExtraction === true;
+  // The flow needs the AI feature on; until the status loads the button stays
+  // disabled without a reason rather than flashing "turned off".
+  const uploadReason = uploadDisabledReason(aiStatus, aiLoading, aiFailed) || undefined;
+
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const closeDialog = useCallback(() => setPendingFile(null), []);
+  // A drop is always swallowed on this page (the browser would otherwise open
+  // the file and lose the list); '' = swallow silently.
+  const dropBlockedReason = isCustomer ? ''
+    : !canCreate ? "You don't have permission to create purchase orders."
+    : !extractionOn ? uploadReason ?? ''
+    : pendingFile !== null ? 'Finish or close the current document first.'
+    : undefined;
 
   return (
     <div className="flex-1 flex flex-col min-h-0">
@@ -33,9 +59,30 @@ export default function PurchaseOrderListPage() {
         </div>
 
         <div className="mt-5 border-t border-stone-100 pt-4 flex-1 flex flex-col min-h-0">
-          <PurchaseOrderTable />
+          <PurchaseOrderTable
+            toolbarActions={
+              canCreate && (
+                <>
+                  <PendingDocumentsChip docType="purchase_order" enabled={extractionOn} />
+                  <UploadDocumentButton
+                    documentLabel="Purchase Order"
+                    onFileSelected={setPendingFile}
+                    disabled={!extractionOn}
+                    disabledReason={uploadReason}
+                  />
+                </>
+              )
+            }
+          />
         </div>
       </div>
+
+      <DropOverlay
+        blockedReason={dropBlockedReason}
+        documentLabel="Purchase Order"
+        onFileDropped={setPendingFile}
+      />
+      {pendingFile && <CreateFromDocumentDialog file={pendingFile} docType="purchase_order" onClose={closeDialog} />}
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import type { Ref } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { cn } from '@/lib/utils';
+import { TAB_LIST_CLASS, tabClass } from '@/components/ui/tabStyles';
 import { ModernSection, ModernFieldShell } from '@/components/crm/FormPrimitives';
 import { EditableFilesPanel, type EditableFilesPanelHandle } from '@/components/crm/CrmSubTabsPanel';
 import { DynamicFieldInput } from '@/components/tenant/DynamicFieldInput';
@@ -12,25 +13,25 @@ import { InvoicePicker, type InvoiceRef } from './InvoicePicker';
 import { SalesOrderPicker, type SalesOrderRef } from './SalesOrderPicker';
 import { CreditMemoSectionGrid } from './CreditMemoFormFields';
 import { CreditMemoSummaryCard } from './CreditMemoSummaryCard';
-import { CreditMemoItemsTab } from './CreditMemoItemsTab';
 import { CreditMemoAuditTab } from './CreditMemoAuditTab';
 import type { CrmLookups } from '@/services/lookupService';
 import {
   PRIMARY_INFO_FIELDS, BILLING_FIELDS,
-  PAGE_TABS, type PageTab, type CreditMemoLineItem,
+  PAGE_TABS, type PageTab,
 } from '@/lib/creditMemoForm';
+import type { CreditMemoPaymentRef } from '@/types/creditMemo';
 
 // Shared tab bar + tab content for both the Add and Edit Credit Memo pages —
 // mirrors InvoiceFormBody, extended with the optional Invoice/Sales Order
 // lineage pickers and gated "money field" disabling for the Edit page.
 export function CreditMemoFormBody({
   activeTab, setActiveTab, creditMemoId,
-  data, set, lineItems, setLineItems,
+  data, set,
   customer, setCustomer, customerLocked = false, onCreateCustomer,
   invoice, setInvoice, invoiceLocked = false,
-  salesOrder, setSalesOrder, salesOrderLocked = false,
+  salesOrder, setSalesOrder, salesOrderLocked = false, sourcePayment,
   customFieldValues, setCustomField,
-  lookups, subtotal, discountAmt, taxTotal, adjustment, total, appliedTotal,
+  lookups, subtotal, taxTotal, adjustment, total, appliedTotal,
   filesPanelRef, moneyFieldsDisabled = false,
 }: {
   activeTab: PageTab;
@@ -40,8 +41,6 @@ export function CreditMemoFormBody({
   creditMemoId?: string;
   data: Record<string, unknown>;
   set: (k: string, v: unknown) => void;
-  lineItems: CreditMemoLineItem[];
-  setLineItems: (v: CreditMemoLineItem[]) => void;
   customer: CustomerRef | null;
   setCustomer: (c: CustomerRef | null) => void;
   /** The customer is fixed after creation — edit mode shows it read-only. */
@@ -56,17 +55,21 @@ export function CreditMemoFormBody({
   salesOrder: SalesOrderRef | null;
   setSalesOrder: (s: SalesOrderRef | null) => void;
   salesOrderLocked?: boolean;
+  /** The payment this memo was issued from (read-only — it funds the memo and
+   *  cannot change after creation). */
+  sourcePayment?: CreditMemoPaymentRef | null;
   customFieldValues: Record<string, unknown>;
   setCustomField: (key: string, value: unknown) => void;
   lookups?: CrmLookups;
-  subtotal: number; discountAmt: number; taxTotal: number; adjustment: number; total: number;
+  subtotal: number; taxTotal: number; adjustment: number; total: number;
   appliedTotal: number;
   filesPanelRef?: Ref<EditableFilesPanelHandle>;
-  /** Disables lines/sales-tax/adjustment (Edit page only, once the credit
+  /** Disables amount/sales-tax/adjustment (Edit page only, once the credit
    *  memo has left DRFT — spec: "Disable money fields when status != DRFT"). */
   moneyFieldsDisabled?: boolean;
 }) {
-  const headerTaxPercent = parseFloat(String(data.sales_tax_pct ?? '')) || 0;
+  const currencyId = Number(data.currency_id);
+  const currencyCode = lookups?.currencies.find((item) => item.id === currencyId)?.code ?? 'USD';
 
   const { data: allWorkflows = [] } = useQuery({ queryKey: ['workflows'], queryFn: workflowService.list });
   const cmWorkflow = allWorkflows.find((wf) => wf.key.toLowerCase() === 'credit_memo');
@@ -80,22 +83,19 @@ export function CreditMemoFormBody({
   return (
     <>
       {/* Page-level tab bar */}
-      <div className="flex shrink-0 overflow-x-auto overflow-y-hidden border-b border-stone-200 bg-white px-5 3xl:px-10 4xl:px-16 modal-scrollbar">
-        {PAGE_TABS.map((tab) => (
-          <button
-            key={tab.key}
-            type="button"
-            onClick={() => setActiveTab(tab.key)}
-            className={cn(
-              'flex shrink-0 items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 -mb-px transition-colors whitespace-nowrap',
-              activeTab === tab.key
-                ? 'border-stone-800 text-stone-900'
-                : 'border-transparent text-stone-400 hover:text-stone-600 hover:border-stone-300',
-            )}
-          >
-            {tab.label}
-          </button>
-        ))}
+      <div className="flex shrink-0 overflow-x-auto overflow-y-hidden border-b border-stone-200 bg-white px-5 3xl:px-10 4xl:px-16 modal-scrollbar py-2.5">
+        <div role="tablist" className={TAB_LIST_CLASS}>
+          {PAGE_TABS.map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setActiveTab(tab.key)}
+              className={tabClass(activeTab === tab.key)}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Scrollable content */}
@@ -108,7 +108,7 @@ export function CreditMemoFormBody({
                 <ModernFieldShell label="Customer" required={!customerLocked}>
                   {customerLocked ? (
                     <div className={cn(readonlyCls, 'cursor-not-allowed select-none')}>
-                      {customer?.name || <span className="text-stone-400">—</span>}
+                      {customer?.name || <span className="text-stone-500">—</span>}
                     </div>
                   ) : (
                     <CustomerPicker value={customer} onChange={setCustomer} required onCreateNew={onCreateCustomer} />
@@ -121,21 +121,28 @@ export function CreditMemoFormBody({
                   <ModernFieldShell label="Invoice">
                     {invoiceLocked ? (
                       <div className={cn(readonlyCls, 'cursor-not-allowed select-none')}>
-                        {invoice?.number || <span className="text-stone-400">—</span>}
+                        {invoice?.number || <span className="text-stone-500">—</span>}
                       </div>
                     ) : (
-                      <InvoicePicker customer={customer} value={invoice} onChange={setInvoice} />
+                      <InvoicePicker customer={customer} value={invoice} onChange={setInvoice} currencyCode={currencyCode} />
                     )}
                   </ModernFieldShell>
                   <ModernFieldShell label="Sales Order">
                     {salesOrderLocked ? (
                       <div className={cn(readonlyCls, 'cursor-not-allowed select-none')}>
-                        {salesOrder?.number || <span className="text-stone-400">—</span>}
+                        {salesOrder?.number || <span className="text-stone-500">—</span>}
                       </div>
                     ) : (
                       <SalesOrderPicker customer={customer} value={salesOrder} onChange={setSalesOrder} />
                     )}
                   </ModernFieldShell>
+                  {sourcePayment && (
+                    <ModernFieldShell label="Source Payment">
+                      <div className={cn(readonlyCls, 'cursor-not-allowed select-none')}>
+                        {sourcePayment.number || 'Linked payment'}
+                      </div>
+                    </ModernFieldShell>
+                  )}
                 </div>
               </ModernSection>
 
@@ -149,7 +156,7 @@ export function CreditMemoFormBody({
                     />
                   </div>
                   <div className="w-full lg:w-56 shrink-0">
-                    <CreditMemoSummaryCard subtotal={subtotal} discountAmt={discountAmt} taxTotal={taxTotal} adjustment={adjustment} total={total} appliedTotal={appliedTotal} />
+                    <CreditMemoSummaryCard subtotal={subtotal} taxTotal={taxTotal} adjustment={adjustment} total={total} appliedTotal={appliedTotal} currencyCode={currencyCode} />
                   </div>
                 </div>
               </ModernSection>
@@ -172,10 +179,6 @@ export function CreditMemoFormBody({
                   </div>
                 </ModernSection>
               )}
-
-              <ModernSection title="Items" index={5}>
-                <CreditMemoItemsTab items={lineItems} onUpdate={setLineItems} headerTaxPercent={headerTaxPercent} disabled={moneyFieldsDisabled} />
-              </ModernSection>
             </>
           )}
 

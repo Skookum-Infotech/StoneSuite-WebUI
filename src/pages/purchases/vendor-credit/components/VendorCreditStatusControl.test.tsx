@@ -11,7 +11,7 @@ function mockPermissions(allowedActions: string[] = ['approve', 'transition']) {
   vi.mocked(useUserPermissions).mockReturnValue({
     grants: [],
     isLoading: false,
-    activeRoleId: '',
+    activeRoleId: '', isSuperAdmin: false,
     hasPermission: (resource: string, action: string) =>
       resource === 'vendor_credit' && allowedActions.includes(action),
   } as ReturnType<typeof useUserPermissions>);

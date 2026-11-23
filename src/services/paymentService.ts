@@ -1,4 +1,6 @@
+import type { WorkflowBlock } from '@/types/workflow';
 import { tenantClient } from '@/api/tenantClient';
+import type { ApprovalRejection } from '@/types/tenant';
 import { isPortalSession } from '@/store/useAuthStore';
 import type { AuditEntry } from '@/services/crmService';
 import type {
@@ -52,15 +54,16 @@ export const paymentService = {
     }
     return tenantClient
       .get<{
-        success: boolean; payment: Payment; approval?: {
+        success: boolean; workflow?: WorkflowBlock; payment: Payment; approval?: {
           gated?: boolean; approvers?: Payment['approvers']; requiredApprovals?: number; approvedCount?: number;
-          canApprove?: boolean; isOverride?: boolean; callerAlreadyApproved?: boolean;
+          canApprove?: boolean; isOverride?: boolean; callerAlreadyApproved?: boolean; canReject?: boolean; rejection?: ApprovalRejection;
         };
       }>(`${BASE}/${uuid}`)
       .then((r) => {
         const a = r.data.approval;
         return {
           ...r.data.payment,
+          workflow: r.data.workflow ?? r.data.payment.workflow,
           gated: a?.gated ?? false,
           approvers: a?.approvers ?? [],
           requiredApprovals: a?.requiredApprovals ?? 0,
@@ -68,6 +71,8 @@ export const paymentService = {
           canApprove: a?.canApprove ?? false,
           isOverride: a?.isOverride ?? false,
           callerAlreadyApproved: a?.callerAlreadyApproved ?? false,
+          canReject: a?.canReject ?? false,
+          rejection: a?.rejection,
         };
       });
   },
@@ -79,6 +84,16 @@ export const paymentService = {
   approve: (uuid: string): Promise<Payment> =>
     tenantClient
       .post<{ success: boolean; payment: Payment }>(`${BASE}/${uuid}/approve`, {})
+      .then((r) => r.data.payment),
+
+  // An approver's veto: rejects the payment while it awaits approval (a reason
+  // is required) and flags it rejected in place until it is edited. Rejected with 403 if the caller isn't a
+  // configured approver (and isn't a super admin), 409 if it isn't awaiting
+  // approval, 400 without a reason. The POST response has no approval overlay, so
+  // callers invalidate the record's query to pick up the rejection banner.
+  reject: (uuid: string, reason: string): Promise<Payment> =>
+    tenantClient
+      .post<{ success: boolean; payment: Payment }>(`${BASE}/${uuid}/reject`, { reason })
       .then((r) => r.data.payment),
 
   createPayment: (payload: PaymentCreatePayload): Promise<Payment> =>

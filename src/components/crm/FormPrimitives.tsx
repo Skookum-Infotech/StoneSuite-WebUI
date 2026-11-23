@@ -59,11 +59,13 @@ export function FormActionBar({
   onCancel,
   isPending,
   isUploadingFiles = false,
+  isSubmitDisabled = false,
   submitLabel = 'Save Changes',
 }: {
   onCancel: () => void;
   isPending: boolean;
   isUploadingFiles?: boolean;
+  isSubmitDisabled?: boolean;
   submitLabel?: string;
 }) {
   const busy = isPending || isUploadingFiles;
@@ -81,7 +83,7 @@ export function FormActionBar({
       </button>
       <button
         type="submit"
-        disabled={busy}
+        disabled={busy || isSubmitDisabled}
         className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3.5 py-1.5 text-xs font-semibold text-stone-900 hover:bg-brand-hover disabled:opacity-50 transition-all shadow-sm active:scale-95"
       >
         {busy ? <Loader2 className="size-3 animate-spin" /> : <Save className="size-3" />}

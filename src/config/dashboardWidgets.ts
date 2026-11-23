@@ -57,7 +57,7 @@ export const WIDGET_CATALOG: WidgetDefinition[] = [
   {
     id: "inventory-alerts",
     title: "Inventory / Low-Stock Alerts",
-    description: "Items below their reorder threshold, by warehouse.",
+    description: "Items below their reorder threshold, by location.",
     category: "operations",
     size: "half",
     defaultEnabled: false,

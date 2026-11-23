@@ -1,3 +1,4 @@
+import type { WorkflowBlock } from '@/types/workflow';
 // Refund module — frontend contract types.
 //
 // Mirrors the dedicated relational Refund backend module
@@ -16,7 +17,7 @@
 //     pair below is populated on any given row.
 //  2. It has no line items and no subtotal/tax rollup (spec AD-1) — a refund is
 //     scalar; the itemization already lives on the source document.
-import type { FilterClause, RecordApprover, SortKey } from '@/types/tenant';
+import type { FilterClause, RecordApprover, SortKey, ApprovalRejection } from '@/types/tenant';
 
 // ── Create / update inputs (client → server) ─────────────────────────────────
 
@@ -79,6 +80,8 @@ export interface Refund {
   refundNumber: string;
   status: string;              // human label, e.g. "Pending"
   statusCode: string;          // lkp_record_status code, e.g. "PEND" — drives transitions
+  /** End-to-end flow this record belongs to; see BACKEND_SPEC_workflow_links.md. */
+  workflow?: WorkflowBlock;
   approvalStatus: 'none' | 'pending' | 'approved';
   gated: boolean;
   approvers: RecordApprover[];
@@ -87,6 +90,8 @@ export interface Refund {
   canApprove: boolean;
   isOverride: boolean;
   callerAlreadyApproved: boolean;
+  canReject?: boolean;            // whether the requesting user can reject it right now (configured approver OR super admin, while it awaits approval)
+  rejection?: ApprovalRejection;  // who rejected it and why -- present while it still sits in the status the rejection left it in
   customer: RefundCustomerRef;
   ownerEmployeeId?: number | null;
 

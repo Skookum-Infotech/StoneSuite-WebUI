@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useCallback } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { Users, AlertCircle, ChevronRight, Loader2, Save } from 'lucide-react';
@@ -11,15 +11,15 @@ import { activeCustomFields } from '@/lib/customFields';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { CrmRecordForm } from '@/components/crm/CrmRecordForm';
 import { FormActionBar } from '@/components/crm/FormPrimitives';
-import { StatusDropdown } from '@/components/crm/StatusDropdown';
+import { InitialStatusField } from '@/components/crm/InitialStatusField';
 import { EditableFilesPanel, type EditableFilesPanelHandle } from '@/components/crm/CrmSubTabsPanel';
 import { UnsavedChangesPrompt } from '@/components/UnsavedChangesPrompt';
 import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
 import { useScrollToError } from '@/hooks/useScrollToError';
-import { crmCoreDefaults, primaryAddressFields } from '@/lib/crmFields';
+import { crmCoreDefaults, applyAddressMirroring } from '@/lib/crmFields';
 import { validateCrmRecord, type CrmFieldError } from '@/lib/crmValidation';
 import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
-import { cn } from '@/lib/utils';
+import { TAB_LIST_CLASS, tabClass } from '@/components/ui/tabStyles';
 import type { FieldDefinition } from '@/types/tenant';
 
 const TABS = [
@@ -37,23 +37,15 @@ export default function AddProspectPage() {
   const [coreFields, setCoreFields] = useState<Record<string, unknown>>(() => crmCoreDefaults());
   const [customFieldValues, setCustomFieldValues] = useState<Record<string, unknown>>({});
   const [ownerUserId, setOwnerUserId] = useState('');
-  const [crmStatusId, setCrmStatusId] = useState('');
   const [isUploadingFiles, setIsUploadingFiles] = useState(false);
   const [validationErrors, setValidationErrors] = useState<CrmFieldError[]>([]);
 
   const set = (key: string, value: unknown) => {
     if (validationErrors.length > 0) setValidationErrors([]);
     setCoreFields((d) => {
-      if (key === 'customer_is_bill_as_primary' && value === true) {
-        return { ...d, ...primaryAddressFields(d, 'bill'), [key]: value };
-      }
-      if (key === 'customer_is_ship_as_primary' && value === true) {
-        return { ...d, ...primaryAddressFields(d, 'ship'), [key]: value };
-      }
-      return { ...d, [key]: value };
+      return applyAddressMirroring(d, key, value);
     });
   };
-  const handleStatusChange = useCallback((stateId: string) => setCrmStatusId(stateId), []);
 
   const { data: allWorkflows = [] } = useQuery({ queryKey: ['workflows'], queryFn: workflowService.list });
   const prospectWorkflow = allWorkflows.find((wf) => wf.key.toLowerCase() === 'prospect');
@@ -86,7 +78,7 @@ export default function AddProspectPage() {
     };
   }, [coreFields, lookups]);
 
-  const guard = useUnsavedChangesGuard({ coreFields, customFieldValues, ownerUserId, crmStatusId });
+  const guard = useUnsavedChangesGuard({ coreFields, customFieldValues, ownerUserId });
 
   const { mutate: createProspect, isPending, error: createError } = useMutation({
     mutationFn: () =>
@@ -94,7 +86,6 @@ export default function AddProspectPage() {
         coreFields: formCoreFields,
         customFields: customFieldValues,
         ownerUserId: ownerUserId || undefined,
-        crmStatusId: crmStatusId || undefined,
       }),
     onSuccess: async (record) => {
       toast.success('Prospect created.');
@@ -179,22 +170,19 @@ export default function AddProspectPage() {
         )}
 
         {/* Tab bar */}
-        <div className="flex shrink-0 border-b border-stone-200 bg-white px-5 3xl:px-10 4xl:px-16">
-          {TABS.map((tab) => (
-            <button
-              key={tab.key}
-              type="button"
-              onClick={() => setActiveTab(tab.key)}
-              className={cn(
-                'px-4 py-3 text-sm font-medium border-b-2 -mb-px transition-colors',
-                activeTab === tab.key
-                  ? 'border-stone-800 text-stone-900'
-                  : 'border-transparent text-stone-400 hover:text-stone-600 hover:border-stone-300',
-              )}
-            >
-              {tab.label}
-            </button>
-          ))}
+        <div className="flex shrink-0 border-b border-stone-200 bg-white px-5 3xl:px-10 4xl:px-16 py-2.5">
+          <div role="tablist" className={TAB_LIST_CLASS}>
+            {TABS.map((tab) => (
+              <button
+                key={tab.key}
+                type="button"
+                onClick={() => setActiveTab(tab.key)}
+                className={tabClass(activeTab === tab.key)}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Scrollable form body */}
@@ -206,14 +194,7 @@ export default function AddProspectPage() {
                 custom={{ defs: customFieldDefs, values: customFieldValues, onChange: (key, value) => { if (validationErrors.length > 0) setValidationErrors([]); setCustomFieldValues((prev) => ({ ...prev, [key]: value })); } }}
                 owner={{ userId: ownerUserId, onChange: setOwnerUserId, users }}
                 invalidKeys={validationErrors.length > 0 ? new Set(validationErrors.map((e) => e.key)) : undefined}
-                statusNode={(
-                  <StatusDropdown
-                    workflowKey="prospect"
-                    mode="all"
-                    value={crmStatusId}
-                    onChange={handleStatusChange}
-                  />
-                )}
+                statusNode={<InitialStatusField workflowKey="prospect" />}
               />
             )}
             {/* Always mounted so staged files survive tab switches and are available in onSuccess */}

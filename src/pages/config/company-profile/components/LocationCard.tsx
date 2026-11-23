@@ -21,17 +21,19 @@ function formatAddress(location: CompanyLocation): string {
   return [address.line1, line2, cityState, address.country].filter(Boolean).join(' · ') || 'No address on file';
 }
 
-// One saved Location, display mode — a read-only card with Edit/Delete/
-// "Set as default" actions. Delete asks for confirmation inline (swapping
-// its own action row) rather than via a separate dialog, matching this
-// card's otherwise-inline interaction style.
+// One saved Location, display mode — a card with Edit/Delete/"Set as default"
+// actions. Delete asks for confirmation inline (swapping its own action row)
+// rather than via a separate dialog, matching this card's otherwise-inline
+// interaction style. Without `canConfigure` (the default) it is purely
+// read-only and shows no actions, which is how Inventory → Locations lists the
+// same locations: they are only ever changed from Company Info.
 export function LocationCard({
-  location, canConfigure, isBusy, actions,
+  location, canConfigure = false, isBusy = false, actions,
 }: {
   location: CompanyLocation;
-  canConfigure: boolean;
-  isBusy: boolean;
-  actions: LocationCardActions;
+  canConfigure?: boolean;
+  isBusy?: boolean;
+  actions?: LocationCardActions;
 }) {
   const [confirmingDelete, setConfirmingDelete] = useState(false);
 
@@ -55,7 +57,7 @@ export function LocationCard({
               {!location.isDefault && (
                 <button
                   type="button"
-                  onClick={actions.onSetDefault}
+                  onClick={actions?.onSetDefault}
                   disabled={isBusy}
                   aria-label={`Set ${location.name} as default location`}
                   className="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-stone-600 hover:bg-stone-100 disabled:opacity-50 transition-colors"
@@ -65,7 +67,7 @@ export function LocationCard({
               )}
               <button
                 type="button"
-                onClick={actions.onEdit}
+                onClick={actions?.onEdit}
                 disabled={isBusy}
                 aria-label={`Edit ${location.name}`}
                 className="rounded-lg p-2 text-stone-500 hover:bg-stone-100 hover:text-stone-700 disabled:opacity-50 transition-colors"
@@ -76,7 +78,7 @@ export function LocationCard({
                 type="button"
                 onClick={() => {
                   setConfirmingDelete(true);
-                  actions.onAnnounce(`Confirm deleting ${location.name}.`);
+                  actions?.onAnnounce(`Confirm deleting ${location.name}.`);
                 }}
                 disabled={isBusy}
                 aria-label={`Delete ${location.name}`}
@@ -94,7 +96,7 @@ export function LocationCard({
                 type="button"
                 onClick={() => {
                   setConfirmingDelete(false);
-                  actions.onAnnounce('Delete cancelled.');
+                  actions?.onAnnounce('Delete cancelled.');
                 }}
                 disabled={isBusy}
                 aria-label="Cancel delete"
@@ -104,7 +106,7 @@ export function LocationCard({
               </button>
               <button
                 type="button"
-                onClick={actions.onDelete}
+                onClick={actions?.onDelete}
                 disabled={isBusy}
                 aria-label={`Confirm delete ${location.name}`}
                 className={cn(

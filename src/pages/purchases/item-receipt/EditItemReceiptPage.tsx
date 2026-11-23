@@ -13,10 +13,12 @@ import { UnsavedChangesPrompt } from '@/components/UnsavedChangesPrompt';
 import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
 import { useScrollToError } from '@/hooks/useScrollToError';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
+import { useInventoryLookups } from '@/hooks/useInventoryLookups';
 import { ItemReceiptFormBody } from './components/ItemReceiptFormBody';
+import { toNumericWarehouseId, toWarehouseUuid } from '@/lib/inventoryWarehouse';
 import {
-  fromItemReceipt, toUpdatePayload, validateReceiptLines, validateReceiptLineErrors, mergeReceiptLines,
-  IR_EDITABLE_STATUSES, irStatusLabel, PAGE_TABS, type PageTab, type ItemReceiptDraftLine,
+  fromItemReceipt, toUpdatePayload, validateReceiptLines, validateReceiptLineErrors, validateReceiptHeader,
+  mergeReceiptLines, IR_EDITABLE_STATUSES, irStatusLabel, PAGE_TABS, type PageTab, type ItemReceiptDraftLine,
 } from '@/lib/itemReceiptForm';
 
 const EMPTY_CUSTOM: Record<string, unknown> = {};
@@ -47,6 +49,15 @@ export default function EditItemReceiptPage() {
     enabled: Boolean(ir?.purchaseOrder.id),
   });
 
+  // The slabs the order put on order and that have not arrived: the checklist's rows.
+  // A pending receipt that already ticked some of them still finds them here, since
+  // a slab stays on order until its receipt posts.
+  const { data: onOrderSlabs, isLoading: onOrderLoading } = useQuery({
+    queryKey: ['po-on-order-slabs', ir?.purchaseOrder.id],
+    queryFn: () => itemReceiptService.onOrderSlabs(ir!.purchaseOrder.id),
+    enabled: Boolean(ir?.purchaseOrder.id),
+  });
+
   const { data: lookups } = useQuery({
     queryKey: ['crm-lookups'],
     queryFn: lookupService.getCrmLookups,
@@ -62,50 +73,64 @@ export default function EditItemReceiptPage() {
     }
   }, [id, ir?.itemReceiptNumber, setLabel, clearLabel]);
 
+  const { lookups: inventoryLookups } = useInventoryLookups();
+  const warehouses = inventoryLookups?.warehouses;
+
   const mapped = useMemo(() => (ir ? fromItemReceipt(ir) : null), [ir]);
-  const mergedLines = useMemo(
-    () => (po && ir ? mergeReceiptLines(po.items, ir.items ?? []) : []),
-    [po, ir],
+  // The receipt carries its warehouse as a numeric id; the picker binds to the uuid.
+  const baseData = useMemo<Record<string, unknown>>(
+    () => (mapped && ir ? { ...mapped.data, warehouse_id: toWarehouseUuid(warehouses ?? [], ir.warehouseId) } : {}),
+    [mapped, ir, warehouses],
   );
-  const data = localData ?? mapped?.data ?? {};
+  const mergedLines = useMemo(
+    () => (po && ir ? mergeReceiptLines(po.items, ir.items ?? [], onOrderSlabs ?? []) : []),
+    [po, ir, onOrderSlabs],
+  );
+  const data = localData ?? baseData;
   const lines = localLines ?? mergedLines;
   const customFieldValues = localCustomFields ?? mapped?.customFieldValues ?? EMPTY_CUSTOM;
   const isLocked = ir ? !IR_EDITABLE_STATUSES.has(ir.statusCode) : false;
 
   const set = useCallback(
-    (key: string, value: unknown) => setLocalData((prev) => ({ ...(prev ?? mapped?.data ?? {}), [key]: value })),
-    [mapped],
+    (key: string, value: unknown) => setLocalData((prev) => ({ ...(prev ?? baseData), [key]: value })),
+    [baseData],
   );
   const setCustomField = useCallback(
     (key: string, value: unknown) => setLocalCustomFields((prev) => ({ ...(prev ?? mapped?.customFieldValues ?? {}), [key]: value })),
     [mapped],
   );
 
-  const validationErrors = validateReceiptLines(lines);
+  const validationErrors = [...validateReceiptHeader(data), ...validateReceiptLines(lines)];
   const lineErrors = useMemo(() => validateReceiptLineErrors(lines), [lines]);
 
-  // Both the receipt and its source PO feed the baseline — lines are merged from
-  // the two, so waiting on `po` avoids flagging the merge itself as an edit.
+  // The receipt, its source PO and the warehouse lookups all feed the baseline
+  // — lines are merged from the first two and the picker is filled from the
+  // third, so waiting on them avoids flagging that assembly as an edit.
   const guard = useUnsavedChangesGuard(
     { data, lines, customFieldValues },
-    Boolean(mapped) && Boolean(po) && !isLocked,
+    Boolean(mapped) && Boolean(po) && !onOrderLoading && Boolean(inventoryLookups) && !isLocked,
   );
 
   const save = useMutation({
     mutationFn: () => {
       if (validationErrors.length > 0) throw new Error(validationErrors[0]);
-      return itemReceiptService.updateItemReceipt(id, toUpdatePayload(data, lines, customFieldValues));
+      return itemReceiptService.updateItemReceipt(id, toUpdatePayload(
+        data, lines, customFieldValues,
+        toNumericWarehouseId(warehouses ?? [], String(data.warehouse_id)),
+      ));
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['item-receipt', id] });
       queryClient.invalidateQueries({ queryKey: ['item-receipts'] });
+      queryClient.invalidateQueries({ queryKey: ['slab-sequence', po?.id] });
+      queryClient.invalidateQueries({ queryKey: ['po-on-order-slabs', po?.id] });
       guard.markClean();
       navigate(`/purchases/item_receipt/${id}`);
     },
   });
   const errorRef = useScrollToError<HTMLDivElement>(save.error);
 
-  if (isLoading || (Boolean(ir) && poLoading)) return <div className="p-6"><Spinner label="Loading item receipt…" /></div>;
+  if (isLoading || (Boolean(ir) && (poLoading || onOrderLoading))) return <div className="p-6"><Spinner label="Loading item receipt…" /></div>;
   if (loadError || !ir)
     return <div className="p-6"><ErrorNote>{apiErrorMessage(loadError, 'Failed to load item receipt.')}</ErrorNote></div>;
   if (poError || !po)
@@ -122,11 +147,11 @@ export default function EditItemReceiptPage() {
           subtitle={ir.vendor.name}
         />
         <div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 text-center">
-          <Lock className="size-8 text-stone-300" aria-hidden="true" />
+          <Lock className="size-8 text-stone-400" aria-hidden="true" />
           <p className="text-sm font-semibold text-stone-700">
             This item receipt is {irStatusLabel(ir.statusCode)} and can no longer be edited.
           </p>
-          <p className="text-xs text-stone-400">
+          <p className="text-xs text-stone-500">
             {ir.statusCode === 'VOID'
               ? 'A voided receipt is terminal.'
               : 'Void and reissue a new receipt to make changes — a posted receipt is immutable.'}

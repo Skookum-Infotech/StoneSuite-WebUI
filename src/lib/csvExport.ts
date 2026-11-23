@@ -1,17 +1,23 @@
-const CSV_ESCAPE_PATTERN = /[",\r\n]/;
+import { toast } from "sonner";
+import { formatDateValue } from "./dateUtils";
 
-/** Escapes a single value for CSV — quotes it (doubling embedded quotes) only when needed. */
+const CSV_ESCAPE_PATTERN = /[",\r\n]/;
+const CSV_FORMULA_PREFIX_PATTERN = /^[=+\-@\t\r]/;
+const CSV_PLAIN_NUMBER_PATTERN = /^[+-]?\d+(\.\d+)?$/;
+
+/** Escapes a single value for CSV — quotes it (doubling embedded quotes) only when needed.
+ *  Values a spreadsheet would run as a formula (leading = + - @ tab CR) get a leading
+ *  apostrophe so they open as text; plain numbers such as -12.50 are left alone. */
 export function csvEscapeValue(value: unknown): string {
-  const str = value === null || value === undefined ? "" : String(value);
+  let str = value === null || value === undefined ? "" : String(value);
+  if (CSV_FORMULA_PREFIX_PATTERN.test(str) && !CSV_PLAIN_NUMBER_PATTERN.test(str)) str = `'${str}`;
   return CSV_ESCAPE_PATTERN.test(str) ? `"${str.replace(/"/g, '""')}"` : str;
 }
 
-/** Formats an ISO timestamp as a plain date for spreadsheet columns. */
+/** Formats an ISO timestamp or date-only value as a plain date for spreadsheet
+ *  columns; date-only values keep their calendar day in every timezone. */
 export function fmtCsvDate(iso: string | undefined): string {
-  if (!iso) return "";
-  const parsed = new Date(iso);
-  if (Number.isNaN(parsed.getTime())) return "";
-  return parsed.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+  return formatDateValue(iso, undefined, { year: "numeric", month: "short", day: "numeric" });
 }
 
 /** Builds CSV text (with header row) from a header list and pre-formatted rows. */
@@ -28,7 +34,14 @@ export function buildCsvFilename(label: string): string {
 
 /** Triggers a browser download of the given CSV text under the given filename. */
 export function downloadCsv(filename: string, csvContent: string): void {
-  const blob = new Blob(["﻿", csvContent], { type: "text/csv;charset=utf-8;" });
+  downloadCsvBlob(filename, new Blob([csvContent]));
+}
+
+/** Triggers a browser download of a CSV the server already built. A UTF-8 byte
+ *  order mark is put in front so Excel reads accented names correctly, the same
+ *  as every client-built export. */
+export function downloadCsvBlob(filename: string, csv: Blob): void {
+  const blob = new Blob(["﻿", csv], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
@@ -37,6 +50,7 @@ export function downloadCsv(filename: string, csvContent: string): void {
   link.click();
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
+  toast.success("Downloaded successfully!");
 }
 
 export interface CsvSearchPage<T> {

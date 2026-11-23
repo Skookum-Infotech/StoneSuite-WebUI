@@ -1,8 +1,10 @@
+import { Select } from '@/components/ui/select';
 import { ModernFieldShell } from '@/components/crm/FormPrimitives';
 import { fieldCls, textareaCls, readonlyCls } from '@/components/crm/formUtils';
 import { DatePicker } from '@/components/ui/date-picker';
 import type { CrmLookups } from '@/services/lookupService';
 import type { ItemReceiptFormField } from '@/lib/itemReceiptForm';
+import { ReceiptWarehouseField } from './ReceiptWarehouseField';
 
 // Renders one ItemReceiptFormField — shared by the Receive and Edit forms.
 // Mirrors PurchaseOrderField, trimmed: no lookupKey country/state chaining
@@ -19,10 +21,14 @@ export function ItemReceiptField({ field, value, set, lookups }: {
     return (
       <ModernFieldShell label={field.label}>
         <div className={`${readonlyCls} cursor-not-allowed select-none`}>
-          {str || <span className="text-stone-400">—</span>}
+          {str || <span className="text-stone-500">—</span>}
         </div>
       </ModernFieldShell>
     );
+  }
+
+  if (field.type === 'warehouse') {
+    return <ReceiptWarehouseField field={field} value={value} set={set} />;
   }
 
   if (field.type === 'textarea') {
@@ -47,7 +53,7 @@ export function ItemReceiptField({ field, value, set, lookups }: {
       : null;
     return (
       <ModernFieldShell label={field.label} required={field.required}>
-        <select
+        <Select
           required={field.required}
           value={str}
           onChange={(e) => set(field.key, e.target.value)}
@@ -58,7 +64,7 @@ export function ItemReceiptField({ field, value, set, lookups }: {
           {lookupRows?.map((row) => (
             <option key={row.id} value={row.id}>{row.name}</option>
           ))}
-        </select>
+        </Select>
       </ModernFieldShell>
     );
   }
@@ -82,7 +88,7 @@ export function ItemReceiptField({ field, value, set, lookups }: {
         placeholder={field.placeholder}
         aria-label={field.label}
       />
-      {field.hint && <p className="text-2xs text-stone-400">{field.hint}</p>}
+      {field.hint && <p className="text-2xs text-stone-500">{field.hint}</p>}
     </ModernFieldShell>
   );
 }

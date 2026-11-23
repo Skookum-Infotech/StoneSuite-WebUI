@@ -1,13 +1,16 @@
 import { useState, useEffect } from 'react';
+import { AddressGeoLine } from '@/components/tenant/AddressGeoLine';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { FileText, Upload, Pencil, FileSpreadsheet, ArrowRightLeft, Loader2, FileDown, Send } from 'lucide-react';
+import { CopyQuickAction } from '@/components/tenant/CopyQuickAction';
 import { toast } from 'sonner';
 import { quoteService } from '@/services/quoteService';
 import { lookupService } from '@/services/lookupService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { Spinner, ErrorNote, Badge } from '@/components/tenant/ui';
-import { ApprovalBanner } from '@/components/tenant/ApprovalBanner';
+import { RecordApprovalBanner } from '@/components/tenant/RecordApprovalBanner';
+import { RecordCommunicationTab } from '@/components/tenant/RecordCommunicationTab';
 import { SendToCustomerDialog } from '@/components/tenant/SendToCustomerDialog';
 import { ModernSection } from '@/components/crm/FormPrimitives';
 import { readonlyCls, fieldLabelCls } from '@/components/crm/formUtils';
@@ -16,16 +19,29 @@ import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { cn } from '@/lib/utils';
-import { QUOTE_STATUS_COLORS, QUOTE_STATUS_CODES, QUOTE_CONVERTIBLE_STATUSES, validateForSend } from '@/lib/quoteForm';
+import { TAB_LIST_CLASS, tabClass } from '@/components/ui/tabStyles';
+import { KitLineRows } from '@/components/inventory/KitLineRows';
+import { unitLabel } from '@/lib/unitLabels';
+import { LineSizeViewCells } from '@/components/inventory/LineSizeCells';
+import { SALES_SIZE_COLS } from '@/lib/lineThickness';
+import { QUOTE_STATUS_COLORS, QUOTE_STATUS_CODES, QUOTE_CONVERTIBLE_STATUSES, QUOTE_ALLOWED_TRANSITIONS, validateForSend } from '@/lib/quoteForm';
 import { statusToastLabel } from '@/lib/statusToast';
+import { itemsShortLabel, uncoveredShortages } from '@/lib/stockShortage';
 import { QuoteAuditTab } from './components/QuoteAuditTab';
 import { DeleteQuoteDialog } from './components/DeleteQuoteDialog';
+import { DangerZoneCard } from '@/components/tenant/DangerZoneCard';
+import { DocumentSendHistory } from '@/components/tenant/DocumentSendHistory';
+import { WorkflowCard } from '@/components/tenant/WorkflowCard';
 import { SalesDetailSidebar } from './components/SalesDetailSidebar';
+import { AmountsStrip } from './components/AmountsStrip';
 import { QuoteStatusControl } from './components/QuoteStatusControl';
+import { formatDateValue } from '@/lib/dateUtils';
+import { CustomerLink } from '@/components/crm/CustomerLink';
 
 const TABS = [
   { key: 'overview', label: 'Overview' },
   { key: 'items', label: 'Items' },
+  { key: 'communication', label: 'Communication' },
   { key: 'audit', label: 'Audit' },
   { key: 'files', label: 'Files' },
 ] as const;
@@ -38,12 +54,14 @@ const DETAIL_POLL_MS = 60_000;
 
 function fmtDate(iso?: string): string {
   if (!iso) return '—';
-  return new Date(iso).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+  return formatDateValue(iso, undefined, { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
 function currency(n: number | undefined): string {
   return (n ?? 0).toLocaleString(undefined, { style: 'currency', currency: 'USD' });
 }
+
+const SENT_STATUS_CODE = 'SENT';
 
 export default function QuoteDetailPage() {
   const { id = '' } = useParams();
@@ -59,6 +77,7 @@ export default function QuoteDetailPage() {
   const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
   const canEdit = permissionsLoading || hasPermission('quote', 'update');
   const canDelete = permissionsLoading || hasPermission('quote', 'delete');
+  const canCopy = permissionsLoading || hasPermission('quote', 'create');
   // Convert targets a new Sales Order, so gate on the Sales Order module's
   // create permission (backend checks source quote:read + target sales_order:create).
   const canConvert = permissionsLoading || hasPermission('sales_order', 'create');
@@ -88,7 +107,15 @@ export default function QuoteDetailPage() {
   // (idempotent replay) — either way, navigate to it.
   const convert = useMutation({
     mutationFn: () => quoteService.convertToSalesOrder(id),
-    onSuccess: ({ salesOrder }) => navigate(`/sales/sales_order/${salesOrder.id}`),
+    // Short stock never stops the conversion; the order opens with its
+    // "items short" banner, and this toast says so straight away.
+    onSuccess: ({ salesOrder, stockShortages: all }) => {
+      const stockShortages = uncoveredShortages(all);
+      if (stockShortages.length > 0) {
+        toast.warning(`${quote?.quoteNumber || 'Quote'} converted to ${salesOrder.salesOrderNumber || 'a sales order'}. ${itemsShortLabel(stockShortages)} in inventory: delivery may be delayed.`);
+      }
+      navigate(`/sales/sales_order/${salesOrder.id}`);
+    },
   });
 
   // Inline status change from the sidebar's Status row — mirrors the Edit
@@ -118,6 +145,14 @@ export default function QuoteDetailPage() {
     },
   });
 
+  // An approver rejected it. The POST response carries no approval overlay, so refetch
+  // to show the rejection banner and drop it from the list's pending view.
+  const handleRejected = () => {
+    queryClient.invalidateQueries({ queryKey: ['quote', id] });
+    queryClient.invalidateQueries({ queryKey: ['quotes'] });
+    toast.success('Rejected — sent back to Draft.');
+  };
+
   if (isLoading) return <div className="p-6"><Spinner label="Loading quote…" /></div>;
   if (!quote)
     return <div className="p-6"><ErrorNote>{apiErrorMessage(error, 'Failed to load quote.')}</ErrorNote></div>;
@@ -129,53 +164,8 @@ export default function QuoteDetailPage() {
     setExportPdfError(undefined);
     setExportingPdf(true);
     try {
-      const { exportSalesDocToPdf } = await import('@/lib/salesPdfExport');
-      await exportSalesDocToPdf({
-        docType: 'quote',
-        title: quote.quoteNumber || 'Quote',
-        recordNumber: quote.quoteNumber,
-        statusLabel: quote.status,
-        customerName: quote.customer.name,
-        createdAt: quote.createdAt,
-        updatedAt: quote.updatedAt,
-        sections: [
-          {
-            title: 'Primary Information',
-            rows: [
-              ['Quote Date', fmtDate(quote.quoteDate)],
-              ['Valid Until', quote.validUntil ? fmtDate(quote.validUntil) : ''],
-              ['PO Number', quote.poNumber || ''],
-              ['Reference #', quote.referenceNumber || ''],
-              ['Sales Tax %', `${quote.salesTaxPercent}%`],
-              ['Source Estimate', quote.estimate?.number || ''],
-              ['Memo', quote.memo || ''],
-            ],
-          },
-          { title: 'Bill To', rows: addressRows(quote.billing) },
-          { title: 'Ship To', rows: addressRows(quote.shipping) },
-        ],
-        itemsTable: {
-          head: ['#', 'Item', 'Description', 'SKU', 'Qty', 'Unit Price', 'Disc %', 'Tax %', 'Total'],
-          rows: quote.items.map((line) => [
-            String(line.lineNumber),
-            line.itemName || line.description || '—',
-            line.description || '—',
-            line.sku || '—',
-            String(line.quantity),
-            currency(line.unitPrice),
-            `${line.discountPercent}%`,
-            `${line.taxPercent}%`,
-            currency(line.lineTotal),
-          ]),
-          numericFrom: 4,
-        },
-        totals: [
-          { label: 'Subtotal', value: currency(quote.subtotal) },
-          { label: 'Discount', value: currency(quote.discountTotal) },
-          { label: 'Tax', value: currency(quote.taxTotal) },
-          { label: 'Grand Total', value: currency(quote.grandTotal), bold: true },
-        ],
-      });
+      const { downloadServerDocPdf } = await import('@/lib/serverDocPdf');
+      await downloadServerDocPdf({ recordId: id, docType: 'quote', recordNumber: quote.quoteNumber });
     } catch (err) {
       setExportPdfError(apiErrorMessage(err, 'Failed to export PDF.'));
     } finally {
@@ -205,18 +195,44 @@ export default function QuoteDetailPage() {
         subtitle={quote.customer.name}
         recordNumber={quote.quoteNumber}
         statusBadge={<Badge color={color}>{quote.status}</Badge>}
-        actions={canConvert && QUOTE_CONVERTIBLE_STATUSES.has(quote.statusCode) && (
-          <button
-            type="button"
-            onClick={() => convert.mutate()}
-            disabled={convert.isPending}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-stone-300 bg-white px-3 py-1.5 text-xs font-semibold text-stone-700 shadow-sm transition-colors hover:bg-stone-50 disabled:opacity-50"
-          >
-            {convert.isPending ? <Loader2 className="size-3.5 animate-spin" /> : <ArrowRightLeft className="size-3.5" />}
-            Convert to Sales Order
-          </button>
+        actions={(
+          <>
+            {canEdit && (
+              <button
+                type="button"
+                onClick={handleSendClick}
+                aria-label="Send quote to customer"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-stone-300 bg-white px-3 py-1.5 text-xs font-semibold text-stone-700 shadow-sm transition-colors hover:bg-stone-50"
+              >
+                <Send className="size-3.5" />
+                Send to Customer
+              </button>
+            )}
+            {canConvert && QUOTE_CONVERTIBLE_STATUSES.has(quote.statusCode) && (
+              <button
+                type="button"
+                onClick={() => convert.mutate()}
+                disabled={convert.isPending}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-stone-300 bg-white px-3 py-1.5 text-xs font-semibold text-stone-700 shadow-sm transition-colors hover:bg-stone-50 disabled:opacity-50"
+              >
+                {convert.isPending ? <Loader2 className="size-3.5 animate-spin" /> : <ArrowRightLeft className="size-3.5" />}
+                Convert to Sales Order
+              </button>
+            )}
+          </>
         )}
       />
+
+      {sendErrors.length > 0 && (
+        <div role="alert" className="space-y-0.5 border-b border-stone-200 bg-white px-5 py-2 3xl:px-12 4xl:px-16">
+          {sendErrors.map((e) => (
+            <p key={e} className="text-2xs text-destructive">{e}</p>
+          ))}
+        </div>
+      )}
+      {sendSuccess && (
+        <p role="status" className="border-b border-stone-200 bg-white px-5 py-2 text-2xs text-emerald-600 3xl:px-12 4xl:px-16">{sendSuccess}</p>
+      )}
 
       {convert.isError && (
         <p role="alert" className="border-b border-stone-200 bg-white px-5 py-2 text-2xs text-destructive 3xl:px-12 4xl:px-16">
@@ -224,50 +240,50 @@ export default function QuoteDetailPage() {
         </p>
       )}
 
-      {quote.gated && (
-        <>
-          <ApprovalBanner
-            approverNames={quote.approvers.filter((a) => !a.approved).map((a) => a.name)}
-            canApprove={quote.canApprove}
-            isOverride={quote.isOverride}
-            requiredApprovals={quote.requiredApprovals}
-            approvedCount={quote.approvedCount}
-            callerAlreadyApproved={quote.callerAlreadyApproved}
-            onApprove={() => approve.mutate()}
-            approving={approve.isPending}
-          />
-          {approve.isError && (
-            <p role="alert" className="border-b border-amber-200 bg-amber-50 px-5 pb-2 text-2xs text-destructive 3xl:px-12 4xl:px-16">
-              {apiErrorMessage(approve.error, 'Failed to approve quote.')}
-            </p>
-          )}
-        </>
+      <RecordApprovalBanner
+        record={quote}
+        onApprove={() => approve.mutate()}
+        approving={approve.isPending}
+        reject={{ noun: 'quote', run: (reason) => quoteService.reject(id, reason), onRejected: handleRejected }}
+        resubmitVia="submit"
+      />
+      {quote.gated && approve.isError && (
+        <p role="alert" className="border-b border-amber-200 bg-amber-50 px-5 pb-2 text-2xs text-destructive 3xl:px-12 4xl:px-16">
+          {apiErrorMessage(approve.error, 'Failed to approve quote.')}
+        </p>
       )}
 
       {/* Tab bar */}
-      <div className="flex shrink-0 overflow-x-auto overflow-y-hidden border-b border-stone-200 bg-white px-5 3xl:px-12 4xl:px-16 modal-scrollbar">
-        {TABS.map((tab) => (
-          <button
-            key={tab.key}
-            type="button"
-            onClick={() => setActiveTab(tab.key)}
-            className={cn(
-              'px-4 py-3 text-sm font-semibold border-b-2 -mb-px transition-colors duration-150 whitespace-nowrap shrink-0',
-              activeTab === tab.key
-                ? 'border-brand text-stone-950'
-                : 'border-transparent text-stone-500 hover:text-stone-700 hover:border-stone-200',
-            )}
-          >
-            {tab.label}
-          </button>
-        ))}
+      <div className="flex shrink-0 overflow-x-auto overflow-y-hidden border-b border-stone-200 bg-white px-5 3xl:px-12 4xl:px-16 modal-scrollbar py-2.5">
+        <div role="tablist" className={TAB_LIST_CLASS}>
+          {TABS.map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setActiveTab(tab.key)}
+              className={tabClass(activeTab === tab.key)}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-6 px-4 py-4 sm:px-5 sm:py-5 3xl:px-12 3xl:py-8 3xl:gap-10 4xl:px-16 4xl:py-10 4xl:gap-14">
+      <div className="flex flex-1 flex-col lg:flex-row gap-6 px-4 py-4 sm:px-5 sm:py-5 3xl:px-12 3xl:py-8 3xl:gap-10 4xl:px-16 4xl:py-10 4xl:gap-14">
         {/* Left column */}
-        <div className="flex-1 space-y-3 min-w-0">
+        {/* The Communication tab fills the column, so its reply box can sit at the
+            bottom of the screen even when the conversation is empty. */}
+        <div className={cn('flex-1 space-y-3 min-w-0', activeTab === 'communication' && 'flex flex-col')}>
           {activeTab === 'overview' && (
             <>
+              <AmountsStrip
+                items={[
+                  { label: 'Subtotal', value: quote.subtotal },
+                  { label: 'Discount', value: quote.discountTotal },
+                  { label: 'Tax', value: quote.taxTotal },
+                  { label: 'Grand Total', value: quote.grandTotal, emphasis: 'key' },
+                ]}
+              />
               <ModernSection title="Primary Information" index={0}>
                 <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
                   <ReadonlyField label="Quote Date" value={fmtDate(quote.quoteDate)} />
@@ -305,14 +321,6 @@ export default function QuoteDetailPage() {
               <ModernSection title="Ship To" index={2}>
                 <AddressBlock addr={quote.shipping} />
               </ModernSection>
-              <div className="rounded-lg border border-stone-200 bg-white p-4">
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                  <Total label="Subtotal" value={quote.subtotal} />
-                  <Total label="Discount" value={quote.discountTotal} />
-                  <Total label="Tax" value={quote.taxTotal} />
-                  <Total label="Grand Total" value={quote.grandTotal} bold />
-                </div>
-              </div>
             </>
           )}
 
@@ -326,6 +334,8 @@ export default function QuoteDetailPage() {
                       { label: 'Item' },
                       { label: 'Description' },
                       { label: 'SKU' },
+                      ...SALES_SIZE_COLS,
+                      { label: 'Unit' },
                       { label: 'Qty', right: true },
                       { label: 'Unit Price', right: true },
                       { label: 'Disc %', right: true },
@@ -337,29 +347,34 @@ export default function QuoteDetailPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-stone-100">
-                  {quote.items.map((line) => (
-                    <tr key={line.id} className="hover:bg-stone-50/50 divide-x divide-stone-100">
-                      <td className="px-3 py-2.5 text-stone-400 tabular-nums">{line.lineNumber}</td>
+                  <KitLineRows lines={quote.items} colSpan={14} renderRow={(line, kitCls) => (
+                    <tr className={cn('hover:bg-stone-50/50 divide-x divide-stone-100', kitCls)}>
+                      <td className="px-3 py-2.5 text-stone-500 tabular-nums">{line.lineNumber}</td>
                       <td className="px-3 py-2.5 font-medium text-stone-800">
-                        {line.itemName || line.description || <span className="text-stone-300">—</span>}
+                        {line.itemName || line.description || <span className="text-stone-500">—</span>}
                       </td>
                       <td className="px-3 py-2.5 text-stone-500 max-w-[200px] truncate">{line.description || '—'}</td>
                       <td className="px-3 py-2.5 font-mono text-2xs text-stone-500">{line.sku || '—'}</td>
+                      <LineSizeViewCells size={line} unit={line.dimensionUnit} units={line.unitCode} />
+                      <td className="px-3 py-2.5 text-stone-500 whitespace-nowrap" title={line.unitCode || undefined}>
+                        {unitLabel(line.unitCode) || <span className="text-stone-500">—</span>}
+                      </td>
                       <td className="px-3 py-2.5 tabular-nums text-right text-stone-600">{line.quantity}</td>
                       <td className="px-3 py-2.5 tabular-nums text-right text-stone-600">{currency(line.unitPrice)}</td>
                       <td className="px-3 py-2.5 tabular-nums text-right text-stone-500">{line.discountPercent}%</td>
                       <td className="px-3 py-2.5 tabular-nums text-right text-stone-500">{line.taxPercent}%</td>
                       <td className="px-3 py-2.5 tabular-nums text-right text-stone-800 font-semibold">{currency(line.lineTotal)}</td>
                     </tr>
-                  ))}
+                  )} />
                   {quote.items.length === 0 && (
-                    <tr><td colSpan={9} className="py-8 text-center text-stone-400">No line items.</td></tr>
+                    <tr><td colSpan={14} className="py-8 text-center text-stone-500">No line items.</td></tr>
                   )}
                 </tbody>
               </table>
             </div>
           )}
 
+          {activeTab === 'communication' && <RecordCommunicationTab recordId={id} audience="customer" canReply={canEdit} />}
           {activeTab === 'audit' && <QuoteAuditTab quoteId={id} />}
           {activeTab === 'files' && <FilesContent ref={null} recordId={id} readOnly={false} />}
 
@@ -368,8 +383,9 @@ export default function QuoteDetailPage() {
 
         {/* Right sidebar */}
         <SalesDetailSidebar label="Quote Details">
+          <WorkflowCard module="quote" statusCode={quote.statusCode} statusLabel={quote.status} workflow={quote.workflow} />
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-            <p className="text-xs font-semibold text-stone-400">Quick Actions</p>
+            <p className="text-xs font-semibold text-stone-500">Quick Actions</p>
             <div className="space-y-0.5">
               <button
                 type="button"
@@ -393,12 +409,15 @@ export default function QuoteDetailPage() {
                 <button
                   type="button"
                   onClick={handleSendClick}
+                  aria-label="Resend quote email to customer"
                   className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs text-stone-700 w-full transition-colors text-left"
-                  aria-label="Send quote to customer"
                 >
                   <Send className="size-4 text-stone-400 shrink-0" />
-                  Send to Customer
+                  Resend to Customer
                 </button>
+              )}
+              {canCopy && (
+                <CopyQuickAction recordLabel="quote" addPath="/sales/quote/new" sourceId={id} />
               )}
               <button
                 type="button"
@@ -414,20 +433,10 @@ export default function QuoteDetailPage() {
             {exportPdfError && (
               <p role="alert" className="text-2xs text-destructive">{exportPdfError}</p>
             )}
-            {sendErrors.length > 0 && (
-              <div role="alert" className="space-y-0.5">
-                {sendErrors.map((e) => (
-                  <p key={e} className="text-2xs text-destructive">{e}</p>
-                ))}
-              </div>
-            )}
-            {sendSuccess && (
-              <p role="status" className="text-2xs text-emerald-600">{sendSuccess}</p>
-            )}
           </div>
 
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-            <p className="text-xs font-semibold text-stone-400">Status</p>
+            <p className="text-xs font-semibold text-stone-500">Status</p>
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
               <span className="text-stone-500">Status</span>
               <QuoteStatusControl
@@ -439,7 +448,7 @@ export default function QuoteDetailPage() {
             </div>
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
               <span className="text-stone-500">Customer</span>
-              <span className="text-stone-700 truncate max-w-[140px]">{quote.customer.name}</span>
+              <CustomerLink id={quote.customer.id} name={quote.customer.name} className="text-stone-700 truncate max-w-[140px] hover:text-accent-foreground hover:underline" />
             </div>
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
               <span className="text-stone-500">Created</span>
@@ -451,9 +460,10 @@ export default function QuoteDetailPage() {
             </div>
           </div>
 
+          <DocumentSendHistory recordId={id} />
+
           {canDelete && (
-            <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-              <p className="text-xs font-semibold text-red-400">Danger Zone</p>
+            <DangerZoneCard>
               <DeleteQuoteDialog
                 quoteId={id}
                 label={`Quote ${quote.quoteNumber}`}
@@ -462,7 +472,7 @@ export default function QuoteDetailPage() {
                   navigate('/sales/quote');
                 }}
               />
-            </div>
+            </DangerZoneCard>
           )}
         </SalesDetailSidebar>
       </div>
@@ -473,11 +483,14 @@ export default function QuoteDetailPage() {
         onOpenChange={setSendDialogOpen}
         recipientEmail={quote.billing.email ?? ''}
         label={`Quote ${quote.quoteNumber}`}
-        onSent={(result) =>
+        onSent={(result) => {
           setSendSuccess(
             result.sentTo.length ? `Sent to ${result.sentTo.join(', ')}.` : 'Send completed, but no recipients were found.',
-          )
-        }
+          );
+          // Sending is what makes the quote "Sent": move it there when that is a legal next step.
+          const next = quote.nextStatusCodes ?? QUOTE_ALLOWED_TRANSITIONS[quote.statusCode] ?? [];
+          if (next.includes(SENT_STATUS_CODE)) transition.mutate(SENT_STATUS_CODE);
+        }}
       />
     </div>
   );
@@ -487,23 +500,12 @@ function ReadonlyField({ label, value, full }: { label: string; value?: string; 
   return (
     <div className={cn('space-y-1', full && 'col-span-full')}>
       <label className={fieldLabelCls}>{label}</label>
-      <div className={readonlyCls}>{value || <span className="text-stone-400">—</span>}</div>
+      <div className={readonlyCls}>{value || <span className="text-stone-500">—</span>}</div>
     </div>
   );
 }
 
-function addressRows(addr: { customerName?: string; attention?: string; addrLine1?: string; addrLine2?: string; suiteUnit?: string; city?: string; zip?: string; phone?: string; fax?: string; email?: string }): Array<[string, string]> {
-  return [
-    ['Name', addr.customerName || ''],
-    ['Attention', addr.attention || ''],
-    ['Address', [addr.addrLine1, addr.addrLine2].filter(Boolean).join(', ')],
-    ['City/Zip', [addr.suiteUnit, addr.city, addr.zip].filter(Boolean).join(', ')],
-    ['Phone', addr.phone || ''],
-    ['Email', addr.email || ''],
-  ];
-}
-
-function AddressBlock({ addr }: { addr: { customerName?: string; attention?: string; addrLine1?: string; addrLine2?: string; suiteUnit?: string; city?: string; zip?: string; phone?: string; fax?: string; email?: string } }) {
+function AddressBlock({ addr }: { addr: { customerName?: string; attention?: string; addrLine1?: string; addrLine2?: string; suiteUnit?: string; city?: string; stateId?: number | null; countryId?: number | null; zip?: string; phone?: string; fax?: string; email?: string } }) {
   const lines = [
     addr.attention,
     [addr.addrLine1, addr.addrLine2].filter(Boolean).join(', '),
@@ -512,24 +514,14 @@ function AddressBlock({ addr }: { addr: { customerName?: string; attention?: str
     addr.email && `Email: ${addr.email}`,
   ].filter(Boolean);
 
-  if (lines.length === 0) {
-    return <p className="text-xs text-stone-400 italic">No address on file.</p>;
+  if (lines.length === 0 && !addr.stateId && !addr.countryId) {
+    return <p className="text-xs text-stone-500 italic">No address on file.</p>;
   }
   return (
     <div className="space-y-1 text-xs text-stone-700">
       {addr.customerName && <p className="font-semibold text-stone-900">{addr.customerName}</p>}
       {lines.map((line, i) => <p key={i} className="text-stone-600">{line}</p>)}
-    </div>
-  );
-}
-
-function Total({ label, value, bold }: { label: string; value: number; bold?: boolean }) {
-  return (
-    <div>
-      <p className="text-2xs font-semibold uppercase tracking-wide text-stone-400">{label}</p>
-      <p className={cn('tabular-nums', bold ? 'text-sm font-bold text-stone-900' : 'text-xs font-semibold text-stone-600')}>
-        {currency(value)}
-      </p>
+      <AddressGeoLine stateId={addr.stateId} countryId={addr.countryId} />
     </div>
   );
 }

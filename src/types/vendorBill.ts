@@ -8,27 +8,50 @@
 // served from `/api/tenant/vendor-bills*`. Unlike Purchase Order, a vendor
 // bill has no shipping/address block and carries its own settlement ledger
 // (payments) plus optional Purchase Order lineage.
-import type { FilterClause, RecordApprover, SortKey } from '@/types/tenant';
+import type { WorkflowBlock } from '@/types/workflow';
+import type { FilterClause, RecordApprover, SortKey, ApprovalRejection } from '@/types/tenant';
 
 // ── Create / update inputs (client → server) ─────────────────────────────────
 
 /** One billed line. `inventoryItemUuid` selects a catalog item (server
  *  snapshots its sku/name/description/unit/price/tax); omit it for a
- *  free-text line, in which case `description` is required. There is no
- *  `purchaseOrderItemUuid` input field — that lineage FK is set exclusively
- *  by the convert path, never by manual create/update input. */
+ *  free-text line, in which case `description` is required. On update, echo
+ *  back `purchaseOrderItemId` for lines of a converted bill so the PO link and
+ *  billed quantity stay correct. */
 export interface VendorBillLineInput {
   lineNumber: number;
   inventoryItemUuid?: string;
+  /** Source PO line of a converted bill, echoed back on update so editing
+   *  keeps the link. Omit for manually added lines; rejected by the backend on create. */
+  purchaseOrderItemId?: string;
   description?: string;
   quantity: number;
   unitPrice: number;
   discountPercent?: number;
   taxRateId?: number | null;
+  /** Size of one slab and how many slabs the line covers. With length and
+   *  width both set the server derives the quantity from them (length x width x
+   *  slabs, in the item's area unit), so the quantity sent is then ignored. */
+  length?: number;
+  width?: number;
+  /** The one unit length and width are measured in: mm, cm, in, ft or m. Blank takes
+   *  the item's unit, then cm. */
+  dimensionUnit?: string;
+  slabs?: number;
+  /** Thickness of one slab, in `dimensionUnit`. Descriptive only: it never enters the quantity. */
+  thickness?: number;
+  /** Set on a line added from a kit: the kit's id and the name it had then.
+   *  A label only — the server stores it and returns it as kitId / kitName. */
+  kitUuid?: string;
+  kitName?: string;
 }
 
 export interface CreateVendorBillPayload {
   vendorUuid: string;
+  /** Optional reference to one of the vendor's purchase orders. A plain link:
+   *  it copies no lines and records no billed quantity (only the PO's
+   *  "Convert to Bill" does). Create-only — fixed after creation like the vendor. */
+  purchaseOrderUuid?: string;
   vendorInvoiceNumber?: string;
   referenceNumber?: string;
   billDate?: string;    // ISO date "yyyy-mm-dd" — defaults to CURRENT_DATE server-side
@@ -44,12 +67,14 @@ export interface CreateVendorBillPayload {
   adjustment?: number;
   customFields?: Record<string, unknown>;
   items: VendorBillLineInput[];
+  /** Save despite a 409 duplicate_document (same vendor invoice number). */
+  allowDuplicate?: boolean;
 }
 
-/** Update mirrors create minus the vendor (a vendor bill's vendor is fixed
- *  after creation — AD-2). Rejected by the server with a 400 once the bill
- *  has left DRFT — recall to draft to edit. */
-export type UpdateVendorBillPayload = Omit<CreateVendorBillPayload, 'vendorUuid'>;
+/** Update mirrors create minus the vendor and purchase order (a vendor bill's
+ *  vendor is fixed after creation — AD-2 — and so is its PO link). Rejected by
+ *  the server with a 400 once the bill has left DRFT — recall to draft to edit. */
+export type UpdateVendorBillPayload = Omit<CreateVendorBillPayload, 'vendorUuid' | 'purchaseOrderUuid'>;
 
 // ── Responses (server → client) ──────────────────────────────────────────────
 
@@ -59,8 +84,9 @@ export interface VendorBillVendorRef {
   number?: string;
 }
 
-/** Flattened {id, number} lineage reference — present only when this bill was
- *  created via a purchase order's "Convert to Bill" action (AD-8). */
+/** Flattened {id, number} lineage reference — present when this bill was
+ *  created via a purchase order's "Convert to Bill" action (AD-8) or was linked
+ *  to one by hand on the create form. */
 export interface VendorBillPurchaseOrderRef {
   id: string;
   number: string;
@@ -83,6 +109,19 @@ export interface VendorBillLine {
   lineDiscount: number;
   lineTax: number;
   lineTotal: number;
+  /** The slab size and count the line was priced from, when entered that
+   *  way; quantity is then their area. */
+  length?: number | null;
+  width?: number | null;
+  /** The unit length and width were measured in. */
+  dimensionUnit?: string | null;
+  slabs?: number | null;
+  /** Thickness of one slab, in `dimensionUnit`. */
+  thickness?: number | null;
+  /** Set on a line added from a kit: the kit's id and the name it had then.
+   *  Consecutive lines with the same kitId sit under one kit heading. */
+  kitId?: string;
+  kitName?: string;
 }
 
 /** One live vendor payment application against this bill — read-only. A bill
@@ -111,6 +150,18 @@ export interface VendorBillRefundEntry {
 export interface VendorBillPaymentLedger {
   payments: VendorBillPaymentEntry[];
   refunds: VendorBillRefundEntry[];
+  /** Settlements recorded on the bill itself (e.g. "Marked as paid"). */
+  billPayments: VendorBillOwnPayment[];
+}
+
+/** A settlement owned by the bill rather than a vendor payment. */
+export interface VendorBillOwnPayment {
+  id: string;
+  amount: number;
+  method?: string;
+  referenceNumber: string;
+  memo: string;
+  paidAt: string;
 }
 
 /** `lkp_record_status` code for the VBIL record type — the state machine
@@ -124,6 +175,8 @@ export type VendorBillStatusCode =
 // so the Edit page can reload a vendor bill and re-save it without silently
 // blanking any header field.
 export interface VendorBill {
+  /** End-to-end flow this record belongs to; see BACKEND_SPEC_workflow_links.md. */
+  workflow?: WorkflowBlock;
   id: string;
   vendorBillNumber: string;
 
@@ -138,6 +191,8 @@ export interface VendorBill {
   canApprove: boolean;
   isOverride: boolean;
   callerAlreadyApproved: boolean;
+  canReject?: boolean;            // whether the requesting user can reject it right now (configured approver OR super admin, while it awaits approval)
+  rejection?: ApprovalRejection;  // who rejected it and why -- present while it still sits in the status the rejection left it in
 
   vendor: VendorBillVendorRef;
   purchaseOrder?: VendorBillPurchaseOrderRef; // nullable lineage (AD-8)
@@ -185,7 +240,7 @@ export type VendorBillSummary = Pick<
   | 'vendor' | 'purchaseOrder' | 'vendorInvoiceNumber' | 'billDate' | 'dueDate'
   | 'grandTotal' | 'amountPaid' | 'balanceDue' | 'ownerEmployeeId'
   | 'createdAt' | 'updatedAt'
->;
+> & { currencyId?: number | null };
 
 /** Search request = the shared `query.Request` plus the optional global-search
  *  term the vendor bill resolver supports. */

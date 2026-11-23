@@ -7,6 +7,7 @@ import { inventoryBundleService } from '@/services/inventoryBundleService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { useModalDialog } from '@/hooks/useModalDialog';
 import { useInventoryLookups } from '@/hooks/useInventoryLookups';
+import { useDefaultLocation } from '@/hooks/useDefaultLocation';
 import { fieldCls, fieldLabelCls } from '@/components/crm/formUtils';
 import { WarehouseSelect } from '@/components/inventory/WarehouseSelect';
 import { toNumericWarehouseId } from '@/lib/inventoryWarehouse';
@@ -20,7 +21,7 @@ export function NewBundleDialog({ onClose }: { onClose: () => void }) {
   const { lookups } = useInventoryLookups();
 
   const [code, setCode] = useState('');
-  const [warehouseId, setWarehouseId] = useState('');
+  const [warehouseId, setWarehouseId] = useDefaultLocation(lookups?.warehouses ?? []);
   const [blockId, setBlockId] = useState('');
   const [lot, setLot] = useState('');
 
@@ -54,7 +55,7 @@ export function NewBundleDialog({ onClose }: { onClose: () => void }) {
             <input type="text" value={code} onChange={(e) => setCode(e.target.value)} placeholder="Band tag / pallet code" className={fieldCls} aria-label="Bundle code" required />
           </div>
           <div className="space-y-1.5">
-            <label className={fieldLabelCls}>Warehouse *</label>
+            <label className={fieldLabelCls}>Location *</label>
             <WarehouseSelect warehouses={lookups?.warehouses ?? []} value={warehouseId} onChange={setWarehouseId} required />
           </div>
           <div className="grid grid-cols-2 gap-3">

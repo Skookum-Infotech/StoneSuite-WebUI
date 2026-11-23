@@ -71,7 +71,7 @@ export function PortalUserRosterTable({ entries }: { entries: PortalUserRosterEn
                 <tr key={u.id} className="border-b border-stone-50 last:border-0 hover:bg-stone-50/60">
                   <td className="px-4 py-2.5">
                     <p className="font-medium text-stone-800">{u.fullName || u.email}</p>
-                    {u.fullName && <p className="text-xs text-stone-400">{u.email}</p>}
+                    {u.fullName && <p className="text-xs text-stone-500">{u.email}</p>}
                   </td>
                   <td className="px-4 py-2.5 text-stone-600">{u.customerName}</td>
                   <td className="px-4 py-2.5"><PortalUserStatusBadge status={u.status} /></td>

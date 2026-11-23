@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { cn } from '@/lib/utils';
 import { Spinner } from '@/components/tenant/ui';
 import { salesOrderService } from '@/services/salesOrderService';
+import { AuditChanges } from '@/components/tenant/AuditChanges';
 import type { AuditEntry } from '@/services/crmService';
 
 // Mirrors CrmSubTabsPanel's AuditContent, but reads from
@@ -16,11 +17,11 @@ export function SalesOrderAuditTab({ orderId }: { orderId?: string }) {
   });
 
   if (!orderId) {
-    return <p className="py-12 text-center text-sm text-stone-400">Audit trail will be available after saving the order.</p>;
+    return <p className="py-12 text-center text-sm text-stone-500">Audit trail will be available after saving the order.</p>;
   }
   if (isLoading) return <div className="py-6 flex justify-center"><Spinner label="Loading audit trail…" /></div>;
   if (error) return <p className="py-6 text-center text-xs text-destructive/70 italic">Failed to load audit trail.</p>;
-  if (entries.length === 0) return <p className="py-6 text-center text-xs text-stone-400 italic">No audit events recorded yet.</p>;
+  if (entries.length === 0) return <p className="py-6 text-center text-xs text-stone-500 italic">No audit events recorded yet.</p>;
 
   return (
     <div className="overflow-x-auto rounded-lg border border-stone-200 bg-white">
@@ -28,7 +29,7 @@ export function SalesOrderAuditTab({ orderId }: { orderId?: string }) {
         <thead>
           <tr className="border-b border-stone-100">
             {['Action', 'Actor', 'IP Address', 'Version', 'Date'].map((h) => (
-              <th key={h} className="py-2 px-3 text-left font-semibold uppercase tracking-wide text-stone-400 text-2xs whitespace-nowrap">
+              <th key={h} className="py-2 px-3 text-left font-semibold uppercase tracking-wide text-stone-500 text-2xs whitespace-nowrap">
                 {h}
               </th>
             ))}
@@ -53,21 +54,18 @@ function AuditRow({ entry }: { entry: AuditEntry }) {
         onClick={() => hasChanges && setExpanded((v) => !v)}
       >
         <td className="py-2.5 px-3"><ActionBadge action={entry.action} /></td>
-        <td className="py-2.5 px-3 text-stone-900 text-xs">{entry.actorName || <span className="text-stone-300 italic">system</span>}</td>
-        <td className="py-2.5 px-3 text-stone-400 font-mono text-2xs">{entry.ipAddress || '—'}</td>
-        <td className="py-2.5 px-3 text-stone-400 text-2xs">{entry.appVersion || '—'}</td>
-        <td className="py-2.5 px-3 text-stone-400 text-2xs whitespace-nowrap">
+        <td className="py-2.5 px-3 text-stone-900 text-xs">{entry.actorName || <span className="text-stone-500 italic">system</span>}</td>
+        <td className="py-2.5 px-3 text-stone-500 font-mono text-2xs">{entry.ipAddress || '—'}</td>
+        <td className="py-2.5 px-3 text-stone-500 text-2xs">{entry.appVersion || '—'}</td>
+        <td className="py-2.5 px-3 text-stone-500 text-2xs whitespace-nowrap">
           {new Date(entry.at).toLocaleString()}
-          {hasChanges && <span className="ml-1.5 text-stone-300">{expanded ? '▲' : '▼'}</span>}
+          {hasChanges && <span className="ml-1.5 text-stone-500">{expanded ? '▲' : '▼'}</span>}
         </td>
       </tr>
       {expanded && hasChanges && (
         <tr className="bg-stone-50">
           <td colSpan={5} className="px-3 pb-3 pt-1">
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              {entry.oldValue && <ChangesBlock label="Before" data={entry.oldValue} />}
-              {entry.newValue && <ChangesBlock label="After" data={entry.newValue} />}
-            </div>
+            <AuditChanges oldValue={entry.oldValue} newValue={entry.newValue} />
           </td>
         </tr>
       )}
@@ -88,18 +86,3 @@ function ActionBadge({ action }: { action: string }) {
   );
 }
 
-function ChangesBlock({ label, data }: { label: string; data: Record<string, unknown> }) {
-  return (
-    <div>
-      <p className="text-2xs font-semibold uppercase tracking-wide text-stone-400 mb-1.5">{label}</p>
-      <div className="space-y-0.5">
-        {Object.entries(data).map(([key, val]) => (
-          <div key={key} className="flex gap-2 text-2xs">
-            <span className="text-stone-400 shrink-0 min-w-[80px] font-medium">{key}</span>
-            <span className="text-stone-600 break-all">{val === null || val === undefined ? '—' : String(val)}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
