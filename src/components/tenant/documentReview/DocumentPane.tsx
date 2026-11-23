@@ -76,7 +76,7 @@ export function DocumentPane({ file, fileName, pages, focus }: DocumentPaneProps
 
   return (
     <section aria-label={`Document: ${fileName}`} className="flex h-full min-h-0 flex-col bg-stone-100 dark:bg-stone-950">
-      <div role="tablist" aria-label="Document view" onKeyDown={onTabKey} className={cn(TAB_LIST_CLASS, 'm-2 self-start dark:border-stone-800 dark:bg-stone-900')}>
+      <div role="tablist" tabIndex={-1} aria-label="Document view" onKeyDown={onTabKey} className={cn(TAB_LIST_CLASS, 'm-2 self-start dark:border-stone-800 dark:bg-stone-900')}>
         {tabs.map((t) => (
           <button
             key={t.key}

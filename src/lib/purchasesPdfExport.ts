@@ -83,9 +83,8 @@ export interface PurchasesExportParams {
   shipTo?: PdfAddressBlock;
   /** Rendered as a Notes card next to the totals summary. */
   notesText?: string;
-  /** Rendered as the Terms & Conditions card's real content instead of the
-   *  "coming soon" placeholder — only Purchase Order and Vendor Bill have
-   *  their own terms field today. */
+  /** Rendered as a Terms & Conditions card. Omitted records print no card —
+   *  only Purchase Order and Vendor Bill have their own terms field today. */
   termsText?: string;
   sections: PurchasesPdfSection[];
   itemsTable?: PurchasesPdfTable;
@@ -103,8 +102,6 @@ const RECORD_TYPE_LABEL: Record<PurchasesRecordType, string> = {
   expense: "Expense",
 };
 
-const TERMS_PLACEHOLDER = "Terms will be available in a future update.";
-const PAYMENT_DETAILS_PLACEHOLDER = "Bank and payment details will be available in a future update.";
 const FOOTER_COLUMN_GAP = 24;
 const WHITE: [number, number, number] = [255, 255, 255];
 
@@ -229,19 +226,22 @@ export async function buildPurchasesRecordPdf(params: PurchasesExportParams): Pr
     cursorY = doc.lastAutoTable.finalY + 18;
   }
 
-  // Vendor is a profile record, not a transaction — Terms & Payment Details
-  // don't apply to it the way they do to the other 7 (documents involving a
-  // vendor), so it skips straight to the footer.
+  // Vendor is a profile record, not a transaction, so it skips the terms/notes/
+  // totals footer. No Payment Details card on any purchase document: the bank
+  // details in Company Info are the tenant's own, for customers paying it, and
+  // on a purchase the tenant is the payer.
   if (recordType !== "vendor") {
     ensureSpace(140);
     const footerColWidth = (pageWidth - MARGIN_X * 2 - FOOTER_COLUMN_GAP) / 2;
     const footerRightX = MARGIN_X + footerColWidth + FOOTER_COLUMN_GAP;
 
-    let footerLeftY = termsText
-      ? drawTextCard(doc, MARGIN_X, footerColWidth, cursorY, "Terms & Conditions", termsText)
-      : drawTextCard(doc, MARGIN_X, footerColWidth, cursorY, "Terms & Conditions", TERMS_PLACEHOLDER, { placeholder: true });
+    let footerLeftY = cursorY;
+    if (termsText) {
+      footerLeftY = drawTextCard(doc, MARGIN_X, footerColWidth, footerLeftY, "Terms & Conditions", termsText);
+    }
     if (notesText) {
-      footerLeftY = drawTextCard(doc, MARGIN_X, footerColWidth, footerLeftY + 12, "Notes", notesText);
+      const notesTop = termsText ? footerLeftY + 12 : footerLeftY;
+      footerLeftY = drawTextCard(doc, MARGIN_X, footerColWidth, notesTop, "Notes", notesText);
     }
 
     let footerRightY = cursorY;
@@ -253,12 +253,6 @@ export async function buildPurchasesRecordPdf(params: PurchasesExportParams): Pr
     }
 
     cursorY = Math.max(footerLeftY, footerRightY) + 8;
-
-    ensureSpace(70);
-    cursorY =
-      drawTextCard(doc, MARGIN_X, pageWidth - MARGIN_X * 2, cursorY, "Payment Details", PAYMENT_DETAILS_PLACEHOLDER, {
-        placeholder: true,
-      }) + 10;
   }
 
   drawFooterOnAllPages(doc, pageHeight, `StoneSuite Purchases — ${RECORD_TYPE_LABEL[recordType]}`);

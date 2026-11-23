@@ -26,7 +26,7 @@ import { DocumentUsedNotice } from '@/components/tenant/documentReview/DocumentU
 import { useVendorBillReviewMode } from '@/hooks/useVendorBillReviewMode';
 import type { VendorBillReviewPatch } from '@/hooks/purchaseReviewTypes';
 import { VENDOR_BILL_REVIEW_FIELDS } from '@/lib/reviewFieldConfigs';
-import type { VendorBillPurchaseOrderRef } from '@/types/vendorBill';
+import type { VendorBillPurchaseOrderRef, VendorBill } from '@/types/vendorBill';
 import { duplicateFrom, type DuplicateConflict } from '@/lib/salesOrderDuplicate';
 import { DuplicateCreateDialog } from '@/components/tenant/documentReview/DuplicateCreateDialog';
 import {
@@ -36,7 +36,7 @@ import {
 import { CopySeedGate } from '@/components/tenant/CopySeedGate';
 import { fromVendorBillForCopy } from '@/lib/vendorBillCopy';
 import { copySubtitle } from '@/lib/recordCopy';
-import type { VendorBill } from '@/types/vendorBill';
+
 
 const MANUAL_DUPLICATE_MESSAGE = 'A bill with this vendor invoice number already exists for this vendor.';
 

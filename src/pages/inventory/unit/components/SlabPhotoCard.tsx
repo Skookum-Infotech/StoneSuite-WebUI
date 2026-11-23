@@ -103,7 +103,7 @@ export function SlabPhotoCard({ unitId, canEdit }: SlabPhotoCardProps) {
         {photoUrl ? (
           <img src={photoUrl} alt="Slab" className="h-full w-full object-contain" />
         ) : (
-          <div className="flex flex-col items-center gap-1.5 text-stone-400">
+          <div className="flex flex-col items-center gap-1.5 text-stone-500">
             <ImageIcon className="size-8" aria-hidden="true" />
             <p className="text-xs text-stone-500">{photoQ.isLoading ? 'Loading…' : 'No photo yet.'}</p>
           </div>

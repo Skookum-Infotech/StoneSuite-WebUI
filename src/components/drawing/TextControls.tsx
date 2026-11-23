@@ -99,7 +99,7 @@ export function TextControls() {
             selectNote(null);
           }
         }}
-        className="h-14 w-56 resize-none rounded-md border border-stone-600 bg-stone-800 px-2 py-1 text-sm text-white placeholder:text-stone-400 focus:border-brand focus:outline-none"
+        className="h-14 w-56 resize-none rounded-md border border-stone-600 bg-stone-800 px-2 py-1 text-sm text-white placeholder:text-stone-500 focus:border-brand focus:outline-none"
         placeholder="Type your text"
       />
       <div className="flex items-center gap-0.5">

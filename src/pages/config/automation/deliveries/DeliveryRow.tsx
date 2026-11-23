@@ -38,7 +38,7 @@ interface Props {
 function Cell({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="flex items-baseline justify-between gap-3 text-xs text-stone-600 md:block dark:text-stone-300">
-      <span className="text-2xs font-semibold uppercase text-stone-400 md:hidden">{label}</span>
+      <span className="text-2xs font-semibold uppercase text-stone-500 md:hidden">{label}</span>
       <span className="min-w-0 break-words text-right md:text-center">{children}</span>
     </div>
   );

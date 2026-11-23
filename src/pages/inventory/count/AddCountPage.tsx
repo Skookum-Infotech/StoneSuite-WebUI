@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { ClipboardCheck, AlertCircle, Loader2, Save } from 'lucide-react';
 import { toast } from 'sonner';
 import { inventoryCountService } from '@/services/inventoryCountService';
@@ -16,7 +16,6 @@ import { useDefaultLocation } from '@/hooks/useDefaultLocation';
 import { useScrollToError } from '@/hooks/useScrollToError';
 import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
 import { UnsavedChangesPrompt } from '@/components/UnsavedChangesPrompt';
-import { useQuery } from '@tanstack/react-query';
 import { inventoryBinService } from '@/services/inventoryBinService';
 
 export default function AddCountPage() {

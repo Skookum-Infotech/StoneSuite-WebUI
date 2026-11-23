@@ -43,7 +43,7 @@ describe('CustomerLink', () => {
     const onRow = vi.fn();
     render(
       <MemoryRouter>
-        <div onClick={onRow}><CustomerLink id="c-1" name="Fontaine" /></div>
+        <div role="presentation" onClick={onRow}><CustomerLink id="c-1" name="Fontaine" /></div>
       </MemoryRouter>,
     );
     await userEvent.setup().click(screen.getByRole('link'));

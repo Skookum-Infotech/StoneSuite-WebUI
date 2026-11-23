@@ -49,7 +49,7 @@ export function ReorderItemCard({ item, onCreated }: {
     <div className="rounded-xl border border-stone-200 bg-white p-4 shadow-sm">
       <div className="min-w-0">
         <p className="text-sm font-semibold text-stone-900">
-          {item.name} <span className="font-normal text-stone-400">· {item.sku} · {item.unit}</span>
+          {item.name} <span className="font-normal text-stone-500">· {item.sku} · {item.unit}</span>
         </p>
         <p className="text-2xs text-stone-500">
           Used {usagePhrase(item)} in {item.usage.map((u) => monthName(u.month)).join(', ')}

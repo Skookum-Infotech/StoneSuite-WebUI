@@ -1,10 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import {
-  Search, ArrowUp, ArrowDown, ArrowUpDown, X, Inbox, Pencil,
-  ChevronLeft, ChevronRight, User, Building2, Download, Loader2,
-} from 'lucide-react';
+import { Search, X, Inbox, Pencil, ChevronLeft, ChevronRight, User, Building2, Download, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { vendorService } from '@/services/vendorService';
 import { apiErrorMessage } from '@/api/tenantClient';
@@ -12,6 +9,8 @@ import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { VENDOR_STATUS_COLORS } from '@/types/vendor';
 import { exportPagedCsv } from '@/lib/csvExport';
 import type { VendorSearchRequest } from '@/types/vendor';
+import { SortIcon } from '@/components/ui/SortIcon';
+import { useListUrlState } from '@/hooks/useListUrlState';
 
 const EXPORT_PAGE_SIZE = 200;
 
@@ -21,7 +20,6 @@ const EXPORT_PAGE_SIZE = 200;
 // search/sort/cursor-pagination UX for visual consistency.
 
 type SortField = 'createdAt' | 'updatedAt' | 'vendorNumber';
-type SortDir = 'asc' | 'desc';
 
 const PAGE_SIZE = 25;
 
@@ -30,6 +28,8 @@ const SORT_LABELS: Record<SortField, string> = {
   updatedAt: 'Last Updated',
   vendorNumber: 'Vendor #',
 };
+
+const SORT_FIELDS = Object.keys(SORT_LABELS) as SortField[];
 
 // Only fields vendors.resolver.go whitelists for ORDER BY (record_number is
 // the built-in alias for vendor_number).
@@ -46,10 +46,11 @@ export function VendorTable() {
   const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
   const canEdit = permissionsLoading || hasPermission('vendor', 'update');
 
-  const [term, setTerm] = useState('');
-  const [debounced, setDebounced] = useState('');
-  const [sortBy, setSortBy] = useState<SortField>('createdAt');
-  const [sortDir, setSortDir] = useState<SortDir>('desc');
+  const { search: debounced, sortBy, sortDir, setSearch: setDebounced, setSort } = useListUrlState<SortField>({
+    sortFields: SORT_FIELDS,
+    defaultSort: { field: 'createdAt', dir: 'desc' },
+  });
+  const [term, setTerm] = useState(debounced);
 
   const [cursor, setCursor] = useState('');
   const [prevCursors, setPrevCursors] = useState<string[]>([]);
@@ -64,7 +65,7 @@ export function VendorTable() {
       setPrevCursors([]);
     }, 300);
     return () => clearTimeout(t);
-  }, [term]);
+  }, [term, setDebounced]);
 
   const req: VendorSearchRequest = {
     search: debounced || undefined,
@@ -111,19 +112,9 @@ export function VendorTable() {
   }
 
   function handleSort(field: SortField) {
-    if (sortBy === field) {
-      setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
-    } else {
-      setSortBy(field);
-      setSortDir('desc');
-    }
+    setSort(field, sortBy === field ? (sortDir === 'asc' ? 'desc' : 'asc') : 'desc');
     setCursor('');
     setPrevCursors([]);
-  }
-
-  function SortIcon({ field }: { field: SortField }) {
-    if (sortBy !== field) return <ArrowUpDown className="size-2.5 opacity-40" />;
-    return sortDir === 'asc' ? <ArrowUp className="size-2.5" /> : <ArrowDown className="size-2.5" />;
   }
 
   async function handleDownloadCsv() {
@@ -180,7 +171,7 @@ export function VendorTable() {
               )}
             >
               {label}
-              <SortIcon field={field} />
+              <SortIcon active={sortBy === field} dir={sortDir} />
             </button>
           ))}
         </div>
