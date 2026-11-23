@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { TAB_LIST_CLASS, tabClass } from '@/components/ui/tabStyles';
 import { useEffect, useId, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
@@ -71,14 +72,11 @@ export function DocumentPane({ file, fileName, pages, focus }: DocumentPaneProps
     tabRefs.current[tabs[next].key]?.focus();
   };
 
-  const tabCls = (t: Tab): string => cn(
-    'rounded-t-md px-3 py-1.5 text-xs font-medium transition-colors',
-    active === t ? 'bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100' : 'text-stone-500 dark:text-stone-400 hover:text-stone-700 dark:hover:text-stone-200',
-  );
+  const tabCls = (t: Tab): string => cn(tabClass(active === t), 'text-xs');
 
   return (
     <section aria-label={`Document: ${fileName}`} className="flex h-full min-h-0 flex-col bg-stone-100 dark:bg-stone-950">
-      <div role="tablist" aria-label="Document view" onKeyDown={onTabKey} className="flex shrink-0 gap-1 border-b border-stone-200 dark:border-stone-800 px-2 pt-1.5">
+      <div role="tablist" aria-label="Document view" onKeyDown={onTabKey} className={cn(TAB_LIST_CLASS, 'm-2 self-start dark:border-stone-800 dark:bg-stone-900')}>
         {tabs.map((t) => (
           <button
             key={t.key}

@@ -21,6 +21,7 @@ import { VB_STATUS_COLORS } from '@/lib/vendorBillForm';
 import type { VendorBillSearchRequest } from '@/types/vendorBill';
 import { formatDateValue, LIST_DATE_OPTIONS } from '@/lib/dateUtils';
 import { formatMoney, currencyCodeFor } from '@/lib/formatMoney';
+import { VendorLink } from '@/pages/purchases/vendor/components/VendorLink';
 
 // Columns still shown below the sm breakpoint (indexes into the header row); the rest return from sm up.
 const PHONE_COLUMNS = new Set([0, 1, 2, 8]);
@@ -345,7 +346,7 @@ export function VendorBillTable({ toolbarActions }: { toolbarActions?: ReactNode
                         </Link>
                       </td>
                       <td className="px-4 max-sm:px-2 py-3.5 text-xs text-stone-700 truncate max-w-[200px]">
-                        {bill.vendor?.name ?? '—'}
+                        <VendorLink vendor={bill.vendor} />
                       </td>
                       <td className="px-4 max-sm:px-2 py-3.5">
                         {isSuperAdmin ? (

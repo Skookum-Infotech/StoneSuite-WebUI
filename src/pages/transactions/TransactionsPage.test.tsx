@@ -1,3 +1,4 @@
+import { pickOption } from '@/test/selectHelpers';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -207,7 +208,7 @@ describe('TransactionsPage', () => {
       await user.click(screen.getByRole('button', { name: 'Page 3' }));
       await screen.findByText('INV-P3');
 
-      await user.selectOptions(screen.getByRole('combobox', { name: /rows per page/i }), '50');
+      await pickOption(screen.getByRole('combobox', { name: /rows per page/i }), '50');
 
       await waitFor(() => expect(list).toHaveBeenLastCalledWith(expect.objectContaining({ page: 1, limit: 50 })));
       expect(await screen.findByText('INV-P1')).toBeInTheDocument();

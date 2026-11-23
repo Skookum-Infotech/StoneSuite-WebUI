@@ -146,9 +146,11 @@ describe('Quote items table — slab length, width and count', () => {
 
     await user.click(screen.getByRole('button', { name: 'Edit line Faucet' }));
 
-    expect(screen.getByRole('textbox', { name: 'Length (cm)' })).toBeDisabled();
-    expect(screen.getByRole('textbox', { name: 'Width (cm)' })).toBeDisabled();
-    expect(screen.getByRole('textbox', { name: 'Slabs' })).toBeDisabled();
+    // The four size cells fold into one: no boxes, and quantity stays typeable.
+    expect(screen.queryByRole('textbox', { name: 'Length (cm)' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('textbox', { name: 'Width (cm)' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('textbox', { name: 'Slabs' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('textbox', { name: 'Thickness (cm)' })).not.toBeInTheDocument();
     expect(screen.getByRole('spinbutton', { name: 'Quantity' })).not.toHaveAttribute('readonly');
   });
 });

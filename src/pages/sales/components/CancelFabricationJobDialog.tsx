@@ -1,3 +1,4 @@
+import { Select } from '@/components/ui/select';
 import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { AxiosError } from 'axios';
@@ -257,7 +258,7 @@ export function CancelFabricationJobDialog({ job, disabled, onCancelled }: {
                           <span className="text-2xs text-stone-500 tabular-nums">{slab.area} sq. area</span>
                         </div>
                         <div className="flex flex-wrap items-center gap-2">
-                          <select
+                          <Select
                             value={draft.disposition}
                             onChange={(e) => updateDraft(slab.id, { disposition: e.target.value as SlabDisposition })}
                             className={cn(fieldCls, 'h-8 py-1 w-48')}
@@ -267,7 +268,7 @@ export function CancelFabricationJobDialog({ job, disabled, onCancelled }: {
                             {DISPOSITION_OPTIONS.map((opt) => (
                               <option key={opt} value={opt}>{DISPOSITION_LABELS[opt]}</option>
                             ))}
-                          </select>
+                          </Select>
                           {draft.disposition === 'recovered' && (
                             <input
                               type="number"

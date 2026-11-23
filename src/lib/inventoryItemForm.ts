@@ -11,7 +11,12 @@ import type { InventoryItem, InventoryItemInput, KitRef, TrackingMode, Warehouse
 import { TRACKING_QUANTITY, TRACKING_SERIALIZED } from '@/types/inventory';
 import { toNumericWarehouseId } from './inventoryWarehouse';
 import { itemPrice } from './itemPrice';
-import { DEFAULT_DIMENSION_UNIT, itemDimensionUnit, normalizeUnit } from './lineDimensions';
+import {
+  DEFAULT_DIMENSION_UNIT, dimensionToMm, itemDimensionUnit, mmToDimension, normalizeUnit,
+} from './lineDimensions';
+
+/** Thickness is entered in millimetres until the user picks another unit. */
+export const DEFAULT_THICKNESS_UNIT = 'mm';
 
 export const PAGE_TABS = [
   { key: 'details', label: 'Details' },
@@ -67,6 +72,25 @@ function warehouseUuidOrEmpty(warehouses: Warehouse[], id: number | null | undef
   return w?.id ?? '';
 }
 
+const FORM_DECIMALS = 10 ** 6;
+
+/** A stored millimetre size as the text the form holds, in `unit`. Finer than
+ *  mmToDimension's display rounding so an unedited save round-trips the same
+ *  millimetres (3000 mm -> 118.110236 in -> 3000 mm). */
+export function mmToFormText(mm: number, unit: string): string {
+  return String(Math.round((mm / dimensionToMm(1, unit)) * FORM_DECIMALS) / FORM_DECIMALS);
+}
+
+/** The unit an item's thickness is shown and entered in; millimetres unless set. */
+export function thicknessUnitOf(item: { thicknessUnit?: string | null }): string {
+  return normalizeUnit(item.thicknessUnit || DEFAULT_THICKNESS_UNIT);
+}
+
+/** A stored millimetre size as the item's own unit, e.g. "118.11 in"; '' when not stated. */
+export function sizeText(mm: number | null | undefined, unit: string): string {
+  return mm && mm > 0 ? `${mmToDimension(mm, unit)} ${unit}` : '';
+}
+
 export function itemDefaults(): Record<string, unknown> {
   return {
     sku: '',
@@ -84,7 +108,12 @@ export function itemDefaults(): Record<string, unknown> {
     material_id: '',
     color_id: '',
     finish_id: '',
-    thickness_mm: '0',
+    // Length / width are typed in dimension_unit, thickness in thickness_unit;
+    // all three are stored as millimetres (see toItemPayload).
+    length: '0',
+    width: '0',
+    thickness: '0',
+    thickness_unit: DEFAULT_THICKNESS_UNIT,
     dimension_unit: DEFAULT_DIMENSION_UNIT,
     origin_country_id: '',
     default_warehouse_id: '',
@@ -117,7 +146,10 @@ export function toItemPayload(data: Record<string, unknown>, warehouses: Warehou
     materialId: toIntOrNull(data.material_id),
     colorId: toIntOrNull(data.color_id),
     finishId: toIntOrNull(data.finish_id),
-    thicknessMm: toNum(data.thickness_mm),
+    thicknessMm: dimensionToMm(toNum(data.thickness), toStr(data.thickness_unit)),
+    thicknessUnit: normalizeUnit(toStr(data.thickness_unit) || DEFAULT_THICKNESS_UNIT),
+    lengthMm: dimensionToMm(toNum(data.length), toStr(data.dimension_unit)),
+    widthMm: dimensionToMm(toNum(data.width), toStr(data.dimension_unit)),
     // Always sent, like every field of this whole-object write.
     dimensionUnit: normalizeUnit(toStr(data.dimension_unit)),
     originCountryId: toIntOrNull(data.origin_country_id),
@@ -148,7 +180,10 @@ export function fromItem(item: InventoryItem, warehouses: Warehouse[] = []): Rec
     material_id: idOrEmpty(item.materialId),
     color_id: idOrEmpty(item.colorId),
     finish_id: idOrEmpty(item.finishId),
-    thickness_mm: String(item.thicknessMm ?? 0),
+    length: mmToFormText(item.lengthMm ?? 0, itemDimensionUnit(item)),
+    width: mmToFormText(item.widthMm ?? 0, itemDimensionUnit(item)),
+    thickness: mmToFormText(item.thicknessMm ?? 0, thicknessUnitOf(item)),
+    thickness_unit: thicknessUnitOf(item),
     dimension_unit: itemDimensionUnit(item),
     origin_country_id: idOrEmpty(item.originCountryId),
     default_warehouse_id: warehouseUuidOrEmpty(warehouses, item.defaultWarehouseId),

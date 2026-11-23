@@ -1,3 +1,4 @@
+import { Select } from '@/components/ui/select';
 import { useState } from 'react';
 import { Plus, Pencil, Trash2, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -180,10 +181,10 @@ function InlineRow({ pieceNumber, draft, onChange, sourceOrderItems }: {
       <td className="px-2 py-1.5"><input type="number" min="0" value={draft.cooktopCutoutCount} onChange={(e) => onChange('cooktopCutoutCount', e.target.value)} className={cn(inlineCls, 'w-14 text-right')} aria-label="Cooktop cutouts" /></td>
       <td className="px-2 py-1.5"><input type="number" min="0" value={draft.seamCount} onChange={(e) => onChange('seamCount', e.target.value)} className={cn(inlineCls, 'w-14 text-right')} aria-label="Seams" /></td>
       <td className="px-2 py-1.5">
-        <select value={draft.salesOrderItemUuid ?? ''} onChange={(e) => onChange('salesOrderItemUuid', e.target.value)} className={cn(inlineCls, 'min-w-[150px]')} aria-label="Linked sales order line">
+        <Select value={draft.salesOrderItemUuid ?? ''} onChange={(e) => onChange('salesOrderItemUuid', e.target.value)} className={cn(inlineCls, 'min-w-[150px]')} aria-label="Linked sales order line">
           <option value="">— Not linked —</option>
           {sourceOrderItems.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}
-        </select>
+        </Select>
       </td>
     </>
   );

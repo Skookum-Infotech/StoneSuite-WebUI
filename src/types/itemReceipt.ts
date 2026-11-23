@@ -8,6 +8,7 @@
 // arriving against a finalized purchase order; it is the only writer of
 // purchase_order_item.qty_received and drives the PO's SENT → PART → RCVD
 // rollup.
+import type { WorkflowBlock } from '@/types/workflow';
 import type { FilterClause, SortKey } from '@/types/tenant';
 
 // ── Create / update inputs (client → server) ─────────────────────────────────
@@ -31,6 +32,10 @@ export interface ItemReceiptLineInput {
  *  the server assigns it when the receipt posts (PO number + running suffix) —
  *  and neither is the area, which it computes from the millimetres. */
 export interface ItemReceiptSlabInput {
+  /** The uuid of an On Order slab this row stands for (see `OnOrderSlab`). The
+   *  slab keeps its serial and the size it was ordered at, so the server reads
+   *  only `thicknessMm` (when the slab has none yet) and `binId` from the row. */
+  onOrderSlabId?: string;
   lengthMm: number;
   widthMm: number;
   thicknessMm: number;
@@ -40,6 +45,22 @@ export interface ItemReceiptSlabInput {
   lot?: string;
   grade?: string;
   supplierCode?: string;
+}
+
+/** A slab a purchase order put on order when it was sent and that has not
+ *  arrived yet — GET /purchase-orders/{uuid}/on-order-slabs. Ticking it on an
+ *  item receipt is what brings it into stock. */
+export interface OnOrderSlab {
+  id: string;
+  serial: string;
+  /** The uuid of the purchase-order line it was ordered on. */
+  purchaseOrderItemId: string;
+  lengthMm: number;
+  widthMm: number;
+  /** 0 when neither the order line nor the item stated a thickness; the
+   *  receiving form then asks for it. */
+  thicknessMm: number;
+  area: number;
 }
 
 /** GET /purchase-orders/{uuid}/next-slab-serial — how the next slabs received
@@ -140,6 +161,9 @@ export interface ItemReceiptLine {
  *  until the receipt posts; `unitStatus` is then the slab's LIVE inventory
  *  status (it may have been reserved, cut or scrapped since). */
 export interface ItemReceiptLineSlab {
+  /** The On Order slab this row ticked, when it came from the purchase order's
+   *  list rather than being typed in. */
+  onOrderSlabId?: string | null;
   serial?: string;
   lengthMm: number;
   widthMm: number;
@@ -158,6 +182,8 @@ export interface ItemReceiptLineSlab {
 // Full detail response (GET/Create/Update/Post/Void/Transition). Every field
 // the create/update contract accepts round-trips back here too.
 export interface ItemReceipt {
+  /** End-to-end flow this record belongs to; see BACKEND_SPEC_workflow_links.md. */
+  workflow?: WorkflowBlock;
   id: string;
   itemReceiptNumber: string;
   status: string;                     // human label, e.g. "Pending"

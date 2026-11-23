@@ -1,3 +1,4 @@
+import { Select } from '@/components/ui/select';
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Plus, X } from "lucide-react";
@@ -163,7 +164,7 @@ export function AssignUsersModal({
 
             {availableUsers.length > 0 ? (
               <div className="flex items-center gap-2">
-                <select
+                <Select
                   aria-label="Select a user to assign this role to"
                   value={selectedUserId}
                   onChange={(e) => setSelectedUserId(e.target.value)}
@@ -175,7 +176,7 @@ export function AssignUsersModal({
                       {u.fullName || u.email}
                     </option>
                   ))}
-                </select>
+                </Select>
                 <Button
                   type="button"
                   onClick={() => selectedUserId && assignMut.mutate(selectedUserId)}

@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { CreditCard, Upload, Pencil, DollarSign, Unlink, FileDown, FileMinus, Loader2 } from 'lucide-react';
+import { CreditCard, Upload, Pencil, DollarSign, Unlink, FileDown, FileMinus, Loader2, Landmark, Ban } from 'lucide-react';
 import { toast } from 'sonner';
 import { paymentService } from '@/services/paymentService';
 import { lookupService } from '@/services/lookupService';
@@ -17,7 +17,11 @@ import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { useWorkflows } from '@/hooks/useWorkflows';
 import { cn } from '@/lib/utils';
-import { PAYMENT_STATUS_COLORS, PAYMENT_STATUS_CODES, PAYMENT_BLOCKS_APPLY } from '@/lib/paymentForm';
+import { TAB_LIST_CLASS, tabClass } from '@/components/ui/tabStyles';
+import {
+  PAYMENT_STATUS_COLORS, PAYMENT_STATUS_CODES, PAYMENT_BLOCKS_APPLY, PAYMENT_DEPOSITED_CODE, PAYMENT_VOID_CODE,
+  paymentHeaderTransitions, type PaymentHeaderCode,
+} from '@/lib/paymentForm';
 import { CREDIT_MEMO_FROM_PAYMENT_STATE, creditMemoHandoffFromPayment } from '@/lib/creditMemoHandoff';
 import { statusToastLabel } from '@/lib/statusToast';
 import { PaymentAuditTab } from './components/PaymentAuditTab';
@@ -25,11 +29,14 @@ import { DeletePaymentDialog } from './components/DeletePaymentDialog';
 import { DangerZoneCard } from '@/components/tenant/DangerZoneCard';
 import { InvoicePicker } from './components/InvoicePicker';
 import type { InvoiceRef } from './components/InvoicePicker';
+import { WorkflowCard } from '@/components/tenant/WorkflowCard';
 import { SalesDetailSidebar } from './components/SalesDetailSidebar';
 import { AmountsStrip } from './components/AmountsStrip';
 import { PaymentStatusControl } from './components/PaymentStatusControl';
+import { ConfirmPaymentStatusDialog } from './components/ConfirmPaymentStatusDialog';
 import type { PaymentApplication } from '@/types/payment';
 import { formatDateValue } from '@/lib/dateUtils';
+import { CustomerLink } from '@/components/crm/CustomerLink';
 
 const TABS = [
   { key: 'overview', label: 'Overview' },
@@ -65,9 +72,14 @@ export default function PaymentDetailPage() {
   const [applyOpen, setApplyOpen] = useState(false);
   const [exportingPdf, setExportingPdf] = useState(false);
   const [exportPdfError, setExportPdfError] = useState<string>();
+  // The final move (Deposited / Void) awaiting confirmation, if any.
+  const [confirmCode, setConfirmCode] = useState<PaymentHeaderCode | null>(null);
+  // Stable so the dialog's focus effect doesn't re-run on every page render.
+  const cancelConfirm = useCallback(() => setConfirmCode(null), []);
 
   const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
   const canEdit = permissionsLoading || hasPermission('payment', 'update');
+  const canTransition = !permissionsLoading && hasPermission('payment', 'transition');
   const canDelete = permissionsLoading || hasPermission('payment', 'delete');
   const { isWorkflowEnabled, isLoading: workflowsLoading } = useWorkflows();
   const canCreateCreditMemo = !permissionsLoading
@@ -134,6 +146,14 @@ export default function PaymentDetailPage() {
     return <div className="p-6"><ErrorNote>{apiErrorMessage(error, 'Failed to load payment.')}</ErrorNote></div>;
 
   const color = PAYMENT_STATUS_COLORS[payment.status] ?? '#a8a29e';
+  // Deposited and Void as header buttons, like the other records' status
+  // buttons; the sidebar Status pill still offers every legal move.
+  const headerCodes = canTransition ? paymentHeaderTransitions(payment) : [];
+  const runConfirmed = () => {
+    if (!confirmCode) return;
+    // Close on either outcome: a failure shows under the header.
+    transition.mutate(confirmCode, { onSettled: () => setConfirmCode(null) });
+  };
   const applyBlocked = PAYMENT_BLOCKS_APPLY.has(payment.statusCode);
   // Overpayment already turned into credit memos is not free to apply any more.
   const creditedTotal = payment.creditedTotal ?? 0;
@@ -192,7 +212,41 @@ export default function PaymentDetailPage() {
         subtitle={payment.customer.name}
         recordNumber={payment.paymentNumber}
         statusBadge={<Badge color={color}>{payment.status}</Badge>}
+        actions={headerCodes.length > 0 && (
+          <>
+            {headerCodes.includes(PAYMENT_DEPOSITED_CODE) && (
+              <button
+                type="button"
+                onClick={() => setConfirmCode(PAYMENT_DEPOSITED_CODE)}
+                disabled={transition.isPending}
+                aria-label={`Mark payment ${payment.paymentNumber} as deposited`}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-stone-300 bg-white px-3 py-1.5 text-xs font-semibold text-stone-700 shadow-sm transition-colors hover:bg-stone-50 disabled:opacity-50"
+              >
+                <Landmark className="size-3.5" aria-hidden="true" />
+                Mark Deposited
+              </button>
+            )}
+            {headerCodes.includes(PAYMENT_VOID_CODE) && (
+              <button
+                type="button"
+                onClick={() => setConfirmCode(PAYMENT_VOID_CODE)}
+                disabled={transition.isPending}
+                aria-label={`Void payment ${payment.paymentNumber}`}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-destructive/30 bg-white px-3 py-1.5 text-xs font-semibold text-destructive shadow-sm transition-colors hover:bg-destructive/5 disabled:opacity-50"
+              >
+                <Ban className="size-3.5" aria-hidden="true" />
+                Void
+              </button>
+            )}
+          </>
+        )}
       />
+
+      {transition.isError && (
+        <p role="alert" className="border-b border-stone-200 bg-white px-5 py-2 text-2xs text-destructive 3xl:px-12 4xl:px-16">
+          {apiErrorMessage(transition.error, 'Failed to change the payment status.')}
+        </p>
+      )}
 
       <RecordApprovalBanner
         record={payment}
@@ -207,22 +261,19 @@ export default function PaymentDetailPage() {
       )}
 
       {/* Tab bar */}
-      <div className="flex shrink-0 overflow-x-auto overflow-y-hidden border-b border-stone-200 bg-white px-5 3xl:px-12 4xl:px-16 modal-scrollbar">
-        {TABS.map((tab) => (
-          <button
-            key={tab.key}
-            type="button"
-            onClick={() => setActiveTab(tab.key)}
-            className={cn(
-              'px-4 py-3 text-sm font-semibold border-b-2 -mb-px transition-colors duration-150 whitespace-nowrap shrink-0',
-              activeTab === tab.key
-                ? 'border-brand text-stone-950'
-                : 'border-transparent text-stone-500 hover:text-stone-700 hover:border-stone-200',
-            )}
-          >
-            {tab.label}
-          </button>
-        ))}
+      <div className="flex shrink-0 overflow-x-auto overflow-y-hidden border-b border-stone-200 bg-white px-5 3xl:px-12 4xl:px-16 modal-scrollbar py-2.5">
+        <div role="tablist" className={TAB_LIST_CLASS}>
+          {TABS.map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setActiveTab(tab.key)}
+              className={tabClass(activeTab === tab.key)}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="flex flex-col lg:flex-row gap-6 px-4 py-4 sm:px-5 sm:py-5 3xl:px-12 3xl:py-8 3xl:gap-10 4xl:px-16 4xl:py-10 4xl:gap-14">
@@ -333,6 +384,7 @@ export default function PaymentDetailPage() {
 
         {/* Right sidebar */}
         <SalesDetailSidebar label="Payment Details">
+          <WorkflowCard module="payment" statusCode={payment.statusCode} statusLabel={payment.status} workflow={payment.workflow} links={{ invoiceId: payment.applications[0]?.invoiceId }} />
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
             <p className="text-xs font-semibold text-stone-500">Quick Actions</p>
             <div className="space-y-0.5">
@@ -398,7 +450,7 @@ export default function PaymentDetailPage() {
             </div>
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
               <span className="text-stone-500">Customer</span>
-              <span className="text-stone-700 truncate max-w-[140px]">{payment.customer.name}</span>
+              <CustomerLink id={payment.customer.id} name={payment.customer.name} className="text-stone-700 truncate max-w-[140px] hover:text-accent-foreground hover:underline" />
             </div>
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
               <span className="text-stone-500">Created</span>
@@ -424,6 +476,16 @@ export default function PaymentDetailPage() {
           )}
         </SalesDetailSidebar>
       </div>
+
+      {confirmCode && (
+        <ConfirmPaymentStatusDialog
+          target={confirmCode}
+          paymentNumber={payment.paymentNumber}
+          pending={transition.isPending}
+          onConfirm={runConfirmed}
+          onCancel={cancelConfirm}
+        />
+      )}
 
       {applyOpen && (
         <ApplyDialog

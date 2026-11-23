@@ -20,6 +20,13 @@ export interface CompanyInfoFieldSpec {
    *  for fields that genuinely hold more text (a full street address, a
    *  legal entity name), not applied uniformly. */
   colSpan?: 2 | 3;
+  /** 'number' for a numeric field (e.g. a percentage) — defaults to 'text'.
+   *  min/step must be given alongside it: a bare min without step makes the
+   *  browser accept whole numbers only (see the app's number-input rule). */
+  type?: 'text' | 'number';
+  min?: number;
+  max?: number;
+  step?: number;
 }
 
 export function CompanyInfoTextField({
@@ -45,7 +52,10 @@ export function CompanyInfoTextField({
         {Icon && <Icon className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-stone-400" />}
         <input
           id={field.id}
-          type="text"
+          type={field.type ?? 'text'}
+          min={field.min}
+          max={field.max}
+          step={field.step}
           placeholder={field.placeholder}
           aria-label={field.label}
           aria-invalid={Boolean(error)}

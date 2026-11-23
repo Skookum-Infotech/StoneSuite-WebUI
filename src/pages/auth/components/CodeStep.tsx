@@ -12,11 +12,12 @@ import {
   mfaErrorInfo,
   wrongCodeMessage,
 } from '@/lib/mfa'
+import { activeSessionPrompt } from '@/lib/singleSession'
 import { CodeInput } from '@/components/auth/CodeInput'
 import { ResendCodeButton } from '@/components/auth/ResendCodeButton'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
-import type { AuthResponse, MfaChallenge } from '@/types/auth'
+import type { ActiveSessionPrompt, AuthResponse, MfaChallenge } from '@/types/auth'
 
 const SECONDS_PER_MINUTE = 60
 const VERIFY_FALLBACK = "We couldn't check that code. Please try again."
@@ -34,12 +35,14 @@ interface CodeStepProps {
   onSuccess: (response: AuthResponse) => void | Promise<void>
   // Back to the password step. A new code then needs a new password entry.
   onBack: () => void
+  // The code was right but the account is in use on another browser.
+  onActiveSession: (prompt: ActiveSessionPrompt) => void
 }
 
 // Third sign-in step, shown when the password was right but the account has
 // two-step verification on. The session starts only once the emailed code is
 // accepted here -- until then the browser holds nothing but the challenge token.
-export function CodeStep({ challenge, onSuccess, onBack }: CodeStepProps) {
+export function CodeStep({ challenge, onSuccess, onBack, onActiveSession }: CodeStepProps) {
   const { secondsLeft, restart } = useCountdown(challenge.resendAfterSeconds)
   const [resending, setResending] = useState(false)
   const [notice, setNotice] = useState<string | null>(null)
@@ -66,6 +69,11 @@ export function CodeStep({ challenge, onSuccess, onBack }: CodeStepProps) {
         setError('root', { message: response.message ?? 'Login failed' })
       }
     } catch (err: unknown) {
+      const prompt = activeSessionPrompt(err)
+      if (prompt) {
+        onActiveSession(prompt)
+        return
+      }
       const info = mfaErrorInfo(err, VERIFY_FALLBACK)
       if (isChallengeDead(info.code)) {
         setDeadMessage(info.message)

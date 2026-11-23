@@ -32,6 +32,11 @@ export interface DocumentWording {
   notes: string;
 }
 
+// Starting fabrication markup (Configuration -> Company Info -> Company
+// Preferences) when a tenant has never set its own — a safe guess, not a
+// measured number. Mirrors the backend's companyprofile.DefaultFabricationPercent.
+export const DEFAULT_FABRICATION_PERCENT = 20;
+
 // The tenant's own company name/address (Configuration -> Company Info) — as
 // opposed to a CRM Lead/Prospect/Customer's address, or a vendor's. One
 // singleton record per tenant, backed by GET/PUT /api/tenant/company-profile.
@@ -44,6 +49,10 @@ export interface CompanyProfile {
   currency: string;
   timezone: string;
   taxId: string;
+  // Company Preferences tab: fabrication sq ft = countertop sq ft * (1 +
+  // fabricationPercent / 100), shown in the SO drawing editor's sq ft
+  // breakdown (components/drawing/AreaSummary.tsx).
+  fabricationPercent: number;
   billingAddress: Address;
   shippingAddress: Address;
   returnAddress: Address;

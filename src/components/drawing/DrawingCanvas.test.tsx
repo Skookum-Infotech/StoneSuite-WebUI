@@ -1,0 +1,516 @@
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { fireEvent, render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import type { Drawing } from '@/types/drawing';
+import { ARROW_KEY_STEP_MM, SHIFT_ARROW_KEY_STEP_MM } from '@/lib/drawing/constants';
+import { DrawingEditorProvider, useDrawingEditor } from './DrawingEditorContext';
+import { DrawingCanvas } from './DrawingCanvas';
+
+function drawingWithOnePiece(): Drawing {
+  return {
+    schemaVersion: 1,
+    salesOrderId: 'so1',
+    version: 0,
+    displayUnit: 'in',
+    fractionDenominator: 32,
+    areas: [{
+      id: 'area-1',
+      name: 'Area 1',
+      code: '',
+      sortOrder: 0,
+      cabinets: [],
+      notes: [],
+      pieces: [{
+        id: 'p1',
+        label: 'A-1',
+        shape: 'rect',
+        outline: [{ x: 0, y: 0 }, { x: 600, y: 0 }, { x: 600, y: -400 }, { x: 0, y: -400 }],
+        position: { x: 0, y: 0 },
+        rotationDeg: 0,
+        thicknessMm: 30,
+        edges: [],
+        seams: [],
+        cutouts: [],
+      }],
+    }],
+    updatedAt: '2026-11-03T00:00:00.000Z',
+    updatedBy: { id: 'u1', name: 'Test User' },
+  };
+}
+
+/** Exposes the piece's live position/rotation and the area's piece count as
+ *  plain text, so tests can assert on real reducer state instead of a
+ *  dispatch mock. */
+function Readout() {
+  const { state } = useDrawingEditor();
+  const piece = state.present.areas[0].pieces[0];
+  return (
+    <div>
+      <span data-testid="pos-x">{piece?.position.x ?? 'none'}</span>
+      <span data-testid="pos-y">{piece?.position.y ?? 'none'}</span>
+      <span data-testid="rotation">{piece?.rotationDeg ?? 'none'}</span>
+      <span data-testid="piece-count">{state.present.areas[0].pieces.length}</span>
+    </div>
+  );
+}
+
+function blankDrawing(): Drawing {
+  return {
+    schemaVersion: 1,
+    salesOrderId: 'so1',
+    version: 0,
+    displayUnit: 'in',
+    fractionDenominator: 32,
+    areas: [{ id: 'area-1', name: 'Area 1', code: '', sortOrder: 0, pieces: [], cabinets: [], notes: [] }],
+    updatedAt: '2026-11-03T00:00:00.000Z',
+    updatedBy: { id: 'u1', name: 'Test User' },
+  };
+}
+
+function PanZoomReadout() {
+  const { state } = useDrawingEditor();
+  return (
+    <div>
+      <span data-testid="pan-x">{state.pan.x}</span>
+      <span data-testid="pan-y">{state.pan.y}</span>
+    </div>
+  );
+}
+
+function PolygonToolButton() {
+  const { setTool } = useDrawingEditor();
+  return <button type="button" onClick={() => setTool('polygon')}>polygon tool</button>;
+}
+
+/** A different tool, picked some other way than Escape (the rail, the Draw
+ *  bar's own pencil, Cutout/Material...) — any of which must abandon an
+ *  unfinished Points draft just the same. */
+function SelectToolButton() {
+  const { setTool } = useDrawingEditor();
+  return <button type="button" onClick={() => setTool('select')}>select tool</button>;
+}
+
+function DimensionsToggleButton() {
+  const { toggleDimensions } = useDrawingEditor();
+  return <button type="button" onClick={toggleDimensions}>toggle dimensions</button>;
+}
+
+function PieceOutlineReadout() {
+  const { state } = useDrawingEditor();
+  const piece = state.present.areas[0].pieces[0];
+  return <span data-testid="outline">{piece ? JSON.stringify(piece.outline) : 'none'}</span>;
+}
+
+function mockSvgRect(width: number, height: number) {
+  vi.spyOn(SVGElement.prototype, 'getBoundingClientRect').mockReturnValue({
+    left: 0, top: 0, width, height, right: width, bottom: height, x: 0, y: 0, toJSON: () => undefined,
+  } as DOMRect);
+}
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
+
+function renderCanvas() {
+  render(
+    <DrawingEditorProvider drawing={drawingWithOnePiece()} materialLines={[]}>
+      <DrawingCanvas />
+      <Readout />
+    </DrawingEditorProvider>,
+  );
+}
+
+describe('DrawingCanvas dimensions', () => {
+  it('are hidden until the Dimensions toggle turns them on', async () => {
+    render(
+      <DrawingEditorProvider drawing={drawingWithOnePiece()} materialLines={[]}>
+        <DrawingCanvas />
+        <DimensionsToggleButton />
+      </DrawingEditorProvider>,
+    );
+    expect(screen.queryAllByText(/23 5\/8"/)).toHaveLength(0);
+    await userEvent.click(screen.getByRole('button', { name: 'toggle dimensions' }));
+    expect(screen.queryAllByText(/23 5\/8"/).length).toBeGreaterThan(0);
+    await userEvent.click(screen.getByRole('button', { name: 'toggle dimensions' }));
+    expect(screen.queryAllByText(/23 5\/8"/)).toHaveLength(0);
+  });
+});
+
+describe('DrawingCanvas keyboard handling', () => {
+  it('ArrowRight with a piece selected moves it by ARROW_KEY_STEP_MM', async () => {
+    renderCanvas();
+    await userEvent.click(screen.getByRole('button', { name: /Piece A-1/ }));
+    const canvas = screen.getByRole('application', { name: 'Drawing canvas' });
+    fireEvent.keyDown(canvas, { key: 'ArrowRight' });
+    expect(Number(screen.getByTestId('pos-x').textContent)).toBeCloseTo(ARROW_KEY_STEP_MM, 5);
+    expect(Number(screen.getByTestId('pos-y').textContent)).toBeCloseTo(0, 5);
+  });
+
+  it('Shift+ArrowRight with a piece selected moves it by SHIFT_ARROW_KEY_STEP_MM', async () => {
+    renderCanvas();
+    await userEvent.click(screen.getByRole('button', { name: /Piece A-1/ }));
+    const canvas = screen.getByRole('application', { name: 'Drawing canvas' });
+    fireEvent.keyDown(canvas, { key: 'ArrowRight', shiftKey: true });
+    expect(Number(screen.getByTestId('pos-x').textContent)).toBeCloseTo(SHIFT_ARROW_KEY_STEP_MM, 5);
+  });
+
+  it('ArrowRight with nothing selected does not move anything', () => {
+    renderCanvas();
+    const canvas = screen.getByRole('application', { name: 'Drawing canvas' });
+    fireEvent.keyDown(canvas, { key: 'ArrowRight' });
+    expect(Number(screen.getByTestId('pos-x').textContent)).toBe(0);
+    expect(Number(screen.getByTestId('pos-y').textContent)).toBe(0);
+  });
+
+  it('Delete with a piece selected removes it', async () => {
+    renderCanvas();
+    await userEvent.click(screen.getByRole('button', { name: /Piece A-1/ }));
+    const canvas = screen.getByRole('application', { name: 'Drawing canvas' });
+    fireEvent.keyDown(canvas, { key: 'Delete' });
+    expect(screen.getByTestId('piece-count').textContent).toBe('0');
+  });
+
+  it('"r" with a piece selected rotates it 90°', async () => {
+    renderCanvas();
+    await userEvent.click(screen.getByRole('button', { name: /Piece A-1/ }));
+    const canvas = screen.getByRole('application', { name: 'Drawing canvas' });
+    fireEvent.keyDown(canvas, { key: 'r' });
+    expect(screen.getByTestId('rotation').textContent).toBe('90');
+  });
+
+  it('Delete returns keyboard focus to the canvas instead of stranding it when the focused piece is removed', async () => {
+    renderCanvas();
+    await userEvent.click(screen.getByRole('button', { name: /Piece A-1/ }));
+    const canvas = screen.getByRole('application', { name: 'Drawing canvas' });
+    fireEvent.keyDown(canvas, { key: 'Delete' });
+    expect(document.activeElement).toBe(canvas);
+  });
+
+  it('exposes its keyboard shortcuts to assistive tech via aria-describedby', () => {
+    renderCanvas();
+    const canvas = screen.getByRole('application', { name: 'Drawing canvas' });
+    const describedById = canvas.getAttribute('aria-describedby');
+    expect(describedById).toBeTruthy();
+    const description = document.getElementById(describedById as string);
+    expect(description?.textContent).toMatch(/arrow key/i);
+  });
+});
+
+describe('DrawingCanvas background pan — rendered size correction', () => {
+  it('converts the same pixel drag to a different pan distance when the SVG renders at half size', () => {
+    mockSvgRect(400, 300); // half of the 800x600 viewBox
+    render(
+      <DrawingEditorProvider drawing={blankDrawing()} materialLines={[]}>
+        <DrawingCanvas />
+        <PanZoomReadout />
+      </DrawingEditorProvider>,
+    );
+    const background = screen.getByTestId('canvas-background');
+    fireEvent.pointerDown(background, { pointerId: 1, clientX: 0, clientY: 0 });
+    fireEvent.pointerMove(background, { pointerId: 1, clientX: 50, clientY: 0, movementX: 50, movementY: 0 });
+    // 50px at a 400-wide rect (half-size) -> 100 viewbox units, not the 50
+    // a naive 1px=1unit assumption would give.
+    expect(Number(screen.getByTestId('pan-x').textContent)).toBeCloseTo(100, 5);
+  });
+});
+
+describe('DrawingCanvas background pan — robust to a wrong movementX/Y', () => {
+  it('pans by the real change in pointer position, ignoring a movementX/Y that disagrees with it', () => {
+    // A scaled Windows display can report movementX/Y in device pixels while
+    // clientX/Y stay in CSS pixels, so the two disagree. A deliberately wrong
+    // movementX/Y (999) here must not move the pan by anything close to
+    // that — only the real 40px drop in clientX counts.
+    mockSvgRect(800, 600); // full viewBox size: 1 screen px = 1 viewbox unit
+    render(
+      <DrawingEditorProvider drawing={blankDrawing()} materialLines={[]}>
+        <DrawingCanvas />
+        <PanZoomReadout />
+      </DrawingEditorProvider>,
+    );
+    const background = screen.getByTestId('canvas-background');
+    fireEvent.pointerDown(background, { pointerId: 1, clientX: 100, clientY: 100 });
+    fireEvent.pointerMove(background, { pointerId: 1, clientX: 60, clientY: 100, movementX: 999, movementY: 999 });
+    expect(Number(screen.getByTestId('pan-x').textContent)).toBeCloseTo(-40, 5);
+    expect(Number(screen.getByTestId('pan-y').textContent)).toBeCloseTo(0, 5);
+  });
+
+  it('keeps panning smoothly across several moves, each measured from the last — not summed from the press', () => {
+    mockSvgRect(800, 600);
+    render(
+      <DrawingEditorProvider drawing={blankDrawing()} materialLines={[]}>
+        <DrawingCanvas />
+        <PanZoomReadout />
+      </DrawingEditorProvider>,
+    );
+    const background = screen.getByTestId('canvas-background');
+    fireEvent.pointerDown(background, { pointerId: 1, clientX: 0, clientY: 0 });
+    fireEvent.pointerMove(background, { pointerId: 1, clientX: 20, clientY: 0 });
+    fireEvent.pointerMove(background, { pointerId: 1, clientX: 50, clientY: 10 });
+    // Net movement is (50, 10), not (20+50, 0+10) or anything else double-counted.
+    expect(Number(screen.getByTestId('pan-x').textContent)).toBeCloseTo(50, 5);
+    expect(Number(screen.getByTestId('pan-y').textContent)).toBeCloseTo(10, 5);
+  });
+});
+
+describe('DrawingCanvas polygon tool', () => {
+  it('places a clicked point at the correct world position, correcting for the SVG\'s actual rendered size', async () => {
+    mockSvgRect(400, 300); // half of the 800x600 viewBox
+    render(
+      <DrawingEditorProvider drawing={blankDrawing()} materialLines={[]}>
+        <DrawingCanvas />
+        <PolygonToolButton />
+        <PieceOutlineReadout />
+      </DrawingEditorProvider>,
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'polygon tool' }));
+    const background = screen.getByTestId('canvas-background');
+    // Clicked in clockwise order (this app's convention), so winding
+    // normalization doesn't reorder them — isolates placement from that
+    // separate behavior (covered by its own test below).
+    fireEvent.pointerDown(background, { clientX: 200, clientY: 150 }); // rendered center -> world (0,0)
+    fireEvent.pointerDown(background, { clientX: 200, clientY: 100 }); // 50px up at half-size -> world (0,100)
+    fireEvent.pointerDown(background, { clientX: 250, clientY: 150 }); // 50px right at half-size -> world (100,0)
+    fireEvent.doubleClick(background);
+    const outline = JSON.parse(screen.getByTestId('outline').textContent ?? 'null');
+    expect(outline).toHaveLength(3);
+    expect(outline[0]).toMatchObject({ x: 0, y: 0 });
+    expect(outline[1]).toMatchObject({ x: 0, y: 100 });
+  });
+
+  it('normalizes a counter-clockwise click order to the app\'s clockwise convention', async () => {
+    mockSvgRect(800, 600);
+    render(
+      <DrawingEditorProvider drawing={blankDrawing()} materialLines={[]}>
+        <DrawingCanvas />
+        <PolygonToolButton />
+        <PieceOutlineReadout />
+      </DrawingEditorProvider>,
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'polygon tool' }));
+    const background = screen.getByTestId('canvas-background');
+    // Clicked counter-clockwise (this app's convention): (0,0) -> (100,0)
+    // -> (100,100) -> (0,100).
+    fireEvent.pointerDown(background, { clientX: 400, clientY: 300 });
+    fireEvent.pointerDown(background, { clientX: 500, clientY: 300 });
+    fireEvent.pointerDown(background, { clientX: 500, clientY: 200 });
+    fireEvent.pointerDown(background, { clientX: 400, clientY: 200 });
+    fireEvent.doubleClick(background);
+    const outline = JSON.parse(screen.getByTestId('outline').textContent ?? 'null');
+    // Reversed to clockwise: the same 4 points, wound the other way.
+    expect(outline[0]).toMatchObject({ x: 0, y: 100 });
+    expect(outline[1]).toMatchObject({ x: 100, y: 100 });
+    expect(outline[3]).toMatchObject({ x: 0, y: 0 });
+  });
+
+  it('drops a duplicate point from a double-click\'s extra pointerdown instead of adding a zero-length edge', async () => {
+    mockSvgRect(800, 600);
+    render(
+      <DrawingEditorProvider drawing={blankDrawing()} materialLines={[]}>
+        <DrawingCanvas />
+        <PolygonToolButton />
+        <PieceOutlineReadout />
+      </DrawingEditorProvider>,
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'polygon tool' }));
+    const background = screen.getByTestId('canvas-background');
+    fireEvent.pointerDown(background, { clientX: 400, clientY: 300 });
+    fireEvent.pointerDown(background, { clientX: 500, clientY: 300 });
+    fireEvent.pointerDown(background, { clientX: 500, clientY: 200 });
+    // A double-click's second pointerdown lands on (nearly) the same spot.
+    fireEvent.pointerDown(background, { clientX: 500, clientY: 200 });
+    fireEvent.doubleClick(background);
+    const outline = JSON.parse(screen.getByTestId('outline').textContent ?? 'null');
+    expect(outline).toHaveLength(3);
+  });
+
+  it('closes on a real (not pixel-exact) click back near the first point, scaled for the editor\'s own opening zoom', async () => {
+    // At a 0.2 zoom (the editor can open as low as OPEN_ZOOM = 0.4, and a
+    // user can zoom out further), a flat world-mm closing tolerance shrinks
+    // to just a few on-screen pixels — effectively unclickable. The closing
+    // click below lands 50mm away from the first point in world space, which
+    // a flat 12mm tolerance would have missed entirely; it must still close,
+    // scaled to a constant on-screen hit radius instead.
+    mockSvgRect(800, 600);
+    render(
+      <DrawingEditorProvider drawing={blankDrawing()} materialLines={[]} initialZoom={0.2}>
+        <DrawingCanvas />
+        <PolygonToolButton />
+        <PieceOutlineReadout />
+      </DrawingEditorProvider>,
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'polygon tool' }));
+    const background = screen.getByTestId('canvas-background');
+    // Clockwise: (0,0) -> (0,100) -> (100,0), each world point scaled by the
+    // 0.2 zoom into screen pixels (screenPointToMm's own inverse).
+    fireEvent.pointerDown(background, { clientX: 400, clientY: 300 }); // world (0,0)
+    fireEvent.pointerDown(background, { clientX: 400, clientY: 280 }); // world (0,100)
+    fireEvent.pointerDown(background, { clientX: 420, clientY: 300 }); // world (100,0)
+    // 50mm (10 screen px at this zoom) off the first point — not pixel-exact,
+    // and well past the old flat 12mm tolerance.
+    fireEvent.pointerDown(background, { clientX: 410, clientY: 300 });
+    const outline = JSON.parse(screen.getByTestId('outline').textContent ?? 'null');
+    expect(outline).toHaveLength(3);
+  });
+
+  it('does not close on a click too far from the first point, even at a low zoom', async () => {
+    mockSvgRect(800, 600);
+    render(
+      <DrawingEditorProvider drawing={blankDrawing()} materialLines={[]} initialZoom={0.2}>
+        <DrawingCanvas />
+        <PolygonToolButton />
+        <PieceOutlineReadout />
+      </DrawingEditorProvider>,
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'polygon tool' }));
+    const background = screen.getByTestId('canvas-background');
+    fireEvent.pointerDown(background, { clientX: 400, clientY: 300 }); // world (0,0)
+    fireEvent.pointerDown(background, { clientX: 400, clientY: 280 }); // world (0,100)
+    fireEvent.pointerDown(background, { clientX: 420, clientY: 300 }); // world (100,0)
+    // 500mm (100 screen px) off the first point — well outside even the
+    // zoom-scaled tolerance (70mm at this zoom).
+    fireEvent.pointerDown(background, { clientX: 500, clientY: 300 });
+    expect(screen.queryByTestId('outline')?.textContent).toBe('none');
+  });
+
+  it('shows each side\'s length while drawing, once Dimensions is on — not before', async () => {
+    mockSvgRect(800, 600);
+    render(
+      <DrawingEditorProvider drawing={blankDrawing()} materialLines={[]}>
+        <DrawingCanvas />
+        <PolygonToolButton />
+        <DimensionsToggleButton />
+      </DrawingEditorProvider>,
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'polygon tool' }));
+    const background = screen.getByTestId('canvas-background');
+    // 2540mm = 100" (same round-inch convention PieceDimensions' own tests use).
+    fireEvent.pointerDown(background, { clientX: 400, clientY: 300 }); // world (0,0)
+    fireEvent.pointerMove(background, { clientX: 2940, clientY: 300 }); // cursor at world (2540,0)
+    expect(screen.queryByText('100"')).toBeNull(); // Dimensions is off by default
+
+    await userEvent.click(screen.getByRole('button', { name: 'toggle dimensions' }));
+    // The not-yet-placed side, following the cursor, already shows its length.
+    expect(screen.getByText('100"')).toBeInTheDocument();
+
+    fireEvent.pointerDown(background, { clientX: 2940, clientY: 300 }); // places the 2nd point, world (2540,0)
+    fireEvent.pointerMove(background, { clientX: 2940, clientY: -2240 }); // cursor at world (2540,2540)
+    // The side just placed keeps showing its length too, not just the live one.
+    expect(screen.getAllByText('100"')).toHaveLength(2);
+  });
+
+  it('closes the shape when clicked back on ANY point already down — not just the first', async () => {
+    mockSvgRect(800, 600);
+    render(
+      <DrawingEditorProvider drawing={blankDrawing()} materialLines={[]}>
+        <DrawingCanvas />
+        <PolygonToolButton />
+        <PieceOutlineReadout />
+      </DrawingEditorProvider>,
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'polygon tool' }));
+    const background = screen.getByTestId('canvas-background');
+    fireEvent.pointerDown(background, { clientX: 400, clientY: 300 }); // world (0,0)
+    fireEvent.pointerDown(background, { clientX: 400, clientY: 200 }); // world (0,100)
+    fireEvent.pointerDown(background, { clientX: 500, clientY: 300 }); // world (100,0)
+    fireEvent.pointerDown(background, { clientX: 500, clientY: 400 }); // world (100,-100)
+    // Closes on the SECOND point (0,100), not the first — the figure is
+    // still a closed, 4-sided shape with no open side either way.
+    fireEvent.pointerDown(background, { clientX: 400, clientY: 200 });
+    const outline = JSON.parse(screen.getByTestId('outline').textContent ?? 'null');
+    expect(outline).toHaveLength(4);
+  });
+
+  it('closes the shape when clicked back on its own first point, once it has at least 3 points', async () => {
+    mockSvgRect(800, 600);
+    render(
+      <DrawingEditorProvider drawing={blankDrawing()} materialLines={[]}>
+        <DrawingCanvas />
+        <PolygonToolButton />
+        <PieceOutlineReadout />
+      </DrawingEditorProvider>,
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'polygon tool' }));
+    const background = screen.getByTestId('canvas-background');
+    // Clockwise, like the first test above: (0,0) -> (0,100) -> (100,0).
+    fireEvent.pointerDown(background, { clientX: 400, clientY: 300 }); // world (0,0) — the first point
+    fireEvent.pointerDown(background, { clientX: 400, clientY: 200 }); // world (0,100)
+    fireEvent.pointerDown(background, { clientX: 500, clientY: 300 }); // world (100,0)
+    // Clicking back on the first point closes it — no Enter, no double-click.
+    fireEvent.pointerDown(background, { clientX: 400, clientY: 300 });
+    const outline = JSON.parse(screen.getByTestId('outline').textContent ?? 'null');
+    expect(outline).toHaveLength(3);
+    expect(outline[0]).toMatchObject({ x: 0, y: 0 });
+    expect(outline[2]).toMatchObject({ x: 100, y: 0 });
+  });
+
+  it('follows the cursor with a rubber-band line from the last point, so the border never looks like it just stops', async () => {
+    mockSvgRect(800, 600);
+    render(
+      <DrawingEditorProvider drawing={blankDrawing()} materialLines={[]}>
+        <DrawingCanvas />
+        <PolygonToolButton />
+      </DrawingEditorProvider>,
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'polygon tool' }));
+    const background = screen.getByTestId('canvas-background');
+    expect(document.querySelectorAll('line')).toHaveLength(0);
+    fireEvent.pointerDown(background, { clientX: 400, clientY: 300 }); // world (0,0)
+    fireEvent.pointerMove(background, { clientX: 500, clientY: 300 }); // cursor at world (100,0), no click yet
+    const rubberBand = document.querySelector('line');
+    expect(rubberBand).not.toBeNull();
+    expect(Number(rubberBand?.getAttribute('x1'))).toBeCloseTo(0);
+    expect(Number(rubberBand?.getAttribute('x2'))).toBeCloseTo(100);
+    // A properly weighted, visible border — not the SVG default hairline.
+    expect(rubberBand?.getAttribute('stroke-width')).not.toBe('1');
+  });
+
+  it('does not close on only 2 points — a click near the first just adds a 3rd point', async () => {
+    mockSvgRect(800, 600);
+    render(
+      <DrawingEditorProvider drawing={blankDrawing()} materialLines={[]}>
+        <DrawingCanvas />
+        <PolygonToolButton />
+        <PieceOutlineReadout />
+      </DrawingEditorProvider>,
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'polygon tool' }));
+    const background = screen.getByTestId('canvas-background');
+    fireEvent.pointerDown(background, { clientX: 400, clientY: 300 }); // world (0,0) — the first point
+    fireEvent.pointerDown(background, { clientX: 500, clientY: 300 }); // world (100,0)
+    // Within SNAP_TOLERANCE_MM of the first point, but only 2 points are down
+    // so far — too few to close, and this lands as a normal 3rd point.
+    fireEvent.pointerDown(background, { clientX: 410, clientY: 290 }); // world (10,10)
+    expect(screen.getByTestId('outline').textContent).toBe('none'); // still drafting, no piece yet
+    fireEvent.doubleClick(background);
+    const outline = JSON.parse(screen.getByTestId('outline').textContent ?? 'null');
+    expect(outline).toHaveLength(3);
+  });
+
+  it('abandons an unfinished draft when a different tool is picked any other way than Escape', async () => {
+    mockSvgRect(800, 600);
+    render(
+      <DrawingEditorProvider drawing={blankDrawing()} materialLines={[]}>
+        <DrawingCanvas />
+        <PolygonToolButton />
+        <SelectToolButton />
+        <PieceOutlineReadout />
+      </DrawingEditorProvider>,
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'polygon tool' }));
+    const background = screen.getByTestId('canvas-background');
+    fireEvent.pointerDown(background, { clientX: 400, clientY: 300 });
+    fireEvent.pointerDown(background, { clientX: 500, clientY: 300 });
+    // Left unfinished (only 2 points) — picked Select instead of Escape.
+    await userEvent.click(screen.getByRole('button', { name: 'select tool' }));
+
+    // Arming Points again starts clean, not picking up the abandoned points.
+    await userEvent.click(screen.getByRole('button', { name: 'polygon tool' }));
+    fireEvent.pointerDown(background, { clientX: 400, clientY: 300 }); // world (0,0)
+    fireEvent.pointerDown(background, { clientX: 400, clientY: 200 }); // world (0,100)
+    fireEvent.pointerDown(background, { clientX: 500, clientY: 300 }); // world (100,0)
+    fireEvent.doubleClick(background);
+    const outline = JSON.parse(screen.getByTestId('outline').textContent ?? 'null');
+    expect(outline).toHaveLength(3);
+    expect(outline[0]).toMatchObject({ x: 0, y: 0 });
+  });
+});

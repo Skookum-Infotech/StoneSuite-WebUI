@@ -1,3 +1,4 @@
+import { Select } from '@/components/ui/select';
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { KeyRound, Search, Download } from "lucide-react";
@@ -78,7 +79,7 @@ export default function PortalUsersPage() {
               className="h-9 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-3 text-xs text-stone-700 outline-none focus:border-brand focus:ring-2 focus:ring-brand/20"
             />
           </div>
-          <select
+          <Select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as PortalUserStatus | "all")}
             aria-label="Filter by status"
@@ -87,7 +88,7 @@ export default function PortalUsersPage() {
             {STATUS_FILTERS.map((f) => (
               <option key={f.value} value={f.value}>{f.label}</option>
             ))}
-          </select>
+          </Select>
           {filtered.length > 0 && (
             <button
               type="button"

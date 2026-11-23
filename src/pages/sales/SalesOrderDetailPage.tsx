@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
+import { AddressGeoLine } from '@/components/tenant/AddressGeoLine';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
-import { ShoppingCart, Upload, Pencil, ArrowRightLeft, Loader2, Wrench, FileDown, Send } from 'lucide-react';
+import { ShoppingCart, Upload, Pencil, ArrowRightLeft, Loader2, Wrench, FileDown, Send, PencilRuler, Receipt } from 'lucide-react';
 import { CopyQuickAction } from '@/components/tenant/CopyQuickAction';
 import { toast } from 'sonner';
 import { salesOrderService } from '@/services/salesOrderService';
 import { useIdempotencyKey } from '@/hooks/useIdempotencyKey';
+import { useSalesOrderDownstream } from '@/hooks/useSalesOrderDownstream';
 import { fabricationService } from '@/services/fabricationService';
 import { lookupService } from '@/services/lookupService';
 import { apiErrorMessage } from '@/api/tenantClient';
@@ -18,26 +20,31 @@ import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { cn } from '@/lib/utils';
+import { TAB_LIST_CLASS, tabClass } from '@/components/ui/tabStyles';
 import { KitLineRows } from '@/components/inventory/KitLineRows';
 import { unitLabel } from '@/lib/unitLabels';
-import { LineDimensionViewCells } from '@/components/inventory/LineDimensionViewCells';
-import { LINE_DIMENSION_COLS } from '@/lib/lineDimensions';
+import { LineSizeViewCells } from '@/components/inventory/LineSizeCells';
+import { SALES_SIZE_COLS } from '@/lib/lineThickness';
 import { SO_DRAFT_CODE, SO_STATUS_COLORS, SO_STATUS_CODES, FULFILLMENT_STATUS_LABELS, FULFILLMENT_STATUS_COLORS, SO_CONVERTIBLE_STATUSES, validateForSend } from '@/lib/salesOrderForm';
 import { statusToastLabel } from '@/lib/statusToast';
 import { SalesOrderInventoryTab } from './components/SalesOrderInventoryTab';
+import { StockShortageBanner } from './components/StockShortageBanner';
 import { SalesOrderSchedulingTab } from './components/SalesOrderSchedulingTab';
+import { SalesOrderDrawingTab } from './components/SalesOrderDrawingTab';
 import { SalesOrderAuditTab } from './components/SalesOrderAuditTab';
 import { RecordCommunicationTab } from '@/components/tenant/RecordCommunicationTab';
 import { DeleteSalesOrderDialog } from './components/DeleteSalesOrderDialog';
 import { DangerZoneCard } from '@/components/tenant/DangerZoneCard';
 import { DocumentSendHistory } from '@/components/tenant/DocumentSendHistory';
 import { SendToCustomerDialog } from '@/components/tenant/SendToCustomerDialog';
+import { WorkflowCard } from '@/components/tenant/WorkflowCard';
 import { SalesDetailSidebar } from './components/SalesDetailSidebar';
 import { AmountsStrip } from './components/AmountsStrip';
 import { SalesOrderStatusControl } from './components/SalesOrderStatusControl';
 import { CustomerOrderFormAction } from './components/CustomerOrderFormAction';
 import { formatDateValue } from '@/lib/dateUtils';
 import { isPortalSession } from '@/store/useAuthStore';
+import { CustomerLink } from '@/components/crm/CustomerLink';
 
 const TABS = [
   { key: 'overview', label: 'Overview' },
@@ -45,14 +52,16 @@ const TABS = [
   { key: 'inventory', label: 'Inventory' },
   { key: 'scheduling', label: 'Scheduling' },
   { key: 'communication', label: 'Communication' },
+  { key: 'drawing', label: 'Drawing' },
   { key: 'audit', label: 'Audit' },
   { key: 'files', label: 'Files' },
 ] as const;
 type Tab = (typeof TABS)[number]['key'];
 
 // Tabs a customer-portal session never gets: both read staff-only endpoints
-// (the production schedule, and the order's email thread with the customer).
-const STAFF_ONLY_TABS: readonly Tab[] = ['scheduling', 'communication'];
+// (the production schedule, the order's email thread with the customer, and
+// the internal production drawing).
+const STAFF_ONLY_TABS: readonly Tab[] = ['scheduling', 'communication', 'drawing'];
 
 // The tab a `?tab=` link asks for — the Activity Planner's cards open the
 // Scheduling tab. Anything unknown, or a tab this session doesn't have (a
@@ -96,6 +105,7 @@ export default function SalesOrderDetailPage() {
   // Convert targets a new Invoice, so gate on the Invoice module's create
   // permission (backend checks source sales_order:read + target invoice:create).
   const canConvert = permissionsLoading || hasPermission('invoice', 'create');
+  const canViewInvoice = permissionsLoading || hasPermission('invoice', 'read');
   // A fabrication job always originates from a sales order (backend spec
   // §2.2), so gate this on installation:create.
   const canFabricate = permissionsLoading || hasPermission('installation', 'create');
@@ -112,6 +122,12 @@ export default function SalesOrderDetailPage() {
     queryFn: lookupService.getCrmLookups,
   });
 
+  // A sales order converts to one invoice only (backend uq_invoice_sales_order_once).
+  // Once it exists, the header offers to open it instead of "creating" it again.
+  // Shares its query with the Progress Bar, so this costs no extra request.
+  const downstream = useSalesOrderDownstream({ id: order?.id, number: order?.salesOrderNumber, customerName: order?.customer?.name });
+  const existingInvoice = Array.isArray(downstream.invoice) ? downstream.invoice[0] : downstream.invoice;
+
   const setLabel = useBreadcrumbStore((s) => s.setLabel);
   const clearLabel = useBreadcrumbStore((s) => s.clearLabel);
   useEffect(() => {
@@ -125,7 +141,13 @@ export default function SalesOrderDetailPage() {
   // (idempotent replay) — either way, navigate to it.
   const convert = useMutation({
     mutationFn: () => salesOrderService.convertToInvoice(id),
-    onSuccess: ({ invoice }) => navigate(`/sales/invoice/${invoice.id}`),
+    onSuccess: ({ invoice }) => {
+      // The order's progress card now has an invoice; refresh it and the lists.
+      queryClient.invalidateQueries({ queryKey: ['sales-order', id] });
+      queryClient.invalidateQueries({ queryKey: ['sales-orders'] });
+      queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      navigate(`/sales/invoice/${invoice.id}`);
+    },
   });
 
   // The request id is stable across retries for this order, so a second click
@@ -135,6 +157,7 @@ export default function SalesOrderDetailPage() {
     mutationFn: () => fabricationService.fabricateFromOrder(id, undefined, fabricateKey.keyFor(id)),
     onSuccess: (job) => {
       fabricateKey.reset();
+      queryClient.invalidateQueries({ queryKey: ['sales-order', id] });
       navigate(`/sales/installation/${job.id}`);
     },
   });
@@ -222,10 +245,23 @@ export default function SalesOrderDetailPage() {
         actions={(
           <>
             <CustomerOrderFormAction orderId={id} isDraft={order.statusCode === SO_DRAFT_CODE} />
-            {canConvert && SO_CONVERTIBLE_STATUSES.has(order.statusCode) && (
+            {existingInvoice && canViewInvoice && (
+              <button
+                type="button"
+                onClick={() => navigate(`/sales/invoice/${existingInvoice.id}`)}
+                aria-label={`View invoice ${existingInvoice.number}`}
+                title={`Open ${existingInvoice.number}, the invoice created from this order`}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-stone-300 bg-white px-3 py-1.5 text-xs font-semibold text-stone-700 shadow-sm transition-colors hover:bg-stone-50"
+              >
+                <Receipt className="size-3.5" />
+                View Invoice
+              </button>
+            )}
+            {!existingInvoice && canConvert && SO_CONVERTIBLE_STATUSES.has(order.statusCode) && (
               <button
                 type="button"
                 onClick={() => convert.mutate()}
+                aria-label="Create invoice from this sales order"
                 disabled={convert.isPending}
                 className="inline-flex items-center gap-1.5 rounded-lg border border-stone-300 bg-white px-3 py-1.5 text-xs font-semibold text-stone-700 shadow-sm transition-colors hover:bg-stone-50 disabled:opacity-50"
               >
@@ -259,6 +295,8 @@ export default function SalesOrderDetailPage() {
         </p>
       )}
 
+      <StockShortageBanner orderNumber={order.salesOrderNumber} shortages={order.stockShortages ?? []} />
+
       <RecordApprovalBanner
         record={order}
         onApprove={() => approve.mutate()}
@@ -273,22 +311,19 @@ export default function SalesOrderDetailPage() {
       )}
 
       {/* Tab bar */}
-      <div className="flex shrink-0 overflow-x-auto overflow-y-hidden border-b border-stone-200 bg-white px-5 3xl:px-12 4xl:px-16 modal-scrollbar">
-        {visibleTabs.map((tab) => (
-          <button
-            key={tab.key}
-            type="button"
-            onClick={() => setActiveTab(tab.key)}
-            className={cn(
-              'px-4 py-3 text-sm font-semibold border-b-2 -mb-px transition-colors duration-150 whitespace-nowrap shrink-0',
-              activeTab === tab.key
-                ? 'border-brand text-stone-950'
-                : 'border-transparent text-stone-500 hover:text-stone-700 hover:border-stone-200',
-            )}
-          >
-            {tab.label}
-          </button>
-        ))}
+      <div className="flex shrink-0 overflow-x-auto overflow-y-hidden border-b border-stone-200 bg-white px-5 3xl:px-12 4xl:px-16 modal-scrollbar py-2.5">
+        <div role="tablist" className={TAB_LIST_CLASS}>
+          {visibleTabs.map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setActiveTab(tab.key)}
+              className={tabClass(activeTab === tab.key)}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="flex flex-1 flex-col lg:flex-row gap-6 px-4 py-4 sm:px-5 sm:py-5 3xl:px-12 3xl:py-8 3xl:gap-10 4xl:px-16 4xl:py-10 4xl:gap-14">
@@ -346,7 +381,7 @@ export default function SalesOrderDetailPage() {
                       { label: '#' },
                       { label: 'Item' },
                       { label: 'SKU' },
-                      ...LINE_DIMENSION_COLS,
+                      ...SALES_SIZE_COLS,
                       { label: 'Unit' },
                       { label: 'Qty', right: true },
                       { label: 'Unit Price', right: true },
@@ -360,14 +395,14 @@ export default function SalesOrderDetailPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-stone-100">
-                  <KitLineRows lines={order.items} colSpan={13} renderRow={(line, kitCls) => (
+                  <KitLineRows lines={order.items} colSpan={14} renderRow={(line, kitCls) => (
                     <tr className={cn('hover:bg-stone-50/50 divide-x divide-stone-100', kitCls)}>
                       <td className="px-3 py-2.5 text-stone-500 tabular-nums">{line.lineNumber}</td>
                       <td className="px-3 py-2.5 font-medium text-stone-800">
                         {line.itemName || line.description || <span className="text-stone-500">—</span>}
                       </td>
                       <td className="px-3 py-2.5 font-mono text-2xs text-stone-500">{line.sku || '—'}</td>
-                      <LineDimensionViewCells length={line.length} width={line.width} slabs={line.slabs} unit={line.dimensionUnit} />
+                      <LineSizeViewCells size={line} unit={line.dimensionUnit} units={line.unitCode} />
                       <td className="px-3 py-2.5 text-stone-500 whitespace-nowrap" title={line.unitCode || undefined}>
                         {unitLabel(line.unitCode) || <span className="text-stone-500">—</span>}
                       </td>
@@ -384,7 +419,7 @@ export default function SalesOrderDetailPage() {
                     </tr>
                   )} />
                   {order.items.length === 0 && (
-                    <tr><td colSpan={13} className="py-8 text-center text-stone-500">No line items.</td></tr>
+                    <tr><td colSpan={14} className="py-8 text-center text-stone-500">No line items.</td></tr>
                   )}
                 </tbody>
               </table>
@@ -396,6 +431,7 @@ export default function SalesOrderDetailPage() {
             <SalesOrderSchedulingTab orderId={id} installDate={order.scheduledInstallDate} canEdit={canEdit} />
           )}
           {activeTab === 'communication' && <RecordCommunicationTab recordId={id} audience="customer" canReply={canEdit} />}
+          {activeTab === 'drawing' && <SalesOrderDrawingTab orderId={id} orderNumber={order.salesOrderNumber} canEdit={canEdit} />}
           {activeTab === 'audit' && <SalesOrderAuditTab orderId={id} />}
           {activeTab === 'files' && <FilesContent ref={null} recordId={id} readOnly={!canEdit} />}
 
@@ -404,6 +440,7 @@ export default function SalesOrderDetailPage() {
 
         {/* Right sidebar */}
         <SalesDetailSidebar label="Order Details">
+          <WorkflowCard module="salesOrder" statusCode={order.statusCode} statusLabel={order.status} workflow={order.workflow} links={{ salesOrderId: order.id }} />
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
             <p className="text-xs font-semibold text-stone-500">Quick Actions</p>
             <div className="space-y-0.5">
@@ -430,6 +467,15 @@ export default function SalesOrderDetailPage() {
               {canCopy && (
                 <CopyQuickAction recordLabel="sales order" addPath="/sales/sales_order/new" sourceId={id} />
               )}
+              <button
+                type="button"
+                onClick={() => navigate(`/sales/sales_order/${id}/drawing`)}
+                className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs text-stone-700 w-full transition-colors text-left"
+                aria-label="Open drawing editor"
+              >
+                <PencilRuler className="size-4 text-stone-400 shrink-0" />
+                Drawing editor
+              </button>
               {canEdit && (
                 <button
                   type="button"
@@ -480,7 +526,7 @@ export default function SalesOrderDetailPage() {
             </div>
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
               <span className="text-stone-500">Customer</span>
-              <span className="text-stone-700 truncate max-w-[140px]">{order.customer.name}</span>
+              <CustomerLink id={order.customer.id} name={order.customer.name} className="text-stone-700 truncate max-w-[140px] hover:text-accent-foreground hover:underline" />
             </div>
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
               <span className="text-stone-500">Created</span>
@@ -534,7 +580,7 @@ function ReadonlyField({ label, value, full }: { label: string; value?: string; 
   );
 }
 
-function AddressBlock({ addr }: { addr: { customerName?: string; attention?: string; addrLine1?: string; addrLine2?: string; suiteUnit?: string; city?: string; zip?: string; phone?: string; fax?: string; email?: string } }) {
+function AddressBlock({ addr }: { addr: { customerName?: string; attention?: string; addrLine1?: string; addrLine2?: string; suiteUnit?: string; city?: string; stateId?: number | null; countryId?: number | null; zip?: string; phone?: string; fax?: string; email?: string } }) {
   const lines = [
     addr.attention,
     [addr.addrLine1, addr.addrLine2].filter(Boolean).join(', '),
@@ -543,13 +589,14 @@ function AddressBlock({ addr }: { addr: { customerName?: string; attention?: str
     addr.email && `Email: ${addr.email}`,
   ].filter(Boolean);
 
-  if (lines.length === 0) {
+  if (lines.length === 0 && !addr.stateId && !addr.countryId) {
     return <p className="text-xs text-stone-500 italic">No address on file.</p>;
   }
   return (
     <div className="space-y-1 text-xs text-stone-700">
       {addr.customerName && <p className="font-semibold text-stone-900">{addr.customerName}</p>}
       {lines.map((line, i) => <p key={i} className="text-stone-600">{line}</p>)}
+      <AddressGeoLine stateId={addr.stateId} countryId={addr.countryId} />
     </div>
   );
 }

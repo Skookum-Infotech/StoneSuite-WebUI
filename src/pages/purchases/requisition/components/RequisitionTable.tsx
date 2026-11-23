@@ -20,6 +20,7 @@ import { RequisitionStatusControl } from './RequisitionStatusControl';
 import { ReadOnlyStatusPill } from '@/pages/sales/components/ReadOnlyStatusPill';
 import type { RequisitionSearchRequest } from '@/types/requisition';
 import { formatDateValue, LIST_DATE_OPTIONS } from '@/lib/dateUtils';
+import { VendorLink } from '@/pages/purchases/vendor/components/VendorLink';
 
 // Columns still shown below the sm breakpoint (indexes into the header row); the rest return from sm up.
 const PHONE_COLUMNS = new Set([0, 1, 3, 8]);
@@ -392,7 +393,7 @@ export function RequisitionTable() {
                         {fmtDate(reqn.neededByDate)}
                       </td>
                       <td className="px-4 max-sm:px-2 py-3.5 text-xs text-stone-500 truncate max-w-[160px] max-sm:hidden">
-                        {reqn.vendor?.name ?? '—'}
+                        <VendorLink vendor={reqn.vendor} />
                       </td>
                       <td className="px-4 max-sm:px-2 py-3.5 text-xs font-semibold text-stone-900 tabular-nums text-right whitespace-nowrap">
                         {currency(reqn.estimatedTotal)}

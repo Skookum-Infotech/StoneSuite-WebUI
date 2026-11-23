@@ -18,6 +18,7 @@ import {
 import { ItemReceiptFilterDrawer } from './ItemReceiptFilterDrawer';
 import type { ItemReceiptSearchRequest } from '@/types/itemReceipt';
 import { formatDateValue, LIST_DATE_OPTIONS } from '@/lib/dateUtils';
+import { VendorLink } from '@/pages/purchases/vendor/components/VendorLink';
 
 // Columns still shown below the sm breakpoint (indexes into the header row); the rest return from sm up.
 const PHONE_COLUMNS = new Set([0, 2, 3]);
@@ -307,7 +308,7 @@ export function ItemReceiptTable() {
                         {ir.purchaseOrder?.number ?? '—'}
                       </td>
                       <td className="px-4 max-sm:px-2 py-3.5 text-xs text-stone-700 truncate max-w-[180px]">
-                        {ir.vendor?.name ?? '—'}
+                        <VendorLink vendor={ir.vendor} />
                       </td>
                       <td className="px-4 max-sm:px-2 py-3.5">
                         <span

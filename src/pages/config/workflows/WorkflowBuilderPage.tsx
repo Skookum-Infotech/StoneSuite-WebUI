@@ -1,3 +1,4 @@
+import { Select } from '@/components/ui/select';
 import { useState, useEffect, type ReactNode } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -487,7 +488,7 @@ function NewFieldRow({ workflowId, onDone, onCancel }: { workflowId: string; onD
       <div className={cn('grid min-w-[560px] items-center gap-x-3 border-b border-stone-100 bg-stone-50/70 py-2 dark:border-stone-800/60 dark:bg-stone-950/30', FIELD_COLS)}>
         <Input aria-label="New field label" value={label} onChange={(e) => setLabel(e.target.value)} placeholder="Label" className="h-8 text-xs" />
         <Input aria-label="New field key (snake_case)" value={key} onChange={(e) => setKey(e.target.value)} placeholder="key_name" className="h-8 font-mono text-xs" />
-        <select
+        <Select
           aria-label="New field type"
           value={dataType}
           onChange={(e) => setDataType(e.target.value as FieldType)}
@@ -496,7 +497,7 @@ function NewFieldRow({ workflowId, onDone, onCancel }: { workflowId: string; onD
           {(['string', 'number', 'date', 'bool', 'enum', 'email'] as FieldType[]).map((t) => (
             <option key={t} value={t}>{t}</option>
           ))}
-        </select>
+        </Select>
         <div className="flex justify-start">
           <input
             aria-label="Required"

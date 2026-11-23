@@ -169,3 +169,22 @@ describe('portal-only links', () => {
     expect(isCustomerAllowedPath(NEW_CREATED_ORDER_PATH)).toBe(true);
   });
 });
+
+describe('Install Schedule nav entry', () => {
+  it('links to the route and is gated by install_appointment:read', () => {
+    const entry = allLinks().find(({ link }) => link.id === 'install-schedule');
+    expect(entry?.link.path).toBe('/calendar/install-schedule');
+    expect(entry?.link.permission).toEqual({ resource: 'install_appointment', action: 'read' });
+    expect(entry?.trail).toContain('Calendar');
+  });
+});
+
+describe('Approvals nav entry', () => {
+  it('points at /approvals, shows a badge, and is staff-only', () => {
+    const entry = allLinks().find(({ link }) => link.id === 'approvals');
+    expect(entry?.link.path).toBe('/approvals');
+    expect(entry?.link.badge).toBe('approvals-pending');
+    expect(entry?.link.customerVisible).toBeUndefined();
+    expect(isCustomerAllowedPath('/approvals')).toBe(false);
+  });
+});

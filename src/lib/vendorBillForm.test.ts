@@ -12,9 +12,10 @@ describe('VB_ALLOWED_TRANSITIONS', () => {
   it.each([
     ['DRFT', ['PAPV', 'VOID']],
     ['PAPV', ['APPV', 'DRFT', 'VOID']],
-    ['APPV', ['PART', 'PAID', 'ODUE', 'VOID']],
-    ['PART', ['PAID', 'ODUE', 'VOID']],
-    ['ODUE', ['PART', 'PAID', 'VOID']],
+    ['APPV', ['PINI', 'PART', 'PAID', 'ODUE', 'VOID']],
+    ['PINI', ['PART', 'PAID', 'ODUE', 'VOID']],
+    ['PART', ['PINI', 'PAID', 'ODUE', 'VOID']],
+    ['ODUE', ['PINI', 'PART', 'PAID', 'VOID']],
     ['PAID', []],
     ['VOID', []],
   ])('from(%p) -> %p', (code, expected) => {
@@ -287,5 +288,34 @@ describe('validateVendorBillCustomFields', () => {
 
   it('ignores optional fields entirely', () => {
     expect(validateVendorBillCustomFields(defs, { cost_center: 'CC-100', notes: '' })).toEqual([])
+  })
+})
+
+describe('toCreatePayload line thickness', () => {
+  const baseData: Record<string, unknown> = { vendor_uuid: 'vnd-1', bill_date: '2026-08-11' }
+  const line = { id: 't', lineNo: 1, itemName: 'Slab', itemDescription: '', quantity: '50', unitPrice: '10', discount: '0', amount: '500.00', total: '500.00', inventoryItemUuid: 'inv-1', length: '120', width: '60', dimensionUnit: 'in' }
+
+  it.each([
+    { name: 'sends the thickness of an area-unit line', units: 'SQFT', thickness: '1.25', want: 1.25 },
+    { name: 'drops a thickness on a per-piece line', units: 'EA', thickness: '1.25', want: undefined },
+    { name: 'sends none when the line states none', units: 'SQFT', thickness: '', want: undefined },
+  ])('$name', ({ units, thickness, want }) => {
+    const payload = toCreatePayload(baseData, [{ ...line, units, thickness }])
+    expect(payload.items[0].thickness).toBe(want)
+  })
+})
+
+describe('toCreatePayload line kit label', () => {
+  const baseData: Record<string, unknown> = { vendor_uuid: 'vnd-1', bill_date: '2026-08-11' }
+  const line = { id: 'k', lineNo: 1, itemName: 'Sink', itemDescription: '', quantity: '1', unitPrice: '10', discount: '0', amount: '10.00', total: '10.00', inventoryItemUuid: 'inv-1' }
+
+  it('sends the kit a line was added from', () => {
+    const payload = toCreatePayload(baseData, [{ ...line, kitId: 'kit-1', kitName: 'Kitchen' }])
+    expect(payload.items[0]).toMatchObject({ kitUuid: 'kit-1', kitName: 'Kitchen' })
+  })
+
+  it('sends no kit for an ordinary line', () => {
+    const payload = toCreatePayload(baseData, [line])
+    expect(payload.items[0]).not.toHaveProperty('kitUuid')
   })
 })

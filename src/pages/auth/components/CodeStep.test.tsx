@@ -34,8 +34,16 @@ function apiError(status: number, data: Record<string, unknown>) {
 function renderStep(challenge: Partial<MfaChallenge> = {}) {
   const onSuccess = vi.fn()
   const onBack = vi.fn()
-  render(<CodeStep challenge={{ ...CHALLENGE, ...challenge }} onSuccess={onSuccess} onBack={onBack} />)
-  return { onSuccess, onBack }
+  const onActiveSession = vi.fn()
+  render(
+    <CodeStep
+      challenge={{ ...CHALLENGE, ...challenge }}
+      onSuccess={onSuccess}
+      onBack={onBack}
+      onActiveSession={onActiveSession}
+    />,
+  )
+  return { onSuccess, onBack, onActiveSession }
 }
 
 const codeBox = () => screen.getByLabelText('Sign-in code')
@@ -44,6 +52,22 @@ const verifyButton = () => screen.getByRole('button', { name: 'Verify code' })
 describe('CodeStep', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+  })
+
+  it('hands an "already signed in elsewhere" answer to onActiveSession', async () => {
+    const user = userEvent.setup()
+    vi.mocked(authService.verifyMfa).mockRejectedValue(
+      apiError(409, { success: false, code: 'active_session', activeSession: { deviceLabel: 'Edge on Windows' } }),
+    )
+    const { onActiveSession, onSuccess } = renderStep()
+
+    await user.type(codeBox(), '123456')
+    await user.click(verifyButton())
+
+    await vi.waitFor(() =>
+      expect(onActiveSession).toHaveBeenCalledWith({ deviceLabel: 'Edge on Windows', lastSeenAt: null }),
+    )
+    expect(onSuccess).not.toHaveBeenCalled()
   })
 
   it('says where the code went and how long it works', () => {

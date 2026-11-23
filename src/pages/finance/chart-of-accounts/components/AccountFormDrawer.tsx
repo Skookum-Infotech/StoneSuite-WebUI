@@ -1,3 +1,4 @@
+import { Select } from '@/components/ui/select';
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -261,7 +262,7 @@ export function AccountFormDrawer({
           {!isEdit && !parent && (
             <>
               <ModernFieldShell label="Category" required>
-                <select
+                <Select
                   value={effectiveCategoryId ?? ''}
                   onChange={(e) => {
                     const next = e.target.value ? Number(e.target.value) : null;
@@ -279,7 +280,7 @@ export function AccountFormDrawer({
                   {categoryData?.categories.map((cat) => (
                     <option key={cat.id} value={cat.id}>{cat.code} — {cat.name}</option>
                   ))}
-                </select>
+                </Select>
                 {showErrors && missingPlacement && (
                   <p id="category-error" className="text-2xs text-destructive">
                     A category is required.
@@ -292,7 +293,7 @@ export function AccountFormDrawer({
                     sub-category) is a deliberate, supported choice, not a
                     lesser default — it's the first option, not an
                     afterthought once sub-categories are listed. */}
-                <select
+                <Select
                   value={subCategoryId ?? ''}
                   onChange={(e) => setSubCategoryId(e.target.value ? Number(e.target.value) : null)}
                   disabled={effectiveCategoryId === null}
@@ -305,7 +306,7 @@ export function AccountFormDrawer({
                   {subCategoryOptions.map((s) => (
                     <option key={s.id} value={s.id}>{s.code} — {s.name}</option>
                   ))}
-                </select>
+                </Select>
               </ModernFieldShell>
             </>
           )}
@@ -362,7 +363,7 @@ export function AccountFormDrawer({
           </ModernFieldShell>
 
           <ModernFieldShell label="Type" required>
-            <select
+            <Select
               value={type}
               onChange={(e) => handleTypeChange(e.target.value as AccountType)}
               className={fieldCls}
@@ -371,7 +372,7 @@ export function AccountFormDrawer({
               {ACCOUNT_TYPES.map((t) => (
                 <option key={t} value={t}>{ACCOUNT_TYPE_LABELS[t]}</option>
               ))}
-            </select>
+            </Select>
           </ModernFieldShell>
 
           <AccountAttributeFields

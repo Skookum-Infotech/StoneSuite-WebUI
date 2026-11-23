@@ -23,17 +23,19 @@ function renderStep(
   const onSuccess = overrides.onSuccess ?? vi.fn()
   const onMfaRequired = overrides.onMfaRequired ?? vi.fn()
   const onBack = overrides.onBack ?? vi.fn()
+  const onActiveSession = vi.fn()
   render(
     <MemoryRouter>
       <PasswordStep
         email={overrides.email ?? 'jane@acme.com'}
         onSuccess={onSuccess}
         onMfaRequired={onMfaRequired}
+        onActiveSession={onActiveSession}
         onBack={onBack}
       />
     </MemoryRouter>,
   )
-  return { onSuccess, onMfaRequired, onBack }
+  return { onSuccess, onMfaRequired, onBack, onActiveSession }
 }
 
 const successResponse: AuthResponse = {
@@ -46,6 +48,26 @@ const successResponse: AuthResponse = {
 describe('PasswordStep', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+  })
+
+  it('hands an "already signed in elsewhere" answer to onActiveSession', async () => {
+    const user = userEvent.setup()
+    vi.mocked(authService.login).mockRejectedValue(
+      new AxiosError('conflict', undefined, undefined, undefined, {
+        status: 409,
+        data: { success: false, code: 'active_session', activeSession: { deviceLabel: 'Chrome on Windows', lastSeenAt: 1 } },
+      } as never),
+    )
+    const { onActiveSession, onSuccess } = renderStep()
+
+    await user.type(screen.getByLabelText('Password'), 'hunter2')
+    await user.click(screen.getByRole('button', { name: 'Sign in' }))
+
+    await vi.waitFor(() =>
+      expect(onActiveSession).toHaveBeenCalledWith({ deviceLabel: 'Chrome on Windows', lastSeenAt: 1 }),
+    )
+    expect(onSuccess).not.toHaveBeenCalled()
+    expect(screen.queryByText(/error occurred/i)).not.toBeInTheDocument()
   })
 
   it('shows the resolved email as read-only context', () => {

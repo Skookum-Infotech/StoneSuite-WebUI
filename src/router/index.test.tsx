@@ -14,4 +14,45 @@ describe('router', () => {
     const paths = matches?.map((match) => match.route.path).filter(Boolean);
     expect(paths).toEqual(['/', 'support']);
   });
+
+  it('registers Configure > Automation inside the app shell', () => {
+    const matches = matchRoutes(router.routes, '/config/automation');
+    const paths = matches?.map((match) => match.route.path).filter(Boolean);
+    expect(paths).toEqual(['/', 'config/automation']);
+  });
+
+  // The backend's portal emails link to <app>/portal; it must land somewhere real
+  // (inside the shell, so signed-out visitors are sent to sign in first).
+  it('registers /portal inside the app shell', () => {
+    const matches = matchRoutes(router.routes, '/portal');
+    const paths = matches?.map((match) => match.route.path).filter(Boolean);
+    expect(paths).toEqual(['/', 'portal']);
+  });
+
+  // These module routes were once "coming soon" placeholders behind a :moduleKey
+  // param. Every module has its own page now, so a mistyped one must be a real
+  // 404, not a silent redirect to the dashboard.
+  it.each(['/sales/not-a-module', '/purchases/not-a-module', '/inventory/not-a-module'])(
+    'does not treat %s as a placeholder module',
+    (path) => {
+      const matches = matchRoutes(router.routes, path);
+      const paths = matches?.map((match) => match.route.path).filter(Boolean);
+      expect(paths).toEqual(['*']);
+    },
+  );
+
+  it.each(['/sales/quote', '/sales/invoice', '/purchases/vendor_bill', '/inventory/count'])(
+    'still registers the real module page %s',
+    (path) => {
+      const matches = matchRoutes(router.routes, path);
+      const paths = matches?.map((match) => match.route.path).filter(Boolean);
+      expect(paths).toEqual(['/', path.slice(1)]);
+    },
+  );
+
+  it('registers the Approvals inbox inside the app shell', () => {
+    const matches = matchRoutes(router.routes, '/approvals');
+    const paths = matches?.map((match) => match.route.path).filter(Boolean);
+    expect(paths).toEqual(['/', 'approvals']);
+  });
 });

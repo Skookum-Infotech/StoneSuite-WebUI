@@ -4,6 +4,7 @@ import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { FileCheck, AlertCircle, Loader2, Save } from 'lucide-react';
 import { toast } from 'sonner';
 import { vendorBillService } from '@/services/vendorBillService';
+import { purchaseOrderService } from '@/services/purchaseOrderService';
 import { lookupService } from '@/services/lookupService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { FormActionBar } from '@/components/crm/FormPrimitives';
@@ -29,7 +30,7 @@ import type { VendorBillPurchaseOrderRef } from '@/types/vendorBill';
 import { duplicateFrom, type DuplicateConflict } from '@/lib/salesOrderDuplicate';
 import { DuplicateCreateDialog } from '@/components/tenant/documentReview/DuplicateCreateDialog';
 import {
-  vendorBillDefaults, toCreatePayload, calcHeaderTotals, PAGE_TABS, type PageTab,
+  vendorBillDefaults, toCreatePayload, calcHeaderTotals, vendorBillLinesFromPurchaseOrder, PAGE_TABS, type PageTab,
   type VendorBillLineItem,
 } from '@/lib/vendorBillForm';
 import { CopySeedGate } from '@/components/tenant/CopySeedGate';
@@ -83,6 +84,10 @@ function AddVendorBillForm({ source }: { source?: VendorBill }) {
     restored?.customFieldValues ?? seed?.customFieldValues ?? {},
   );
   const [manualDuplicate, setManualDuplicate] = useState<DuplicateConflict | null>(null);
+  const [poItemsError, setPoItemsError] = useState<string>();
+
+  const headerTaxPercent = parseFloat(String(data.sales_tax_pct ?? '')) || 0;
+  const adjustment = parseFloat(String(data.adjustment ?? '')) || 0;
 
   // A linked purchase order must belong to the bill's vendor, so switching (or
   // clearing) the vendor drops the link rather than leaving a stale one the
@@ -99,10 +104,29 @@ function AddVendorBillForm({ source }: { source?: VendorBill }) {
     vendorIdRef.current = next?.id;
     setVendor(next);
   }, []);
+  // Guards a stale response from overwriting a faster, later pick's items.
+  const poFetchRef = useRef(0);
   const changePurchaseOrder = useCallback((next: VendorBillPurchaseOrderRef | null) => {
     setPurchaseOrder(next);
-    setLineItems((ls) => unlinkPoLines(ls));
-  }, []);
+    setPoItemsError(undefined);
+    if (!next) {
+      setLineItems((ls) => unlinkPoLines(ls));
+      return;
+    }
+    // Picking an order fills the items table with its own lines — same
+    // values, ready to edit before saving — rather than leave the user to
+    // re-type what the order already states.
+    const requestId = ++poFetchRef.current;
+    purchaseOrderService.getPurchaseOrder(next.id)
+      .then((po) => {
+        if (poFetchRef.current !== requestId) return;
+        setLineItems(vendorBillLinesFromPurchaseOrder(po.items, headerTaxPercent));
+      })
+      .catch((err: unknown) => {
+        if (poFetchRef.current !== requestId) return;
+        setPoItemsError(apiErrorMessage(err, "Failed to load the purchase order's items."));
+      });
+  }, [headerTaxPercent]);
 
   const set = useCallback((key: string, value: unknown) => setData((d) => ({ ...d, [key]: value })), []);
   const setCustomField = useCallback(
@@ -159,9 +183,6 @@ function AddVendorBillForm({ source }: { source?: VendorBill }) {
     inventoryReturn.isRestored || vendorReturn.isRestored || Boolean(seed)
       || (review.active && !documentUsed && !documentFailed),
   );
-
-  const headerTaxPercent = parseFloat(String(data.sales_tax_pct ?? '')) || 0;
-  const adjustment = parseFloat(String(data.adjustment ?? '')) || 0;
 
   const { subtotal, discountAmt, taxTotal, total } = useMemo(
     () => calcHeaderTotals(lineItems, headerTaxPercent, adjustment),
@@ -265,6 +286,7 @@ function AddVendorBillForm({ source }: { source?: VendorBill }) {
             onCreateVendor={startCreateVendor}
             purchaseOrder={purchaseOrder}
             setPurchaseOrder={changePurchaseOrder}
+            purchaseOrderItemsError={poItemsError}
             customFieldValues={customFieldValues}
             setCustomField={setCustomField}
             lookups={lookups}

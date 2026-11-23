@@ -1,24 +1,34 @@
-import { useEffect, type ReactNode } from 'react';
-import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
+import { useEffect, useRef, type KeyboardEvent } from 'react';
+import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { platformService } from '@/services/tenantServices';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
-import { describeTenantMetadata } from '@/lib/tenantMetadata';
-import { formatTenantDate, formatTenantDateTime, tenantAvatarClass, tenantInitials } from '@/lib/tenantDisplay';
+import { tenantAvatarClass, tenantInitials } from '@/lib/tenantDisplay';
 import { cn } from '@/lib/utils';
 import { Spinner, ErrorNote, EmptyState } from '@/components/tenant/ui';
 import { TenantActions } from '@/components/customer/TenantActions';
-import { TenantDetailCell } from '@/components/customer/TenantDetailCell';
-import { TenantInvitesPanel } from '@/components/customer/TenantInvitesPanel';
-import { TenantJobsPanel } from '@/components/customer/TenantJobsPanel';
+import { TenantGeneralTab } from '@/components/customer/TenantGeneralTab';
+import { TenantSettingsTab } from '@/components/customer/TenantSettingsTab';
 import { TenantStatusBadges } from '@/components/customer/TenantStatusBadges';
-import type { Tenant } from '@/types/tenant';
+import { TAB_LIST_CLASS, tabClass } from '@/components/ui/tabStyles';
 
 const CUSTOMERS_PATH = '/customer/onboarding';
-const NOT_SET = '—';
+
+// The page's tabs. General is everything about the customer; Settings holds
+// per-customer feature controls. The choice lives in ?tab= so it can be linked.
+const TABS = [
+  { key: 'general', label: 'General' },
+  { key: 'settings', label: 'Settings' },
+] as const;
+type TabKey = (typeof TABS)[number]['key'];
+const TAB_PARAM = 'tab';
+
+function toTabKey(raw: string | null): TabKey {
+  return TABS.some((t) => t.key === raw) ? (raw as TabKey) : 'general';
+}
 
 function BackToCustomers() {
   return (
@@ -28,58 +38,6 @@ function BackToCustomers() {
     >
       <ArrowLeft className="size-3.5" aria-hidden="true" /> Back to customers
     </Link>
-  );
-}
-
-function SectionCard({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <section className="overflow-hidden rounded-xl border border-stone-200 bg-white">
-      <h2 className="border-b border-stone-100 px-4 py-2.5 text-xs font-bold uppercase tracking-wide text-stone-500">
-        {title}
-      </h2>
-      {children}
-    </section>
-  );
-}
-
-function TenantOverview({ tenant }: { tenant: Tenant }) {
-  return (
-    <SectionCard title="Overview">
-      <div className="grid grid-cols-2 gap-px bg-stone-100 sm:grid-cols-3 lg:grid-cols-5">
-        <TenantDetailCell label="Database" value={tenant.dbName || NOT_SET} mono />
-        <TenantDetailCell label="Storage bucket" value={tenant.r2Bucket || NOT_SET} mono />
-        <TenantDetailCell label="DB migration" value={tenant.migrationStatus || NOT_SET} />
-        <TenantDetailCell label="Onboarded" value={formatTenantDateTime(tenant.createdAt)} />
-        <TenantDetailCell
-          label="Auto-delete after"
-          value={tenant.hardDeleteAfter ? formatTenantDate(tenant.hardDeleteAfter) : 'Not scheduled'}
-          dimmed={!tenant.hardDeleteAfter}
-        />
-      </div>
-    </SectionCard>
-  );
-}
-
-function TenantCompanyDetails({ tenant }: { tenant: Tenant }) {
-  const { contactEmail, phone, industry, website, extra } = describeTenantMetadata(tenant.metadata);
-  const allCells: Array<[string, string]> = [
-    ['Contact email', contactEmail],
-    ['Phone', phone],
-    ['Industry', industry],
-    ['Website', website],
-    ...extra.map(([key, value]): [string, string] => [key.replace(/_/g, ' '), value]),
-  ];
-  const cells = allCells.filter(([, value]) => value !== '');
-
-  if (cells.length === 0) return null;
-  return (
-    <SectionCard title="Company details">
-      <div className="grid grid-cols-2 gap-px bg-stone-100 sm:grid-cols-3 lg:grid-cols-4">
-        {cells.map(([label, value]) => (
-          <TenantDetailCell key={label} label={label} value={value} />
-        ))}
-      </div>
-    </SectionCard>
   );
 }
 
@@ -100,6 +58,31 @@ export default function TenantDetailPage() {
     enabled: Boolean(user?.isPlatformAdmin),
   });
   const tenant = tenantsQ.data?.find((t) => t.id === tenantId);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = toTabKey(searchParams.get(TAB_PARAM));
+  const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
+
+  const selectTab = (key: TabKey) => {
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        if (key === 'general') next.delete(TAB_PARAM);
+        else next.set(TAB_PARAM, key);
+        return next;
+      },
+      { replace: true },
+    );
+  };
+
+  // Arrow keys move between tabs (WAI-ARIA tabs pattern).
+  const onTabKeyDown = (e: KeyboardEvent<HTMLButtonElement>, index: number) => {
+    const step = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
+    if (step === 0) return;
+    e.preventDefault();
+    const next = (index + step + TABS.length) % TABS.length;
+    selectTab(TABS[next].key);
+    tabRefs.current[next]?.focus();
+  };
 
   // The breadcrumb must show the customer's name, never the raw UUID segment.
   useEffect(() => {
@@ -147,14 +130,34 @@ export default function TenantDetailPage() {
               <TenantActions tenant={tenant} onPurged={() => navigate(CUSTOMERS_PATH)} />
             </div>
 
-            <TenantOverview tenant={tenant} />
-            <TenantCompanyDetails tenant={tenant} />
-
-            <div className="overflow-hidden rounded-xl border border-stone-200 bg-white empty:hidden">
-              <TenantJobsPanel tenant={tenant} />
+            <div role="tablist" aria-label="Customer sections" className={TAB_LIST_CLASS}>
+              {TABS.map((tab, i) => (
+                <button
+                  key={tab.key}
+                  ref={(el) => {
+                    tabRefs.current[i] = el;
+                  }}
+                  id={`customer-tab-${tab.key}`}
+                  type="button"
+                  role="tab"
+                  aria-selected={activeTab === tab.key}
+                  aria-controls={`customer-panel-${tab.key}`}
+                  tabIndex={activeTab === tab.key ? 0 : -1}
+                  onClick={() => selectTab(tab.key)}
+                  onKeyDown={(e) => onTabKeyDown(e, i)}
+                  className={tabClass(activeTab === tab.key)}
+                >
+                  {tab.label}
+                </button>
+              ))}
             </div>
-            <div className="overflow-hidden rounded-xl border border-stone-200 bg-white">
-              <TenantInvitesPanel tenant={tenant} />
+
+            <div
+              role="tabpanel"
+              id={`customer-panel-${activeTab}`}
+              aria-labelledby={`customer-tab-${activeTab}`}
+            >
+              {activeTab === 'settings' ? <TenantSettingsTab tenant={tenant} /> : <TenantGeneralTab tenant={tenant} />}
             </div>
           </>
         )}

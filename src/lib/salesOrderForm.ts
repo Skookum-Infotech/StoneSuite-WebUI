@@ -7,6 +7,7 @@ import type { CrmLookups } from '@/services/lookupService';
 import type { SalesOrder, SalesOrderCreatePayload, SalesOrderLineInput } from '@/types/salesOrder';
 import { kitFromLine, kitPayload, type KitLabeled } from '@/lib/kitLines';
 import { dimensionsFromLine, dimensionsPayload, type LineDimensions } from '@/lib/lineDimensions';
+import { thicknessPayload, thicknessText } from '@/lib/lineThickness';
 
 export const PAGE_TABS = [
   { key: 'details', label: 'Details' },
@@ -607,6 +608,7 @@ function toLineInput(item: SOLineItem): SalesOrderLineInput {
     taxPercent: item.taxRateId ? undefined : toNum(item.tax),
     ...kitPayload(item),
     ...dimensionsPayload(item, item.units),
+    thickness: thicknessPayload(item.thickness, item.units),
   };
 }
 
@@ -740,6 +742,7 @@ export function fromOrder(order: SalesOrder): {
     inventoryItemUuid: line.inventoryItemId ?? undefined,
     ...kitFromLine(line),
     ...dimensionsFromLine(line),
+    thickness: thicknessText(line.thickness),
     fulfilledQuantity: line.fulfilledQuantity,
     status: line.status,
   }));

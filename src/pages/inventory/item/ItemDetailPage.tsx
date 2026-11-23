@@ -14,10 +14,11 @@ import { SalesDetailSidebar } from '@/pages/sales/components/SalesDetailSidebar'
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { useInventoryLookups } from '@/hooks/useInventoryLookups';
-import { cn } from '@/lib/utils';
+import { TAB_LIST_CLASS, tabClass } from '@/components/ui/tabStyles';
 import { itemPrice } from '@/lib/itemPrice';
 import { TRACKING_SERIALIZED } from '@/types/inventory';
 import { DIMENSION_UNIT_LABELS, itemDimensionUnit } from '@/lib/lineDimensions';
+import { sizeText, thicknessUnitOf } from '@/lib/inventoryItemForm';
 import { DeleteItemDialog } from './components/DeleteItemDialog';
 import { DangerZoneCard } from '@/components/tenant/DangerZoneCard';
 
@@ -116,7 +117,9 @@ export default function ItemDetailPage() {
               ['Material', nameOf(lookups?.materials, item.materialId) || ''],
               ['Color', nameOf(lookups?.colors, item.colorId) || ''],
               ['Finish', nameOf(lookups?.finishes, item.finishId) || ''],
-              ['Thickness (mm)', item.thicknessMm ? String(item.thicknessMm) : ''],
+              ['Length', sizeText(item.lengthMm, itemDimensionUnit(item))],
+              ['Width', sizeText(item.widthMm, itemDimensionUnit(item))],
+              ['Thickness', sizeText(item.thicknessMm, thicknessUnitOf(item))],
               ['Origin Country', nameOf(crmLookups?.countries, item.originCountryId) || ''],
             ],
           },
@@ -141,20 +144,19 @@ export default function ItemDetailPage() {
         statusBadge={<Badge color={item.isActive ? '#22c55e' : '#a8a29e'}>{item.isActive ? 'Active' : 'Inactive'}</Badge>}
       />
 
-      <div className="flex shrink-0 overflow-x-auto overflow-y-hidden border-b border-stone-200 bg-white px-5 3xl:px-12 4xl:px-16 modal-scrollbar">
-        {TABS.map((tab) => (
-          <button
-            key={tab.key}
-            type="button"
-            onClick={() => setActiveTab(tab.key)}
-            className={cn(
-              'px-4 py-3 text-sm font-semibold border-b-2 -mb-px transition-colors duration-150 whitespace-nowrap shrink-0',
-              activeTab === tab.key ? 'border-brand text-stone-950' : 'border-transparent text-stone-500 hover:text-stone-700 hover:border-stone-200',
-            )}
-          >
-            {tab.label}
-          </button>
-        ))}
+      <div className="flex shrink-0 overflow-x-auto overflow-y-hidden border-b border-stone-200 bg-white px-5 3xl:px-12 4xl:px-16 modal-scrollbar py-2.5">
+        <div role="tablist" className={TAB_LIST_CLASS}>
+          {TABS.map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setActiveTab(tab.key)}
+              className={tabClass(activeTab === tab.key)}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="flex flex-col lg:flex-row gap-6 px-4 py-4 sm:px-5 sm:py-5 3xl:px-12 3xl:py-8 3xl:gap-10 4xl:px-16 4xl:py-10 4xl:gap-14">
@@ -182,7 +184,9 @@ export default function ItemDetailPage() {
                   <ReadonlyField label="Material" value={nameOf(lookups?.materials, item.materialId)} />
                   <ReadonlyField label="Color" value={nameOf(lookups?.colors, item.colorId)} />
                   <ReadonlyField label="Finish" value={nameOf(lookups?.finishes, item.finishId)} />
-                  {item.thicknessMm > 0 && <ReadonlyField label="Thickness (mm)" value={String(item.thicknessMm)} />}
+                  {Boolean(item.lengthMm) && <ReadonlyField label="Length" value={sizeText(item.lengthMm, itemDimensionUnit(item))} />}
+                  {Boolean(item.widthMm) && <ReadonlyField label="Width" value={sizeText(item.widthMm, itemDimensionUnit(item))} />}
+                  {item.thicknessMm > 0 && <ReadonlyField label="Thickness" value={sizeText(item.thicknessMm, thicknessUnitOf(item))} />}
                   <ReadonlyField label="Origin Country" value={nameOf(crmLookups?.countries, item.originCountryId)} />
                 </div>
               </ModernSection>

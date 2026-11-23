@@ -1,3 +1,4 @@
+import { Select } from '@/components/ui/select';
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -88,21 +89,21 @@ export function RequisitionFilterDrawer({ onClose, value, onApply }: {
           </FilterField>
 
           <FilterField label="Priority">
-            <select value={draft.priority} onChange={(e) => set('priority', e.target.value)} className={fieldCls} aria-label="Priority">
+            <Select value={draft.priority} onChange={(e) => set('priority', e.target.value)} className={fieldCls} aria-label="Priority">
               <option value="">— Any —</option>
               {REQUISITION_PRIORITIES.map((p) => (
                 <option key={p.value} value={p.value}>{p.label}</option>
               ))}
-            </select>
+            </Select>
           </FilterField>
 
           <FilterField label="Requested By">
-            <select value={draft.requestedById} onChange={(e) => set('requestedById', e.target.value)} className={fieldCls} aria-label="Requested by">
+            <Select value={draft.requestedById} onChange={(e) => set('requestedById', e.target.value)} className={fieldCls} aria-label="Requested by">
               <option value="">— Any —</option>
               {(lookups?.employees ?? []).map((emp) => (
                 <option key={emp.id} value={emp.id}>{emp.name}</option>
               ))}
-            </select>
+            </Select>
           </FilterField>
 
           <FilterField label="Needed By">

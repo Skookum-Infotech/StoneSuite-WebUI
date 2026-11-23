@@ -1,3 +1,4 @@
+import { Select } from '@/components/ui/select';
 import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { CheckCircle2, RotateCcw } from 'lucide-react';
@@ -99,7 +100,7 @@ export default function ImportDataPage() {
             <label htmlFor="import-workflow" className="text-xs font-semibold text-stone-600 dark:text-stone-300">
               Import into
             </label>
-            <select
+            <Select
               id="import-workflow"
               value={workflowKey}
               disabled={step !== 'upload'}
@@ -111,7 +112,7 @@ export default function ImportDataPage() {
                   {workflowsQuery.data?.find((w) => w.key === key)?.name ?? humanizeKey(key)}
                 </option>
               ))}
-            </select>
+            </Select>
           </div>
 
           <div className="rounded-2xl border border-stone-200 bg-white p-5 dark:border-stone-800 dark:bg-stone-900">

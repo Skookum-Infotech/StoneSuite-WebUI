@@ -1,3 +1,4 @@
+import { Select } from '@/components/ui/select';
 import { fieldCls, fieldErrorCls, fieldLabelCls, checkboxLabelCls } from '@/components/crm/formUtils';
 import type { FieldDefinition } from '@/types/tenant';
 
@@ -30,7 +31,7 @@ export function DynamicFieldInput({
     return (
       <div className="space-y-1.5">
         {label}
-        <select
+        <Select
           id={id}
           aria-label={labelText}
           value={(value as string) ?? ''}
@@ -43,7 +44,7 @@ export function DynamicFieldInput({
               {opt}
             </option>
           ))}
-        </select>
+        </Select>
       </div>
     );
   }

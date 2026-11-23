@@ -18,7 +18,7 @@ interface Props {
   workflowKey?: string;
 }
 
-function AccessDenied() {
+export function AccessDenied() {
   return (
     <div className="flex flex-col items-center justify-center py-24 text-center">
       <ShieldOff className="mb-3 size-10 text-stone-400" aria-hidden="true" />

@@ -34,6 +34,10 @@ export class UploadError extends Error {
   }
 }
 
+export type UploadFilesResult = { uploaded: Attachment[]; failed: string[] };
+
+/** Matches maxFilesPerBatch in the backend's controllers/attachments.go. */
+const MAX_FILES_PER_BATCH = 10;
 const HTTP_CLIENT_ERROR_MIN = 400;
 const HTTP_SERVER_ERROR_MIN = 500;
 
@@ -139,4 +143,47 @@ export const attachmentService = {
     tenantClient
       .delete(`/tenant/records/${recordId}/attachments/${attachmentId}`)
       .then(() => undefined),
+
+  /** Presign → PUT → confirm, in batches the backend accepts. A file whose PUT
+   *  fails is named in `failed` and the rest still land; a refused presign or
+   *  confirm rejects, since it carries the server's reason. */
+  uploadFiles: async (recordId: string, files: File[]): Promise<UploadFilesResult> => {
+    const result: UploadFilesResult = { uploaded: [], failed: [] };
+    for (let start = 0; start < files.length; start += MAX_FILES_PER_BATCH) {
+      const batch = files.slice(start, start + MAX_FILES_PER_BATCH);
+      const presigned = await attachmentService.presignBatch(
+        recordId,
+        batch.map((f) => ({ fileName: f.name, contentType: f.type, sizeBytes: f.size })),
+      );
+      const outcomes = await Promise.allSettled(
+        presigned.map((p, i) => attachmentService.uploadToR2(p.uploadUrl, batch[i])),
+      );
+      const landed = presigned.flatMap((p, i) => {
+        if (outcomes[i].status === 'rejected') {
+          result.failed.push(batch[i].name);
+          return [];
+        }
+        return [{
+          fileName: p.fileName,
+          contentType: batch[i].type,
+          sizeBytes: batch[i].size,
+          storageKey: p.storageKey,
+          checksumSha256: '',
+        }];
+      });
+      if (landed.length > 0) {
+        result.uploaded.push(...await attachmentService.confirmAttachments(recordId, landed));
+      }
+    }
+    return result;
+  },
+
+  /** The file's contents, for a viewer in the page. The link is presigned, so
+   *  no credentials go with it, and it's fetched fresh because it expires fast. */
+  fetchAttachmentBytes: async (recordId: string, attachmentId: string, signal?: AbortSignal): Promise<ArrayBuffer> => {
+    const { downloadUrl } = await attachmentService.downloadAttachment(recordId, attachmentId);
+    const response = await fetch(downloadUrl, { credentials: 'omit', signal });
+    if (!response.ok) throw new Error(`Could not fetch the file (${response.status})`);
+    return response.arrayBuffer();
+  },
 };

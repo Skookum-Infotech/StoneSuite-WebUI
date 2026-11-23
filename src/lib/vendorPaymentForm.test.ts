@@ -171,9 +171,11 @@ describe('transition map', () => {
   it('offers the backend map verbatim everywhere else', () => {
     const cases: [string, string[]][] = [
       ['DRFT', ['PAPV', 'VOID']],
-      ['APPV', ['SCHD', 'SENT', 'VOID']],
-      ['SCHD', ['SENT', 'VOID']],
-      ['SENT', ['VOID']],
+      ['PINI', ['PAPV', 'VOID']],
+      ['APPV', ['SCHD', 'SENT', 'PAID', 'VOID']],
+      ['SCHD', ['SENT', 'PAID', 'VOID']],
+      ['SENT', ['PAID', 'VOID']],
+      ['PAID', ['VOID']],
       ['VOID', []],
     ];
     for (const [from, expected] of cases) {
@@ -222,8 +224,8 @@ describe('field definitions', () => {
     expect(EDIT_FIELDS).toHaveLength(PRIMARY_INFO_FIELDS.length - 1);
   });
 
-  it('allows edits only at the two statuses the backend accepts a PATCH on', () => {
-    expect([...VP_EDITABLE_STATUSES].sort()).toEqual(['DRFT', 'PAPV']);
+  it('allows edits only at the statuses the backend accepts a PATCH on', () => {
+    expect([...VP_EDITABLE_STATUSES].sort()).toEqual(['DRFT', 'PAPV', 'PINI']);
   });
 });
 

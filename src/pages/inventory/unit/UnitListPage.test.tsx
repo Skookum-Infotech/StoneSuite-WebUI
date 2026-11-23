@@ -5,6 +5,7 @@ import { MemoryRouter } from 'react-router-dom';
 
 vi.mock('./components/UnitTable', () => ({ UnitTable: () => <div>unit table</div> }));
 vi.mock('./components/RemnantsFinder', () => ({ RemnantsFinder: () => <div>remnants finder</div> }));
+vi.mock('./components/StockOnHandTable', () => ({ StockOnHandTable: () => <div>stock on hand table</div> }));
 
 import UnitListPage from './UnitListPage';
 
@@ -34,6 +35,17 @@ describe('UnitListPage', () => {
     await user.click(screen.getByRole('button', { name: 'Find Remnants' }));
 
     expect(screen.getByText('remnants finder')).toBeInTheDocument();
+    expect(screen.queryByText('unit table')).not.toBeInTheDocument();
+  });
+
+  it('has a Stock on Hand tab for the items that are counted rather than serialized', async () => {
+    const user = userEvent.setup();
+    renderPage();
+    expect(screen.queryByText('stock on hand table')).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Stock on Hand' }));
+
+    expect(screen.getByText('stock on hand table')).toBeInTheDocument();
     expect(screen.queryByText('unit table')).not.toBeInTheDocument();
   });
 });

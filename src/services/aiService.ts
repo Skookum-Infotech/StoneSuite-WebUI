@@ -1,4 +1,5 @@
-import { API_BASE_URL, attemptRefresh, authHeaders, forceLogout } from '@/api/client';
+import { API_BASE_URL, attemptRefresh, authHeaders, forceLogout, reportSessionReplaced } from '@/api/client';
+import { SESSION_REPLACED_CODE, SESSION_REPLACED_NOTICE } from '@/lib/singleSession';
 import { tenantClient } from '@/api/tenantClient';
 import type { AIStatus, AiConversation, AiMessage, AskResponse, AskResult, Citation, PlatformAISettings } from '@/types/ai';
 
@@ -132,6 +133,8 @@ export async function askAssistantStream(
         forceLogout();
         throw new AskStreamHTTPError(401, SESSION_EXPIRED_MESSAGE);
       }
+      // Signed in elsewhere: the countdown overlay is already up and signs out.
+      if (outcome === 'replaced') throw new AskStreamHTTPError(401, SESSION_REPLACED_NOTICE);
       // 'transient': the backend was unreachable, not a dead session — surface
       // the request as unreachable (caught below) without ending the session.
       if (outcome === 'transient') throw new TypeError('refresh unreachable');
@@ -157,7 +160,8 @@ export async function askAssistantStream(
       // Non-JSON error body (e.g. a proxy's own error page) — keep the default.
     }
     const retryAfter = Number(res.headers.get('Retry-After'));
-    if (res.status === 401) forceLogout();
+    if (code === SESSION_REPLACED_CODE) reportSessionReplaced({});
+    else if (res.status === 401) forceLogout();
     throw new AskStreamHTTPError(res.status, message, code, Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter : undefined);
   }
   if (!res.body) {

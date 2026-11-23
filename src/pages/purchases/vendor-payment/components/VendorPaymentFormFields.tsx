@@ -1,3 +1,4 @@
+import { Select } from '@/components/ui/select';
 import { ModernFieldShell } from '@/components/crm/FormPrimitives';
 import { fieldCls, textareaCls, readonlyCls, parseNumberFieldValue } from '@/components/crm/formUtils';
 import { DatePicker } from '@/components/ui/date-picker';
@@ -54,7 +55,7 @@ export function VendorPaymentField({ field, value, set, lookups }: {
     return (
       <div className={spanCls}>
         <ModernFieldShell label={field.label} required={field.required}>
-          <select
+          <Select
             required={field.required}
             value={str}
             onChange={(e) => set(field.key, e.target.value)}
@@ -65,7 +66,7 @@ export function VendorPaymentField({ field, value, set, lookups }: {
             {(idRows ?? []).map((row) => (
               <option key={row.id} value={row.id}>{row.name}</option>
             ))}
-          </select>
+          </Select>
         </ModernFieldShell>
         <FieldHint hint={field.hint} />
       </div>

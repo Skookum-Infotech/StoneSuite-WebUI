@@ -1,3 +1,4 @@
+import { Select } from '@/components/ui/select';
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Lock, Unlock, Loader2, X } from 'lucide-react';
@@ -72,7 +73,7 @@ export function PeriodBulkActionBar({ selectedPeriods, onClear }: {
         <div className="flex flex-wrap items-center gap-2 rounded-lg border border-accent-foreground/20 bg-accent/10 px-3 py-2">
           <span className="text-xs font-semibold text-accent-foreground">{selectedPeriods.length} selected</span>
 
-          <select
+          <Select
             value={target}
             onChange={(e) => setTarget(e.target.value as LockTarget)}
             aria-label="Choose what to lock or unlock on the selected periods"
@@ -81,7 +82,7 @@ export function PeriodBulkActionBar({ selectedPeriods, onClear }: {
             {TARGETS.map((t) => (
               <option key={t} value={t}>{LOCK_TARGET_LABELS[t]}</option>
             ))}
-          </select>
+          </Select>
 
           <input
             type="text"

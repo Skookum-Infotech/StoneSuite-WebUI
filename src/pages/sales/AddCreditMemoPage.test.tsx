@@ -136,11 +136,11 @@ describe('AddCreditMemoPage payment handoff', () => {
     render(<Providers />);
 
     expect(await screen.findByText('Acme Stoneworks')).toBeInTheDocument();
-    expect(await screen.findByRole('option', { name: 'Canadian Dollar' })).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByLabelText('Currency')).toHaveTextContent('Canadian Dollar'));
     expect(screen.getByText('INV-000001')).toBeInTheDocument();
     expect(screen.getByText('PAY-000001')).toBeInTheDocument();
     expect(screen.getAllByText('Prefilled from PAY-000001. Review before saving.')).toHaveLength(2);
-    expect(screen.getByLabelText('Currency')).toHaveValue('2');
+    expect(screen.getByLabelText('Currency')).toHaveAttribute('data-value', '2');
     expect(screen.getByLabelText('Reference #')).toHaveValue('PAY-000001');
     expect(screen.getByLabelText('Reason')).toHaveValue('Excess payment');
     expect(screen.getByLabelText('Memo')).toHaveValue('Created from payment PAY-000001 for invoice INV-000001.');
@@ -157,8 +157,8 @@ describe('AddCreditMemoPage payment handoff', () => {
     await waitFor(() => expect(screen.getByLabelText('Address Line 1')).toHaveValue('456 Commerce Blvd'));
     expect(screen.getByLabelText('City')).toHaveValue('Chicago');
     expect(screen.getByLabelText('Zip / Postal Code')).toHaveValue('60601');
-    expect(screen.getByLabelText('Country')).toHaveValue('1');
-    expect(screen.getByLabelText('State')).toHaveValue('17');
+    expect(screen.getByLabelText('Country')).toHaveAttribute('data-value', '1');
+    expect(screen.getByLabelText('State')).toHaveAttribute('data-value', '17');
     expect(crmService.getRecord).toHaveBeenCalledWith('cust-1', 'customer');
   });
 
@@ -168,7 +168,7 @@ describe('AddCreditMemoPage payment handoff', () => {
 
     expect(screen.getByText('INV-000001')).toBeInTheDocument();
     expect(screen.getByText('PAY-000001')).toBeInTheDocument();
-    expect(screen.getByLabelText('Currency')).toHaveValue('2');
+    expect(screen.getByLabelText('Currency')).toHaveAttribute('data-value', '2');
     expect(screen.getByLabelText('Amount')).toHaveValue(24.5);
   });
 
@@ -215,7 +215,7 @@ describe('AddCreditMemoPage payment handoff', () => {
 
     expect(screen.queryByText('INV-000001')).not.toBeInTheDocument();
     expect(screen.queryByText('PAY-000001')).not.toBeInTheDocument();
-    expect(screen.getByLabelText('Currency')).toHaveValue('');
+    expect(screen.getByLabelText('Currency')).toHaveAttribute('data-value', '');
   });
 
   it('saves the amount and the payment it is issued from, with no line items', async () => {

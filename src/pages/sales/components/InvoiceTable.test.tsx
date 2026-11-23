@@ -93,6 +93,14 @@ describe('InvoiceTable status pill', () => {
   });
 });
 
+describe('InvoiceTable customer link', () => {
+  it('links the customer name to the customer page', async () => {
+    mockPermissions();
+    const row = await renderWithRow(draftInvoice([]));
+    expect(within(row).getByRole('link', { name: 'View customer Fontaine Builders' })).toHaveAttribute('href', '/crm/customer/c-1');
+  });
+});
+
 // Below the sm breakpoint the table keeps only what identifies and prices an invoice, so
 // Status and Balance Due stay on screen instead of scrolling sideways.
 describe('InvoiceTable phone layout', () => {

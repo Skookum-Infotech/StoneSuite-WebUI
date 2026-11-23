@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { allocationOf, allocationSentence, fabricationJobPath, salesOrderPath } from './unitAllocation';
+import {
+  allocationOf, allocationSentence, customerPath, customerReservationOf, fabricationJobPath, isAllocated, orderHoldOf, salesOrderPath,
+} from './unitAllocation';
 import { makeAllocatedUnit, makeCutUnit, makeUnit } from '@/pages/inventory/unit/components/unitFixtures';
 
 describe('allocationOf', () => {
@@ -53,5 +55,56 @@ describe('paths', () => {
   it('point at the sales order and fabrication job pages', () => {
     expect(salesOrderPath('so-3')).toBe('/sales/sales_order/so-3');
     expect(fabricationJobPath('job-7')).toBe('/sales/installation/job-7');
+  });
+});
+
+describe('customerReservationOf', () => {
+  const reserved = () => makeUnit({ status: 'reserved', reservedCustomerId: 'cust-1', reservedCustomerName: 'Acme Kitchens' });
+
+  it('names the customer a slab was reserved for from Inventory', () => {
+    expect(customerReservationOf(reserved())).toEqual({ customerId: 'cust-1', customerName: 'Acme Kitchens' });
+  });
+
+  it('is null for a slab nobody reserved, and for one a job holds', () => {
+    expect(customerReservationOf(makeUnit())).toBeNull();
+    expect(customerReservationOf(makeAllocatedUnit())).toBeNull();
+  });
+
+  it('is null once the slab is no longer reserved, whatever the customer field still says', () => {
+    expect(customerReservationOf(makeUnit({ status: 'available', reservedCustomerId: 'cust-1' }))).toBeNull();
+  });
+
+  it('counts as allocated, like a job does, and reads as a sentence', () => {
+    expect(isAllocated(reserved())).toBe(true);
+    expect(isAllocated(makeAllocatedUnit())).toBe(true);
+    expect(isAllocated(makeUnit())).toBe(false);
+    expect(allocationSentence(reserved())).toBe('Reserved for customer Acme Kitchens.');
+    expect(customerPath('cust-1')).toBe('/crm/customer/cust-1');
+  });
+});
+
+describe('orderHoldOf', () => {
+  const held = makeUnit({ status: 'reserved', reservedSalesOrderId: 'so-9', reservedSalesOrderNumber: 'SORD-000009' });
+
+  it('names the order a reserved slab is held for from its drawing', () => {
+    expect(orderHoldOf(held)).toEqual({ salesOrderId: 'so-9', salesOrderNumber: 'SORD-000009' });
+  });
+
+  it('is null for a free slab, a customer hold, or a slab whose hold was released', () => {
+    expect(orderHoldOf(makeUnit())).toBeNull();
+    expect(orderHoldOf(makeUnit({ status: 'reserved', reservedCustomerId: 'c-1', reservedCustomerName: 'Acme' }))).toBeNull();
+    // A stale order id on a slab that is no longer reserved means nothing.
+    expect(orderHoldOf(makeUnit({ status: 'available', reservedSalesOrderId: 'so-9' }))).toBeNull();
+  });
+
+  it('counts as allocated and explains itself in a sentence', () => {
+    expect(isAllocated(held)).toBe(true);
+    expect(allocationSentence(held)).toBe('Held for sales order SORD-000009 from its drawing.');
+  });
+
+  it('is replaced by the job allocation once a fabrication job takes the slab', () => {
+    const handedOver = makeAllocatedUnit();
+    expect(orderHoldOf(handedOver)).toBeNull();
+    expect(allocationOf(handedOver)).not.toBeNull();
   });
 });

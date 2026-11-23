@@ -78,10 +78,16 @@ export const EDIT_FIELDS: VendorPaymentFormField[] = PRIMARY_INFO_FIELDS.filter(
  *  since the map (not the seed) is the module's stated contract. */
 export const VP_STATUS_CODES: { code: string; label: string }[] = [
   { code: 'DRFT', label: 'Draft' },
+  { code: 'PINI', label: 'Payment Initiated' },
   { code: 'PAPV', label: 'Pending Approval' },
   { code: 'APPV', label: 'Approved' },
   { code: 'SCHD', label: 'Scheduled' },
+  // Dispatched — the daily scheduler tick still lands a due payment here
+  // (Mark Sent), same as before; it has no effect on any bill by itself.
   { code: 'SENT', label: 'Sent' },
+  // What actually settles a payment's bills (and a fully-billed purchase
+  // order) — see Complete Payment below.
+  { code: 'PAID', label: 'Paid' },
   { code: 'VOID', label: 'Void' },
 ];
 
@@ -92,10 +98,16 @@ export const VP_STATUS_CODES: { code: string; label: string }[] = [
  *  VendorPaymentTransitionBar filters it out of the button row. */
 export const VP_ALLOWED_TRANSITIONS: Record<string, string[]> = {
   DRFT: ['PAPV', 'VOID'],
+  // A payment recorded against a vendor bill starts here instead of Draft and
+  // otherwise moves exactly like one.
+  PINI: ['PAPV', 'VOID'],
   PAPV: ['APPV', 'DRFT', 'VOID'],
-  APPV: ['SCHD', 'SENT', 'VOID'],
-  SCHD: ['SENT', 'VOID'],
-  SENT: ['VOID'],
+  // Complete Payment (-> PAID) reaches straight from Approved or Scheduled,
+  // skipping the dispatch bookkeeping, not only from Sent.
+  APPV: ['SCHD', 'SENT', 'PAID', 'VOID'],
+  SCHD: ['SENT', 'PAID', 'VOID'],
+  SENT: ['PAID', 'VOID'],
+  PAID: ['VOID'],
   VOID: [],
 };
 
@@ -107,18 +119,29 @@ export const VP_APPROVAL_ONLY_EDGES = new Set(['PAPV:APPV']);
  *  distinguish contexts that share a target code (mirrors VB_TRANSITION_LABELS). */
 export const VP_TRANSITION_LABELS: Record<string, string> = {
   'DRFT:PAPV': 'Submit for Approval',
-  // Offered directly when nobody is configured to approve (backend nextStatusCodes).
+  // Offered directly when nobody is configured to approve (backend nextStatusCodes
+  // passes the approval checkpoint straight through to one of these).
   'DRFT:SCHD': 'Schedule Payment',
   'DRFT:SENT': 'Mark Sent',
+  'DRFT:PAID': 'Complete Payment',
   'DRFT:VOID': 'Void',
+  'PINI:PAPV': 'Submit for Approval',
+  'PINI:SCHD': 'Schedule Payment',
+  'PINI:SENT': 'Mark Sent',
+  'PINI:PAID': 'Complete Payment',
+  'PINI:VOID': 'Void',
   'PAPV:DRFT': 'Recall to Draft',
   'PAPV:VOID': 'Void',
   'APPV:SCHD': 'Schedule Payment',
   'APPV:SENT': 'Mark Sent',
+  'APPV:PAID': 'Complete Payment',
   'APPV:VOID': 'Void',
   'SCHD:SENT': 'Mark Sent',
+  'SCHD:PAID': 'Complete Payment',
   'SCHD:VOID': 'Void',
+  'SENT:PAID': 'Complete Payment',
   'SENT:VOID': 'Void',
+  'PAID:VOID': 'Void',
 };
 
 export function vpTransitionLabel(from: string, to: string): string {
@@ -181,16 +204,19 @@ export function isScheduleBlocked(toCode: string, scheduledDate?: string | null)
  *  mirrors VB_STATUS_COLORS). */
 export const VP_STATUS_COLORS: Record<string, string> = {
   DRFT: '#a8a29e',
+  PINI: '#06b6d4',
   PAPV: '#f59e0b',
   APPV: '#3b82f6',
   SCHD: '#8b5cf6',
   SENT: '#10b981',
+  PAID: '#10b981',
   VOID: '#78716c',
 };
 
 /** Statuses `vendorPaymentService.updateVendorPayment` accepts edits at
- *  (vendorpayment/store_update.go — DRFT/PAPV only). */
-export const VP_EDITABLE_STATUSES = new Set(['DRFT', 'PAPV']);
+ *  (vendorpayment/store_update.go — DRFT/PINI/PAPV only: nothing has actually
+ *  been paid out at any of them). */
+export const VP_EDITABLE_STATUSES = new Set(['DRFT', 'PINI', 'PAPV']);
 
 /** Apply/unapply is blocked only on a voided payment (vendorpayment/apply.go)
  *  — looser than the bill's payable-status gate, which the server checks on
@@ -198,9 +224,11 @@ export const VP_EDITABLE_STATUSES = new Set(['DRFT', 'PAPV']);
 export const VP_BLOCKS_APPLY = new Set(['VOID']);
 
 /** Bill statuses `Apply` will settle against (vendorbill.PayableStatuses) — a
- *  bill must be approved before money can be applied to it. Used to explain an
- *  empty bill picker rather than to gate the request. */
-export const VP_PAYABLE_BILL_STATUSES = new Set(['APPV', 'PART', 'ODUE']);
+ *  bill must be approved before money can be applied to it. PINI counts: a
+ *  bill only partly covered by an in-flight payment still takes a second one
+ *  for the rest. Used to explain an empty bill picker rather than to gate the
+ *  request. */
+export const VP_PAYABLE_BILL_STATUSES = new Set(['APPV', 'PINI', 'PART', 'ODUE']);
 
 // ── Form defaults ─────────────────────────────────────────────────────────────
 

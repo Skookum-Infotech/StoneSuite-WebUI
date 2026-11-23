@@ -33,8 +33,8 @@ function lookups(overrides: Partial<CrmLookups> = {}): CrmLookups {
 describe('countryOptions', () => {
   it('maps countries to value/label pairs keyed by name', () => {
     expect(countryOptions(lookups().countries, '')).toEqual([
-      { value: 'United States', label: 'United States' },
-      { value: 'Canada', label: 'Canada' },
+      { value: 'United States', label: 'United States', flag: { kind: 'country', code: 'US' } },
+      { value: 'Canada', label: 'Canada', flag: { kind: 'country', code: 'CA' } },
     ]);
   });
 
@@ -82,8 +82,8 @@ describe('currencyOptions', () => {
 describe('stateOptionsForCountry', () => {
   it('filters states to the ones belonging to the selected country', () => {
     expect(stateOptionsForCountry(lookups(), 'United States', '')).toEqual([
-      { value: 'Illinois', label: 'Illinois' },
-      { value: 'Texas', label: 'Texas' },
+      { value: 'Illinois', label: 'Illinois', flag: { kind: 'state', code: 'IL' } },
+      { value: 'Texas', label: 'Texas', flag: { kind: 'state', code: 'TX' } },
     ]);
   });
 

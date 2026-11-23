@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { UserProfile, PortalCustomer, PortalWorkspace } from '@/types/auth';
+import type { UserProfile, PortalCustomer, PortalWorkspace, ReplacedSessionInfo } from '@/types/auth';
 import { queryClient } from '@/lib/queryClient';
 import { clearAllDrafts } from '@/lib/documentReviewDraft';
 
@@ -79,6 +79,13 @@ interface AuthState {
   customer: PortalCustomer | null;
   workspaces: PortalWorkspace[];
   activeTenantId: string | null;
+  // Non-null once another sign-in took over this browser's session: the app
+  // is then covered by the countdown overlay until it signs out. In memory
+  // only -- a reload re-learns it from the server.
+  replacedSession: ReplacedSessionInfo | null;
+  // Records the takeover. The first report wins: a later one (another tab, the
+  // next poll) must not restart the countdown.
+  markSessionReplaced: (info: ReplacedSessionInfo) => void;
   setAuth: (user: UserProfile, token: string, expiresAt: number) => void;
   // Establishes a customer-portal session. Separate from setAuth (rather than
   // an overload) so every existing staff call site — SSO callback, role
@@ -124,6 +131,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   customer: loadCustomer(),
   workspaces: [],
   activeTenantId: loadActiveTenantId(),
+  replacedSession: null,
+  markSessionReplaced: (info) => {
+    if (get().replacedSession) return;
+    set({ replacedSession: info });
+  },
   setAuth: (user, token, expiresAt) => {
     localStorage.setItem(USER_KEY, JSON.stringify(user));
     localStorage.setItem(SESSION_EXPIRY_KEY, String(expiresAt));
@@ -135,7 +147,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     localStorage.removeItem(CUSTOMER_KEY);
     set({
       user, token, sessionExpiresAt: expiresAt, isAuthenticated: true,
-      kind: undefined, customer: null, workspaces: [], activeTenantId: null,
+      kind: undefined, customer: null, workspaces: [], activeTenantId: null, replacedSession: null,
     });
   },
   setPortalAuth: ({ user, token, expiresAt, tenantId, workspaces }) => {
@@ -191,7 +203,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     clearAllDrafts();
     set({
       user: null, token: null, sessionExpiresAt: null, isAuthenticated: false,
-      kind: undefined, customer: null, workspaces: [], activeTenantId: null,
+      kind: undefined, customer: null, workspaces: [], activeTenantId: null, replacedSession: null,
     });
   },
   setLoading: (isLoading) => set({ isLoading }),

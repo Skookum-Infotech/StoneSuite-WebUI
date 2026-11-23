@@ -69,10 +69,13 @@ export function CustomerPicker({
   onChange,
   required,
   onCreateNew,
+  label = 'billing customer',
 }: {
   value: CustomerRef | null;
   onChange: (customer: CustomerRef | null) => void;
   required?: boolean;
+  /** What the customer is for, used in the accessible names ("billing customer"). */
+  label?: string;
   /** Sends the user to create a new Customer CRM record for a typed name the
    *  list doesn't have (see useRecordCreateReturn). Omitted when the user
    *  can't create customers — the picker then only shows the warning. */
@@ -185,7 +188,7 @@ export function CustomerPicker({
         <button
           type="button"
           onClick={() => onChange(null)}
-          aria-label="Change billing customer"
+          aria-label={`Change ${label}`}
           className="shrink-0 rounded p-0.5 text-stone-500 hover:bg-stone-100 hover:text-stone-600 transition-colors"
         >
           <X className="size-3.5" />
@@ -206,7 +209,7 @@ export function CustomerPicker({
           onFocus={() => setOpen(true)}
           placeholder="Click to browse, or search by name…"
           className={cn(fieldCls, 'pl-8')}
-          aria-label="Search billing customer"
+          aria-label={`Search ${label}`}
         />
         {(isFetching || isCheckingInactive) && (
           <Loader2 className="absolute right-2.5 top-1/2 -translate-y-1/2 size-3.5 animate-spin text-stone-400" />

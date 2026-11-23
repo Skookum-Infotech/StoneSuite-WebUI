@@ -13,6 +13,7 @@ import { CREDIT_MEMO_STATUS_COLORS } from '@/lib/creditMemoForm';
 import { exportPagedCsv, fmtCsvDate } from '@/lib/csvExport';
 import type { CreditMemoSearchRequest } from '@/types/creditMemo';
 import { formatDateValue, LIST_DATE_OPTIONS } from '@/lib/dateUtils';
+import { CustomerLink } from '@/components/crm/CustomerLink';
 
 const EXPORT_PAGE_SIZE = 200;
 
@@ -278,7 +279,7 @@ export function CreditMemoTable() {
                           : '—'}
                       </td>
                       <td className="px-4 max-sm:px-2 py-3.5 text-xs text-stone-700 truncate max-w-[200px]">
-                        {cm.customer?.name ?? '—'}
+                        {cm.customer?.name ? <CustomerLink id={cm.customer.id} name={cm.customer.name} className="hover:text-accent-foreground hover:underline" /> : '—'}
                       </td>
                       <td className="px-4 max-sm:px-2 py-3.5">
                         <span

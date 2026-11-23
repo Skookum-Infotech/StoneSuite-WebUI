@@ -8,6 +8,7 @@ import type { Quote, QuoteCreatePayload, QuoteLineInput } from '@/types/quote';
 import type { Estimate } from '@/types/estimate';
 import { kitFromLine, kitPayload, type KitLabeled } from '@/lib/kitLines';
 import { dimensionsFromLine, dimensionsPayload, type LineDimensions } from '@/lib/lineDimensions';
+import { thicknessPayload, thicknessText } from '@/lib/lineThickness';
 
 export const PAGE_TABS = [
   { key: 'details', label: 'Details' },
@@ -514,6 +515,7 @@ function toLineInput(item: QuoteLineItem, lineNo: number): QuoteLineInput {
     discountPercent: toNum(item.discount),
     ...kitPayload(item),
     ...dimensionsPayload(item, item.units),
+    thickness: thicknessPayload(item.thickness, item.units),
   };
 }
 
@@ -646,6 +648,7 @@ export function fromQuote(quote: Quote): {
     inventoryItemUuid: line.inventoryItemId ?? undefined,
     ...kitFromLine(line),
     ...dimensionsFromLine(line),
+    thickness: thicknessText(line.thickness),
   }));
 
   return {
@@ -691,6 +694,7 @@ export function fromSourceEstimate(estimate: Estimate): {
       inventoryItemUuid: line.inventoryItemId ?? undefined,
       ...kitFromLine(line),
       ...dimensionsFromLine(line),
+      thickness: thicknessText(line.thickness),
     }));
 
   return { data, lineItems, customer: { id: estimate.customer.id, name: estimate.customer.name } };

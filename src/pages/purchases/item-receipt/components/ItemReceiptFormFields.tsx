@@ -1,3 +1,4 @@
+import { Select } from '@/components/ui/select';
 import { ModernFieldShell } from '@/components/crm/FormPrimitives';
 import { fieldCls, textareaCls, readonlyCls } from '@/components/crm/formUtils';
 import { DatePicker } from '@/components/ui/date-picker';
@@ -52,7 +53,7 @@ export function ItemReceiptField({ field, value, set, lookups }: {
       : null;
     return (
       <ModernFieldShell label={field.label} required={field.required}>
-        <select
+        <Select
           required={field.required}
           value={str}
           onChange={(e) => set(field.key, e.target.value)}
@@ -63,7 +64,7 @@ export function ItemReceiptField({ field, value, set, lookups }: {
           {lookupRows?.map((row) => (
             <option key={row.id} value={row.id}>{row.name}</option>
           ))}
-        </select>
+        </Select>
       </ModernFieldShell>
     );
   }

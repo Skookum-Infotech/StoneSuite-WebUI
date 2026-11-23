@@ -1,3 +1,4 @@
+import { Select } from '@/components/ui/select';
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -134,7 +135,7 @@ export function AllocateSlabsDialog({ jobId, material, pieces, onClose }: {
             />
           </div>
           {pieces.length > 0 && (
-            <select
+            <Select
               value={pieceUuid}
               onChange={(e) => setPieceUuid(e.target.value)}
               aria-label="Piece to allocate to"
@@ -144,7 +145,7 @@ export function AllocateSlabsDialog({ jobId, material, pieces, onClose }: {
               {pieces.map((p) => (
                 <option key={p.id} value={p.id}>{p.pieceName || `Piece ${p.pieceNumber}`}</option>
               ))}
-            </select>
+            </Select>
           )}
           <button
             type="button"

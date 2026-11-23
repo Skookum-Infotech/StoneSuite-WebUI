@@ -1,3 +1,4 @@
+import { Select } from '@/components/ui/select';
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -171,7 +172,7 @@ export function TaxonomyFormDialog({ intent, onClose }: {
           {intent.kind === 'create-category' && (
             <>
               <ModernFieldShell label="Reports under" required>
-                <select
+                <Select
                   value={side}
                   onChange={(e) => setSide(e.target.value as CategorySide)}
                   className={fieldCls}
@@ -180,11 +181,11 @@ export function TaxonomyFormDialog({ intent, onClose }: {
                   {SIDE_OPTIONS.map((o) => (
                     <option key={o.value} value={o.value}>{o.label} — {o.hint}</option>
                   ))}
-                </select>
+                </Select>
               </ModernFieldShell>
 
               <ModernFieldShell label="Normal balance" required>
-                <select
+                <Select
                   value={normalBalance}
                   onChange={(e) => setNormalBalance(e.target.value as NormalBalance)}
                   className={fieldCls}
@@ -193,7 +194,7 @@ export function TaxonomyFormDialog({ intent, onClose }: {
                   {NORMAL_BALANCES.map((b) => (
                     <option key={b} value={b}>{NORMAL_BALANCE_LABELS[b]}</option>
                   ))}
-                </select>
+                </Select>
               </ModernFieldShell>
 
               <p className="text-2xs text-stone-500">

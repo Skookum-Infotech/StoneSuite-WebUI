@@ -144,7 +144,7 @@ function AddItemForm({ source }: { source?: InventoryItem }) {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const errors = validateItem(data);
+    const errors = validateItem(formData);
     if (errors.length > 0) {
       setFieldErrors(errors.map((er) => er.label));
       return;

@@ -5,6 +5,7 @@
 
 import type { CrmLookups } from '@/services/lookupService';
 import { isInvalidPhoneValue } from './phoneValidation';
+import { isValidEmail } from './emailValidation';
 import type {
   AcceptedPaymentMethod, Vendor, VendorCreatePayload, VendorType,
 } from '@/types/vendor';
@@ -30,7 +31,7 @@ export const GENDER_OPTIONS = ['Male', 'Female', 'Non-binary', 'Prefer not to sa
 // ── Shared fields (always visible) ───────────────────────────────────────────
 
 export const VENDOR_CONTACT_FIELDS: VendorFormField[] = [
-  { key: 'email', label: 'Email Address', type: 'email', placeholder: 'vendor@company.com' },
+  { key: 'email', label: 'Email Address', type: 'email', required: true, placeholder: 'vendor@company.com' },
   { key: 'fax_number', label: 'Fax Number', type: 'tel', placeholder: '+1 (555) 000-0000' },
   {
     key: 'physical_address', label: 'Physical Address', type: 'textarea', rows: 3,
@@ -128,6 +129,13 @@ export function validateVendorForm(data: Record<string, unknown>): VendorFieldEr
     if (!String(data.family_name ?? '').trim()) errors.push({ key: 'family_name', label: 'Last Name' });
   } else {
     if (!String(data.legal_name ?? '').trim()) errors.push({ key: 'legal_name', label: 'Legal Business Name' });
+  }
+
+  const email = String(data.email ?? '').trim();
+  if (!email || !isValidEmail(email)) errors.push({ key: 'email', label: 'Email Address' });
+  const contactEmail = String(data.contact_point_email ?? '').trim();
+  if (contactEmail && !isValidEmail(contactEmail)) {
+    errors.push({ key: 'contact_point_email', label: 'Contact Email' });
   }
 
   if (isInvalidPhoneValue(String(data.fax_number ?? ''))) {

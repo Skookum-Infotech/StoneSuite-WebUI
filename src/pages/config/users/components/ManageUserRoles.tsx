@@ -1,3 +1,4 @@
+import { Select } from '@/components/ui/select';
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Plus, ShieldCheck, X } from "lucide-react";
@@ -126,7 +127,7 @@ export function ManageUserRoles({ user }: { user: WorkspaceUser }) {
 
       {canManageRoles && availableRoles.length > 0 && (
         <div className="flex items-center gap-2">
-          <select
+          <Select
             aria-label="Select a role to add"
             value={selectedRoleId}
             onChange={(e) => setSelectedRoleId(e.target.value)}
@@ -138,7 +139,7 @@ export function ManageUserRoles({ user }: { user: WorkspaceUser }) {
                 {r.name}
               </option>
             ))}
-          </select>
+          </Select>
           <Button
             type="button"
             onClick={() => selectedRoleId && assignMut.mutate(selectedRoleId)}

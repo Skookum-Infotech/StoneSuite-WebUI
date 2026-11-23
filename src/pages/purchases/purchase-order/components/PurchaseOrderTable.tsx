@@ -22,6 +22,7 @@ import { ReadOnlyStatusPill } from '@/pages/sales/components/ReadOnlyStatusPill'
 import { PO_STATUS_COLORS } from '@/lib/purchaseOrderForm';
 import type { PurchaseOrderSearchRequest } from '@/types/purchaseOrder';
 import { formatDateValue, LIST_DATE_OPTIONS } from '@/lib/dateUtils';
+import { VendorLink } from '@/pages/purchases/vendor/components/VendorLink';
 
 // Columns still shown below the sm breakpoint (indexes into the header row); the rest return from sm up.
 const PHONE_COLUMNS = new Set([0, 1, 2, 8]);
@@ -343,7 +344,7 @@ export function PurchaseOrderTable({ toolbarActions }: { toolbarActions?: ReactN
                         </Link>
                       </td>
                       <td className="px-4 max-sm:px-2 py-3.5 text-xs text-stone-700 truncate max-w-[200px]">
-                        {po.vendor?.name ?? '—'}
+                        <VendorLink vendor={po.vendor} />
                       </td>
                       <td className="px-4 max-sm:px-2 py-3.5">
                         {isSuperAdmin ? (

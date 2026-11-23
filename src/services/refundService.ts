@@ -1,3 +1,4 @@
+import type { WorkflowBlock } from '@/types/workflow';
 import { tenantClient } from '@/api/tenantClient';
 import type { ApprovalRejection } from '@/types/tenant';
 import { isPortalSession } from '@/store/useAuthStore';
@@ -53,7 +54,7 @@ export const refundService = {
     }
     return tenantClient
       .get<{
-        success: boolean; refund: Refund; approval?: {
+        success: boolean; workflow?: WorkflowBlock; refund: Refund; approval?: {
           gated?: boolean; approvers?: Refund['approvers']; requiredApprovals?: number; approvedCount?: number;
           canApprove?: boolean; isOverride?: boolean; callerAlreadyApproved?: boolean; canReject?: boolean; rejection?: ApprovalRejection;
         };
@@ -62,6 +63,7 @@ export const refundService = {
         const a = r.data.approval;
         return {
           ...r.data.refund,
+          workflow: r.data.workflow ?? r.data.refund.workflow,
           gated: a?.gated ?? false,
           approvers: a?.approvers ?? [],
           requiredApprovals: a?.requiredApprovals ?? 0,

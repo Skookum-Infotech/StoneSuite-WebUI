@@ -1,6 +1,7 @@
 import type { Ref } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { cn } from '@/lib/utils';
+import { TAB_LIST_CLASS, tabClass } from '@/components/ui/tabStyles';
 import { ModernSection, ModernFieldShell } from '@/components/crm/FormPrimitives';
 import { EditableFilesPanel, type EditableFilesPanelHandle } from '@/components/crm/CrmSubTabsPanel';
 import { readonlyCls } from '@/components/crm/formUtils';
@@ -28,7 +29,7 @@ export function VendorBillFormBody({
   activeTab, setActiveTab, vendorBillId,
   data, set, lineItems, setLineItems,
   vendor, setVendor, vendorLocked = false, onCreateVendor,
-  purchaseOrder, setPurchaseOrder,
+  purchaseOrder, setPurchaseOrder, purchaseOrderItemsError,
   customFieldValues, setCustomField,
   lookups, subtotal, discountAmt, taxTotal, adjustment, total, filesPanelRef,
 }: {
@@ -56,6 +57,9 @@ export function VendorBillFormBody({
    *  the bill actually has one. */
   purchaseOrder: VendorBillPurchaseOrderRef | null;
   setPurchaseOrder?: (v: VendorBillPurchaseOrderRef | null) => void;
+  /** Set when picking a purchase order failed to load its items into the
+   *  table below — Add mode only; Edit never fetches (the link is fixed). */
+  purchaseOrderItemsError?: string;
   customFieldValues: Record<string, unknown>;
   setCustomField: (key: string, value: unknown) => void;
   lookups?: CrmLookups;
@@ -78,22 +82,19 @@ export function VendorBillFormBody({
   return (
     <>
       {/* Page-level tab bar */}
-      <div className="flex shrink-0 overflow-x-auto overflow-y-hidden border-b border-stone-200 bg-white px-5 3xl:px-10 4xl:px-16 modal-scrollbar">
-        {PAGE_TABS.map((tab) => (
-          <button
-            key={tab.key}
-            type="button"
-            onClick={() => setActiveTab(tab.key)}
-            className={cn(
-              'flex shrink-0 items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 -mb-px transition-colors whitespace-nowrap',
-              activeTab === tab.key
-                ? 'border-stone-800 text-stone-900'
-                : 'border-transparent text-stone-500 hover:text-stone-600 hover:border-stone-300',
-            )}
-          >
-            {tab.label}
-          </button>
-        ))}
+      <div className="flex shrink-0 overflow-x-auto overflow-y-hidden border-b border-stone-200 bg-white px-5 3xl:px-10 4xl:px-16 modal-scrollbar py-2.5">
+        <div role="tablist" className={TAB_LIST_CLASS}>
+          {PAGE_TABS.map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setActiveTab(tab.key)}
+              className={tabClass(activeTab === tab.key)}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Scrollable content */}
@@ -126,6 +127,9 @@ export function VendorBillFormBody({
                             <div className={cn(readonlyCls, 'cursor-not-allowed select-none')}>
                               {purchaseOrder?.number}
                             </div>
+                          )}
+                          {purchaseOrderItemsError && (
+                            <p role="alert" className="mt-1 text-2xs text-destructive">{purchaseOrderItemsError}</p>
                           )}
                         </ModernFieldShell>
                       )}

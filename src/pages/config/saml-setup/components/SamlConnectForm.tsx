@@ -1,5 +1,6 @@
+import { Select } from '@/components/ui/select';
 import { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Save, Loader2, Trash2, AlertTriangle } from "lucide-react";
@@ -190,18 +191,26 @@ export function SamlConnectForm({ provider }: SamlConnectFormProps) {
 
         <div className="space-y-1.5">
           <Label htmlFor={`${provider}-default-role`}>Default role for new sign-ins</Label>
-          <select
-            id={`${provider}-default-role`}
-            {...register("defaultRoleId")}
-            className="h-10 w-full rounded-lg border border-stone-200 bg-white px-3 text-sm text-stone-700 focus:outline-none focus:ring-2 focus:ring-brand/50"
-          >
-            <option value="">No role — assign manually after sign-in</option>
-            {assignableRoles.map((role) => (
-              <option key={role.id} value={role.id}>
-                {role.name}
-              </option>
-            ))}
-          </select>
+          <Controller
+            control={control}
+            name="defaultRoleId"
+            render={({ field }) => (
+              <Select
+                id={`${provider}-default-role`}
+                name={field.name}
+                value={field.value ?? ""}
+                onChange={(e) => field.onChange(e.target.value)}
+                className="h-10 w-full rounded-lg border border-stone-200 bg-white px-3 text-sm text-stone-700 focus:outline-none focus:ring-2 focus:ring-brand/50"
+              >
+                <option value="">No role — assign manually after sign-in</option>
+                {assignableRoles.map((role) => (
+                  <option key={role.id} value={role.id}>
+                    {role.name}
+                  </option>
+                ))}
+              </Select>
+            )}
+          />
           <p className="text-2xs text-stone-500">
             Granted automatically to anyone signing in for the first time through this provider.
           </p>

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import {
   PO_ALLOWED_TRANSITIONS, isPoTransitionBlocked, poTransitionLabel, poStatusLabel,
-  poNextCodes, poHeaderTransitions, poDropdownTransitions,
+  poNextCodes, poHeaderTransitions, poDropdownTransitions, poDropdownOverrideTransitions,
   billableQuantity, poBillableLines, PO_BILLABLE_STATUSES,
   calcLineItem, calcHeaderTotals, toCreatePayload, validatePurchaseOrderCustomFields, fromPurchaseOrder,
 } from './purchaseOrderForm'
@@ -13,10 +13,11 @@ describe('PO_ALLOWED_TRANSITIONS', () => {
     ['DRFT', ['PAPV', 'CANC']],
     ['PAPV', ['APPV', 'DRFT', 'CANC']],
     ['APPV', ['SENT', 'DRFT', 'CANC']],
-    ['SENT', ['PART', 'RCVD', 'CLSD', 'CANC']],
-    ['PART', ['RCVD', 'CLSD']],
-    ['RCVD', ['CLSD']],
-    ['CLSD', []],
+    ['SENT', ['PART', 'RCVD', 'PAID', 'CLSD', 'CANC']],
+    ['PART', ['RCVD', 'PAID', 'CLSD']],
+    ['RCVD', ['PAID', 'CLSD']],
+    ['PAID', ['PART', 'RCVD', 'CLSD']],
+    ['CLSD', ['PAID']],
     ['CANC', []],
   ])('from(%p) -> %p', (code, expected) => {
     expect(PO_ALLOWED_TRANSITIONS[code]).toEqual(expected)
@@ -33,8 +34,8 @@ describe('poNextCodes / poHeaderTransitions / poDropdownTransitions', () => {
     ['draft, nobody to approve (backend collapsed the checkpoint)', { statusCode: 'DRFT', nextStatusCodes: ['CANC', 'SENT'] }, ['CANC', 'SENT'], ['SENT'], ['CANC']],
     ['pending approval', { statusCode: 'PAPV' }, ['APPV', 'DRFT', 'CANC'], [], ['APPV', 'DRFT', 'CANC']],
     ['approved', { statusCode: 'APPV' }, ['SENT', 'DRFT', 'CANC'], ['SENT'], ['DRFT', 'CANC']],
-    ['sent', { statusCode: 'SENT' }, ['PART', 'RCVD', 'CLSD', 'CANC'], [], ['PART', 'RCVD', 'CLSD', 'CANC']],
-    ['closed is terminal', { statusCode: 'CLSD' }, [], [], []],
+    ['sent', { statusCode: 'SENT' }, ['PART', 'RCVD', 'PAID', 'CLSD', 'CANC'], [], ['PART', 'RCVD', 'PAID', 'CLSD', 'CANC']],
+    ['closed can still be marked paid', { statusCode: 'CLSD' }, ['PAID'], [], ['PAID']],
     ['record nextStatusCodes wins over the static map', { statusCode: 'DRFT', nextStatusCodes: [] }, [], [], []],
     ['unknown status has no moves', { statusCode: 'XXXX' }, [], [], []],
   ])('%s', (_label, order, next, header, dropdown) => {
@@ -45,6 +46,21 @@ describe('poNextCodes / poHeaderTransitions / poDropdownTransitions', () => {
 
   it('lists Submit for Approval before Send to Vendor when both are legal', () => {
     expect(poHeaderTransitions({ statusCode: 'DRFT', nextStatusCodes: ['SENT', 'PAPV', 'CANC'] })).toEqual(['PAPV', 'SENT'])
+  })
+})
+
+// The admin dropdown's own option list: like poDropdownTransitions, but Send
+// to Vendor stays in it too (the deliberate overlap with its header button —
+// an admin-only override onto Sent regardless of the vendor email).
+describe('poDropdownOverrideTransitions', () => {
+  it.each([
+    ['draft, approvers configured', { statusCode: 'DRFT' }, ['CANC']],
+    ['draft, nobody to approve', { statusCode: 'DRFT', nextStatusCodes: ['CANC', 'SENT'] }, ['CANC', 'SENT']],
+    ['approved', { statusCode: 'APPV' }, ['SENT', 'DRFT', 'CANC']],
+    ['sent', { statusCode: 'SENT' }, ['PART', 'RCVD', 'PAID', 'CLSD', 'CANC']],
+    ['closed can still be marked paid', { statusCode: 'CLSD' }, ['PAID']],
+  ])('%s', (_label, order, expected) => {
+    expect(poDropdownOverrideTransitions(order)).toEqual(expected)
   })
 })
 
@@ -256,7 +272,7 @@ describe('poBillableLines', () => {
   })
 
   it('agrees with the statuses the backend converts', () => {
-    expect([...PO_BILLABLE_STATUSES].sort()).toEqual(['CLSD', 'PART', 'RCVD'])
+    expect([...PO_BILLABLE_STATUSES].sort()).toEqual(['CLSD', 'PAID', 'PART', 'RCVD'])
   })
 })
 
@@ -324,5 +340,71 @@ describe('expected slabs on a purchase order line', () => {
     const payload = toCreatePayload(baseData, lineItems)
 
     expect(payload.items[0]).toMatchObject({ inventoryItemUuid: 'inv-slab', quantity: 600, expectedSlabs: 12 })
+  })
+})
+
+describe('line thickness', () => {
+  const baseData: Record<string, unknown> = { vendor_uuid: 'vnd-1', order_date: '2026-10-30' }
+  const slabLine = {
+    id: 's', lineNo: 1, itemName: 'Absolute Black', itemDescription: '', quantity: '150', unitPrice: '10', discount: '0',
+    amount: '1500.00', total: '1500.00', inventoryItemUuid: 'inv-1', units: 'SQFT', tracking: 'serialized',
+    length: '120', width: '60', expectedSlabs: '3', dimensionUnit: 'in',
+  }
+
+  it('sends the thickness with the size, in the line\'s unit', () => {
+    const [item] = toCreatePayload(baseData, [{ ...slabLine, thickness: '0.75' }]).items
+    expect(item).toMatchObject({ length: 120, width: 60, thickness: 0.75, dimensionUnit: 'in' })
+  })
+
+  it('sends none when it is blank, zero or not a number', () => {
+    for (const thickness of ['', '0', 'abc', undefined]) {
+      const [item] = toCreatePayload(baseData, [{ ...slabLine, thickness }]).items
+      expect(item.thickness).toBeUndefined()
+    }
+  })
+
+  it('does not send one for a line that is not measured by area', () => {
+    const [item] = toCreatePayload(baseData, [{ ...slabLine, units: 'EA', thickness: '0.75' }]).items
+    expect(item.thickness).toBeUndefined()
+  })
+
+  it('names the unit when the line states a thickness but no size', () => {
+    const [item] = toCreatePayload(baseData, [{ ...slabLine, length: '', width: '', thickness: '2', dimensionUnit: 'cm' }]).items
+    expect(item).toMatchObject({ thickness: 2, dimensionUnit: 'cm' })
+    expect(item.length).toBeUndefined()
+  })
+
+  it('comes back onto the edit form from a saved order', () => {
+    const po = {
+      id: 'po-1', purchaseOrderNumber: 'PORD-000001', status: 'Draft', statusCode: 'DRFT', vendor: { id: 'v', name: 'V' }, shipTo: {},
+      items: [{
+        id: 'l1', lineNumber: 1, sku: 'AB', itemName: 'Absolute Black', description: '', unitCode: 'SQFT', quantity: 150,
+        qtyReceived: 0, qtyBilled: 0, unitPrice: 10, discountPercent: 0, taxPercent: 0, lineSubtotal: 1500, lineDiscount: 0,
+        lineTax: 0, lineTotal: 1500, length: 120, width: 60, thickness: 0.75, dimensionUnit: 'in', expectedSlabs: 3,
+      }, {
+        id: 'l2', lineNumber: 2, sku: 'EA', itemName: 'Sealer', description: '', unitCode: 'EA', quantity: 1,
+        qtyReceived: 0, qtyBilled: 0, unitPrice: 5, discountPercent: 0, taxPercent: 0, lineSubtotal: 5, lineDiscount: 0,
+        lineTax: 0, lineTotal: 5,
+      }],
+    } as unknown as PurchaseOrder
+
+    const { lineItems } = fromPurchaseOrder(po)
+    expect(lineItems[0].thickness).toBe('0.75')
+    expect(lineItems[1].thickness).toBe('')
+  })
+})
+
+describe('toCreatePayload line kit label', () => {
+  const baseData: Record<string, unknown> = { vendor_uuid: 'vnd-1', order_date: '2026-08-11' }
+  const line = { id: 'k', lineNo: 1, itemName: 'Sink', itemDescription: '', quantity: '1', unitPrice: '10', discount: '0', amount: '10.00', total: '10.00', inventoryItemUuid: 'inv-1' }
+
+  it('sends the kit a line was added from', () => {
+    const payload = toCreatePayload(baseData, [{ ...line, kitId: 'kit-1', kitName: 'Kitchen' }])
+    expect(payload.items[0]).toMatchObject({ kitUuid: 'kit-1', kitName: 'Kitchen' })
+  })
+
+  it('sends no kit for an ordinary line', () => {
+    const payload = toCreatePayload(baseData, [line])
+    expect(payload.items[0]).not.toHaveProperty('kitUuid')
   })
 })

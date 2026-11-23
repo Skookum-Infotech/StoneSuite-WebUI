@@ -1,4 +1,5 @@
 import { ChevronDown } from 'lucide-react';
+import { TAB_LIST_CLASS, tabClass } from '@/components/ui/tabStyles';
 import { cn } from '@/lib/utils';
 
 export const inputClass =
@@ -48,19 +49,14 @@ export function TabBar({
   onSelect: (key: string) => void;
 }) {
   return (
-    <div className="flex flex-wrap items-stretch overflow-hidden rounded-t border-b-2 border-tab-border bg-tab-bg">
+    <div role="tablist" className={cn(TAB_LIST_CLASS, "flex-wrap")}>
       {tabs.map((t) => (
         <button
           key={t.key}
           type="button"
           onClick={() => onSelect(t.key)}
           aria-current={active === t.key}
-          className={cn(
-            'px-3 py-2 text-label font-semibold transition-colors',
-            active === t.key
-              ? 'bg-white text-tab-bg'
-              : 'text-white/90 hover:bg-white/10',
-          )}
+          className={tabClass(active === t.key)}
         >
           {t.label}
         </button>

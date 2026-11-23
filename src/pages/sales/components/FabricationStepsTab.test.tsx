@@ -1,6 +1,7 @@
+import userEvent from '@testing-library/user-event';
+import { pickOption } from '@/test/selectHelpers';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 vi.mock('@/services/fabricationService', () => ({
@@ -37,11 +38,10 @@ beforeEach(() => {
 
 describe('FabricationStepsTab', () => {
   it('saves one piece’s step with that piece’s uuid, not for every piece', async () => {
-    const user = userEvent.setup();
     renderTab();
 
-    await user.selectOptions(screen.getByLabelText('Status for Primary Saw Cutting (piece 2 of 2)'), 'completed');
-    await user.click(screen.getByRole('button', { name: 'Save Primary Saw Cutting (piece 2 of 2)' }));
+    await pickOption(screen.getByLabelText('Status for Primary Saw Cutting (piece 2 of 2)'), 'completed');
+    await userEvent.click(screen.getByRole('button', { name: 'Save Primary Saw Cutting (piece 2 of 2)' }));
 
     expect(fabricationService.updateStep).toHaveBeenCalledTimes(1);
     expect(fabricationService.updateStep).toHaveBeenCalledWith('job-1', 'SAW_CUTTING', {
@@ -50,23 +50,21 @@ describe('FabricationStepsTab', () => {
   });
 
   it('keeps each piece’s draft separate even though the rows share a step code', async () => {
-    const user = userEvent.setup();
     renderTab();
 
-    await user.selectOptions(screen.getByLabelText('Status for Primary Saw Cutting (piece 1 of 2)'), 'in_progress');
+    await pickOption(screen.getByLabelText('Status for Primary Saw Cutting (piece 1 of 2)'), 'in_progress');
 
-    expect(screen.getByLabelText('Status for Primary Saw Cutting (piece 1 of 2)')).toHaveValue('in_progress');
-    expect(screen.getByLabelText('Status for Primary Saw Cutting (piece 2 of 2)')).toHaveValue('pending');
+    expect(screen.getByLabelText('Status for Primary Saw Cutting (piece 1 of 2)')).toHaveAttribute('data-value', 'in_progress');
+    expect(screen.getByLabelText('Status for Primary Saw Cutting (piece 2 of 2)')).toHaveAttribute('data-value', 'pending');
     expect(screen.getByRole('button', { name: 'Save Primary Saw Cutting (piece 1 of 2)' })).toBeEnabled();
     expect(screen.getByRole('button', { name: 'Save Primary Saw Cutting (piece 2 of 2)' })).toBeDisabled();
   });
 
   it('sends no pieceUuid for a whole-job step', async () => {
-    const user = userEvent.setup();
     renderTab();
 
-    await user.selectOptions(screen.getByLabelText('Status for Order Intake & Verification'), 'completed');
-    await user.click(screen.getByRole('button', { name: 'Save Order Intake & Verification' }));
+    await pickOption(screen.getByLabelText('Status for Order Intake & Verification'), 'completed');
+    await userEvent.click(screen.getByRole('button', { name: 'Save Order Intake & Verification' }));
 
     expect(fabricationService.updateStep).toHaveBeenCalledWith('job-1', 'INTAKE_VERIFY', {
       status: 'completed', notes: undefined, pieceUuid: undefined,
@@ -74,11 +72,10 @@ describe('FabricationStepsTab', () => {
   });
 
   it('requires a note to skip a step, per row', async () => {
-    const user = userEvent.setup();
     renderTab();
 
-    await user.selectOptions(screen.getByLabelText('Status for Primary Saw Cutting (piece 1 of 2)'), 'skipped');
-    await user.click(screen.getByRole('button', { name: 'Save Primary Saw Cutting (piece 1 of 2)' }));
+    await pickOption(screen.getByLabelText('Status for Primary Saw Cutting (piece 1 of 2)'), 'skipped');
+    await userEvent.click(screen.getByRole('button', { name: 'Save Primary Saw Cutting (piece 1 of 2)' }));
 
     expect(await screen.findByText('A skipped step requires a note explaining why.')).toBeInTheDocument();
     expect(fabricationService.updateStep).not.toHaveBeenCalled();

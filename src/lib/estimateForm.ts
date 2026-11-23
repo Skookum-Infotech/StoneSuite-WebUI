@@ -7,6 +7,7 @@ import type { CrmLookups } from '@/services/lookupService';
 import type { Estimate, EstimateCreatePayload, EstimateLineInput } from '@/types/estimate';
 import { kitFromLine, kitPayload, type KitLabeled } from '@/lib/kitLines';
 import { dimensionsFromLine, dimensionsPayload, type LineDimensions } from '@/lib/lineDimensions';
+import { thicknessPayload, thicknessText } from '@/lib/lineThickness';
 
 export const PAGE_TABS = [
   { key: 'details', label: 'Details' },
@@ -527,6 +528,7 @@ function toLineInput(item: EstimateLineItem, lineNo: number): EstimateLineInput 
     discountPercent: toNum(item.discount),
     ...kitPayload(item),
     ...dimensionsPayload(item, item.units),
+    thickness: thicknessPayload(item.thickness, item.units),
   };
 }
 
@@ -663,6 +665,7 @@ export function fromEstimate(estimate: Estimate): {
     inventoryItemUuid: line.inventoryItemId ?? undefined,
     ...kitFromLine(line),
     ...dimensionsFromLine(line),
+    thickness: thicknessText(line.thickness),
   }));
 
   return {

@@ -7,6 +7,7 @@
 // router — served from `/api/tenant/purchase-orders*`. Structurally
 // identical to Estimate, with a vendor instead of a customer and a single
 // ship-to address instead of a billing/shipping pair.
+import type { WorkflowBlock } from '@/types/workflow';
 import type { FilterClause, RecordApprover, SortKey, ApprovalRejection } from '@/types/tenant';
 
 // ── Create / update inputs (client → server) ─────────────────────────────────
@@ -52,9 +53,16 @@ export interface PurchaseOrderLineInput {
    *  quantity sent is then ignored. */
   length?: number;
   width?: number;
-  /** The one unit length and width are measured in: mm, cm, in, ft or m. Blank takes
-   *  the item's unit, then cm. */
+  /** Thickness of one slab, in the same unit as length and width. Optional and
+   *  descriptive; the slabs put on order when the PO is sent are cut to it. */
+  thickness?: number;
+  /** The one unit length, width and thickness are measured in: mm, cm, in, ft or m.
+   *  Blank takes the item's unit, then inches. */
   dimensionUnit?: string;
+  /** Set on a line added from a kit: the kit's id and the name it had then.
+   *  A label only — the server stores it and returns it as kitId / kitName. */
+  kitUuid?: string;
+  kitName?: string;
 }
 
 export interface PurchaseOrderCreatePayload {
@@ -125,8 +133,17 @@ export interface PurchaseOrderLine {
    *  quantity is then length x width x expectedSlabs. */
   length?: number | null;
   width?: number | null;
-  /** The unit length and width were measured in. */
+  /** Thickness of one slab, in `dimensionUnit`; null when the line states none. */
+  thickness?: number | null;
+  /** Set on a line added from a kit: the kit's id and the name it had then.
+   *  Consecutive lines with the same kitId sit under one kit heading. */
+  kitId?: string;
+  kitName?: string;
+  /** The unit length, width and thickness were measured in. */
   dimensionUnit?: string | null;
+  /** How many of this line's slabs are still On Order in Inventory — put on order
+   *  when the PO was sent, not yet arrived on a receipt. */
+  slabsOnOrder?: number;
 }
 
 /** `lkp_record_status` code for the PORD record type — the fixed, mostly
@@ -139,6 +156,8 @@ export type PurchaseOrderStatusCode =
 // page can reload a purchase order and re-save it without silently blanking
 // the ship-to block or any header field.
 export interface PurchaseOrder {
+  /** End-to-end flow this record belongs to; see BACKEND_SPEC_workflow_links.md. */
+  workflow?: WorkflowBlock;
   id: string;
   purchaseOrderNumber: string;
   status: string;                       // human label, e.g. "Draft"

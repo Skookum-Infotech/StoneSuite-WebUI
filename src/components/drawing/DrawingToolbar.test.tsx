@@ -1,0 +1,263 @@
+import { describe, expect, it, vi } from 'vitest';
+import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import type { Drawing } from '@/types/drawing';
+import { MM_PER_INCH } from '@/lib/drawing/constants';
+import { DrawingEditorProvider, useDrawingEditor } from './DrawingEditorContext';
+import { DrawingToolbar } from './DrawingToolbar';
+import { ShapePalette } from './ShapePalette';
+
+vi.mock('@/services/drawingService', () => ({
+  drawingService: {
+    listVersions: vi.fn().mockResolvedValue({ items: [], nextCursor: null }),
+    getEdgeTypes: vi.fn().mockResolvedValue([]),
+    getAttachedProfileTypes: vi.fn().mockResolvedValue([]),
+  },
+}));
+vi.mock('@/lib/drawingPdfExport', () => ({ exportDrawingToPdf: vi.fn().mockResolvedValue(undefined) }));
+
+import { exportDrawingToPdf } from '@/lib/drawingPdfExport';
+
+function blankDrawing(): Drawing {
+  return {
+    schemaVersion: 1,
+    salesOrderId: 'so1',
+    version: 0,
+    displayUnit: 'in',
+    fractionDenominator: 32,
+    areas: [{ id: 'area-1', name: 'Area 1', code: '', sortOrder: 0, pieces: [], cabinets: [], notes: [] }],
+    updatedAt: '2026-11-03T00:00:00.000Z',
+    updatedBy: { id: 'u1', name: 'Test User' },
+  };
+}
+
+/** Exposes the active area's pieces and the undo/redo history depth as
+ *  plain text/JSON, so tests assert on real reducer state. */
+function Readout() {
+  const { state } = useDrawingEditor();
+  const area = state.present.areas[0];
+  return (
+    <div>
+      <span data-testid="pieces">{JSON.stringify(area.pieces.map((p) => ({ outline: p.outline, thicknessMm: p.thicknessMm, label: p.label })))}</span>
+      <span data-testid="past-length">{state.past.length}</span>
+      <span data-testid="future-length">{state.future.length}</span>
+    </div>
+  );
+}
+
+function renderToolbar(saveStatus: Parameters<typeof DrawingToolbar>[0]['saveStatus'] = 'idle', onSave: () => void = () => {}) {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  render(
+    <QueryClientProvider client={queryClient}>
+      <DrawingEditorProvider drawing={blankDrawing()} materialLines={[]}>
+        <div data-drawing-editor><DrawingToolbar saveStatus={saveStatus} onSave={onSave} orderNumber="1001" onExit={() => {}} /></div>
+        {/* The add-piece buttons live in the left panel, not the toolbar. */}
+        <ShapePalette />
+        <Readout />
+      </DrawingEditorProvider>
+    </QueryClientProvider>,
+  );
+}
+
+describe('DrawingToolbar — add rectangle', () => {
+  it('reveals Length/Width/Thickness inputs after clicking "Add rectangle"', async () => {
+    renderToolbar();
+    await userEvent.click(screen.getByRole('button', { name: 'Add rectangle' }));
+    expect(screen.getByLabelText('Length')).toBeDefined();
+    expect(screen.getByLabelText('Width')).toBeDefined();
+    expect(screen.getByLabelText('Thickness')).toBeDefined();
+  });
+
+  it('submitting valid Length/Width/Thickness adds a piece with the matching outline and thickness', async () => {
+    renderToolbar();
+    await userEvent.click(screen.getByRole('button', { name: 'Add rectangle' }));
+    await userEvent.type(screen.getByLabelText('Length'), '96');
+    await userEvent.type(screen.getByLabelText('Width'), '26');
+    await userEvent.type(screen.getByLabelText('Thickness'), '1.25');
+    await userEvent.click(screen.getByRole('button', { name: 'Add piece' }));
+
+    const pieces = JSON.parse(screen.getByTestId('pieces').textContent ?? '[]');
+    expect(pieces).toHaveLength(1);
+    expect(pieces[0].thicknessMm).toBeCloseTo(1.25 * MM_PER_INCH, 5);
+    expect(pieces[0].outline).toEqual([
+      { x: 0, y: 0 },
+      { x: 96 * MM_PER_INCH, y: 0 },
+      { x: 96 * MM_PER_INCH, y: -26 * MM_PER_INCH },
+      { x: 0, y: -26 * MM_PER_INCH },
+    ]);
+    expect(pieces[0].label).toBe('A-1');
+  });
+
+  it('shows the parse error inline and does not add a piece when Length is invalid', async () => {
+    renderToolbar();
+    await userEvent.click(screen.getByRole('button', { name: 'Add rectangle' }));
+    await userEvent.type(screen.getByLabelText('Length'), 'banana');
+    await userEvent.type(screen.getByLabelText('Width'), '26');
+    await userEvent.type(screen.getByLabelText('Thickness'), '1.25');
+    await userEvent.click(screen.getByRole('button', { name: 'Add piece' }));
+
+    expect(screen.getByText(/isn't a length/)).toBeDefined();
+    expect(JSON.parse(screen.getByTestId('pieces').textContent ?? '[]')).toHaveLength(0);
+  });
+
+  it('shows a specific error and does not add a piece when Length is zero — found in the final review as a silent refusal', async () => {
+    renderToolbar();
+    await userEvent.click(screen.getByRole('button', { name: 'Add rectangle' }));
+    await userEvent.type(screen.getByLabelText('Length'), '0');
+    await userEvent.type(screen.getByLabelText('Width'), '26');
+    await userEvent.type(screen.getByLabelText('Thickness'), '1.25');
+    await userEvent.click(screen.getByRole('button', { name: 'Add piece' }));
+
+    expect(screen.getByText(/greater than zero/)).toBeDefined();
+    expect(JSON.parse(screen.getByTestId('pieces').textContent ?? '[]')).toHaveLength(0);
+  });
+
+  it('links an invalid field\'s error to its input via aria-describedby, and announces it as an alert', async () => {
+    renderToolbar();
+    await userEvent.click(screen.getByRole('button', { name: 'Add rectangle' }));
+    await userEvent.type(screen.getByLabelText('Length'), 'banana');
+    await userEvent.type(screen.getByLabelText('Width'), '26');
+    await userEvent.type(screen.getByLabelText('Thickness'), '1.25');
+    await userEvent.click(screen.getByRole('button', { name: 'Add piece' }));
+
+    const errorText = screen.getByText(/isn't a length/);
+    expect(errorText).toHaveAttribute('role', 'alert');
+    expect(screen.getByLabelText('Length').getAttribute('aria-describedby')).toBe(errorText.id);
+  });
+});
+
+describe('DrawingToolbar — undo/redo', () => {
+  it('Undo is disabled with no history, enabled and working after an edit; Redo mirrors it', async () => {
+    renderToolbar();
+    expect(screen.getByRole('button', { name: 'Undo' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Redo' })).toBeDisabled();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Add rectangle' }));
+    await userEvent.type(screen.getByLabelText('Length'), '96');
+    await userEvent.type(screen.getByLabelText('Width'), '26');
+    await userEvent.type(screen.getByLabelText('Thickness'), '1.25');
+    await userEvent.click(screen.getByRole('button', { name: 'Add piece' }));
+    expect(JSON.parse(screen.getByTestId('pieces').textContent ?? '[]')).toHaveLength(1);
+
+    const undoButton = screen.getByRole('button', { name: 'Undo' });
+    expect(undoButton).toBeEnabled();
+    await userEvent.click(undoButton);
+    expect(JSON.parse(screen.getByTestId('pieces').textContent ?? '[]')).toHaveLength(0);
+
+    const redoButton = screen.getByRole('button', { name: 'Redo' });
+    expect(redoButton).toBeEnabled();
+    await userEvent.click(redoButton);
+    expect(JSON.parse(screen.getByTestId('pieces').textContent ?? '[]')).toHaveLength(1);
+  });
+});
+
+describe('DrawingToolbar — add L-shape', () => {
+  it('adds an L-shaped piece built from lShapeOutline', async () => {
+    renderToolbar();
+    await userEvent.click(screen.getByRole('button', { name: 'Add L-shape' }));
+    await userEvent.type(screen.getByLabelText('Length'), '40');
+    await userEvent.type(screen.getByLabelText('Width'), '24');
+    await userEvent.type(screen.getByLabelText('Notch length'), '16');
+    await userEvent.type(screen.getByLabelText('Notch width'), '12');
+    await userEvent.type(screen.getByLabelText('Thickness'), '1.25');
+    await userEvent.click(screen.getByRole('button', { name: 'Add piece' }));
+
+    const pieces = JSON.parse(screen.getByTestId('pieces').textContent ?? '[]');
+    expect(pieces).toHaveLength(1);
+    expect(pieces[0].outline).toHaveLength(6);
+  });
+
+  it('rejects a notch as large as the piece itself, instead of building a degenerate outline', async () => {
+    renderToolbar();
+    await userEvent.click(screen.getByRole('button', { name: 'Add L-shape' }));
+    await userEvent.type(screen.getByLabelText('Length'), '40');
+    await userEvent.type(screen.getByLabelText('Width'), '24');
+    await userEvent.type(screen.getByLabelText('Notch length'), '40'); // equal to Length
+    await userEvent.type(screen.getByLabelText('Notch width'), '12');
+    await userEvent.type(screen.getByLabelText('Thickness'), '1.25');
+    await userEvent.click(screen.getByRole('button', { name: 'Add piece' }));
+
+    expect(screen.getByText(/notch must be smaller than the piece/i)).toBeDefined();
+    expect(JSON.parse(screen.getByTestId('pieces').textContent ?? '[]')).toHaveLength(0);
+  });
+});
+
+describe('DrawingToolbar — save status and version history', () => {
+  it.each([
+    ['dirty', 'Unsaved changes — autosaves shortly', 'Save'],
+    ['saving', 'Saving…', 'Saving…'],
+    ['saved', 'All changes saved', 'Saved'],
+    ['error', 'Save failed — your changes are not saved', 'Retry save'],
+  ] as const)('shows "%s" as status "%s" and button "%s"', (status, text, button) => {
+    renderToolbar(status);
+    expect(screen.getByRole('status').textContent).toBe(text);
+    expect(screen.getByRole('button', { name: 'Save drawing' }).textContent).toBe(button);
+  });
+
+  it.each([['dirty', false], ['error', false], ['saving', true], ['saved', true], ['idle', true]] as const)(
+    'when status is %s, Save disabled is %s', (status, disabled) => {
+      renderToolbar(status);
+      expect(screen.getByRole('button', { name: 'Save drawing' })).toHaveProperty('disabled', disabled);
+    },
+  );
+
+  it('Save button saves immediately', async () => {
+    const onSave = vi.fn();
+    renderToolbar('dirty', onSave);
+    await userEvent.click(screen.getByRole('button', { name: 'Save drawing' }));
+    expect(onSave).toHaveBeenCalledTimes(1);
+  });
+
+  it('"Version history" opens the version drawer', async () => {
+    renderToolbar();
+    await userEvent.click(screen.getByRole('button', { name: 'Version history' }));
+    expect(screen.getByRole('dialog')).toBeDefined();
+  });
+});
+
+describe('DrawingToolbar — Export DXF', () => {
+  it('downloads the active area under the spec file name', async () => {
+    const created: Blob[] = [];
+    vi.stubGlobal('URL', { createObjectURL: (b: Blob) => { created.push(b); return 'blob:x'; }, revokeObjectURL: vi.fn() });
+    const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
+    renderToolbar();
+    await userEvent.click(screen.getByRole('button', { name: 'Export DXF' }));
+    expect(click).toHaveBeenCalledTimes(1);
+    expect(created).toHaveLength(1);
+    expect(created[0].type).toBe('application/dxf');
+    click.mockRestore();
+    vi.unstubAllGlobals();
+  });
+});
+
+describe('DrawingToolbar — Export PDF', () => {
+  it('hands the live drawing and the order number to the PDF exporter', async () => {
+    renderToolbar();
+    await userEvent.click(screen.getByRole('button', { name: 'Export PDF' }));
+    await vi.waitFor(() => expect(exportDrawingToPdf).toHaveBeenCalledTimes(1));
+    expect(vi.mocked(exportDrawingToPdf).mock.calls[0][0]).toMatchObject({
+      orderNumber: '1001',
+      drawing: { salesOrderId: 'so1' },
+    });
+  });
+});
+
+describe('DrawingToolbar — full screen', () => {
+  it('asks the editor container to go full screen, then offers to exit', async () => {
+    const request = vi.fn().mockResolvedValue(undefined);
+    const exit = vi.fn().mockResolvedValue(undefined);
+    let current: Element | null = null;
+    Object.defineProperty(document, 'fullscreenElement', { configurable: true, get: () => current });
+    document.exitFullscreen = exit;
+    renderToolbar();
+    const host = document.querySelector('[data-drawing-editor]') as HTMLElement;
+    host.requestFullscreen = () => { current = host; document.dispatchEvent(new Event('fullscreenchange')); return request(); };
+
+    await userEvent.click(screen.getByRole('button', { name: 'Full screen' }));
+    expect(request).toHaveBeenCalledTimes(1);
+    expect(await screen.findByRole('button', { name: 'Exit full screen' })).toBeDefined();
+    await userEvent.click(screen.getByRole('button', { name: 'Exit full screen' }));
+    expect(exit).toHaveBeenCalledTimes(1);
+  });
+});

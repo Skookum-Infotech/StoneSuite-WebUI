@@ -1,6 +1,6 @@
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { TAB_LIST_CLASS, tabClass } from '@/components/ui/tabStyles';
 import { Boxes, Package, Plus } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { ItemTable } from './components/ItemTable';
 import { KitTable } from './components/KitTable';
@@ -62,7 +62,7 @@ export default function ItemListPage() {
         </div>
 
         <div className="mt-5 border-t border-stone-100 pt-4 flex-1 flex flex-col min-h-0 gap-3">
-          <div role="tablist" aria-label="Inventory catalogue" className="flex gap-1 border-b border-stone-200">
+          <div role="tablist" aria-label="Inventory catalogue" className={TAB_LIST_CLASS}>
             {TABS.map((t) => (
               <button
                 key={t.key}
@@ -72,12 +72,7 @@ export default function ItemListPage() {
                 aria-selected={tab === t.key}
                 aria-controls="item-list-panel"
                 onClick={() => selectTab(t.key)}
-                className={cn(
-                  '-mb-px border-b-2 px-4 py-2 text-sm font-semibold transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring/50',
-                  tab === t.key
-                    ? 'border-brand text-stone-950'
-                    : 'border-transparent text-stone-500 hover:border-stone-200 hover:text-stone-700',
-                )}
+                className={tabClass(tab === t.key)}
               >
                 {t.label}
               </button>

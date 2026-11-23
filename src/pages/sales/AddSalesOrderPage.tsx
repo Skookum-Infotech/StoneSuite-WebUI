@@ -28,8 +28,7 @@ import { ReviewFooter } from '@/components/tenant/documentReview/ReviewFooter';
 import { DocumentFailedNotice } from '@/components/tenant/documentReview/DocumentFailedNotice';
 import { DocumentUsedNotice } from '@/components/tenant/documentReview/DocumentUsedNotice';
 import { useSalesOrderReviewMode, type ReviewPatch } from '@/hooks/useSalesOrderReviewMode';
-import { StockShortageGate } from './components/StockShortageGate';
-import { stockShortagesFrom } from '@/lib/stockShortage';
+import { shortageToastMessage, uncoveredShortages } from '@/lib/stockShortage';
 import {
   soDefaults, toCreatePayload, PAGE_TABS, SO_STATUS_CODES, BILL_TO_FIELDS, SHIP_TO_FIELDS, type PageTab,
   type SOLineItem, type SODrawing,
@@ -212,14 +211,18 @@ function AddSalesOrderForm({ source }: { source?: SalesOrder }) {
           }
         } catch { /* non-fatal — order was created; it just stays in Draft */ }
       }
+      // Short stock never stops the save: warn, and open the order so its
+      // "items short" banner (with Order shortage items) is the next thing seen.
+      const short = uncoveredShortages(order.stockShortages ?? []);
+      if (short.length > 0) toast.warning(shortageToastMessage(order.salesOrderNumber, 'created', short));
       if (review.active) await review.afterCreate(order);
-      else if (!autoSubmitted) toast.success('Sales order created.');
+      else if (!autoSubmitted && short.length === 0) toast.success('Sales order created.');
 
       queryClient.invalidateQueries({ queryKey: ['sales-orders'] });
       // A new order plans a schedule, which the Activity Planner lists.
       queryClient.invalidateQueries({ queryKey: [PLANNER_QUERY_KEY] });
       guard.markClean();
-      navigate('/sales/sales_order');
+      navigate(short.length > 0 ? `/sales/sales_order/${order.id}` : '/sales/sales_order');
     },
   });
   const errorRef = useScrollToError<HTMLDivElement>(saveError);
@@ -246,9 +249,7 @@ function AddSalesOrderForm({ source }: { source?: SalesOrder }) {
           )}
         />
 
-        {/* A refusal for lack of stock has its own dialog; everything else is a banner. */}
-        <StockShortageGate error={saveError} />
-        {saveError && !stockShortagesFrom(saveError) && !review.duplicate && (
+        {saveError && !review.duplicate && (
           <div
             ref={errorRef}
             tabIndex={-1}

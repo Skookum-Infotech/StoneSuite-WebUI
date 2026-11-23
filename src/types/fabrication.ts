@@ -7,6 +7,7 @@
 // allocation and a 16-step checklist. Served from
 // `/api/tenant/fabrication-jobs*` and `/api/tenant/inventory/slabs*` — a
 // relational sibling of Sales Order, not the generic JSONB CRM router.
+import type { WorkflowBlock } from '@/types/workflow';
 import type { FilterClause, RecordApprover, SortKey } from '@/types/tenant';
 
 export interface FabricationCustomerRef {
@@ -106,6 +107,8 @@ export interface FabricationJobCreatePayload extends FabricationJobFields {
 export type FabricationJobUpdatePayload = FabricationJobFields;
 
 export interface FabricationJob {
+  /** End-to-end flow this record belongs to; see BACKEND_SPEC_workflow_links.md. */
+  workflow?: WorkflowBlock;
   workflowVersion?: number;
   version?: number;
   id: string;

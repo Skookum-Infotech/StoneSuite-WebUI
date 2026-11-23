@@ -1,3 +1,4 @@
+import { Select } from '@/components/ui/select';
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -60,7 +61,7 @@ export function AccountFilterDrawer({ onClose, value, onApply }: {
 
         <div className="flex-1 overflow-y-auto modal-scrollbar px-4 py-4 space-y-5">
           <FilterField label="Type">
-            <select
+            <Select
               value={draft.type}
               onChange={(e) => set('type', e.target.value as AccountTableFilterState['type'])}
               className={fieldCls}
@@ -68,11 +69,11 @@ export function AccountFilterDrawer({ onClose, value, onApply }: {
             >
               <option value="">— Any —</option>
               {ACCOUNT_TYPES.map((t) => <option key={t} value={t}>{ACCOUNT_TYPE_LABELS[t]}</option>)}
-            </select>
+            </Select>
           </FilterField>
 
           <FilterField label="Balance Sheet / P&L">
-            <select
+            <Select
               value={draft.bsPnl}
               onChange={(e) => set('bsPnl', e.target.value as AccountTableFilterState['bsPnl'])}
               className={fieldCls}
@@ -81,11 +82,11 @@ export function AccountFilterDrawer({ onClose, value, onApply }: {
               <option value="">— Any —</option>
               <option value="BS">Balance Sheet</option>
               <option value="PNL">Profit &amp; Loss</option>
-            </select>
+            </Select>
           </FilterField>
 
           <FilterField label="Category">
-            <select
+            <Select
               value={draft.categoryCode}
               onChange={(e) => {
                 set('categoryCode', e.target.value ? Number(e.target.value) : '');
@@ -96,11 +97,11 @@ export function AccountFilterDrawer({ onClose, value, onApply }: {
             >
               <option value="">— Any —</option>
               {categoryData?.categories.map((c) => <option key={c.id} value={c.code}>{c.code} — {c.name}</option>)}
-            </select>
+            </Select>
           </FilterField>
 
           <FilterField label="Sub-category">
-            <select
+            <Select
               value={draft.subCategoryCode}
               onChange={(e) => set('subCategoryCode', e.target.value ? Number(e.target.value) : '')}
               className={fieldCls}
@@ -108,11 +109,11 @@ export function AccountFilterDrawer({ onClose, value, onApply }: {
             >
               <option value="">— Any —</option>
               {subCategoryOptions.map((s) => <option key={s.id} value={s.code}>{s.code} — {s.name}</option>)}
-            </select>
+            </Select>
           </FilterField>
 
           <FilterField label="System Accounts">
-            <select
+            <Select
               value={draft.isSystem}
               onChange={(e) => set('isSystem', e.target.value as AccountTableFilterState['isSystem'])}
               className={fieldCls}
@@ -121,7 +122,7 @@ export function AccountFilterDrawer({ onClose, value, onApply }: {
               <option value="">— Any —</option>
               <option value="true">Seeded (system) only</option>
               <option value="false">User-created only</option>
-            </select>
+            </Select>
           </FilterField>
         </div>
 

@@ -7,8 +7,48 @@ import {
   findAnomalyScanRule,
   scanSummary,
   reviewActions,
+  sortAnomalies,
 } from './anomaly';
-import type { AnomalyStatus } from '@/types/anomaly';
+import type { Anomaly, AnomalySeverity, AnomalyStatus } from '@/types/anomaly';
+
+function make(id: string, severity: AnomalySeverity, detectedAt: string): Anomaly {
+  return {
+    id,
+    ruleKey: 'self_approval',
+    severity,
+    resource: 'invoice',
+    title: id,
+    detail: '',
+    status: 'open',
+    note: '',
+    detectedAt,
+  };
+}
+
+describe('sortAnomalies', () => {
+  it('puts criticals first, then newest first within each severity', () => {
+    const input = [
+      make('old-warn', 'warning', '2026-10-01T00:00:00Z'),
+      make('new-info', 'info', '2026-10-27T00:00:00Z'),
+      make('old-crit', 'critical', '2026-10-02T00:00:00Z'),
+      make('new-warn', 'warning', '2026-10-26T00:00:00Z'),
+      make('new-crit', 'critical', '2026-10-25T00:00:00Z'),
+    ];
+    expect(sortAnomalies(input).map((a) => a.id)).toEqual([
+      'new-crit',
+      'old-crit',
+      'new-warn',
+      'old-warn',
+      'new-info',
+    ]);
+  });
+
+  it('does not mutate its input', () => {
+    const input = [make('a', 'info', '2026-10-01T00:00:00Z'), make('b', 'critical', '2026-10-01T00:00:00Z')];
+    sortAnomalies(input);
+    expect(input.map((a) => a.id)).toEqual(['a', 'b']);
+  });
+});
 
 describe('buildAnomalyParams', () => {
   const cases = [
@@ -64,8 +104,10 @@ describe('ANOMALY_FILTERS', () => {
   });
 });
 
+import { makeRule } from '@/test/automationFixtures';
+
 describe('findAnomalyScanRule', () => {
-  const base = { name: 'x', audience: 'internal', enabled: true, enabledAt: null } as const;
+  const base = makeRule({ name: 'x', enabled: true, enabledAt: null });
   it('finds the scan switch among the workspace rules', () => {
     const rules = [{ ...base, ruleKey: 'ar_dunning' }, { ...base, ruleKey: 'anomaly_scan' }];
     expect(findAnomalyScanRule(rules)?.ruleKey).toBe('anomaly_scan');

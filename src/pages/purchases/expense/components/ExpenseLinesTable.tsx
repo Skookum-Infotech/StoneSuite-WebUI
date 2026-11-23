@@ -1,3 +1,4 @@
+import { Select } from '@/components/ui/select';
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Plus, Pencil, Trash2, Copy, X } from 'lucide-react';
@@ -192,7 +193,7 @@ function InlineItemRow({ lineNo, draft, categories, onChange, onCategoryChange }
     <>
       <td className="px-2.5 py-1.5 text-stone-500 tabular-nums">{lineNo}</td>
       <td className="px-2 py-1.5">
-        <select
+        <Select
           value={draft.categoryCode}
           onChange={(e) => onCategoryChange(e.target.value)}
           className={cn(inlineCls, 'min-w-[130px]')}
@@ -202,7 +203,7 @@ function InlineItemRow({ lineNo, draft, categories, onChange, onCategoryChange }
           {categories.map((c) => (
             <option key={c.id} value={c.code}>{c.name}</option>
           ))}
-        </select>
+        </Select>
       </td>
       <td className="px-2 py-1.5">
         <input type="date" value={draft.expenseDate} onChange={(e) => onChange('expenseDate', e.target.value)} className={cn(inlineCls, 'w-28')} aria-label="Expense date" />

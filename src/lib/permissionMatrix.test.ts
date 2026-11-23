@@ -27,7 +27,7 @@ describe('buildPermModules', () => {
 
     expect(orderRows).toHaveLength(1);
     expect(orderRows[0]?.label).toBe('Sales Orders');
-    expect(modules.find((m) => m.id === 'calendar')).toBeUndefined();
+    expect(modules.find((m) => m.id === 'calendar')?.rows.map((r) => r.resource)).not.toContain('sales_order');
   });
 
   it('drops the Default Accounts row once chart_of_account is already covered by Chart of Accounts', () => {
@@ -38,5 +38,15 @@ describe('buildPermModules', () => {
 
     expect(coaRows).toHaveLength(1);
     expect(coaRows[0]?.label).toBe('Chart of Accounts');
+  });
+});
+
+describe('buildPermModules install schedule', () => {
+  it('lists install_appointment once, as "Install Schedule" under Calendar', () => {
+    const modules = buildPermModules();
+    const rows = modules.flatMap((m) => m.rows).filter((r) => r.resource === 'install_appointment');
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.label).toBe('Install Schedule');
+    expect(modules.find((m) => m.id === 'calendar')?.rows.map((r) => r.resource)).toContain('install_appointment');
   });
 });

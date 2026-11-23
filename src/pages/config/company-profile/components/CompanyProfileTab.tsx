@@ -11,7 +11,7 @@ import {
 import { ModernSection } from '@/components/crm/FormPrimitives';
 import { companyProfileService } from '@/services/companyProfileService';
 import { companyProfileSchema, type CompanyProfileFormValues } from '@/lib/companyProfileForm';
-import type { Address, PaymentDetails } from '@/types/companyProfile';
+import { DEFAULT_FABRICATION_PERCENT, type Address, type PaymentDetails } from '@/types/companyProfile';
 import { lookupService } from '@/services/lookupService';
 import { countryOptions, currencyOptions, stateOptionsForCountry, timezoneOptions } from '@/lib/companyInfoLookupOptions';
 import { apiErrorMessage } from '@/api/tenantClient';
@@ -35,6 +35,7 @@ const DEFAULT_VALUES: CompanyProfileFormValues = {
   currency: '',
   timezone: '',
   taxId: '',
+  fabricationPercent: DEFAULT_FABRICATION_PERCENT,
   billingAddress: EMPTY_ADDRESS,
   shippingAddress: EMPTY_ADDRESS,
   returnAddress: EMPTY_ADDRESS,
@@ -177,6 +178,7 @@ export function CompanyProfileTab({ actionsSlot }: { actionsSlot: HTMLDivElement
           field={field}
           registration={register('country')}
           error={errors.country?.message}
+          value={values.country ?? ''}
           options={countryOptions(lookupsQ.data?.countries, values.country ?? '')}
         />
       );
@@ -188,6 +190,7 @@ export function CompanyProfileTab({ actionsSlot }: { actionsSlot: HTMLDivElement
           field={field}
           registration={register('currency')}
           error={errors.currency?.message}
+          value={values.currency ?? ''}
           options={currencyOptions(lookupsQ.data?.currencies, values.currency ?? '')}
         />
       );
@@ -199,6 +202,7 @@ export function CompanyProfileTab({ actionsSlot }: { actionsSlot: HTMLDivElement
           field={field}
           registration={register('timezone')}
           error={errors.timezone?.message}
+          value={values.timezone ?? ''}
           options={timezoneOptions(values.timezone ?? '')}
         />
       );
@@ -228,6 +232,7 @@ export function CompanyProfileTab({ actionsSlot }: { actionsSlot: HTMLDivElement
           field={fieldSpec}
           registration={register(`${group.key}.country`)}
           error={errors[group.key]?.country?.message}
+          value={groupValues?.country ?? ''}
           options={countryOptions(lookupsQ.data?.countries, groupValues?.country ?? '')}
         />
       );
@@ -239,6 +244,7 @@ export function CompanyProfileTab({ actionsSlot }: { actionsSlot: HTMLDivElement
           field={fieldSpec}
           registration={register(`${group.key}.state`)}
           error={errors[group.key]?.state?.message}
+          value={groupValues?.state ?? ''}
           options={stateOptionsForCountry(lookupsQ.data, groupValues?.country ?? '', groupValues?.state ?? '')}
         />
       );

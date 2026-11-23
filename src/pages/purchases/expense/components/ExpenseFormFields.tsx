@@ -1,3 +1,4 @@
+import { Select } from '@/components/ui/select';
 import { ModernFieldShell } from '@/components/crm/FormPrimitives';
 import { fieldCls, textareaCls, readonlyCls } from '@/components/crm/formUtils';
 import type { ExpenseFormField } from '@/lib/expenseForm';
@@ -46,7 +47,7 @@ export function ExpenseField({ field, value, set }: {
     return (
       <div className={spanCls}>
         <ModernFieldShell label={field.label} required={field.required}>
-          <select
+          <Select
             required={field.required}
             value={str}
             onChange={(e) => set(field.key, e.target.value)}
@@ -57,7 +58,7 @@ export function ExpenseField({ field, value, set }: {
             {field.options?.filter(Boolean).map((opt) => (
               <option key={opt} value={opt}>{opt}</option>
             ))}
-          </select>
+          </Select>
           {field.hint && <p className="text-2xs text-stone-500">{field.hint}</p>}
         </ModernFieldShell>
       </div>

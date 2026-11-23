@@ -1,3 +1,4 @@
+import { Select } from '@/components/ui/select';
 import { ModernFieldShell } from '@/components/crm/FormPrimitives';
 import { fieldCls, textareaCls, readonlyCls } from '@/components/crm/formUtils';
 import { PhoneNumberInput } from '@/components/crm/PhoneNumberInput';
@@ -53,7 +54,7 @@ export function FJField({ field, value, set, lookups }: {
     return (
       <div className={field.colSpanFull ? 'col-span-full' : field.colSpan2 ? 'sm:col-span-2' : ''}>
         <ModernFieldShell label={field.label} required={field.required}>
-          <select
+          <Select
             required={field.required}
             value={str}
             onChange={(e) => set(field.key, e.target.value)}
@@ -64,7 +65,7 @@ export function FJField({ field, value, set, lookups }: {
             {lookupRows?.map((row) => (
               <option key={row.id} value={row.id}>{row.name}</option>
             ))}
-          </select>
+          </Select>
           {field.hint && <p className="text-2xs text-stone-500">{field.hint}</p>}
         </ModernFieldShell>
       </div>

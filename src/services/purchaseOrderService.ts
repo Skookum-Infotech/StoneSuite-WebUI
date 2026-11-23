@@ -1,3 +1,4 @@
+import type { WorkflowBlock } from '@/types/workflow';
 import { tenantClient } from '@/api/tenantClient';
 import type { ApprovalRejection } from '@/types/tenant';
 import type { AuditEntry } from '@/services/crmService';
@@ -40,7 +41,7 @@ export const purchaseOrderService = {
   getPurchaseOrder: (uuid: string): Promise<PurchaseOrder> =>
     tenantClient
       .get<{
-        success: boolean; purchaseOrder: PurchaseOrder; approval?: {
+        success: boolean; workflow?: WorkflowBlock; purchaseOrder: PurchaseOrder; approval?: {
           gated?: boolean; approvers?: PurchaseOrder['approvers']; requiredApprovals?: number; approvedCount?: number;
           canApprove?: boolean; isOverride?: boolean; callerAlreadyApproved?: boolean; canReject?: boolean; rejection?: ApprovalRejection;
         };
@@ -49,6 +50,7 @@ export const purchaseOrderService = {
         const a = r.data.approval;
         return {
           ...r.data.purchaseOrder,
+          workflow: r.data.workflow ?? r.data.purchaseOrder.workflow,
           gated: a?.gated ?? false,
           approvers: a?.approvers ?? [],
           requiredApprovals: a?.requiredApprovals ?? 0,
@@ -78,13 +80,17 @@ export const purchaseOrderService = {
 
   // Status change validated against the server-side transition map; a denied
   // move returns 409 (surface as a blocked-transition message, not a failure).
-  // A move to SENT ("Send to Vendor") also emails the vendor server-side; the
-  // result then carries emailSent (and emailError when delivery failed).
-  transition: (uuid: string, toStatusCode: string): Promise<PurchaseOrderTransitionResult> =>
+  // A move to SENT ("Send to Vendor") also emails the vendor server-side and,
+  // without `force`, only actually lands once that email is confirmed sent —
+  // a failed send rejects the whole call (surface its message; the order
+  // wasn't moved). `force` (the admin status dropdown only — the backend
+  // drops it from anyone else) moves it regardless; the result then carries
+  // emailSent (and emailError when delivery failed) either way.
+  transition: (uuid: string, toStatusCode: string, opts?: { force?: boolean }): Promise<PurchaseOrderTransitionResult> =>
     tenantClient
       .post<{ success: boolean; purchaseOrder: PurchaseOrder; emailSent?: boolean; emailError?: string }>(
         `${BASE}/${uuid}/transition`,
-        { toStatusCode },
+        { toStatusCode, ...(opts?.force ? { force: true } : {}) },
       )
       .then((r) => ({ ...r.data.purchaseOrder, emailSent: r.data.emailSent, emailError: r.data.emailError })),
 

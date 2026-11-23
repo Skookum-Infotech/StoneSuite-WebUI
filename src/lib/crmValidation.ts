@@ -1,5 +1,6 @@
 import { CRM_CORE_SECTIONS, type CrmCoreField } from './crmFields';
 import { isInvalidPhoneValue } from './phoneValidation';
+import { isValidEmail } from './emailValidation';
 import type { FieldDefinition } from '@/types/tenant';
 
 export interface CrmFieldError {
@@ -35,6 +36,12 @@ function isInvalidPhone(field: CrmCoreField, val: unknown): boolean {
   return isInvalidPhoneValue(val);
 }
 
+/** True when a `type: 'email'` field's value is present but not email-shaped. */
+function isInvalidEmail(field: CrmCoreField, val: unknown): boolean {
+  if (field.type !== 'email' || typeof val !== 'string' || val.trim() === '') return false;
+  return !isValidEmail(val);
+}
+
 export function validateCrmRecord(
   coreFields: Record<string, unknown>,
   customDefs: FieldDefinition[],
@@ -46,7 +53,7 @@ export function validateCrmRecord(
       if (!isVisible(field, coreFields)) continue;
       const val = coreFields[field.key];
       const missingRequired = field.required && (val === undefined || val === null || val === '');
-      if (missingRequired || isOutOfRange(field, val) || isInvalidPhone(field, val)) {
+      if (missingRequired || isOutOfRange(field, val) || isInvalidPhone(field, val) || isInvalidEmail(field, val)) {
         errors.push({ key: field.key, label: field.label });
       }
     }

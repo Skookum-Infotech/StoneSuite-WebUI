@@ -1,0 +1,162 @@
+import { describe, expect, it, vi } from 'vitest';
+import { AxiosError } from 'axios';
+import type { Drawing } from '@/types/drawing';
+
+vi.mock('@/api/tenantClient', async (importOriginal) => ({
+  ...(await importOriginal<Record<string, unknown>>()),
+  tenantClient: { get: vi.fn(), put: vi.fn(), post: vi.fn() },
+}));
+
+import { tenantClient } from '@/api/tenantClient';
+import { DrawingConflictError, drawingService } from './drawingService';
+
+const DRAWING: Drawing = {
+  schemaVersion: 1,
+  salesOrderId: 'so1',
+  version: 1,
+  displayUnit: 'in',
+  fractionDenominator: 32,
+  areas: [],
+  updatedAt: '2026-11-03T00:00:00.000Z',
+  updatedBy: { id: 'u1', name: 'Test User' },
+};
+
+describe('drawingService.getDrawing', () => {
+  it('returns the drawing on success', async () => {
+    vi.mocked(tenantClient.get).mockResolvedValue({ data: { success: true, drawing: DRAWING } });
+    expect(await drawingService.getDrawing('so1')).toEqual(DRAWING);
+    expect(tenantClient.get).toHaveBeenCalledWith('/tenant/sales-orders/so1/drawing');
+  });
+
+  it('returns null on a 404', async () => {
+    const err = new AxiosError('Not found');
+    err.response = { status: 404, data: {} } as AxiosError['response'];
+    vi.mocked(tenantClient.get).mockRejectedValue(err);
+    expect(await drawingService.getDrawing('so1')).toBeNull();
+  });
+
+  it('rethrows any other error', async () => {
+    vi.mocked(tenantClient.get).mockRejectedValue(new Error('network down'));
+    await expect(drawingService.getDrawing('so1')).rejects.toThrow('network down');
+  });
+});
+
+function conflict409() {
+  const err = new AxiosError('Conflict');
+  err.response = { status: 409, data: {} } as AxiosError['response'];
+  return err;
+}
+
+describe('drawingService.saveDrawing', () => {
+  const payload = { areas: DRAWING.areas, displayUnit: DRAWING.displayUnit, fractionDenominator: DRAWING.fractionDenominator, recordVersion: 1 };
+
+  it('PUTs the payload and returns the saved drawing', async () => {
+    vi.mocked(tenantClient.put).mockResolvedValue({ data: { success: true, drawing: DRAWING } });
+    expect(await drawingService.saveDrawing('so1', payload)).toEqual(DRAWING);
+    expect(tenantClient.put).toHaveBeenCalledWith('/tenant/sales-orders/so1/drawing', payload);
+  });
+
+  it('throws DrawingConflictError specifically on a 409', async () => {
+    vi.mocked(tenantClient.put).mockRejectedValue(conflict409());
+    await expect(drawingService.saveDrawing('so1', payload)).rejects.toBeInstanceOf(DrawingConflictError);
+  });
+
+  it('rethrows any other error', async () => {
+    vi.mocked(tenantClient.put).mockRejectedValue(new Error('network down'));
+    await expect(drawingService.saveDrawing('so1', payload)).rejects.toThrow('network down');
+  });
+});
+
+describe('drawingService.listVersions', () => {
+  it('GETs the versions page', async () => {
+    const page = { items: [{ version: 1, updatedAt: DRAWING.updatedAt, updatedBy: DRAWING.updatedBy }], nextCursor: null };
+    vi.mocked(tenantClient.get).mockResolvedValue({ data: { success: true, ...page } });
+    expect(await drawingService.listVersions('so1')).toEqual(page);
+    expect(tenantClient.get).toHaveBeenCalledWith('/tenant/sales-orders/so1/drawing/versions', { params: { cursor: undefined } });
+  });
+
+  it('passes a cursor through unchanged', async () => {
+    vi.mocked(tenantClient.get).mockResolvedValue({ data: { success: true, items: [], nextCursor: null } });
+    await drawingService.listVersions('so1', 'abc');
+    expect(tenantClient.get).toHaveBeenCalledWith('/tenant/sales-orders/so1/drawing/versions', { params: { cursor: 'abc' } });
+  });
+});
+
+describe('drawingService.getVersion', () => {
+  it('GETs one version', async () => {
+    vi.mocked(tenantClient.get).mockResolvedValue({ data: { success: true, drawing: DRAWING } });
+    expect(await drawingService.getVersion('so1', 2)).toEqual(DRAWING);
+    expect(tenantClient.get).toHaveBeenCalledWith('/tenant/sales-orders/so1/drawing/versions/2');
+  });
+});
+
+describe('drawingService.restoreVersion', () => {
+  it('POSTs the restore and returns the new drawing', async () => {
+    vi.mocked(tenantClient.post).mockResolvedValue({ data: { success: true, drawing: DRAWING } });
+    expect(await drawingService.restoreVersion('so1', 1, 2)).toEqual(DRAWING);
+    expect(tenantClient.post).toHaveBeenCalledWith('/tenant/sales-orders/so1/drawing/versions/1/restore', { recordVersion: 2 });
+  });
+
+  it('throws DrawingConflictError specifically on a 409', async () => {
+    vi.mocked(tenantClient.post).mockRejectedValue(conflict409());
+    await expect(drawingService.restoreVersion('so1', 1, 2)).rejects.toBeInstanceOf(DrawingConflictError);
+  });
+});
+
+describe('drawingService edge types', () => {
+  const input = { name: 'Cove', pricingType: 'linear' as const, price: 12.5, alias: 'C', color: '#aa00ff', finish: 'bullnose' as const };
+  const saved = { ...input, id: 'e1', isSystem: false };
+
+  it('GETs the edge type list', async () => {
+    vi.mocked(tenantClient.get).mockResolvedValue({ data: { success: true, edgeTypes: [saved] } });
+    expect(await drawingService.getEdgeTypes()).toEqual([saved]);
+    expect(tenantClient.get).toHaveBeenCalledWith('/tenant/settings/edge-types');
+  });
+
+  it('POSTs a new edge type and returns what the server saved', async () => {
+    vi.mocked(tenantClient.post).mockResolvedValue({ data: { success: true, edgeType: saved } });
+    expect(await drawingService.createEdgeType(input)).toEqual(saved);
+    expect(tenantClient.post).toHaveBeenCalledWith('/tenant/settings/edge-types', input);
+  });
+
+  it('PUTs changes to an existing edge type', async () => {
+    vi.mocked(tenantClient.put).mockResolvedValue({ data: { success: true, edgeType: saved } });
+    expect(await drawingService.updateEdgeType('e1', input)).toEqual(saved);
+    expect(tenantClient.put).toHaveBeenCalledWith('/tenant/settings/edge-types/e1', input);
+  });
+});
+
+describe('drawingService attached profile types', () => {
+  const input = {
+    name: 'Lamination', pricingType: 'linear' as const, price: 18, alias: 'LM', color: '#9333ea',
+    measurementPresetsMm: [38.1, 50.8], angle: 180 as const, finish: 'mitered' as const,
+  };
+  const saved = { ...input, id: 'pt1', isSystem: false };
+
+  it('GETs the profile type list', async () => {
+    vi.mocked(tenantClient.get).mockResolvedValue({ data: { success: true, profileTypes: [saved] } });
+    expect(await drawingService.getAttachedProfileTypes()).toEqual([saved]);
+    expect(tenantClient.get).toHaveBeenCalledWith('/tenant/settings/attached-profile-types');
+  });
+
+  it('POSTs a new profile type and returns what the server saved', async () => {
+    vi.mocked(tenantClient.post).mockResolvedValue({ data: { success: true, profileType: saved } });
+    expect(await drawingService.createAttachedProfileType(input)).toEqual(saved);
+    expect(tenantClient.post).toHaveBeenCalledWith('/tenant/settings/attached-profile-types', input);
+  });
+
+  it('PUTs changes to an existing profile type', async () => {
+    vi.mocked(tenantClient.put).mockResolvedValue({ data: { success: true, profileType: saved } });
+    expect(await drawingService.updateAttachedProfileType('pt1', input)).toEqual(saved);
+    expect(tenantClient.put).toHaveBeenCalledWith('/tenant/settings/attached-profile-types/pt1', input);
+  });
+});
+
+describe('drawingService.getEdgeCodes', () => {
+  it('GETs the edge code list', async () => {
+    const edgeCodes = [{ code: 'EE', label: 'Eased Edge' }];
+    vi.mocked(tenantClient.get).mockResolvedValue({ data: { success: true, edgeCodes } });
+    expect(await drawingService.getEdgeCodes()).toEqual(edgeCodes);
+    expect(tenantClient.get).toHaveBeenCalledWith('/tenant/settings/edge-codes');
+  });
+});

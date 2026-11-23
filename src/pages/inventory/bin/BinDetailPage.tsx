@@ -8,6 +8,7 @@ import { ErrorNote, Spinner } from '@/components/tenant/ui';
 import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { cn } from '@/lib/utils';
+import { TAB_LIST_CLASS, tabClass } from '@/components/ui/tabStyles';
 import { BinContentsTab } from './components/BinContentsTab';
 import { BinHistoryTab } from './components/BinHistoryTab';
 
@@ -77,22 +78,19 @@ export default function BinDetailPage() {
         <Stat label="Location" value={bin.warehouseName || '—'} />
       </div>
 
-      <div className="flex shrink-0 overflow-x-auto overflow-y-hidden border-b border-stone-200 bg-white px-5 3xl:px-12 4xl:px-16 modal-scrollbar">
-        {TABS.map((tab) => (
-          <button
-            key={tab.key}
-            type="button"
-            onClick={() => setActiveTab(tab.key)}
-            className={cn(
-              'shrink-0 whitespace-nowrap border-b-2 -mb-px px-4 py-3 text-sm font-semibold transition-colors',
-              activeTab === tab.key
-                ? 'border-brand text-stone-950'
-                : 'border-transparent text-stone-500 hover:border-stone-200 hover:text-stone-700',
-            )}
-          >
-            {tab.label}
-          </button>
-        ))}
+      <div className="flex shrink-0 overflow-x-auto overflow-y-hidden border-b border-stone-200 bg-white px-5 3xl:px-12 4xl:px-16 modal-scrollbar py-2.5">
+        <div role="tablist" className={TAB_LIST_CLASS}>
+          {TABS.map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setActiveTab(tab.key)}
+              className={tabClass(activeTab === tab.key)}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="px-4 py-4 sm:px-5 sm:py-5 3xl:px-12 3xl:py-8 4xl:px-16 4xl:py-10">

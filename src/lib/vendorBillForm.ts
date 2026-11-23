@@ -7,10 +7,13 @@
 import type { CrmLookups } from '@/services/lookupService';
 import type { FieldDefinition } from '@/types/tenant';
 import { dimensionsFromLine, dimensionsPayload, type LineDimensions } from '@/lib/lineDimensions';
+import { thicknessPayload, thicknessText } from '@/lib/lineThickness';
+import { kitFromLine, kitPayload, type KitLabeled } from '@/lib/kitLines';
 import type {
   VendorBill, CreateVendorBillPayload, VendorBillLineInput, VendorBillLine,
   VendorBillPurchaseOrderRef,
 } from '@/types/vendorBill';
+import type { PurchaseOrderLine } from '@/types/purchaseOrder';
 
 export const PAGE_TABS = [
   { key: 'details', label: 'Details' },
@@ -140,7 +143,7 @@ export const PRIMARY_INFO_FIELDS: VendorBillFormField[] = [
 // is accepted by the backend but has no lookup UI yet (matches every other
 // sales/purchases module), so every line's tax preview follows the header's
 // Sales Tax % rather than a per-line rate.
-export interface VendorBillLineItem extends LineDimensions {
+export interface VendorBillLineItem extends KitLabeled, LineDimensions {
   id: string;
   lineNo: number;
   itemName: string;
@@ -265,6 +268,9 @@ export const VB_STATUS_CODES: { code: string; label: string }[] = [
   { code: 'DRFT', label: 'Draft' },
   { code: 'PAPV', label: 'Pending Approval' },
   { code: 'APPV', label: 'Approved' },
+  // Money has been recorded against the bill through a vendor payment that
+  // has not been completed yet — committed, but not gone out.
+  { code: 'PINI', label: 'Payment Initiated' },
   { code: 'PART', label: 'Partially Paid' },
   { code: 'ODUE', label: 'Overdue' },
   { code: 'PAID', label: 'Paid' },
@@ -282,9 +288,10 @@ export const VB_STATUS_CODES: { code: string; label: string }[] = [
 export const VB_ALLOWED_TRANSITIONS: Record<string, string[]> = {
   DRFT: ['PAPV', 'VOID'],
   PAPV: ['APPV', 'DRFT', 'VOID'],
-  APPV: ['PART', 'PAID', 'ODUE', 'VOID'],
-  PART: ['PAID', 'ODUE', 'VOID'],
-  ODUE: ['PART', 'PAID', 'VOID'],
+  APPV: ['PINI', 'PART', 'PAID', 'ODUE', 'VOID'],
+  PINI: ['PART', 'PAID', 'ODUE', 'VOID'],
+  PART: ['PINI', 'PAID', 'ODUE', 'VOID'],
+  ODUE: ['PINI', 'PART', 'PAID', 'VOID'],
   PAID: [],
   VOID: [],
 };
@@ -298,7 +305,7 @@ export const VB_ALLOWED_TRANSITIONS: Record<string, string[]> = {
 
 /** Moves surfaced as header buttons, in button order — least to most final, so
  *  Paid lands in the corner. */
-export const VB_HEADER_TRANSITION_CODES: readonly string[] = ['ODUE', 'PART', 'PAID'];
+export const VB_HEADER_TRANSITION_CODES: readonly string[] = ['ODUE', 'PINI', 'PART', 'PAID'];
 
 /** The move offered as a Danger Zone button rather than next to Paid. */
 export const VB_VOID_CODE = 'VOID';
@@ -344,13 +351,20 @@ export const VB_TRANSITION_LABELS: Record<string, string> = {
   'PAPV:APPV': 'Approve & Advance',
   'PAPV:DRFT': 'Recall to Draft',
   'PAPV:VOID': 'Void',
+  'APPV:PINI': 'Mark Payment Initiated',
   'APPV:PART': 'Mark Partially Paid',
   'APPV:PAID': 'Mark Paid',
   'APPV:ODUE': 'Mark Overdue',
   'APPV:VOID': 'Void',
+  'PINI:PART': 'Mark Partially Paid',
+  'PINI:PAID': 'Mark Paid',
+  'PINI:ODUE': 'Mark Overdue',
+  'PINI:VOID': 'Void',
+  'PART:PINI': 'Mark Payment Initiated',
   'PART:PAID': 'Mark Paid',
   'PART:ODUE': 'Mark Overdue',
   'PART:VOID': 'Void',
+  'ODUE:PINI': 'Mark Payment Initiated',
   'ODUE:PART': 'Mark Partially Paid',
   'ODUE:PAID': 'Mark Paid',
   'ODUE:VOID': 'Void',
@@ -381,6 +395,7 @@ export const VB_STATUS_COLORS: Record<string, string> = {
   DRFT: '#a8a29e',
   PAPV: '#f59e0b',
   APPV: '#3b82f6',
+  PINI: '#06b6d4',
   PART: '#f59e0b',
   ODUE: '#ef4444',
   PAID: '#10b981',
@@ -389,10 +404,11 @@ export const VB_STATUS_COLORS: Record<string, string> = {
 
 /** Statuses a vendor payment can be applied against (vendorbill/balance.go
  *  `PayableStatuses`) — a bill must be approved before anything can be paid
- *  against it. The bill itself no longer records settlements: the check runs
- *  server-side inside `vendorpayment.Apply`, and this set only drives UI copy
- *  (see VP_PAYABLE_BILL_STATUSES in lib/vendorPaymentForm.ts). */
-export const VB_PAYABLE_STATUSES = new Set(['APPV', 'PART', 'ODUE']);
+ *  against it, and PINI still takes one for whatever an in-flight payment
+ *  left uncovered. The bill itself no longer records settlements: the check
+ *  runs server-side inside `vendorpayment.Apply`, and this set only drives UI
+ *  copy (see VP_PAYABLE_BILL_STATUSES in lib/vendorPaymentForm.ts). */
+export const VB_PAYABLE_STATUSES = new Set(['APPV', 'PINI', 'PART', 'ODUE']);
 
 /** Statuses `vendorBillService.updateVendorBill` rejects edits against
  *  (vendorbill/store_update.go — editing is DRFT-only). */
@@ -450,6 +466,8 @@ function toLineInput(item: VendorBillLineItem, lineNo: number): VendorBillLineIn
     unitPrice: toNum(item.unitPrice),
     discountPercent: toNum(item.discount),
     ...dimensionsPayload(item, item.units),
+    thickness: thicknessPayload(item.thickness, item.units),
+    ...kitPayload(item),
   };
 }
 
@@ -512,7 +530,45 @@ function fromLine(line: VendorBillLine, i: number): VendorBillLineItem {
     inventoryItemUuid: line.inventoryItemId ?? undefined,
     purchaseOrderItemId: line.purchaseOrderItemId ?? undefined,
     ...dimensionsFromLine(line),
+    thickness: thicknessText(line.thickness),
+    ...kitFromLine(line),
   };
+}
+
+/** Maps one purchase order line onto a fresh vendor bill line — used when the
+ *  Add page's Purchase Order picker fills the items table from the order a
+ *  bill is being raised for. Copied with the order's own item, price and
+ *  size, same as `fromLine` copies a saved bill's own lines; the picker's
+ *  link itself stays a plain reference with no purchaseOrderItemId lineage —
+ *  that billed-quantity tracking belongs to the PO's own "Create Bill"
+ *  button, not a plain manual bill. A PO line's slab count is `expectedSlabs`,
+ *  not `slabs` (dimensionsFromLine's field), so it's renamed on the way in. */
+function fromPurchaseOrderLine(line: PurchaseOrderLine, headerTaxPercent: number, i: number): VendorBillLineItem {
+  const base = {
+    itemName: line.itemName || line.description,
+    itemDescription: line.description ?? '',
+    itemSku: line.sku,
+    units: line.unitCode,
+    quantity: String(line.quantity),
+    unitPrice: String(line.unitPrice),
+    discount: String(line.discountPercent),
+    inventoryItemUuid: line.inventoryItemId ?? undefined,
+    ...dimensionsFromLine({ length: line.length, width: line.width, slabs: line.expectedSlabs, dimensionUnit: line.dimensionUnit }),
+    thickness: thicknessText(line.thickness),
+    ...kitFromLine(line),
+  };
+  const { amount, total } = calcLineItem(base, headerTaxPercent);
+  return { id: `po-line-${i}`, lineNo: i + 1, ...base, amount, total };
+}
+
+/** The lines a vendor bill's items table takes on once the Add page's
+ *  Purchase Order picker selects an order — every one of its lines, same
+ *  values, ready to edit before saving. */
+export function vendorBillLinesFromPurchaseOrder(
+  items: PurchaseOrderLine[],
+  headerTaxPercent: number,
+): VendorBillLineItem[] {
+  return items.map((line, i) => fromPurchaseOrderLine(line, headerTaxPercent, i));
 }
 
 /** Maps a loaded VendorBill (GET response) back to the Edit form's state —

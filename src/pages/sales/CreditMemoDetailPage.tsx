@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { AddressGeoLine } from '@/components/tenant/AddressGeoLine';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { lookupService } from '@/services/lookupService';
@@ -16,6 +17,7 @@ import { RecordApprovalBanner } from '@/components/tenant/RecordApprovalBanner';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { cn } from '@/lib/utils';
+import { TAB_LIST_CLASS, tabClass } from '@/components/ui/tabStyles';
 import { CREDIT_MEMO_STATUS_COLORS, CREDIT_MEMO_READONLY_STATUSES, CREDIT_MEMO_DRAFT_STATUS } from '@/lib/creditMemoForm';
 import { CreditMemoAuditTab } from './components/CreditMemoAuditTab';
 import { DeleteCreditMemoDialog } from './components/DeleteCreditMemoDialog';
@@ -26,6 +28,7 @@ import { SalesDetailSidebar } from './components/SalesDetailSidebar';
 import { AmountsStrip } from './components/AmountsStrip';
 import type { CreditMemoApplication } from '@/types/creditMemo';
 import { formatDateValue } from '@/lib/dateUtils';
+import { CustomerLink } from '@/components/crm/CustomerLink';
 
 const TABS = [
   { key: 'overview', label: 'Overview' },
@@ -198,22 +201,19 @@ export default function CreditMemoDetailPage() {
       )}
 
       {/* Tab bar */}
-      <div className="flex shrink-0 overflow-x-auto overflow-y-hidden border-b border-stone-200 bg-white px-5 3xl:px-12 4xl:px-16 modal-scrollbar">
-        {visibleTabs.map((tab) => (
-          <button
-            key={tab.key}
-            type="button"
-            onClick={() => setActiveTab(tab.key)}
-            className={cn(
-              'px-4 py-3 text-sm font-semibold border-b-2 -mb-px transition-colors duration-150 whitespace-nowrap shrink-0',
-              activeTab === tab.key
-                ? 'border-brand text-stone-950'
-                : 'border-transparent text-stone-500 hover:text-stone-700 hover:border-stone-200',
-            )}
-          >
-            {tab.label}
-          </button>
-        ))}
+      <div className="flex shrink-0 overflow-x-auto overflow-y-hidden border-b border-stone-200 bg-white px-5 3xl:px-12 4xl:px-16 modal-scrollbar py-2.5">
+        <div role="tablist" className={TAB_LIST_CLASS}>
+          {visibleTabs.map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setActiveTab(tab.key)}
+              className={tabClass(activeTab === tab.key)}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="flex flex-col lg:flex-row gap-6 px-4 py-4 sm:px-5 sm:py-5 3xl:px-12 3xl:py-8 3xl:gap-10 4xl:px-16 4xl:py-10 4xl:gap-14">
@@ -444,7 +444,7 @@ export default function CreditMemoDetailPage() {
             </div>
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
               <span className="text-stone-500">Customer</span>
-              <span className="text-stone-700 truncate max-w-[140px]">{creditMemo.customer.name}</span>
+              <CustomerLink id={creditMemo.customer.id} name={creditMemo.customer.name} className="text-stone-700 truncate max-w-[140px] hover:text-accent-foreground hover:underline" />
             </div>
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
               <span className="text-stone-500">Created</span>
@@ -498,7 +498,7 @@ function ReadonlyField({ label, value, full }: { label: string; value?: string; 
   );
 }
 
-function AddressBlock({ addr }: { addr: { customerName?: string; attention?: string; addrLine1?: string; addrLine2?: string; suiteUnit?: string; city?: string; zip?: string; phone?: string; fax?: string; email?: string } }) {
+function AddressBlock({ addr }: { addr: { customerName?: string; attention?: string; addrLine1?: string; addrLine2?: string; suiteUnit?: string; city?: string; stateId?: number | null; countryId?: number | null; zip?: string; phone?: string; fax?: string; email?: string } }) {
   const lines = [
     addr.attention,
     [addr.addrLine1, addr.addrLine2].filter(Boolean).join(', '),
@@ -507,13 +507,14 @@ function AddressBlock({ addr }: { addr: { customerName?: string; attention?: str
     addr.email && `Email: ${addr.email}`,
   ].filter(Boolean);
 
-  if (lines.length === 0) {
+  if (lines.length === 0 && !addr.stateId && !addr.countryId) {
     return <p className="text-xs text-stone-500 italic">No address on file.</p>;
   }
   return (
     <div className="space-y-1 text-xs text-stone-700">
       {addr.customerName && <p className="font-semibold text-stone-900">{addr.customerName}</p>}
       {lines.map((line, i) => <p key={i} className="text-stone-600">{line}</p>)}
+      <AddressGeoLine stateId={addr.stateId} countryId={addr.countryId} />
     </div>
   );
 }

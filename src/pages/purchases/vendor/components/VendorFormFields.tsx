@@ -1,8 +1,11 @@
+import { Select } from '@/components/ui/select';
+import { lookupFlagAttrs } from '@/lib/flags';
 import { ModernFieldShell } from '@/components/crm/FormPrimitives';
 import { fieldCls, fieldErrorCls, textareaCls } from '@/components/crm/formUtils';
 import { PhoneNumberInput } from '@/components/crm/PhoneNumberInput';
 import { DatePicker } from '@/components/ui/date-picker';
 import { isInvalidPhoneValue } from '@/lib/phoneValidation';
+import { isValidEmail } from '@/lib/emailValidation';
 import type { CrmLookups } from '@/services/lookupService';
 import type { VendorFormField } from '@/lib/vendorForm';
 
@@ -21,6 +24,7 @@ export function VendorField({ field, value, set, lookups, showError }: {
     showError && (
       (field.required && !str.trim())
       || (field.type === 'tel' && isInvalidPhoneValue(str))
+      || (field.type === 'email' && str.trim() !== '' && !isValidEmail(str))
     ),
   );
   const colClass = field.colSpanFull ? 'col-span-full' : field.colSpan2 ? 'sm:col-span-2' : '';
@@ -45,13 +49,13 @@ export function VendorField({ field, value, set, lookups, showError }: {
 
   if (field.type === 'select') {
     const lookupRows = field.lookupKey && lookups
-      ? (lookups[field.lookupKey] as Array<{ id: number; name: string }>)
+      ? (lookups[field.lookupKey] as Array<{ id: number; name: string; code?: string }>)
       : null;
 
     return (
       <div className={colClass}>
         <ModernFieldShell label={field.label} required={field.required}>
-          <select
+          <Select
             required={field.required}
             value={str}
             onChange={(e) => set(field.key, e.target.value)}
@@ -60,9 +64,9 @@ export function VendorField({ field, value, set, lookups, showError }: {
           >
             <option value="">— Select —</option>
             {lookupRows
-              ? lookupRows.map((row) => <option key={row.id} value={row.id}>{row.name}</option>)
+              ? lookupRows.map((row) => <option key={row.id} value={row.id} {...lookupFlagAttrs(field.lookupKey, row)}>{row.name}</option>)
               : field.options?.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
-          </select>
+          </Select>
         </ModernFieldShell>
       </div>
     );

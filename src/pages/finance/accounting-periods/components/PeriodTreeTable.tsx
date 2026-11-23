@@ -1,3 +1,4 @@
+import { Select } from '@/components/ui/select';
 import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { ChevronsDown, ChevronsUp, Download, X } from 'lucide-react';
@@ -153,7 +154,7 @@ export function PeriodTreeTable({ calendar }: { calendar: AccountingCalendar }) 
 
         <div className="h-5 w-px bg-stone-200" aria-hidden="true" />
 
-        <select
+        <Select
           value={fiscalYearFilter}
           onChange={(e) => handleFiscalYearFilterChange(e.target.value)}
           aria-label="Filter by fiscal year"
@@ -163,9 +164,9 @@ export function PeriodTreeTable({ calendar }: { calendar: AccountingCalendar }) 
           {fiscalYears.map((fy) => (
             <option key={fy.id} value={fy.name}>{fy.name}</option>
           ))}
-        </select>
+        </Select>
 
-        <select
+        <Select
           value={statusFilter}
           onChange={(e) => handleStatusFilterChange(e.target.value as '' | PeriodStatus)}
           aria-label="Filter by status"
@@ -174,7 +175,7 @@ export function PeriodTreeTable({ calendar }: { calendar: AccountingCalendar }) 
           <option value="">All statuses</option>
           <option value="open">Open</option>
           <option value="closed">Closed</option>
-        </select>
+        </Select>
 
         {filtersActive && (
           <button

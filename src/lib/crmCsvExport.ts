@@ -11,16 +11,24 @@ const APPROVAL_LABEL: Record<ReturnType<typeof recordApprovalState>, string> = {
   rejected: "Rejected",
 };
 
-/** Builds CSV text (with header row) for a page of CRM lead/prospect/customer records. */
+/**
+ * Builds CSV text (with header row) for CRM lead/prospect/customer records.
+ * The columns follow the list table (Company, Status, Owner, Email, Created),
+ * plus the record number, approval state and last-updated date. `ownerNames`
+ * maps a user id to a display name, as the table's Owner cell does; a record
+ * with no owner, or one that is not in the map, gets an empty cell.
+ */
 export function buildCrmRecordsCsv(
   records: WorkflowRecord[],
   statusMap: Map<string, StatusInfo>,
   showEmail: boolean,
+  ownerNames: ReadonlyMap<string, string> = new Map(),
 ): string {
   const headers = [
     "Record Number",
     "Company",
     "Status",
+    "Owner",
     "Approval",
     ...(showEmail ? ["Email"] : []),
     "Created",
@@ -33,6 +41,7 @@ export function buildCrmRecordsCsv(
       record.recordNumber ?? "",
       String(record.coreFields.customer_name ?? ""),
       statusInfo?.statusLabel ?? "",
+      (record.ownerUserId && ownerNames.get(record.ownerUserId)) || "",
       APPROVAL_LABEL[recordApprovalState(record)],
       ...(showEmail ? [String(record.coreFields.customer_contact_email ?? "")] : []),
       fmtCsvDate(record.createdAt),

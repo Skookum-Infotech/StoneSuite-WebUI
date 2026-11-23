@@ -6,6 +6,7 @@
 // a Quote's billing/shipping address references lkp_state/lkp_country by
 // numeric id (stateId/countryId), not free-text. A line item is either a
 // catalog pick or free-text, same as Estimate — see QuoteLineInput below.
+import type { WorkflowBlock } from '@/types/workflow';
 import type { FilterClause, SortKey, RecordApprover, ApprovalRejection } from '@/types/tenant';
 
 // ── Create / update inputs (client → server) ─────────────────────────────────
@@ -57,6 +58,8 @@ export interface QuoteLineInput {
    *  the item's unit, then cm. */
   dimensionUnit?: string;
   slabs?: number;
+  /** Thickness of one slab, in `dimensionUnit`. Descriptive only: it never enters the quantity. */
+  thickness?: number;
 }
 
 export interface QuoteCreatePayload {
@@ -133,6 +136,8 @@ export interface QuoteLine {
   /** The unit length and width were measured in. */
   dimensionUnit?: string | null;
   slabs?: number | null;
+  /** Thickness of one slab, in `dimensionUnit`. */
+  thickness?: number | null;
 }
 
 // Full detail response (GET/Create/Update/Transition/Approve). Every field the
@@ -140,6 +145,8 @@ export interface QuoteLine {
 // can reload a quote and re-save it without silently blanking billing/
 // shipping or any header field.
 export interface Quote {
+  /** End-to-end flow this record belongs to; see BACKEND_SPEC_workflow_links.md. */
+  workflow?: WorkflowBlock;
   id: string;
   quoteNumber: string;
   status: string;              // human label, e.g. "Draft"

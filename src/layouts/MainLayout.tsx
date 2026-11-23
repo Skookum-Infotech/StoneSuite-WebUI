@@ -20,7 +20,10 @@ import { useTrackLastAppPath } from '@/hooks/useTrackLastAppPath';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { isCustomerAllowedPath } from '@/config/customerPortal';
 import { Breadcrumbs } from '@/layouts/Breadcrumbs';
+import { hidesBreadcrumbs } from '@/layouts/breadcrumbVisibility';
 import { SessionExpiryModal } from '@/components/SessionExpiryModal';
+import { SessionReplacedOverlay } from '@/components/SessionReplacedOverlay';
+import { useSessionWatch } from '@/hooks/useSessionWatch';
 import { ConfirmLeaveDialog } from '@/components/ConfirmLeaveDialog';
 import { apiClient } from '@/api/client';
 import { rbacService } from '@/services/tenantServices';
@@ -73,6 +76,9 @@ export default function MainLayout(): React.JSX.Element {
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
 
   const { showWarning, secondsRemaining, onStay, onLogout, isExtending } = useSessionTimer();
+  // Signed in on another computer: the countdown overlay replaces everything.
+  useSessionWatch();
+  const replacedSession = useAuthStore((s) => s.replacedSession);
 
   // Tickets are filed from /support; remember the page the user was on before
   // that so the ticket can still say where the problem happened.
@@ -216,7 +222,9 @@ export default function MainLayout(): React.JSX.Element {
         />
       )}
 
-      {showWarning && (
+      {replacedSession && <SessionReplacedOverlay info={replacedSession} />}
+
+      {showWarning && !replacedSession && (
         <SessionExpiryModal
           secondsRemaining={secondsRemaining}
           onStay={onStay}
@@ -475,7 +483,7 @@ export default function MainLayout(): React.JSX.Element {
         <main className="flex-1 w-full flex flex-col min-h-0 bg-background">
 
           {/* Breadcrumb bar — contextual, scrolls with page */}
-          {pathSegments.length > 0 && (
+          {pathSegments.length > 0 && !hidesBreadcrumbs(location.pathname) && (
             <Breadcrumbs segments={pathSegments} labels={breadcrumbLabels} routes={routes} />
           )}
 

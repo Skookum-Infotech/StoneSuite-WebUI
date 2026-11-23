@@ -6,19 +6,20 @@ import { LINE_ACTIONS_HEAD_CLS, LINE_ACTIONS_CELL_CLS, LINE_ACTIONS_EDIT_CELL_CL
 // from its current home rather than duplicated (mirrors EstimateItemsTab's
 // usage one folder over).
 import { InventoryItemPicker, type InventoryItemPickerHandlers } from '@/pages/sales/components/InventoryItemPicker';
-import { itemPrice } from '@/lib/itemPrice';
-import { TRACKING_SERIALIZED, type InventoryItem } from '@/types/inventory';
+import { withCatalogItem } from '@/lib/purchaseOrderCatalogLine';
+import type { InventoryItem } from '@/types/inventory';
 import { useCatalogLineDraft } from '@/hooks/useCatalogLineDraft';
 import { useAddKitLines } from '@/hooks/useAddKitLines';
 import { useItemUnitCode } from '@/hooks/useItemUnitCode';
 import { unitLabel } from '@/lib/unitLabels';
-import { LineDimensionInputCells } from '@/components/inventory/LineDimensionInputCells';
-import { LineDimensionViewCells } from '@/components/inventory/LineDimensionViewCells';
+import { LineSizeInputCells, LineSizeViewCells } from '@/components/inventory/LineSizeCells';
+import { SALES_SIZE_COLS } from '@/lib/lineThickness';
 import {
-  LINE_DIMENSION_COLS, clampDimensionField, itemDimensionUnit, normalizeUnit, clampSlabs, hasSize, isAreaUnit, isSized, withoutUnsupportedSize, withSizedQuantity,
+  clampDimensionField, clampSlabs, hasSize, isSized, withoutUnsupportedSize, withSizedQuantity,
 } from '@/lib/lineDimensions';
 import { blockEnterSubmit } from '@/lib/lineEntryKeys';
-import { SlabEstimateRow } from './SlabEstimateRow';
+import { KitHeadingRow, KIT_ROW_CLS } from '@/components/inventory/KitHeadingRow';
+import { kitHeadings, labelWithKit, removeKitRun } from '@/lib/kitLines';
 import {
   EMPTY_LINE_ITEM, calcLineItem, clampPercent, type PurchaseOrderLineItem,
 } from '@/lib/purchaseOrderForm';
@@ -37,7 +38,8 @@ const ITEM_COLS = [
   { label: 'Item Name *', w: 'min-w-[160px]' },
   { label: 'Description', w: 'min-w-[140px]' },
   { label: 'SKU', w: 'min-w-[90px]' },
-  ...LINE_DIMENSION_COLS,
+  // L, W, Thick, Slabs — the same order as the Sales tables.
+  ...SALES_SIZE_COLS,
   { label: 'Units', w: 'w-16' },
   { label: 'Qty', w: 'w-20', right: true },
   { label: 'Unit Price', w: 'w-20', right: true },
@@ -71,36 +73,22 @@ export function PurchaseOrderItemsTab({ items, onUpdate, headerTaxPercent }: {
   // Picking an inventory item snapshots its display fields into the draft;
   // the server re-snapshots authoritatively from inventoryItemUuid at save time.
   const unitCodeFor = useItemUnitCode();
-  const applyCatalogItem = (prev: Omit<PurchaseOrderLineItem, 'id' | 'lineNo'>, item: InventoryItem) => {
-    const units = unitCodeFor(item);
-    return recalc(withoutUnsupportedSize({
-      ...prev,
-      itemName: item.name,
-      units,
-      tracking: item.tracking,
-      // A slab count is kept for a slab-tracked item and for any area unit, where
-      // it is the Slabs of a length x width x slabs line.
-      expectedSlabs: item.tracking === TRACKING_SERIALIZED || isAreaUnit(units) ? prev.expectedSlabs : '',
-      itemDescription: item.description,
-      itemSku: item.sku,
-      unitPrice: String(itemPrice(item, 'purchasing')),
-      inventoryItemUuid: item.id,
-      dimensionUnit: itemDimensionUnit(item),
-    }));
-  };
+  const applyCatalogItem = (prev: Omit<PurchaseOrderLineItem, 'id' | 'lineNo'>, item: InventoryItem) =>
+    recalc(withCatalogItem(prev, item, unitCodeFor(item)));
 
   const {
     draft, setDraft, editId, setEditId, isAdding, setIsAdding, lineError, requireCatalogItem, addToInventory,
     addNewKit, returnedKit, reportLineError,
   } = useCatalogLineDraft(EMPTY_LINE_ITEM, applyCatalogItem);
 
-  // Picking a kit adds its items as ordinary lines — Purchases tables show no
-  // kit heading, so the lines carry no kit label.
+  // Picking a kit appends its items as lines under the kit's heading, as in
+  // the Sales tables.
   const { addKit, isAddingKit } = useAddKitLines({
     items,
     onUpdate,
     emptyDraft: EMPTY_LINE_ITEM,
     applyItem: applyCatalogItem,
+    label: labelWithKit,
     newId: genId,
     onAdded: () => { setDraft(EMPTY_LINE_ITEM); setIsAdding(false); },
     onError: reportLineError,
@@ -116,7 +104,7 @@ export function PurchaseOrderItemsTab({ items, onUpdate, headerTaxPercent }: {
   // inventory item — a fresh pick is required before the line can be saved.
   // The description is left untouched — it's independent of the item name.
   const onItemNameText = (text: string) => {
-    setDraft((prev) => recalc(withoutUnsupportedSize({ ...prev, itemName: text, inventoryItemUuid: undefined, itemSku: '', units: '', tracking: undefined, expectedSlabs: '' })));
+    setDraft((prev) => recalc(withoutUnsupportedSize({ ...prev, itemName: text, inventoryItemUuid: undefined, itemSku: '', units: '', tracking: undefined, expectedSlabs: '', thickness: '' })));
   };
 
   const picker: InventoryItemPickerHandlers = {
@@ -157,33 +145,25 @@ export function PurchaseOrderItemsTab({ items, onUpdate, headerTaxPercent }: {
     if (editId === id) { setEditId(null); setDraft(EMPTY_LINE_ITEM); }
   };
 
+  // The heading's remove button takes the whole kit group out.
+  const removeRun = (firstId: string) => {
+    const next = removeKitRun(items, firstId);
+    onUpdate(next);
+    if (editId && !next.some((r) => r.id === editId)) { setEditId(null); setDraft(EMPTY_LINE_ITEM); }
+  };
+
   const copyPrev = () => {
     if (!items.length) return;
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { id, lineNo, ...rest } = items[items.length - 1];
-    setDraft(rest);
+    // A copy is a new line of its own, not another member of the kit.
+    setDraft({ ...rest, kitId: undefined, kitName: undefined });
     setIsAdding(true);
     setEditId(null);
   };
 
+  const headings = kitHeadings(items);
   const activeDraft = isAdding || editId !== null;
-
-  // A slab line is ordered by count and average size; the helper fills in its area
-  // quantity. Once a length and width are stated the exact area is worked out
-  // from them, so the helper steps aside.
-  const slabEstimate = draft.tracking === TRACKING_SERIALIZED && !hasSize(draft) ? (
-    <tr className="bg-brand/5">
-      <td colSpan={ITEM_COLS.length} className="border-t border-brand/10">
-        <SlabEstimateRow
-          key={editId ?? 'new'}
-          quantity={draft.quantity}
-          units={draft.units ?? ''}
-          expectedSlabs={draft.expectedSlabs ?? ''}
-          onChange={updateDraft}
-        />
-      </td>
-    </tr>
-  ) : null;
 
   return (
     <div className="rounded-lg border border-stone-200 bg-white overflow-hidden">
@@ -199,9 +179,17 @@ export function PurchaseOrderItemsTab({ items, onUpdate, headerTaxPercent }: {
             </tr>
           </thead>
           <tbody className="divide-y divide-stone-100">
-            {items.map((row) =>
-              editId === row.id ? (
-                <Fragment key={row.id}>
+            {items.map((row) => (
+              <Fragment key={row.id}>
+                {headings.get(row.id) && (
+                  <KitHeadingRow
+                    name={headings.get(row.id)?.kitName ?? ''}
+                    count={headings.get(row.id)?.count ?? 0}
+                    colSpan={ITEM_COLS.length}
+                    onRemove={() => removeRun(row.id)}
+                  />
+                )}
+              {editId === row.id ? (
                 <tr className="bg-brand/5 divide-x divide-stone-100">
                   <InlineItemRow lineNo={row.lineNo} draft={draft} onChange={updateDraft} picker={picker} />
                   <td className={LINE_ACTIONS_EDIT_CELL_CLS}>
@@ -210,15 +198,17 @@ export function PurchaseOrderItemsTab({ items, onUpdate, headerTaxPercent }: {
                     </button>
                   </td>
                 </tr>
-                {slabEstimate}
-                </Fragment>
               ) : (
-                <tr key={row.id} className="hover:bg-stone-50/70 transition-colors group divide-x divide-stone-100">
+                <tr className={cn('hover:bg-stone-50/70 transition-colors group divide-x divide-stone-100', row.kitId && KIT_ROW_CLS)}>
                   <td className="px-2.5 py-2.5 text-stone-500 tabular-nums">{row.lineNo}</td>
                   <td className="px-2.5 py-2.5 font-medium text-stone-800">{row.itemName || <span className="text-stone-500">—</span>}</td>
                   <td className="px-2.5 py-2.5 text-stone-500 max-w-[140px] truncate">{row.itemDescription || '—'}</td>
                   <td className="px-2.5 py-2.5 text-stone-500 font-mono text-2xs">{row.itemSku || '—'}</td>
-                  <LineDimensionViewCells length={row.length} width={row.width} slabs={row.expectedSlabs} unit={row.dimensionUnit} />
+                  <LineSizeViewCells
+                    size={{ length: row.length, width: row.width, slabs: row.expectedSlabs, thickness: row.thickness }}
+                    unit={row.dimensionUnit}
+                    units={row.units}
+                  />
                   <td className="px-2.5 py-2.5 text-stone-500 whitespace-nowrap" title={row.units || undefined}>{unitLabel(row.units) || '—'}</td>
                   <td className="px-2.5 py-2.5 tabular-nums text-right text-stone-600">
                     {row.quantity}
@@ -240,16 +230,14 @@ export function PurchaseOrderItemsTab({ items, onUpdate, headerTaxPercent }: {
                     </div>
                   </td>
                 </tr>
-              ),
-            )}
+              )}
+              </Fragment>
+            ))}
             {isAdding && (
-              <>
-                <tr className="bg-brand/5 divide-x divide-stone-100">
-                  <InlineItemRow lineNo={items.length + 1} draft={draft} onChange={updateDraft} picker={picker} />
-                  <td className={LINE_ACTIONS_EDIT_CELL_CLS} />
-                </tr>
-                {slabEstimate}
-              </>
+              <tr className="bg-brand/5 divide-x divide-stone-100">
+                <InlineItemRow lineNo={items.length + 1} draft={draft} onChange={updateDraft} picker={picker} />
+                <td className={LINE_ACTIONS_EDIT_CELL_CLS} />
+              </tr>
             )}
           </tbody>
         </table>
@@ -298,7 +286,7 @@ export function PurchaseOrderItemsTab({ items, onUpdate, headerTaxPercent }: {
   );
 }
 
-type DraftKey = 'quantity' | 'unitPrice' | 'discount' | 'itemDescription' | 'expectedSlabs' | 'length' | 'width';
+type DraftKey = 'quantity' | 'unitPrice' | 'discount' | 'itemDescription' | 'expectedSlabs' | 'length' | 'width' | 'thickness';
 
 function InlineItemRow({ lineNo, draft, onChange, picker }: {
   lineNo: number;
@@ -319,10 +307,12 @@ function InlineItemRow({ lineNo, draft, onChange, picker }: {
         <input type="text" value={draft.itemDescription} onChange={(e) => onChange('itemDescription', e.target.value)} placeholder="Description" className={cn(inlineCls, 'min-w-[120px]')} aria-label="Description" />
       </td>
       <td className="px-2 py-1.5 text-stone-500 font-mono text-2xs">{draft.itemSku || '—'}</td>
-      <LineDimensionInputCells
-        dims={{ length: draft.length ?? '', width: draft.width ?? '', slabs: draft.expectedSlabs ?? '' }}
-        unit={normalizeUnit(draft.dimensionUnit)}
-        enabled={isAreaUnit(draft.units)}
+      {/* A per-piece item (a sink) folds the four size cells into one dash;
+          the slab count is the line's expected slabs. */}
+      <LineSizeInputCells
+        dims={{ length: draft.length ?? '', width: draft.width ?? '', slabs: draft.expectedSlabs ?? '', thickness: draft.thickness ?? '' }}
+        dimensionUnit={draft.dimensionUnit}
+        units={draft.units}
         onChange={(key, val) => onChange(key === 'slabs' ? 'expectedSlabs' : key, val)}
       />
       <td className="px-2 py-1.5 text-stone-500 text-2xs whitespace-nowrap" title={draft.units || undefined}>{unitLabel(draft.units) || '—'}</td>

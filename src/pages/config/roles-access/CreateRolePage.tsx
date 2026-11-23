@@ -1,3 +1,4 @@
+import { Select } from '@/components/ui/select';
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -688,7 +689,7 @@ export default function CreateRolePage() {
                                         })}
 
                                         <td className="px-3 py-2.5">
-                                          <select
+                                          <Select
                                             aria-label={`Scope for ${row.label}`}
                                             value={scope}
                                             disabled={!hasAny}
@@ -711,7 +712,7 @@ export default function CreateRolePage() {
                                                 {SCOPE_LABELS[s]}
                                               </option>
                                             ))}
-                                          </select>
+                                          </Select>
                                         </td>
                                       </tr>
                                     );

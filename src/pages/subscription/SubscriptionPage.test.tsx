@@ -1,17 +1,32 @@
-import { describe, it, expect } from 'vitest'
+import { pickOption } from '@/test/selectHelpers';
+import { describe, it, expect, vi } from 'vitest'
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import SubscriptionPage from './SubscriptionPage'
 import { DEFAULT_COUNTRY_NAME } from '@/lib/lookupDefaults'
 
-// SubscriptionPage is a UI-only mock module (no backend contract — see
-// types/subscription.ts), so these tests exercise real user flows against
-// local component state rather than mocking network calls.
+// The plan/billing/payment parts of SubscriptionPage are a UI-only mock
+// module (see types/subscription.ts), so these tests exercise real user flows
+// against local component state. Only the Usage panel calls the API; its
+// service is stubbed here and covered in UsagePanel.test.tsx.
+vi.mock('@/services/subscriptionService', () => ({
+  subscriptionService: { getUsage: vi.fn(() => new Promise(() => {})) },
+}))
+
+function renderPage() {
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+  return render(
+    <QueryClientProvider client={client}>
+      <SubscriptionPage />
+    </QueryClientProvider>,
+  )
+}
 
 describe('SubscriptionPage — Plan tab', () => {
   it('upgrading from the current plan card updates the plan and shows a confirmation', async () => {
     const user = userEvent.setup()
-    render(<SubscriptionPage />)
+    renderPage()
 
     expect(screen.getByRole('heading', { name: 'Pro Plan' })).toBeInTheDocument()
 
@@ -27,7 +42,7 @@ describe('SubscriptionPage — Plan tab', () => {
 
   it('cancelling shows the destructive confirmation and updates status on confirm', async () => {
     const user = userEvent.setup()
-    render(<SubscriptionPage />)
+    renderPage()
 
     await user.click(screen.getByRole('button', { name: 'Cancel subscription' }))
     expect(screen.getByRole('dialog', { name: 'Cancel your Pro plan?' })).toBeInTheDocument()
@@ -40,7 +55,7 @@ describe('SubscriptionPage — Plan tab', () => {
 
   it('keep plan closes the cancel dialog without changing status', async () => {
     const user = userEvent.setup()
-    render(<SubscriptionPage />)
+    renderPage()
 
     await user.click(screen.getByRole('button', { name: 'Cancel subscription' }))
     await user.click(screen.getByRole('button', { name: 'Keep current plan' }))
@@ -51,14 +66,14 @@ describe('SubscriptionPage — Plan tab', () => {
 
   it('contact sales opens a form and submitting shows a confirmation', async () => {
     const user = userEvent.setup()
-    render(<SubscriptionPage />)
+    renderPage()
 
     await user.click(screen.getByRole('button', { name: 'Contact Sales — Enterprise' }))
     const dialog = screen.getByRole('dialog', { name: 'Contact Sales' })
 
     await user.type(within(dialog).getByLabelText('Name'), 'Jane Doe')
     await user.type(within(dialog).getByLabelText('Work email'), 'jane@acme.com')
-    await user.selectOptions(within(dialog).getByLabelText('Company size'), 'medium')
+    await pickOption(within(dialog).getByLabelText('Company size'), 'medium')
     await user.click(within(dialog).getByRole('button', { name: 'Send message to sales' }))
 
     expect(await screen.findByRole('status')).toHaveTextContent(
@@ -74,7 +89,7 @@ describe('SubscriptionPage — Payment tab', () => {
 
   it('shows the default card and billing details side by side', async () => {
     const user = userEvent.setup()
-    render(<SubscriptionPage />)
+    renderPage()
     await goToPaymentTab(user)
 
     expect(screen.getByText('•••• •••• •••• 4242')).toBeInTheDocument()
@@ -84,7 +99,7 @@ describe('SubscriptionPage — Payment tab', () => {
 
   it('shows the same country wording the lookup table uses elsewhere in the app', async () => {
     const user = userEvent.setup()
-    render(<SubscriptionPage />)
+    renderPage()
     await goToPaymentTab(user)
 
     expect(screen.getByText(DEFAULT_COUNTRY_NAME, { exact: false, selector: 'dd' })).toBeInTheDocument()
@@ -92,7 +107,7 @@ describe('SubscriptionPage — Payment tab', () => {
 
   it('adds a new card via the mock form', async () => {
     const user = userEvent.setup()
-    render(<SubscriptionPage />)
+    renderPage()
     await goToPaymentTab(user)
 
     await user.click(screen.getByRole('button', { name: 'Add payment method' }))
@@ -111,7 +126,7 @@ describe('SubscriptionPage — Payment tab', () => {
 
   it('setting a non-default card as default swaps the badge', async () => {
     const user = userEvent.setup()
-    render(<SubscriptionPage />)
+    renderPage()
     await goToPaymentTab(user)
 
     await user.click(screen.getByRole('button', { name: 'Set Mastercard ending 8210 as default' }))
@@ -122,7 +137,7 @@ describe('SubscriptionPage — Payment tab', () => {
 
   it('the last remaining card cannot be removed', async () => {
     const user = userEvent.setup()
-    render(<SubscriptionPage />)
+    renderPage()
     await goToPaymentTab(user)
 
     await user.click(screen.getByRole('button', { name: 'Remove Mastercard ending 8210' }))
@@ -133,7 +148,7 @@ describe('SubscriptionPage — Payment tab', () => {
 
   it('removing a card opens a confirmation and removes it on confirm', async () => {
     const user = userEvent.setup()
-    render(<SubscriptionPage />)
+    renderPage()
     await goToPaymentTab(user)
 
     await user.click(screen.getByRole('button', { name: 'Remove Mastercard ending 8210' }))
@@ -146,7 +161,7 @@ describe('SubscriptionPage — Payment tab', () => {
 
   it('editing billing details updates the displayed contact', async () => {
     const user = userEvent.setup()
-    render(<SubscriptionPage />)
+    renderPage()
     await goToPaymentTab(user)
 
     await user.click(screen.getByRole('button', { name: 'Edit billing details' }))

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { TAB_LIST_CLASS, tabClass } from '@/components/ui/tabStyles';
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { Sparkles } from "lucide-react";
@@ -25,7 +26,6 @@ import { ActivityLogPanel } from "@/components/crm/ActivityLogPanel";
 import { useBreadcrumbStore } from "@/store/useBreadcrumbStore";
 import { CrmPageHeader } from "@/pages/crm/components/CrmPageHeader";
 import { readonlyCls, fieldLabelCls, resolveStatusColor } from "@/components/crm/formUtils";
-import { cn } from "@/lib/utils";
 import { useUserPermissions } from "@/hooks/useUserPermissions";
 import { canConvertCrmRecord } from "@/lib/crmStatusFlow";
 import { recordApprovalState, type StatusInfo, type WorkflowRecord } from "@/types/tenant";
@@ -230,22 +230,19 @@ export default function LeadDetailPage() {
       )}
 
       {/* Tab bar */}
-      <div className="flex shrink-0 border-b border-stone-200 bg-white px-5 3xl:px-12 4xl:px-16">
-        {TABS.map((tab) => (
-          <button
-            key={tab.key}
-            type="button"
-            onClick={() => setActiveTab(tab.key)}
-            className={cn(
-              "px-4 py-3 text-sm font-semibold border-b-2 -mb-px transition-colors duration-150",
-              activeTab === tab.key
-                ? "border-brand text-stone-950"
-                : "border-transparent text-stone-500 hover:text-stone-700 hover:border-stone-200",
-            )}
-          >
-            {tab.label}
-          </button>
-        ))}
+      <div className="flex shrink-0 border-b border-stone-200 bg-white px-5 3xl:px-12 4xl:px-16 py-2.5">
+        <div role="tablist" className={TAB_LIST_CLASS}>
+          {TABS.map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setActiveTab(tab.key)}
+              className={tabClass(activeTab === tab.key)}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Two-column body — stacks on mobile, side-by-side on lg+ */}

@@ -1,3 +1,4 @@
+import type { WorkflowBlock } from '@/types/workflow';
 import { tenantClient } from '@/api/tenantClient';
 import type { AuditEntry } from '@/services/crmService';
 import type {
@@ -8,6 +9,7 @@ import type {
   ItemReceiptVoidPayload,
   ItemReceiptSearchRequest,
   ItemReceiptPage,
+  OnOrderSlab,
   SlabSequence,
 } from '@/types/itemReceipt';
 
@@ -36,8 +38,8 @@ export const itemReceiptService = {
 
   getItemReceipt: (uuid: string): Promise<ItemReceipt> =>
     tenantClient
-      .get<{ success: boolean; itemReceipt: ItemReceipt }>(`${BASE}/${uuid}`)
-      .then((r) => r.data.itemReceipt),
+      .get<{ success: boolean; workflow?: WorkflowBlock; itemReceipt: ItemReceipt }>(`${BASE}/${uuid}`)
+      .then((r) => ({ ...r.data.itemReceipt, workflow: r.data.workflow ?? r.data.itemReceipt.workflow })),
 
   createItemReceipt: (payload: ItemReceiptCreatePayload): Promise<ItemReceipt> =>
     tenantClient
@@ -94,4 +96,15 @@ export const itemReceiptService = {
         `/tenant/purchase-orders/${purchaseOrderUuid}/next-slab-serial`,
       )
       .then((r) => ({ prefix: r.data.prefix, next: r.data.next })),
+
+  // GET /api/tenant/purchase-orders/{uuid}/on-order-slabs — the slabs this order
+  // put on order when it was sent and that have not arrived yet, so the receiving
+  // form can list them with a tick box each. Gated by the order's own
+  // permission, like nextSlabSerial.
+  onOrderSlabs: (purchaseOrderUuid: string): Promise<OnOrderSlab[]> =>
+    tenantClient
+      .get<{ success: boolean; slabs: OnOrderSlab[] | null }>(
+        `/tenant/purchase-orders/${purchaseOrderUuid}/on-order-slabs`,
+      )
+      .then((r) => r.data.slabs ?? []),
 };

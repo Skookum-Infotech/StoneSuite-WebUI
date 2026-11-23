@@ -42,8 +42,8 @@ import {
   Layers,
   Boxes,
   ArrowLeftRight,
-  CalendarClock,
   CalendarDays,
+  CalendarClock,
   CalendarRange,
   LayoutGrid,
   KeyRound,
@@ -51,6 +51,8 @@ import {
   MessageSquareText,
   Upload,
   ShieldAlert,
+  PackagePlus,
+  BarChart3,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -61,7 +63,7 @@ export interface NavPermission {
 
 /** Live counters a link can show beside its label. The config only names the
  *  counter; Sidebar resolves the number, which keeps this file static data. */
-export type NavBadge = "support-unread";
+export type NavBadge = "support-unread" | "approvals-pending";
 
 export interface NavLink {
   type: "link";
@@ -90,6 +92,9 @@ export interface NavLink {
   customerOnly?: boolean;
   /** Live counter shown as a pill beside the label. */
   badge?: NavBadge;
+  /** Hide the link while its `badge` count is 0 and the user is not an approver
+   *  of any module (Approvals: nothing to show, nothing they could be asked for). */
+  hideWhenIdle?: boolean;
   /** Workflow key (Configuration > Workflows) backing this link's form, e.g.
    *  "lead". When set, the link is hidden for every user — independent of
    *  permission — while that workflow is disabled. Omit for links with no
@@ -145,6 +150,20 @@ export const sidebarNav: SidebarNavConfig = {
       // The landing route for every signed-in user; it has no single backing
       // resource and each widget gates its own data server-side.
       alwaysVisible: true,
+    },
+    {
+      type: "link",
+      id: "approvals",
+      label: "Approvals",
+      path: "/approvals",
+      icon: ClipboardCheck,
+      iconColor: "text-amber-600 dark:text-amber-400",
+      // Staff only: no `customerVisible`, and the path is outside
+      // CUSTOMER_ALLOWED_PATH_PREFIXES. The server filters the inbox, so there
+      // is no role-editor row for it either.
+      alwaysVisible: true,
+      badge: "approvals-pending",
+      hideWhenIdle: true,
     },
     {
       type: "link",
@@ -346,6 +365,15 @@ export const sidebarNav: SidebarNavConfig = {
               iconColor: "text-orange-500 dark:text-orange-400",
               permission: { resource: "purchase_order", action: "read" },
               workflowKey: "purchase_order",
+            },
+            {
+              type: "link",
+              id: "reorder",
+              label: "Reorder",
+              path: "/purchases/reorder",
+              icon: PackagePlus,
+              iconColor: "text-red-500 dark:text-red-400",
+              permission: { resource: "replenishment", action: "read" },
             },
             {
               type: "link",
@@ -560,6 +588,93 @@ export const sidebarNav: SidebarNavConfig = {
               permission: { resource: "sales_order", action: "read" },
               workflowKey: "sales_order",
             },
+            {
+              type: "link",
+              id: "install-schedule",
+              label: "Install Schedule",
+              path: "/calendar/install-schedule",
+              icon: CalendarClock,
+              iconColor: "text-emerald-500 dark:text-emerald-400",
+              permission: { resource: "install_appointment", action: "read" },
+            },
+          ],
+        },
+        {
+          type: "group",
+          id: "reports",
+          label: "Reports",
+          icon: BarChart3,
+          iconColor: "text-fuchsia-600 dark:text-fuchsia-400",
+          matchPaths: ["/reports"],
+          // One read grant per sub-module (report_<module>:read), so a role can
+          // get Sales reports without CRM reports. These are the only rows the
+          // role matrix shows for the group. Custom Reports has its own
+          // resource (read = open/run, create = save/share); each source a
+          // custom report uses also needs that module's report grant.
+          children: [
+            {
+              type: "link",
+              id: "reports-crm",
+              label: "CRM Reports",
+              path: "/reports/crm",
+              icon: Building2,
+              iconColor: "text-blue-600 dark:text-blue-400",
+              permission: { resource: "report_crm", action: "read" },
+            },
+            {
+              type: "link",
+              id: "reports-sales",
+              label: "Sales Reports",
+              path: "/reports/sales",
+              icon: TrendingUp,
+              iconColor: "text-emerald-600 dark:text-emerald-400",
+              permission: { resource: "report_sales", action: "read" },
+            },
+            {
+              type: "link",
+              id: "reports-purchases",
+              label: "Purchases Reports",
+              path: "/reports/purchases",
+              icon: ShoppingCart,
+              iconColor: "text-amber-600 dark:text-amber-400",
+              permission: { resource: "report_purchases", action: "read" },
+            },
+            {
+              type: "link",
+              id: "reports-inventory",
+              label: "Inventory Reports",
+              path: "/reports/inventory",
+              icon: Boxes,
+              iconColor: "text-purple-600 dark:text-purple-400",
+              permission: { resource: "report_inventory", action: "read" },
+            },
+            {
+              type: "link",
+              id: "reports-calendar",
+              label: "Calendar Reports",
+              path: "/reports/calendar",
+              icon: CalendarDays,
+              iconColor: "text-sky-600 dark:text-sky-400",
+              permission: { resource: "report_calendar", action: "read" },
+            },
+            {
+              type: "link",
+              id: "reports-finance",
+              label: "Finance Reports",
+              path: "/reports/finance",
+              icon: Landmark,
+              iconColor: "text-slate-600 dark:text-slate-400",
+              permission: { resource: "report_finance", action: "read" },
+            },
+            {
+              type: "link",
+              id: "reports-custom",
+              label: "Custom Reports",
+              path: "/reports/custom",
+              icon: SlidersHorizontal,
+              iconColor: "text-violet-500 dark:text-violet-400",
+              permission: { resource: "custom_report", action: "read" },
+            },
           ],
         },
       ],
@@ -682,6 +797,15 @@ export const sidebarNav: SidebarNavConfig = {
               // editor's Leads row read as fully granted whenever this one
               // was checked, since both mapped to the same resource.
               permission: { resource: "import", action: "read" },
+            },
+            {
+              type: "link",
+              id: "automation",
+              label: "Automation",
+              path: "/config/automation",
+              icon: Timer,
+              iconColor: "text-amber-500 dark:text-amber-400",
+              permission: { resource: "automation", action: "read" },
             },
           ],
         },

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { AddressGeoLine } from '@/components/tenant/AddressGeoLine';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { Package, Upload, Pencil, FileDown, Loader2 } from 'lucide-react';
@@ -16,13 +17,17 @@ import { RecordCommunicationTab } from '@/components/tenant/RecordCommunicationT
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { cn } from '@/lib/utils';
+import { TAB_LIST_CLASS, tabClass } from '@/components/ui/tabStyles';
 import { unitLabel } from '@/lib/unitLabels';
-import { LineDimensionViewCells } from '@/components/inventory/LineDimensionViewCells';
-import { LINE_DIMENSION_COLS, PDF_DIMENSION_HEAD, anyDimensions, dimensionCells } from '@/lib/lineDimensions';
+import { LineSizeViewCells } from '@/components/inventory/LineSizeCells';
+import { KitLineRows } from '@/components/inventory/KitLineRows';
+import { INVENTORY_STOCK_QUERY_KEYS } from '@/lib/inventoryQueryKeys';
+import { PDF_THICKNESS_HEAD, SALES_SIZE_COLS, anyThickness, thicknessPdfCell } from '@/lib/lineThickness';
+import { PDF_DIMENSION_HEAD, anyDimensions, dimensionCells } from '@/lib/lineDimensions';
 import { slabProgressText } from '@/lib/itemReceiptSlabs';
 import {
-  PO_STATUS_COLORS, PO_STATUS_CODES, PO_DELETABLE_STATUSES, PO_HEADER_TRANSITION_CODES, PO_RESENDABLE_STATUSES,
-  poBillableLines, poDropdownTransitions,
+  PO_STATUS_COLORS, PO_STATUS_CODES, PO_DELETABLE_STATUSES, PO_DROPDOWN_HIDDEN_CODES, PO_RESENDABLE_STATUSES,
+  poBillableLines, poDropdownOverrideTransitions,
 } from '@/lib/purchaseOrderForm';
 import { statusToastLabel } from '@/lib/statusToast';
 import { isPurchaseOrderReceivable } from '@/lib/itemReceiptForm';
@@ -37,6 +42,7 @@ import { documentSendsKey } from '@/lib/documentSends';
 import { PurchaseOrderStatusControl } from './components/PurchaseOrderStatusControl';
 import { PurchaseOrderHeaderActions } from './components/PurchaseOrderHeaderActions';
 import { ConvertToBillDialog } from './components/ConvertToBillDialog';
+import { WorkflowCard } from '@/components/tenant/WorkflowCard';
 import { SalesDetailSidebar } from '@/pages/sales/components/SalesDetailSidebar';
 import { formatDateValue } from '@/lib/dateUtils';
 
@@ -53,6 +59,8 @@ const TABS = [
 // tab show up without a manual reload — same cadence as NotificationBell's
 // unread poll.
 const DETAIL_POLL_MS = 60_000;
+/** Columns in the Items table — a kit heading and the empty row span them all. */
+const PO_ITEM_COLUMNS = 15;
 type Tab = (typeof TABS)[number]['key'];
 
 function fmtDate(iso?: string): string {
@@ -101,10 +109,17 @@ export default function PurchaseOrderDetailPage() {
   }, [id, po?.purchaseOrderNumber, setLabel, clearLabel]);
 
   const transition = useMutation({
-    mutationFn: (toStatusCode: string) => purchaseOrderService.transition(id, toStatusCode),
+    mutationFn: (vars: { toStatusCode: string; force?: boolean }) =>
+      vars.force
+        ? purchaseOrderService.transition(id, vars.toStatusCode, { force: true })
+        : purchaseOrderService.transition(id, vars.toStatusCode),
     onSuccess: (updated) => {
       queryClient.setQueryData(['purchase-order', id], updated);
       queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
+      // Sending puts the order's slabs on order in Inventory, and cancelling or
+      // closing it takes the ones that never arrived back off.
+      for (const queryKey of INVENTORY_STOCK_QUERY_KEYS) queryClient.invalidateQueries({ queryKey });
+      queryClient.invalidateQueries({ queryKey: ['po-on-order-slabs', id] });
       // A move to Sent emails the vendor, which adds to the email history.
       queryClient.invalidateQueries({ queryKey: documentSendsKey(id) });
       // Label the actual resulting status, not the one requested -- a move
@@ -144,11 +159,12 @@ export default function PurchaseOrderDetailPage() {
   const canDeleteHere = canDelete && PO_DELETABLE_STATUSES.has(po.statusCode);
   // Only a super admin gets the status dropdown (the backend refuses any manual
   // move but PAPV/SENT to anyone else); everyone else moves an order with the
-  // header buttons. Terminal statuses (CLSD/CANC) have no legal transitions, and
-  // Submit for Approval / Send to Vendor are header buttons, not options — when
-  // none is left the dropdown would render nothing, so the card would be an
-  // empty "Actions" header. Hide it then.
-  const showActions = isSuperAdmin && canTransition && poDropdownTransitions(po).length > 0;
+  // header buttons. Submit for Approval is a header button only; Send to
+  // Vendor is both — the header button is the normal, email-gated move, the
+  // dropdown an admin-only override onto Sent regardless (PO_DROPDOWN_HIDDEN_
+  // CODES). Terminal statuses (CLSD/CANC) have no legal transitions; when
+  // nothing is left to show, hide the card instead of an empty "Actions" header.
+  const showActions = isSuperAdmin && canTransition && poDropdownOverrideTransitions(po).length > 0;
   const canReceiveHere = canReceive && isPurchaseOrderReceivable(po);
   // What Create Bill would bill: received and not yet billed. Empty (button
   // hidden) until something has been received, and again once it's all billed.
@@ -164,7 +180,8 @@ export default function PurchaseOrderDetailPage() {
     try {
       const { exportPurchasesRecordToPdf } = await import('@/lib/purchasesPdfExport');
       // The three size columns only appear when some line states a size.
-      const sized = anyDimensions(po.items);
+      const thick = anyThickness(po.items);
+      const sized = anyDimensions(po.items) || thick;
       await exportPurchasesRecordToPdf({
         recordType: 'purchase_order',
         title: po.purchaseOrderNumber || 'Purchase Order',
@@ -198,12 +215,13 @@ export default function PurchaseOrderDetailPage() {
           },
         ],
         itemsTable: {
-          head: ['#', 'Item', 'SKU', ...(sized ? PDF_DIMENSION_HEAD : []), 'Unit', 'Qty', 'Received', 'Unit Price', 'Disc %', 'Tax %', 'Total'],
+          head: ['#', 'Item', 'SKU', ...(sized ? PDF_DIMENSION_HEAD : []), ...(thick ? [PDF_THICKNESS_HEAD] : []), 'Unit', 'Qty', 'Received', 'Unit Price', 'Disc %', 'Tax %', 'Total'],
           rows: po.items.map((line) => [
             String(line.lineNumber),
             line.itemName || line.description || '—',
             line.sku || '—',
             ...(sized ? dimensionCells(line, line.expectedSlabs) : []),
+            ...(thick ? [thicknessPdfCell(line)] : []),
             unitLabel(line.unitCode) || '—',
             String(line.quantity),
             String(line.qtyReceived),
@@ -245,7 +263,7 @@ export default function PurchaseOrderDetailPage() {
           <PurchaseOrderHeaderActions
             order={{ statusCode: po.statusCode, approvalStatus: po.approvalStatus, gated: po.gated, nextStatusCodes: po.nextStatusCodes }}
             canTransition={canTransition}
-            onTransition={(toCode) => transition.mutate(toCode)}
+            onTransition={(toCode) => transition.mutate({ toStatusCode: toCode })}
             transitioning={transition.isPending}
             actions={{
               onReceive: canReceiveHere ? () => navigate(`/purchases/item_receipt/new?po=${id}`) : undefined,
@@ -276,22 +294,19 @@ export default function PurchaseOrderDetailPage() {
       )}
 
       {/* Tab bar */}
-      <div className="flex shrink-0 overflow-x-auto overflow-y-hidden border-b border-stone-200 bg-white px-5 3xl:px-12 4xl:px-16 modal-scrollbar">
-        {TABS.map((tab) => (
-          <button
-            key={tab.key}
-            type="button"
-            onClick={() => setActiveTab(tab.key)}
-            className={cn(
-              'px-4 py-3 text-sm font-semibold border-b-2 -mb-px transition-colors duration-150 whitespace-nowrap shrink-0',
-              activeTab === tab.key
-                ? 'border-brand text-stone-950'
-                : 'border-transparent text-stone-500 hover:text-stone-700 hover:border-stone-200',
-            )}
-          >
-            {tab.label}
-          </button>
-        ))}
+      <div className="flex shrink-0 overflow-x-auto overflow-y-hidden border-b border-stone-200 bg-white px-5 3xl:px-12 4xl:px-16 modal-scrollbar py-2.5">
+        <div role="tablist" className={TAB_LIST_CLASS}>
+          {TABS.map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setActiveTab(tab.key)}
+              className={tabClass(activeTab === tab.key)}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="flex flex-1 flex-col lg:flex-row gap-6 px-4 py-4 sm:px-5 sm:py-5 3xl:px-12 3xl:py-8 3xl:gap-10 4xl:px-16 4xl:py-10 4xl:gap-14">
@@ -339,7 +354,7 @@ export default function PurchaseOrderDetailPage() {
                       { label: 'Item' },
                       { label: 'Description' },
                       { label: 'SKU' },
-                      ...LINE_DIMENSION_COLS,
+                      ...SALES_SIZE_COLS,
                       { label: 'Unit' },
                       { label: 'Qty', right: true },
                       { label: 'Received' },
@@ -353,15 +368,20 @@ export default function PurchaseOrderDetailPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-stone-100">
-                  {po.items.map((line) => (
-                    <tr key={line.id} className="hover:bg-stone-50/50 divide-x divide-stone-100">
+                  {/* Lines added from a kit sit under the kit's heading, as in Sales. */}
+                  <KitLineRows lines={po.items} colSpan={PO_ITEM_COLUMNS} renderRow={(line, kitCls) => (
+                    <tr className={cn('hover:bg-stone-50/50 divide-x divide-stone-100', kitCls)}>
                       <td className="px-3 py-2.5 text-stone-500 tabular-nums">{line.lineNumber}</td>
                       <td className="px-3 py-2.5 font-medium text-stone-800">
                         {line.itemName || line.description || <span className="text-stone-500">—</span>}
                       </td>
                       <td className="px-3 py-2.5 text-stone-500 min-w-[200px] max-w-md whitespace-pre-wrap break-words">{line.description || '—'}</td>
                       <td className="px-3 py-2.5 font-mono text-2xs text-stone-500">{line.sku || '—'}</td>
-                      <LineDimensionViewCells length={line.length} width={line.width} slabs={line.expectedSlabs} unit={line.dimensionUnit} />
+                      <LineSizeViewCells
+                        size={{ length: line.length, width: line.width, slabs: line.expectedSlabs, thickness: line.thickness }}
+                        unit={line.dimensionUnit}
+                        units={line.unitCode}
+                      />
                       <td className="px-3 py-2.5 text-stone-500 whitespace-nowrap" title={line.unitCode || undefined}>
                         {unitLabel(line.unitCode) || <span className="text-stone-500">—</span>}
                       </td>
@@ -371,15 +391,18 @@ export default function PurchaseOrderDetailPage() {
                         {(line.expectedSlabs || line.slabsReceived) ? (
                           <p className="mt-1 text-2xs text-stone-500">{slabProgressText(line.slabsReceived ?? 0, line.expectedSlabs)}</p>
                         ) : null}
+                        {line.slabsOnOrder ? (
+                          <p className="mt-1 text-2xs text-stone-500">{line.slabsOnOrder} on order in Inventory</p>
+                        ) : null}
                       </td>
                       <td className="px-3 py-2.5 tabular-nums text-right text-stone-600">{currency(line.unitPrice)}</td>
                       <td className="px-3 py-2.5 tabular-nums text-right text-stone-500">{line.discountPercent}%</td>
                       <td className="px-3 py-2.5 tabular-nums text-right text-stone-500">{line.taxPercent}%</td>
                       <td className="px-3 py-2.5 tabular-nums text-right text-stone-800 font-semibold">{currency(line.lineTotal)}</td>
                     </tr>
-                  ))}
+                  )} />
                   {po.items.length === 0 && (
-                    <tr><td colSpan={14} className="py-8 text-center text-stone-500">No line items.</td></tr>
+                    <tr><td colSpan={PO_ITEM_COLUMNS} className="py-8 text-center text-stone-500">No line items.</td></tr>
                   )}
                 </tbody>
               </table>
@@ -396,6 +419,7 @@ export default function PurchaseOrderDetailPage() {
 
         {/* Right sidebar */}
         <SalesDetailSidebar label="Purchase Order Details">
+          <WorkflowCard module="purchaseOrder" statusCode={po.statusCode} statusLabel={po.status} workflow={po.workflow} links={{ purchaseOrderId: po.id }} />
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
             <p className="text-xs font-semibold text-stone-500">Quick Actions</p>
             <div className="space-y-0.5">
@@ -441,10 +465,10 @@ export default function PurchaseOrderDetailPage() {
               <p className="text-xs font-semibold text-stone-500">Actions</p>
               <PurchaseOrderStatusControl
                 order={{ statusCode: po.statusCode, approvalStatus: po.approvalStatus, gated: po.gated, nextStatusCodes: po.nextStatusCodes }}
-                onChange={(toCode) => transition.mutate(toCode)}
+                onChange={(toCode) => transition.mutate({ toStatusCode: toCode, force: true })}
                 disabled={transition.isPending}
                 variant="pill"
-                excludeCodes={PO_HEADER_TRANSITION_CODES}
+                excludeCodes={PO_DROPDOWN_HIDDEN_CODES}
               />
             </div>
           )}
@@ -531,7 +555,7 @@ function ReadonlyField({ label, value, full }: { label: string; value?: string; 
   );
 }
 
-function AddressBlock({ addr }: { addr: { name?: string; attention?: string; addrLine1?: string; addrLine2?: string; suiteUnit?: string; city?: string; zip?: string; phone?: string; fax?: string; email?: string } }) {
+function AddressBlock({ addr }: { addr: { name?: string; attention?: string; addrLine1?: string; addrLine2?: string; suiteUnit?: string; city?: string; stateId?: number | null; countryId?: number | null; zip?: string; phone?: string; fax?: string; email?: string } }) {
   const lines = [
     addr.attention,
     [addr.addrLine1, addr.addrLine2].filter(Boolean).join(', '),
@@ -540,13 +564,14 @@ function AddressBlock({ addr }: { addr: { name?: string; attention?: string; add
     addr.email && `Email: ${addr.email}`,
   ].filter(Boolean);
 
-  if (lines.length === 0) {
+  if (lines.length === 0 && !addr.stateId && !addr.countryId) {
     return <p className="text-xs text-stone-500 italic">No address on file.</p>;
   }
   return (
     <div className="space-y-1 text-xs text-stone-700">
       {addr.name && <p className="font-semibold text-stone-900">{addr.name}</p>}
       {lines.map((line, i) => <p key={i} className="text-stone-600">{line}</p>)}
+      <AddressGeoLine stateId={addr.stateId} countryId={addr.countryId} />
     </div>
   );
 }

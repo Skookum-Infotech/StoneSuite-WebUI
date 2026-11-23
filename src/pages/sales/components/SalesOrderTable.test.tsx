@@ -91,3 +91,11 @@ describe('SalesOrderTable status pill', () => {
     expect(screen.queryByRole('option', { name: 'Open' })).not.toBeInTheDocument();
   });
 });
+
+describe('SalesOrderTable customer link', () => {
+  it('links the customer name to the customer page', async () => {
+    mockPermissions();
+    const row = await renderWithRow(draftOrder([]));
+    expect(within(row).getByRole('link', { name: 'View customer Fontaine Builders' })).toHaveAttribute('href', '/crm/customer/c-1');
+  });
+});
