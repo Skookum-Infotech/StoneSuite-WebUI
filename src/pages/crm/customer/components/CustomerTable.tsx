@@ -7,6 +7,7 @@ const CONFIG = {
   editPath:    (id: string) => `/crm/customer/${id}/edit`,
   queryKey:    ['crm-records', 'customer'] as const,
   showEmail:   true,
+  selectable:  true,
 } as const;
 
 export function CustomerTable() {
