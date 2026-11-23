@@ -45,13 +45,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
 }
 
-/** Only same-origin, in-app paths — never `//host` or an absolute URL. */
-export function isSafeReturnPath(path: string | null | undefined): path is string {
-  return typeof path === 'string'
-    && path.startsWith('/')
-    && !path.startsWith('//')
-    && !path.startsWith('/\\');
-}
+export { isSafeReturnPath } from '@/lib/safeReturnPath';
 
 export function newInventoryItemPath(returnTo: string, itemName: string): string {
   const params = new URLSearchParams({ [RETURN_TO_PARAM]: returnTo });

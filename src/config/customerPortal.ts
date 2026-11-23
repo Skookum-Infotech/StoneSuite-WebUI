@@ -29,5 +29,7 @@ export const CUSTOMER_ALLOWED_PATH_PREFIXES: readonly string[] = [
  *  reuses a resource the portal is granted (the Activity Planner reads under
  *  `sales_order:read`) must not show up in their menu. */
 export function isCustomerAllowedPath(pathname: string): boolean {
-  return CUSTOMER_ALLOWED_PATH_PREFIXES.some((prefix) => pathname.startsWith(prefix));
+  return CUSTOMER_ALLOWED_PATH_PREFIXES.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+  );
 }

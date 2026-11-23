@@ -1,3 +1,4 @@
+import type { Grant } from '@/types/tenant';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useMyPermissionsQuery } from '@/hooks/useMyPermissionsQuery';
 import { isSuperAdminGrants } from '@/lib/dashboardWidgets';
@@ -19,12 +20,23 @@ const PORTAL_GRANTS: ReadonlySet<string> = new Set([
   'refund:read',
 ]);
 
-export function useUserPermissions() {
+export interface UserPermissions {
+  grants: Grant[];
+  hasPermission: (resource: string, action: string) => boolean;
+  isSuperAdmin: boolean;
+  isLoading: boolean;
+  /** True when the grants query failed — distinct from "has no grants". */
+  isError?: boolean;
+  refetch?: () => Promise<unknown>;
+  activeRoleId: string;
+}
+
+export function useUserPermissions(): UserPermissions {
   const isPortal = useAuthStore((s) => s.kind === 'portal');
 
   // Shared with useCurrentUserRoles — see useMyPermissionsQuery for the key,
   // the portal-session gate, and the caching.
-  const { data, isLoading } = useMyPermissionsQuery();
+  const { data, isLoading, isError, refetch } = useMyPermissionsQuery();
 
   const grants = data?.grants ?? [];
   // '' means no active-role restriction is set server-side (all assigned
@@ -47,5 +59,14 @@ export function useUserPermissions() {
   // for a non-admin; unlike the optimistic `can*` checks, this one fails closed.
   const isSuperAdmin = !isPortal && isSuperAdminGrants(grants);
 
-  return { grants, hasPermission, isSuperAdmin, isLoading: isPortal ? false : isLoading, activeRoleId };
+  // isError lets a guard tell "could not load grants" apart from "has no grants".
+  return {
+    grants,
+    hasPermission,
+    isSuperAdmin,
+    isLoading: isPortal ? false : isLoading,
+    isError: !isPortal && isError,
+    refetch,
+    activeRoleId,
+  };
 }

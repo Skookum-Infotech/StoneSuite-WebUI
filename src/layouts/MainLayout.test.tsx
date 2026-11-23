@@ -162,3 +162,21 @@ describe('MainLayout last-page tracking', () => {
     expect(useLastAppPathStore.getState().path).toBe('/sales/invoice/9?tab=lines');
   });
 });
+
+describe('MainLayout signed-out redirect', () => {
+  it('sends a signed-out visitor to login carrying the page they asked for', () => {
+    const router = renderAt('/sales/invoice/inv-1?tab=payments');
+
+    expect(screen.getByText('Sign in')).toBeInTheDocument();
+    expect(router.state.location.pathname).toBe('/auth/login');
+    expect(new URLSearchParams(router.state.location.search).get('return_to')).toBe(
+      '/sales/invoice/inv-1?tab=payments',
+    );
+  });
+
+  it('does not add a return_to for the default landing page', () => {
+    const router = renderAt('/dashboard');
+
+    expect(router.state.location.search).toBe('');
+  });
+});

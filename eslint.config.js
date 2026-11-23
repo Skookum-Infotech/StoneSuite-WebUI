@@ -14,7 +14,7 @@ import { defineConfig, globalIgnores } from 'eslint/config'
 // import importPlugin from 'eslint-plugin-import'
 
 export default defineConfig([
-  globalIgnores(['dist/', 'node_modules/', '*.config.ts', '*.config.js']),
+  globalIgnores(['dist/', 'node_modules/', '.claude/**', '*.config.ts', '*.config.js']),
 
   {
     files: ['**/*.{ts,tsx}'],
