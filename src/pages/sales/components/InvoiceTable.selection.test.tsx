@@ -29,6 +29,11 @@ import type { InvoiceSummary } from '@/types/invoice';
 // for. Give the file room and keep each wait shorter than the test.
 vi.setConfig({ testTimeout: 20_000 });
 const SETTLE = { timeout: 10_000 };
+// The table's search box debounces by 300ms and, once after it first appears,
+// resets paging to page 1 even though nothing was typed. Let that pass before
+// paging, or on a slow shard the reset lands after the click and undoes it.
+const DEBOUNCE_SETTLE_MS = 400;
+const afterSearchDebounce = () => new Promise<void>((resolve) => setTimeout(resolve, DEBOUNCE_SETTLE_MS));
 
 function makeInvoice(n: number, customer: string, balance: number): InvoiceSummary {
   return {
@@ -99,6 +104,7 @@ describe('InvoiceTable selection', () => {
   it('select-all ticks only the rows on this page, and again unticks them', async () => {
     renderTable();
     await screen.findByText('INV-1001', {}, SETTLE);
+    await afterSearchDebounce();
     const user = userEvent.setup();
     await user.click(selectAll());
     expect(within(screen.getByRole('region', { name: 'Selected rows' })).getByRole('status')).toHaveTextContent('3 selected');

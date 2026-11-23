@@ -36,6 +36,9 @@ function renderCard() {
   );
 }
 
+// Escapes every regex metacharacter (a bare .replace('$', ...) only reaches the first).
+const escapeRegExp = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
 describe('VendorAgingCard', () => {
   beforeEach(() => {
     aging.mockReset();
@@ -62,7 +65,7 @@ describe('VendorAgingCard', () => {
     const items = within(card).getAllByRole('listitem');
     expect(items).toHaveLength(ZERO_BUCKETS.length);
     for (const item of items) {
-      expect(item).toHaveAccessibleName(new RegExp(`${moneyOrDash(0).replace('$', '\\$')}, 0 bills$`));
+      expect(item).toHaveAccessibleName(new RegExp(`${escapeRegExp(moneyOrDash(0))}, 0 bills$`));
     }
     expect(within(card).getByText(`Total open ${moneyOrDash(0)}`)).toBeInTheDocument();
     expect(screen.queryByRole('alert')).toBeNull();
