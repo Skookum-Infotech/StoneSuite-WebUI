@@ -10,6 +10,7 @@ import type { StatusInfo, Workflow, WorkflowRecord } from '@/types/tenant';
 vi.mock('react-router-dom', async () => ({
   useNavigate: () => vi.fn(),
   Link: (await import('@/test/routerLinkStub')).RouterLinkStub,
+  useSearchParams: (await import('@/test/routerSearchParamsStub')).useSearchParams,
 }));
 vi.mock('@/hooks/useUserPermissions', () => ({ useUserPermissions: vi.fn() }));
 vi.mock('@/services/crmService', async (importOriginal) => {

@@ -1,10 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import {
-  Search, ArrowUp, ArrowDown, ArrowUpDown, X, Package, Pencil, Filter,
-  ChevronLeft, ChevronRight, Download, Loader2,
-} from 'lucide-react';
+import { Search, X, Package, Pencil, Filter, ChevronLeft, ChevronRight, Download, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { inventoryService } from '@/services/inventoryService';
@@ -15,15 +12,17 @@ import { TRACKING_SERIALIZED } from '@/types/inventory';
 import { EMPTY_FILTER_STATE, hasActiveFilters, toFilterClauses, type InventoryItemFilterState } from '@/lib/inventoryItemFilters';
 import { ItemFilterDrawer } from './ItemFilterDrawer';
 import type { InventoryItemSearchRequest } from '@/types/inventory';
+import { SortIcon } from '@/components/ui/SortIcon';
+import { useListUrlState } from '@/hooks/useListUrlState';
 
 const EXPORT_PAGE_SIZE = 200;
 
 type SortField = 'sku' | 'name';
-type SortDir = 'asc' | 'desc';
 
 const PAGE_SIZE = 25;
 
 const SORT_LABELS: Record<SortField, string> = { sku: 'SKU', name: 'Name' };
+const SORT_FIELDS = Object.keys(SORT_LABELS) as SortField[];
 
 export function ItemTable() {
   const navigate = useNavigate();
@@ -32,10 +31,11 @@ export function ItemTable() {
   const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
   const canEdit = permissionsLoading || hasPermission('inventory_item', 'update');
 
-  const [term, setTerm] = useState('');
-  const [debounced, setDebounced] = useState('');
-  const [sortBy, setSortBy] = useState<SortField>('name');
-  const [sortDir, setSortDir] = useState<SortDir>('asc');
+  const { search: debounced, sortBy, sortDir, setSearch: setDebounced, setSort } = useListUrlState<SortField>({
+    sortFields: SORT_FIELDS,
+    defaultSort: { field: 'name', dir: 'asc' },
+  });
+  const [term, setTerm] = useState(debounced);
   const [filters, setFilters] = useState<InventoryItemFilterState>(EMPTY_FILTER_STATE);
   const [filtersOpen, setFiltersOpen] = useState(false);
 
@@ -52,7 +52,7 @@ export function ItemTable() {
       setPrevCursors([]);
     }, 300);
     return () => clearTimeout(t);
-  }, [term]);
+  }, [term, setDebounced]);
 
   const req: InventoryItemSearchRequest = {
     search: debounced || undefined,
@@ -108,19 +108,9 @@ export function ItemTable() {
   }
 
   function handleSort(field: SortField) {
-    if (sortBy === field) {
-      setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
-    } else {
-      setSortBy(field);
-      setSortDir('asc');
-    }
+    setSort(field, sortBy === field ? (sortDir === 'asc' ? 'desc' : 'asc') : 'asc');
     setCursor('');
     setPrevCursors([]);
-  }
-
-  function SortIcon({ field }: { field: SortField }) {
-    if (sortBy !== field) return <ArrowUpDown className="size-2.5 opacity-40" />;
-    return sortDir === 'asc' ? <ArrowUp className="size-2.5" /> : <ArrowDown className="size-2.5" />;
   }
 
   async function handleDownloadCsv() {
@@ -183,7 +173,7 @@ export function ItemTable() {
               )}
             >
               {label}
-              <SortIcon field={field} />
+              <SortIcon active={sortBy === field} dir={sortDir} />
             </button>
           ))}
         </div>

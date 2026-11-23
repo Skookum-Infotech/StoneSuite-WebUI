@@ -44,7 +44,7 @@ export function StockOnHandTable() {
       setPrevCursors([]);
     }, SEARCH_DEBOUNCE_MS);
     return () => clearTimeout(t);
-  }, [term]);
+  }, [term, setDebounced]);
 
   const req: InventoryItemSearchRequest = {
     search: debounced || undefined,
@@ -136,7 +136,7 @@ export function StockOnHandTable() {
                       <td className="px-4 py-3.5 font-mono text-xs font-semibold whitespace-nowrap text-stone-900">{it.sku}</td>
                       <td className="max-w-[240px] truncate px-4 py-3.5 text-stone-700">{it.name}</td>
                       <td className="px-4 py-3.5 text-right tabular-nums text-stone-800">
-                        {total ? <>{formatStockQty(total.onHand)}{unit && <span className="ml-1 text-stone-400">{unit}</span>}</> : totalsLoading ? '…' : '—'}
+                        {total ? <>{formatStockQty(total.onHand)}{unit && <span className="ml-1 text-stone-500">{unit}</span>}</> : totalsLoading ? '…' : '—'}
                       </td>
                       <td className="px-4 py-3.5 text-right tabular-nums text-stone-500">{total ? formatStockQty(total.allocated) : '—'}</td>
                       <td className="px-4 py-3.5 text-right tabular-nums font-semibold text-stone-800">{total ? formatStockQty(total.available) : '—'}</td>

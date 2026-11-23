@@ -7,6 +7,7 @@ import type { CreatedBatch } from '@/lib/replenishment';
 
 vi.mock('react-router-dom', async () => ({
   Link: (await import('@/test/routerLinkStub')).RouterLinkStub,
+  useSearchParams: (await import('@/test/routerSearchParamsStub')).useSearchParams,
 }));
 vi.mock('@/services/replenishmentService', () => ({ replenishmentService: { list: vi.fn() } }));
 vi.mock('./components/ReorderItemCard', () => ({

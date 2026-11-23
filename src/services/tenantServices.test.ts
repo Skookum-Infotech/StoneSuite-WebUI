@@ -22,6 +22,45 @@ function serverError(): AxiosError {
   return err;
 }
 
+describe('platformService.listTenants', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  const tenant = (id: string) => ({ id }) as never;
+
+  it('follows nextCursor until the server stops returning one, passing it back unchanged', async () => {
+    vi.mocked(tenantClient.get)
+      .mockResolvedValueOnce({ data: { success: true, tenants: [tenant('a'), tenant('b')], nextCursor: 'opaque-1' } })
+      .mockResolvedValueOnce({ data: { success: true, tenants: [tenant('c')], nextCursor: '' } });
+
+    const result = await platformService.listTenants();
+
+    expect(result.map((t) => t.id)).toEqual(['a', 'b', 'c']);
+    expect(tenantClient.get).toHaveBeenNthCalledWith(1, '/platform/tenants', { params: { limit: 200 } });
+    expect(tenantClient.get).toHaveBeenNthCalledWith(2, '/platform/tenants', { params: { limit: 200, cursor: 'opaque-1' } });
+  });
+
+  it('accepts a server that predates paging (everything in one response, no cursor)', async () => {
+    vi.mocked(tenantClient.get).mockResolvedValue({ data: { success: true, tenants: [tenant('a')] } });
+
+    expect(await platformService.listTenants()).toHaveLength(1);
+    expect(tenantClient.get).toHaveBeenCalledTimes(1);
+  });
+
+  it('returns an empty list when the response has no tenants field', async () => {
+    vi.mocked(tenantClient.get).mockResolvedValue({ data: { success: true } });
+
+    expect(await platformService.listTenants()).toEqual([]);
+  });
+
+  it('gives up after a bounded number of pages instead of looping forever', async () => {
+    vi.mocked(tenantClient.get).mockResolvedValue({ data: { success: true, tenants: [], nextCursor: 'again' } });
+
+    await platformService.listTenants();
+
+    expect(vi.mocked(tenantClient.get).mock.calls.length).toBeLessThanOrEqual(500);
+  });
+});
+
 describe('platformService.purgeTenant', () => {
   beforeEach(() => vi.clearAllMocks());
 

@@ -5,6 +5,7 @@ import type { RecentRecord } from '@/types/dashboardData';
 
 vi.mock('react-router-dom', async () => ({
   Link: (await import('@/test/routerLinkStub')).RouterLinkStub,
+  useSearchParams: (await import('@/test/routerSearchParamsStub')).useSearchParams,
 }));
 
 function makeRecord(overrides: Partial<RecentRecord> = {}): RecentRecord {

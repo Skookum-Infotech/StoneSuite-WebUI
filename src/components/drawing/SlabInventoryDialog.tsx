@@ -57,7 +57,7 @@ export function SlabInventoryDialog({ onClose }: { onClose: () => void }) {
                   i.itemId === item?.itemId ? 'border-brand-dark text-stone-900' : 'border-transparent text-stone-500 hover:text-stone-800',
                 )}
               >
-                {i.itemName} <span className="text-stone-400">({i.units.length})</span>
+                {i.itemName} <span className="text-stone-500">({i.units.length})</span>
               </button>
             ))}
           </div>

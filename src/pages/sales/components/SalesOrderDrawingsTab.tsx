@@ -54,6 +54,8 @@ export function SalesOrderDrawingsTab({ drawings, onUpdate }: { drawings: SODraw
     <div className="space-y-4">
       {/* Drop zone */}
       <div onClick={() => fileRef.current?.click()}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileRef.current?.click(); } }}
+        role="button" tabIndex={0} aria-label="Upload drawing files"
         className="relative rounded-lg border-2 border-dashed border-stone-200 px-6 py-7 text-center cursor-pointer hover:border-stone-300 hover:bg-stone-50/50 transition-all duration-200 group">
         <input ref={fileRef} type="file" multiple accept=".pdf,.dwg,.dxf,.png,.jpg" className="sr-only" aria-label="Upload drawing files" />
         <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-stone-100 group-hover:bg-stone-200 mb-3 transition-colors">
