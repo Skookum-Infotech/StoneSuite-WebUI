@@ -62,7 +62,7 @@ export const PROGRESS_PATHS: Record<ProgressModule, string[]> = {
   itemReceipt: ['PEND', 'PART', 'RCVD'],
   vendorPayment: [...DRAFT_APPROVAL, 'SCHD', 'SENT'],
   vendorCredit: ['DRFT', 'APPV', 'APPL'],
-  expense: ['DRFT', 'SUBM', 'APPV', 'REIM'],
+  expense: ['DRFT', 'SUBM', 'APPV', 'PAID'],
 };
 
 /** Side statuses that still sit on a path step (an overdue invoice is still

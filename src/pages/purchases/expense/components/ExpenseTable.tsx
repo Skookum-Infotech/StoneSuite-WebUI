@@ -181,7 +181,7 @@ export function ExpenseTable() {
         ['Expense #', 'Claimant', 'Department', 'Status', 'Approval', 'Total', 'Created'],
         (exp) => [
           exp.expenseNumber ?? '',
-          (exp.claimantEmployeeId ? employeeNames.get(String(exp.claimantEmployeeId)) : undefined) ?? '',
+          exp.claimantName || (exp.claimantEmployeeId ? employeeNames.get(String(exp.claimantEmployeeId)) : undefined) || '',
           exp.department ?? '',
           exp.status ?? '',
           APPROVAL_LABELS[exp.approvalStatus] ?? '',
@@ -312,9 +312,8 @@ export function ExpenseTable() {
               ) : records.length > 0 ? (
                 records.map((exp) => {
                   const approvalLabel = APPROVAL_LABELS[exp.approvalStatus];
-                  const claimantName = exp.claimantEmployeeId
-                    ? employeeNames.get(String(exp.claimantEmployeeId))
-                    : undefined;
+                  const claimantName = exp.claimantName
+                    || (exp.claimantEmployeeId ? employeeNames.get(String(exp.claimantEmployeeId)) : undefined);
                   return (
                     <tr key={exp.id} className="group hover:bg-accent/10 transition-colors duration-150">
                       <td className="px-4 max-sm:px-2 py-3.5">

@@ -10,13 +10,14 @@ import { workflowService } from '@/services/tenantServices';
 import { activeCustomFields } from '@/lib/customFields';
 import { VendorPicker, type VendorRef } from '@/pages/purchases/purchase-order/components/VendorPicker';
 import { PurchaseOrderPicker } from './PurchaseOrderPicker';
+import { ExpenseClaimField } from './ExpenseClaimField';
 import { VendorBillSectionGrid } from './VendorBillFormFields';
 import { VendorBillSummaryCard } from './VendorBillSummaryCard';
 import { currencyCodeFor } from '@/lib/formatMoney';
 import { VendorBillItemsTab } from './VendorBillItemsTab';
 import { VendorBillAuditTab } from './VendorBillAuditTab';
 import type { CrmLookups } from '@/services/lookupService';
-import type { VendorBillPurchaseOrderRef } from '@/types/vendorBill';
+import type { VendorBillExpenseRef, VendorBillPurchaseOrderRef } from '@/types/vendorBill';
 import {
   PRIMARY_INFO_FIELDS, PAGE_TABS, type PageTab, type VendorBillLineItem,
 } from '@/lib/vendorBillForm';
@@ -30,6 +31,7 @@ export function VendorBillFormBody({
   data, set, lineItems, setLineItems,
   vendor, setVendor, vendorLocked = false, onCreateVendor,
   purchaseOrder, setPurchaseOrder, purchaseOrderItemsError,
+  expense, setExpense, expenseError,
   customFieldValues, setCustomField,
   lookups, subtotal, discountAmt, taxTotal, adjustment, total, filesPanelRef,
 }: {
@@ -60,6 +62,13 @@ export function VendorBillFormBody({
   /** Set when picking a purchase order failed to load its items into the
    *  table below — Add mode only; Edit never fetches (the link is fixed). */
   purchaseOrderItemsError?: string;
+  /** The optional Expense Claim source (Add mode only): an employee's approved
+   *  claim the bill is raised for. The field appears only for an employee vendor
+   *  that has such claims, so an ordinary supplier's bill never shows it. */
+  expense?: VendorBillExpenseRef | null;
+  setExpense?: (v: VendorBillExpenseRef | null) => void;
+  /** Set when picking a claim failed to load its lines into the table below. */
+  expenseError?: string;
   customFieldValues: Record<string, unknown>;
   setCustomField: (key: string, value: unknown) => void;
   lookups?: CrmLookups;
@@ -122,7 +131,7 @@ export function VendorBillFormBody({
                       {(setPurchaseOrder || purchaseOrder) && (
                         <ModernFieldShell label="Purchase Order">
                           {setPurchaseOrder ? (
-                            <PurchaseOrderPicker vendor={vendor} value={purchaseOrder} onChange={setPurchaseOrder} />
+                            <PurchaseOrderPicker vendor={vendor} value={purchaseOrder} onChange={setPurchaseOrder} disabled={Boolean(expense)} />
                           ) : (
                             <div className={cn(readonlyCls, 'cursor-not-allowed select-none')}>
                               {purchaseOrder?.number}
@@ -132,6 +141,12 @@ export function VendorBillFormBody({
                             <p role="alert" className="mt-1 text-2xs text-destructive">{purchaseOrderItemsError}</p>
                           )}
                         </ModernFieldShell>
+                      )}
+                      {setExpense && (
+                        <ExpenseClaimField vendor={vendor} value={expense ?? null} onChange={setExpense} disabled={Boolean(purchaseOrder)} />
+                      )}
+                      {expenseError && (
+                        <p role="alert" className="text-2xs text-destructive sm:col-span-2">{expenseError}</p>
                       )}
                     </div>
                     <VendorBillSectionGrid

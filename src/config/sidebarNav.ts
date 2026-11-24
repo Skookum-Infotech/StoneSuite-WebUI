@@ -9,6 +9,7 @@ import {
   ShieldCheck,
   UserPlus,
   UsersRound,
+  UserRound,
   Hash,
   ScrollText,
   TrendingUp,
@@ -726,6 +727,15 @@ export const sidebarNav: SidebarNavConfig = {
               icon: UsersRound,
               iconColor: "text-sky-500 dark:text-sky-400",
               permission: { resource: "user", action: "read" },
+            },
+            {
+              type: "link",
+              id: "employees",
+              label: "Employee",
+              path: "/config/employees",
+              icon: UserRound,
+              iconColor: "text-indigo-500 dark:text-indigo-400",
+              permission: { resource: "employee", action: "read" },
             },
             {
               type: "link",

@@ -14,6 +14,7 @@ import type {
   VendorBillPurchaseOrderRef,
 } from '@/types/vendorBill';
 import type { PurchaseOrderLine } from '@/types/purchaseOrder';
+import type { ExpenseLine } from '@/types/expense';
 
 export const PAGE_TABS = [
   { key: 'details', label: 'Details' },
@@ -486,6 +487,7 @@ export function toCreatePayload(
   return {
     vendorUuid: toStr(data.vendor_uuid),
     purchaseOrderUuid: toStr(data.purchase_order_uuid) || undefined,
+    expenseUuid: toStr(data.expense_uuid) || undefined,
     vendorInvoiceNumber: toStr(data.vendor_invoice_number),
     referenceNumber: toStr(data.reference_number),
     billDate: toStr(data.bill_date),
@@ -569,6 +571,31 @@ export function vendorBillLinesFromPurchaseOrder(
   headerTaxPercent: number,
 ): VendorBillLineItem[] {
   return items.map((line, i) => fromPurchaseOrderLine(line, headerTaxPercent, i));
+}
+
+/** The text of a bill line made from an expense line — the same wording the server
+ *  uses when it raises the bill itself: "Category - what it was (date)". */
+export function expenseLineDescription(line: Pick<ExpenseLine, 'categoryName' | 'description' | 'expenseDate'>): string {
+  const what = line.description?.trim();
+  return `${line.categoryName}${what ? ` - ${what}` : ''} (${line.expenseDate})`;
+}
+
+/** The lines a vendor bill's items table takes on once the Add page's Expense
+ *  picker selects a claim — one line per claim line at quantity 1, ready to edit
+ *  before saving, the same shape the server builds on its own. */
+export function vendorBillLinesFromExpense(items: ExpenseLine[], headerTaxPercent: number): VendorBillLineItem[] {
+  return items.map((line, i) => {
+    const text = expenseLineDescription(line);
+    const base = {
+      itemName: text,
+      itemDescription: text,
+      quantity: '1',
+      unitPrice: String(line.amount),
+      discount: '0',
+    };
+    const { amount, total } = calcLineItem(base, headerTaxPercent);
+    return { id: `expense-line-${i}`, lineNo: i + 1, ...base, amount, total };
+  });
 }
 
 /** Maps a loaded VendorBill (GET response) back to the Edit form's state —

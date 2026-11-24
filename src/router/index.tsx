@@ -68,6 +68,10 @@ const RolesPage = lazyWithRetry(() => import("@/pages/config/roles-access/RolesP
 const CreateRolePage = lazyWithRetry(() => import("@/pages/config/roles-access/CreateRolePage"));
 const EditRolePage = lazyWithRetry(() => import("@/pages/config/roles-access/EditRolePage"));
 const UsersPage = lazyWithRetry(() => import("@/pages/config/users/UsersPage"));
+const EmployeeListPage = lazyWithRetry(() => import("@/pages/config/employees/EmployeeListPage"));
+const AddEmployeePage = lazyWithRetry(() => import("@/pages/config/employees/AddEmployeePage"));
+const EmployeeDetailPage = lazyWithRetry(() => import("@/pages/config/employees/EmployeeDetailPage"));
+const EditEmployeePage = lazyWithRetry(() => import("@/pages/config/employees/EditEmployeePage"));
 const CompanyProfilePage = lazyWithRetry(
   () => import("@/pages/config/company-profile/CompanyProfilePage"),
 );
@@ -1748,6 +1752,39 @@ export const router = createBrowserRouter([
         element: lazy_(
           <PermissionGuard resource="user" action="read">
             <UsersPage />
+          </PermissionGuard>,
+        ),
+      },
+      // Employees (specific routes before the :id routes)
+      {
+        path: "config/employees",
+        element: lazy_(
+          <PermissionGuard resource="employee" action="read">
+            <EmployeeListPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "config/employees/new",
+        element: lazy_(
+          <PermissionGuard resource="employee" action="create">
+            <AddEmployeePage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "config/employees/:id",
+        element: lazy_(
+          <PermissionGuard resource="employee" action="read">
+            <EmployeeDetailPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "config/employees/:id/edit",
+        element: lazy_(
+          <PermissionGuard resource="employee" action="update">
+            <EditEmployeePage />
           </PermissionGuard>,
         ),
       },

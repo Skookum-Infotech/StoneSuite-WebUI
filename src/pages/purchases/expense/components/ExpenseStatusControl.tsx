@@ -9,13 +9,13 @@ import { StatusSelect } from '@/pages/sales/components/StatusSelect';
 // PurchaseOrderStatusControl.tsx, replacing ExpenseTransitionBar's
 // always-modal-confirm button row with the same 1-click pill Sales/CRM
 // already use (confirm only for a move that lands on a terminal status —
-// EXPENSE_ALLOWED_TRANSITIONS marks REIM that way). RJCT never appears in
+// EXPENSE_ALLOWED_TRANSITIONS leaves PAID with none). RJCT never appears in
 // EXPENSE_ALLOWED_TRANSITIONS as a SUBM target, so — same as
 // ExpenseTransitionBar — this never offers it; rejection stays a dedicated
 // action (RejectExpenseDialog) that captures a reason. The record's own
 // `nextStatusCodes` (when loaded) wins over the static map: with nobody
 // configured to approve, the backend collapses the SUBM checkpoint and
-// Approved out of Draft's moves, so Draft is offered "Mark Reimbursed"
+// Approved out of Draft's moves, so Draft is offered "Submit & Approve"
 // directly.
 export function ExpenseStatusControl({ order, onChange, disabled, variant }: {
   order: { statusCode: string; approvalStatus: string; gated?: boolean; nextStatusCodes?: string[] };
