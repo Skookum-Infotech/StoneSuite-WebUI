@@ -1,4 +1,4 @@
-import { Building2, TrendingUp, Truck, Landmark, Boxes, Warehouse } from 'lucide-react';
+import { Building2, TrendingUp, Truck, Landmark, Boxes, Warehouse, UsersRound } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
 /**
@@ -114,6 +114,20 @@ export const WORKFLOW_GROUPS: WorkflowGroup[] = [
     // Transfer, Adjustment and Count are plain stock documents with no workflow
     // row; Bin Transfer is the one inventory module with an approver chain.
     keys: ['bin_transfer'],
+  },
+  {
+    id: 'staff',
+    label: 'Staff',
+    description: 'Employees — a new employee can require approval before they become active.',
+    icon: UsersRound,
+    accent: {
+      chip: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-400/15 dark:text-indigo-300',
+      rail: 'bg-indigo-300 dark:bg-indigo-400/40',
+      count: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-400/15 dark:text-indigo-300',
+    },
+    // Employee is configuration data, not a document, but it has the same
+    // approval chain as the document modules.
+    keys: ['employee'],
   },
 ];
 

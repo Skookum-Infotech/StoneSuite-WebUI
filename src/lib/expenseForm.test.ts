@@ -30,9 +30,9 @@ describe('EXPENSE_ALLOWED_TRANSITIONS', () => {
   it.each([
     ['DRFT', ['SUBM']],
     ['SUBM', ['APPV', 'DRFT']],
-    ['APPV', ['REIM']],
+    ['APPV', []],
     ['RJCT', ['DRFT']],
-    ['REIM', []],
+    ['PAID', []],
   ])('from %p -> %p', (from, expected) => {
     expect(EXPENSE_ALLOWED_TRANSITIONS[from]).toEqual(expected)
   })
@@ -76,7 +76,7 @@ describe('expStatusLabel', () => {
     ['SUBM', 'Submitted'],
     ['APPV', 'Approved'],
     ['RJCT', 'Rejected'],
-    ['REIM', 'Reimbursed'],
+    ['PAID', 'Paid'],
     ['ZZZZ', 'ZZZZ'],
   ])('%p -> %p', (code, expected) => {
     expect(expStatusLabel(code)).toBe(expected)
@@ -89,7 +89,7 @@ describe('canRejectExpense', () => {
     ['DRFT', false],
     ['APPV', false],
     ['RJCT', false],
-    ['REIM', false],
+    ['PAID', false],
   ])('%p -> %p', (code, expected) => {
     expect(canRejectExpense(code)).toBe(expected)
   })
@@ -121,7 +121,7 @@ describe('EXPENSE_NON_DRAFT_LOCKED', () => {
     ['SUBM', true],
     ['APPV', true],
     ['RJCT', true],
-    ['REIM', true],
+    ['PAID', true],
   ])('%p locked: %p', (code, expected) => {
     expect(EXPENSE_NON_DRAFT_LOCKED(code)).toBe(expected)
   })
@@ -135,7 +135,7 @@ describe('EXPENSE_DELETABLE_STATUSES', () => {
     ['SUBM', false],
     ['APPV', false],
     ['RJCT', false],
-    ['REIM', false],
+    ['PAID', false],
   ])('has(%p) -> %p', (code, expected) => {
     expect(EXPENSE_DELETABLE_STATUSES.has(code)).toBe(expected)
   })
@@ -180,10 +180,19 @@ describe('categoryNameForCode', () => {
 })
 
 describe('toCreatePayload', () => {
-  it('maps the header, omitting the claimant (server always resolves it)', () => {
+  it('maps the header, leaving the claimant to the server when none was picked', () => {
     const payload = toCreatePayload({ department: 'Sales', memo: 'Client visit' }, [])
     expect(payload).toMatchObject({ department: 'Sales', memo: 'Client visit', items: [] })
-    expect(payload).not.toHaveProperty('claimantEmployeeId')
+    expect(payload.claimantEmployeeId).toBeUndefined()
+  })
+
+  it.each([
+    ['a picked employee id', '42', 42],
+    ['the blank "Myself" choice', '', undefined],
+    ['a non-numeric value', 'abc', undefined],
+    ['zero', '0', undefined],
+  ])('sends the claimant for %s', (_label, picked, expected) => {
+    expect(toCreatePayload({ claimantEmployeeId: picked }, []).claimantEmployeeId).toBe(expected)
   })
 
   it('maps and renumbers line items sequentially regardless of stored lineNo', () => {

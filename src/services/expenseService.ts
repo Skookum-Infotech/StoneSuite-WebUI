@@ -7,6 +7,8 @@ import type {
   ExpenseSearchRequest,
   ExpensePage,
   ExpenseCategory,
+  ExpenseClaimant,
+  ExpenseBillableClaim,
 } from '@/types/expense';
 
 // Expense API wrapper. Talks to the dedicated relational module under
@@ -54,8 +56,8 @@ export const expenseService = {
         };
       }),
 
-  // Claimant is never sent — the server always resolves it from the caller
-  // (spec AD-2, self-service; never "file on behalf of").
+  // The claimant defaults to the caller; send claimantEmployeeId to file the
+  // claim for another Active employee.
   createExpense: (payload: ExpenseCreatePayload): Promise<Expense> =>
     tenantClient
       .post<{ success: boolean; expense: Expense }>(BASE, payload)
@@ -103,6 +105,29 @@ export const expenseService = {
     tenantClient
       .get<{ success: boolean; recordId: string; audit: AuditEntry[] }>(`${BASE}/${uuid}/audit`)
       .then((r) => r.data.audit ?? []),
+
+  // Approved claims, with no live vendor bill, whose claimant's employee vendor is
+  // `vendorUuid` — the Vendor Bill form's expense picker. Empty for any vendor that
+  // is not an employee's.
+  getBillableClaims: (vendorUuid: string): Promise<ExpenseBillableClaim[]> =>
+    tenantClient
+      .get<{ success: boolean; claims: ExpenseBillableClaim[] }>(`${BASE}/billable`, { params: { vendorUuid } })
+      .then((r) => r.data.claims ?? []),
+
+  // Raises the Draft vendor bill for an approved claim that has none (approved
+  // before bills were automatic, or its bill was voided). The claim stays Approved
+  // until the bill is paid. 409/400 if the claim isn't Approved or already has a
+  // live bill; 403 without vendor_bill:create.
+  createBill: (uuid: string): Promise<Expense> =>
+    tenantClient
+      .post<{ success: boolean; expense: Expense }>(`${BASE}/${uuid}/create-bill`, {})
+      .then((r) => r.data.expense),
+
+  // Active employees a claim can be filed for — the form's Employee picker.
+  getClaimants: (): Promise<ExpenseClaimant[]> =>
+    tenantClient
+      .get<{ success: boolean; claimants: ExpenseClaimant[] }>(`${BASE}/claimants`)
+      .then((r) => r.data.claimants ?? []),
 
   // Active lkp_expense_category rows — the line item category picker.
   getCategories: (): Promise<ExpenseCategory[]> =>

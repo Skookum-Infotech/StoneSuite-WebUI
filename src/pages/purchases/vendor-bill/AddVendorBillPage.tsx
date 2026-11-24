@@ -5,6 +5,7 @@ import { FileCheck, AlertCircle, Loader2, Save } from 'lucide-react';
 import { toast } from 'sonner';
 import { vendorBillService } from '@/services/vendorBillService';
 import { purchaseOrderService } from '@/services/purchaseOrderService';
+import { expenseService } from '@/services/expenseService';
 import { lookupService } from '@/services/lookupService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { FormActionBar } from '@/components/crm/FormPrimitives';
@@ -26,11 +27,11 @@ import { DocumentUsedNotice } from '@/components/tenant/documentReview/DocumentU
 import { useVendorBillReviewMode } from '@/hooks/useVendorBillReviewMode';
 import type { VendorBillReviewPatch } from '@/hooks/purchaseReviewTypes';
 import { VENDOR_BILL_REVIEW_FIELDS } from '@/lib/reviewFieldConfigs';
-import type { VendorBillPurchaseOrderRef, VendorBill } from '@/types/vendorBill';
+import type { VendorBillExpenseRef, VendorBillPurchaseOrderRef, VendorBill } from '@/types/vendorBill';
 import { duplicateFrom, type DuplicateConflict } from '@/lib/salesOrderDuplicate';
 import { DuplicateCreateDialog } from '@/components/tenant/documentReview/DuplicateCreateDialog';
 import {
-  vendorBillDefaults, toCreatePayload, calcHeaderTotals, vendorBillLinesFromPurchaseOrder, PAGE_TABS, type PageTab,
+  vendorBillDefaults, toCreatePayload, calcHeaderTotals, vendorBillLinesFromPurchaseOrder, vendorBillLinesFromExpense, PAGE_TABS, type PageTab,
   type VendorBillLineItem,
 } from '@/lib/vendorBillForm';
 import { CopySeedGate } from '@/components/tenant/CopySeedGate';
@@ -52,6 +53,7 @@ interface VendorBillDraft {
   lineItems: VendorBillLineItem[];
   vendor: VendorRef | null;
   purchaseOrder: VendorBillPurchaseOrderRef | null;
+  expense: VendorBillExpenseRef | null;
   customFieldValues: Record<string, unknown>;
 }
 
@@ -80,11 +82,13 @@ function AddVendorBillForm({ source }: { source?: VendorBill }) {
   const [lineItems, setLineItems] = useState<VendorBillLineItem[]>(restored?.lineItems ?? seed?.lineItems ?? []);
   const [vendor, setVendor] = useState<VendorRef | null>(restored?.vendor ?? seed?.vendor ?? null);
   const [purchaseOrder, setPurchaseOrder] = useState<VendorBillPurchaseOrderRef | null>(restored?.purchaseOrder ?? null);
+  const [expense, setExpense] = useState<VendorBillExpenseRef | null>(restored?.expense ?? null);
   const [customFieldValues, setCustomFieldValues] = useState<Record<string, unknown>>(
     restored?.customFieldValues ?? seed?.customFieldValues ?? {},
   );
   const [manualDuplicate, setManualDuplicate] = useState<DuplicateConflict | null>(null);
   const [poItemsError, setPoItemsError] = useState<string>();
+  const [expenseError, setExpenseError] = useState<string>();
 
   const headerTaxPercent = parseFloat(String(data.sales_tax_pct ?? '')) || 0;
   const adjustment = parseFloat(String(data.adjustment ?? '')) || 0;
@@ -99,6 +103,8 @@ function AddVendorBillForm({ source }: { source?: VendorBill }) {
   const changeVendor = useCallback((next: VendorRef | null) => {
     if (next?.id !== vendorIdRef.current) {
       setPurchaseOrder(null);
+      setExpense(null);
+      setExpenseError(undefined);
       setLineItems((ls) => unlinkPoLines(ls));
     }
     vendorIdRef.current = next?.id;
@@ -125,6 +131,33 @@ function AddVendorBillForm({ source }: { source?: VendorBill }) {
       .catch((err: unknown) => {
         if (poFetchRef.current !== requestId) return;
         setPoItemsError(apiErrorMessage(err, "Failed to load the purchase order's items."));
+      });
+  }, [headerTaxPercent]);
+
+  // Picking an employee's approved expense claim raises the bill for it: the
+  // claim's lines fill the items table (one per line, quantity 1) and its number
+  // becomes the vendor invoice / reference number — all editable before saving.
+  // The pick is only a link, so clearing it leaves what was filled in.
+  const expenseFetchRef = useRef(0);
+  const changeExpense = useCallback((next: VendorBillExpenseRef | null) => {
+    setExpense(next);
+    setExpenseError(undefined);
+    if (!next) return;
+    const requestId = ++expenseFetchRef.current;
+    expenseService.getExpense(next.id)
+      .then((claim) => {
+        if (expenseFetchRef.current !== requestId) return;
+        setLineItems(vendorBillLinesFromExpense(claim.items, headerTaxPercent));
+        setData((d) => ({
+          ...d,
+          vendor_invoice_number: claim.expenseNumber,
+          reference_number: claim.expenseNumber,
+          memo: d.memo || claim.memo || '',
+        }));
+      })
+      .catch((err: unknown) => {
+        if (expenseFetchRef.current !== requestId) return;
+        setExpenseError(apiErrorMessage(err, "Failed to load the expense claim's lines."));
       });
   }, [headerTaxPercent]);
 
@@ -178,7 +211,7 @@ function AddVendorBillForm({ source }: { source?: VendorBill }) {
   const documentUsed = review.active && review.phase === 'used';
   const documentFailed = review.active && review.phase === 'failed';
   const guard = useUnsavedChangesGuard(
-    { data, lineItems, vendor, purchaseOrder, customFieldValues },
+    { data, lineItems, vendor, purchaseOrder, expense, customFieldValues },
     !review.active || review.hydrated,
     inventoryReturn.isRestored || vendorReturn.isRestored || Boolean(seed)
       || (review.active && !documentUsed && !documentFailed),
@@ -190,7 +223,7 @@ function AddVendorBillForm({ source }: { source?: VendorBill }) {
   );
 
   // Shared by both return-trip hooks — either one may stash and restore it.
-  const draft: VendorBillDraft = { activeTab, data, lineItems, vendor, purchaseOrder, customFieldValues };
+  const draft: VendorBillDraft = { activeTab, data, lineItems, vendor, purchaseOrder, expense, customFieldValues };
   const { startCreate: startCreateVendor } = vendorReturn.provide(draft, guard.markClean);
 
   const { mutate: save, isPending, error: saveError } = useMutation({
@@ -198,7 +231,7 @@ function AddVendorBillForm({ source }: { source?: VendorBill }) {
       if (!vendor) throw new Error('A vendor is required.');
       const payload = {
         ...toCreatePayload(
-          { ...formData, vendor_uuid: vendor.id, purchase_order_uuid: purchaseOrder?.id },
+          { ...formData, vendor_uuid: vendor.id, purchase_order_uuid: purchaseOrder?.id, expense_uuid: expense?.id },
           lineItems,
           customFieldValues,
         ),
@@ -287,6 +320,9 @@ function AddVendorBillForm({ source }: { source?: VendorBill }) {
             purchaseOrder={purchaseOrder}
             setPurchaseOrder={changePurchaseOrder}
             purchaseOrderItemsError={poItemsError}
+            expense={expense}
+            setExpense={changeExpense}
+            expenseError={expenseError}
             customFieldValues={customFieldValues}
             setCustomField={setCustomField}
             lookups={lookups}

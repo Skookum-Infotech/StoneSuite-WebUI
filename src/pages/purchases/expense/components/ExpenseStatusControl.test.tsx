@@ -75,27 +75,26 @@ describe('ExpenseStatusControl', () => {
     expect(onChange).toHaveBeenCalledWith('SUBM');
   });
 
-  it('requires a second click to confirm a terminal move (Mark Reimbursed)', async () => {
+  it('with nobody configured to approve, offers Submit & Approve on a draft and confirms it', async () => {
     const user = userEvent.setup();
     mockPermissions();
     const onChange = vi.fn();
     render(
       <ExpenseStatusControl
-        order={{ statusCode: 'APPV', approvalStatus: 'approved' }}
+        order={{ statusCode: 'DRFT', approvalStatus: 'none', nextStatusCodes: ['APPV'] }}
         onChange={onChange}
         variant="pill"
       />,
     );
 
-    await user.click(screen.getByRole('button', { name: 'Approved' }));
-    await user.click(screen.getByRole('option', { name: 'Mark Reimbursed' }));
+    await user.click(screen.getByRole('button', { name: 'Draft' }));
+    await user.click(screen.getByRole('option', { name: 'Submit & Approve' }));
 
+    // Approved has no way out of it now, so landing there asks for a second click.
     expect(onChange).not.toHaveBeenCalled();
-    expect(screen.getByRole('option', { name: 'Confirm: Mark Reimbursed' })).toBeInTheDocument();
-
-    await user.click(screen.getByRole('option', { name: 'Confirm: Mark Reimbursed' }));
+    await user.click(screen.getByRole('option', { name: 'Confirm: Submit & Approve' }));
 
     expect(onChange).toHaveBeenCalledOnce();
-    expect(onChange).toHaveBeenCalledWith('REIM');
+    expect(onChange).toHaveBeenCalledWith('APPV');
   });
 });

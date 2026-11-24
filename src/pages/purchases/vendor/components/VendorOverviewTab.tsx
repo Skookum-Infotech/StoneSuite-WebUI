@@ -62,7 +62,7 @@ function ChipList({ items, emptyLabel }: { items: string[]; emptyLabel: ReactNod
 // SalesOrderDetailPage's ModernSection + ReadonlyField pattern, branching on
 // vendorType the same way VendorFormBody does for the Add/Edit forms.
 export function VendorOverviewTab({ vendor, countryName, countryCode }: { vendor: Vendor; countryName?: string; countryCode?: string }) {
-  const isPerson = vendor.vendorType === 'Person';
+  const isPerson = vendor.vendorType !== 'Organization'; // an Employee vendor reads like a person
   const associatedBrands = vendor.associatedBrands ?? [];
   const acceptedPaymentMethods = vendor.acceptedPaymentMethods ?? [];
 

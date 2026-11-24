@@ -237,7 +237,7 @@ export function VendorTable() {
                 ))
               ) : records.length > 0 ? (
                 records.map((vendor) => {
-                  const TypeIcon = vendor.vendorType === 'Person' ? User : Building2;
+                  const TypeIcon = vendor.vendorType === 'Organization' ? Building2 : User;
                   const statusColor = VENDOR_STATUS_COLORS[vendor.status] ?? '#a8a29e';
                   return (
                     <tr key={vendor.id} className="group hover:bg-accent/10 transition-colors duration-150">
@@ -272,14 +272,16 @@ export function VendorTable() {
                       </td>
                       {canEdit && (
                         <td className="px-4 py-3.5 text-right">
-                          <button
-                            type="button"
-                            onClick={() => navigate(`/purchases/vendor/${vendor.id}/edit`)}
-                            aria-label={`Edit vendor ${vendor.displayName}`}
-                            className="inline-flex items-center justify-center rounded-lg border border-stone-200 bg-white p-2 text-stone-500 transition-colors hover:bg-accent hover:border-accent hover:text-accent-foreground cursor-pointer"
-                          >
-                            <Pencil className="size-4" />
-                          </button>
+                          {vendor.vendorType !== 'Employee' && (
+                            <button
+                              type="button"
+                              onClick={() => navigate(`/purchases/vendor/${vendor.id}/edit`)}
+                              aria-label={`Edit vendor ${vendor.displayName}`}
+                              className="inline-flex items-center justify-center rounded-lg border border-stone-200 bg-white p-2 text-stone-500 transition-colors hover:bg-accent hover:border-accent hover:text-accent-foreground cursor-pointer"
+                            >
+                              <Pencil className="size-4" />
+                            </button>
+                          )}
                         </td>
                       )}
                     </tr>
