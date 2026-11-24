@@ -6,6 +6,8 @@ import { notificationService } from '@/services/notificationService';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useHeaderMenuStore } from '@/store/useHeaderMenuStore';
 import { cn } from '@/lib/utils';
+import { NOTIFICATION_HISTORY_KEY, NOTIFICATION_LIST_KEY, NOTIFICATION_SUMMARY_KEY } from '@/lib/notificationKeys';
+import { NOTIFICATIONS_PATH } from '@/lib/notificationRoutes';
 
 // Poll interval for the unread badge — same cadence as HelpMenu's own
 // unread-reply poll, cheap enough to run continuously while a session is
@@ -16,8 +18,8 @@ const UNREAD_POLL_MS = 60_000;
 const LIST_LIMIT = 30;
 const COLLAPSED_COUNT = 3;
 
-const SUMMARY_KEY = ['notifications-summary'];
-const LIST_KEY = ['notifications-list'];
+const SUMMARY_KEY = NOTIFICATION_SUMMARY_KEY;
+const LIST_KEY = NOTIFICATION_LIST_KEY;
 
 // Durable notification history (owner/approver pings, etc. — see
 // approvalchain/notify.go on the backend) surfaced via stonesuite-notify.
@@ -72,6 +74,7 @@ export function NotificationBell() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: SUMMARY_KEY });
       queryClient.invalidateQueries({ queryKey: LIST_KEY });
+      queryClient.invalidateQueries({ queryKey: NOTIFICATION_HISTORY_KEY });
     },
   });
 
@@ -80,6 +83,7 @@ export function NotificationBell() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: SUMMARY_KEY });
       queryClient.invalidateQueries({ queryKey: LIST_KEY });
+      queryClient.invalidateQueries({ queryKey: NOTIFICATION_HISTORY_KEY });
     },
   });
 
@@ -208,6 +212,13 @@ export function NotificationBell() {
               </button>
             )}
           </div>
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); setOpenMenu(null); navigate(NOTIFICATIONS_PATH); }}
+            className="mt-1 flex w-full items-center justify-center rounded-xl border-t border-white/10 px-3 py-2 text-2xs font-semibold text-stone-300 hover:bg-white/[0.06] hover:text-white cursor-pointer"
+          >
+            View all notifications
+          </button>
         </div>
       )}
     </div>

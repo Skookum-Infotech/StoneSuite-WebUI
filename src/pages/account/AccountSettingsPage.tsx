@@ -5,6 +5,7 @@ import { z } from 'zod'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   Shield,
+  Bell,
   CheckCircle2,
   Check,
   Loader2,
@@ -31,6 +32,7 @@ import type { UserRole } from '@/types/auth'
 import type { Grant } from '@/types/tenant'
 import { ProfileNameForm } from './components/ProfileNameForm'
 import { TwoStepVerificationCard } from './components/TwoStepVerificationCard'
+import { DailyDigestCard } from './components/DailyDigestCard'
 
 // ── Password schema ──────────────────────────────────────────────────────────
 
@@ -50,7 +52,7 @@ const passwordSchema = z
   })
 
 type PasswordFields = z.infer<typeof passwordSchema>
-type Tab = 'profile' | 'password' | 'security' | 'roles'
+type Tab = 'profile' | 'password' | 'security' | 'notifications' | 'roles'
 
 // ── Role card ────────────────────────────────────────────────────────────────
 
@@ -265,6 +267,8 @@ export default function AccountSettingsPage() {
     // Two-step verification is staff-only: its endpoints are unreachable from a
     // customer-portal session, and the portal sign-in has no code step to offer.
     ...(isCustomer ? [] : [{ id: 'security' as Tab, label: 'Security', icon: ShieldCheck }]),
+    // The daily digest summarises staff work (assigned installs, bills, approvals): staff only.
+    ...(isCustomer ? [] : [{ id: 'notifications' as Tab, label: 'Notifications', icon: Bell }]),
     ...(isCustomer
       ? []
       : [{ id: 'roles' as Tab, label: 'Roles & Access', icon: Shield, badge: roles.length > 0 ? String(roles.length) : undefined }]),
@@ -481,6 +485,9 @@ export default function AccountSettingsPage() {
 
             {/* ── Security tab ── */}
             {activeTab === 'security' && !isCustomer && <TwoStepVerificationCard />}
+
+            {/* ── Notifications tab ── */}
+            {activeTab === 'notifications' && !isCustomer && <DailyDigestCard />}
 
             {/* ── Roles tab ── */}
             {activeTab === 'roles' && (

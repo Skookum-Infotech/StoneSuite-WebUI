@@ -7,6 +7,7 @@ describe('isCustomerAllowedPath', () => {
     ['/sales/sales_order/abc', true],
     ['/sales/invoice/abc', true],
     ['/account/settings', true],
+    ['/notifications', true],
     ['/sales/sales_order_internal', false],
     ['/sales/invoices', false],
     ['/dashboard', false],
