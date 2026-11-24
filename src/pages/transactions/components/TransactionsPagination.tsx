@@ -93,7 +93,7 @@ export function TransactionsPagination({
                 </button>
               </li>
             ) : (
-              <li key={item} aria-hidden="true" className="flex h-8 w-6 items-center justify-center text-stone-400">…</li>
+              <li key={item} aria-hidden="true" className="flex h-8 w-6 items-center justify-center text-stone-500">…</li>
             ),
           )}
         </ol>

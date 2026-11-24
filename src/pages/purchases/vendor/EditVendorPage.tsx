@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Building, AlertCircle, ChevronRight, Loader2, Save } from 'lucide-react';
+import { Building, AlertCircle, ChevronRight, Loader2, Lock, Save } from 'lucide-react';
 import { vendorService } from '@/services/vendorService';
 import { lookupService } from '@/services/lookupService';
 import { apiErrorMessage } from '@/api/tenantClient';
@@ -102,6 +102,37 @@ export default function EditVendorPage() {
   if (isLoading) return <div className="p-6"><Spinner label="Loading vendor…" /></div>;
   if (loadError || !vendor)
     return <div className="p-6"><ErrorNote>{apiErrorMessage(loadError, 'Failed to load vendor.')}</ErrorNote></div>;
+
+  // An Employee vendor mirrors an employee record and is edited from there; a form
+  // here would be overwritten the next time the employee changes.
+  if (vendor.vendorType === 'Employee') {
+    return (
+      <div className="flex flex-col flex-1 min-h-0 bg-stone-50">
+        <CrmPageHeader
+          backLabel="Vendor"
+          onBack={() => navigate(`/purchases/vendor/${id}`)}
+          icon={Building}
+          title={vendor.displayName || 'Vendor'}
+          subtitle={vendor.vendorType}
+        />
+        <div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 text-center">
+          <Lock className="size-8 text-stone-400" aria-hidden="true" />
+          <p className="text-sm font-semibold text-stone-700">This vendor is an employee and is managed from the employee record.</p>
+          <p className="text-xs text-stone-500">Changes to the employee's name, email or contact details carry over to this vendor automatically.</p>
+          {vendor.employeeId && (
+            <button
+              type="button"
+              onClick={() => navigate(`/config/employees/${vendor.employeeId}`)}
+              aria-label="Open the employee record"
+              className="rounded-lg bg-brand px-3.5 py-1.5 text-xs font-semibold text-stone-900 hover:bg-brand-hover transition-all shadow-sm"
+            >
+              Open employee
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   const saveError = save.error ?? transition.error;
 

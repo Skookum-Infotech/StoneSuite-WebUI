@@ -1,10 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import {
-  Search, ArrowUp, ArrowDown, ArrowUpDown, X, Inbox, Pencil, Filter,
-  ChevronLeft, ChevronRight, Download, Loader2,
-} from 'lucide-react';
+import { Search, X, Inbox, Pencil, Filter, ChevronLeft, ChevronRight, Download, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { itemReceiptService } from '@/services/itemReceiptService';
@@ -19,6 +16,8 @@ import { ItemReceiptFilterDrawer } from './ItemReceiptFilterDrawer';
 import type { ItemReceiptSearchRequest } from '@/types/itemReceipt';
 import { formatDateValue, LIST_DATE_OPTIONS } from '@/lib/dateUtils';
 import { VendorLink } from '@/pages/purchases/vendor/components/VendorLink';
+import { SortIcon } from '@/components/ui/SortIcon';
+import { useListUrlState } from '@/hooks/useListUrlState';
 
 // Columns still shown below the sm breakpoint (indexes into the header row); the rest return from sm up.
 const PHONE_COLUMNS = new Set([0, 2, 3]);
@@ -31,7 +30,6 @@ const EXPORT_PAGE_SIZE = 200;
 // §3), so it's a display column here, never a sort chip.
 
 type SortField = 'recordNumber' | 'receiptDate' | 'warehouseId';
-type SortDir = 'asc' | 'desc';
 
 const PAGE_SIZE = 25;
 
@@ -40,6 +38,8 @@ const SORT_LABELS: Record<SortField, string> = {
   receiptDate: 'Receipt Date',
   warehouseId: 'Location',
 };
+
+const SORT_FIELDS = Object.keys(SORT_LABELS) as SortField[];
 
 const SORT_KEY: Record<SortField, string> = {
   recordNumber: 'record_number',
@@ -59,10 +59,11 @@ export function ItemReceiptTable() {
   const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
   const canEdit = permissionsLoading || hasPermission('item_receipt', 'update');
 
-  const [term, setTerm] = useState('');
-  const [debounced, setDebounced] = useState('');
-  const [sortBy, setSortBy] = useState<SortField>('recordNumber');
-  const [sortDir, setSortDir] = useState<SortDir>('desc');
+  const { search: debounced, sortBy, sortDir, setSearch: setDebounced, setSort } = useListUrlState<SortField>({
+    sortFields: SORT_FIELDS,
+    defaultSort: { field: 'recordNumber', dir: 'desc' },
+  });
+  const [term, setTerm] = useState(debounced);
   const [filters, setFilters] = useState<ItemReceiptFilterState>(EMPTY_FILTER_STATE);
   const [filtersOpen, setFiltersOpen] = useState(false);
 
@@ -86,7 +87,7 @@ export function ItemReceiptTable() {
       setPrevCursors([]);
     }, 300);
     return () => clearTimeout(t);
-  }, [term]);
+  }, [term, setDebounced]);
 
   const req: ItemReceiptSearchRequest = {
     search: debounced || undefined,
@@ -142,19 +143,9 @@ export function ItemReceiptTable() {
   }
 
   function handleSort(field: SortField) {
-    if (sortBy === field) {
-      setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
-    } else {
-      setSortBy(field);
-      setSortDir('desc');
-    }
+    setSort(field, sortBy === field ? (sortDir === 'asc' ? 'desc' : 'asc') : 'desc');
     setCursor('');
     setPrevCursors([]);
-  }
-
-  function SortIcon({ field }: { field: SortField }) {
-    if (sortBy !== field) return <ArrowUpDown className="size-2.5 opacity-40" />;
-    return sortDir === 'asc' ? <ArrowUp className="size-2.5" /> : <ArrowDown className="size-2.5" />;
   }
 
   async function handleDownloadCsv() {
@@ -226,7 +217,7 @@ export function ItemReceiptTable() {
               )}
             >
               {label}
-              <SortIcon field={field} />
+              <SortIcon active={sortBy === field} dir={sortDir} />
             </button>
           ))}
         </div>

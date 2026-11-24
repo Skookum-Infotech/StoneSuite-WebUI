@@ -10,7 +10,13 @@
 
 import type { FilterClause, SortKey } from './tenant';
 
+/** The types a person can pick when creating or editing a vendor. */
 export type VendorType = 'Person' | 'Organization';
+
+/** Every vendor type a vendor record can carry. 'Employee' is written only by the
+ *  backend, for the vendor of an employee (Configuration > Employee): it is shown,
+ *  never picked, and is edited from the employee's page. */
+export type VendorRecordType = VendorType | 'Employee';
 
 /** schema.org/ContactPoint (subset) — a named point of contact for the vendor. */
 export interface VendorContactPoint {
@@ -97,8 +103,11 @@ export const VENDOR_STATUS_COLORS: Record<string, string> = {
   Inactive: '#6b7280',
 };
 
-export interface Vendor extends VendorCreatePayload {
+export interface Vendor extends Omit<VendorCreatePayload, 'vendorType'> {
   id: string;
+  vendorType: VendorRecordType;
+  /** The employee an Employee-type vendor stands for; empty for any other vendor. */
+  employeeId?: string;
   vendorNumber: string;
   status: string; // human label, e.g. "Active"
   statusCode: string; // lkp_record_status code, e.g. "ACT_"

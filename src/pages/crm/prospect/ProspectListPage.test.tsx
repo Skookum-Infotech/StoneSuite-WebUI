@@ -10,6 +10,7 @@ const navigate = vi.hoisted(() => vi.fn());
 vi.mock('react-router-dom', async () => ({
   useNavigate: () => navigate,
   Link: (await import('@/test/routerLinkStub')).RouterLinkStub,
+  useSearchParams: (await import('@/test/routerSearchParamsStub')).useSearchParams,
 }));
 vi.mock('@/hooks/useUserPermissions', () => ({ useUserPermissions: vi.fn() }));
 vi.mock('@/services/crmService', async (importOriginal) => {

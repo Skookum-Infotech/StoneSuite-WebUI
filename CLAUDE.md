@@ -169,13 +169,13 @@ layout**:
   Grand Total (Invoice/Vendor Bill's Balance Due, Payment/Credit's Unapplied). A doc
   that's just a Grand Total (Sales Order, PO, Quote) skips it — the totals card's own
   bold row is emphasis enough; don't show the same number three times.
-- **Money/counterparty documents** (Sales, Purchases) get the **Terms & Conditions** and
-  **Payment Details** footer cards on every record type in the domain, even a non-money
-  one (Fabrication Job, Vendor) — use `drawTextCard(..., { placeholder: true })` with
-  "will be available in a future update" copy when the record has no real terms/bank
-  field, real content when it does (e.g. a Purchase Order's own `termsConditions`).
-  **Profile-only domains** (CRM, Inventory) skip both entirely — they aren't documents
-  and the cards would look like a mistake, not polish.
+- **Terms & Conditions / Payment Details** — never print a "coming soon" placeholder card.
+  A **Terms & Conditions** card appears only when the record has real terms (a Purchase
+  Order's or Vendor Bill's own `termsConditions`). **Payment Details** (the tenant's bank
+  details from Company Info) belong on documents a *customer* pays — invoice, quote,
+  estimate, sales order — which the backend renders (`serverDocPdf`); a purchase document
+  has the tenant as the payer, so it never gets that card. Profile-only domains (CRM,
+  Inventory) skip both.
 - A real free-text field (memo/notes) promotes to a `drawTextCard` "Notes" card instead
   of sitting in the generic Field/Value grid — but only one field per record; if a page
   has several (memo *and* notes *and* internal notes), promote the most customer-facing

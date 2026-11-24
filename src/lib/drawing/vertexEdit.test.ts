@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { area, lShapeOutline, rectOutline, uShapeOutline } from './geometry';
+import { area, lShapeOutline, rectOutline, uShapeOutline, distance } from './geometry';
 import { insertVertex, moveVertex, removeVertex, setEdgeLength } from './vertexEdit';
-import { distance } from './geometry';
+
 
 describe('setEdgeLength', () => {
   it('stretches a rectangle and keeps it a rectangle', () => {

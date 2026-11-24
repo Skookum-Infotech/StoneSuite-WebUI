@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 vi.mock('react-router-dom', async () => ({
   useNavigate: () => vi.fn(),
   Link: (await import('@/test/routerLinkStub')).RouterLinkStub,
+  useSearchParams: (await import('@/test/routerSearchParamsStub')).useSearchParams,
 }));
 vi.mock('sonner', () => ({ toast: { info: vi.fn(), error: vi.fn(), success: vi.fn() } }));
 vi.mock('@/hooks/useAIStatus', () => ({ useAIStatus: vi.fn() }));

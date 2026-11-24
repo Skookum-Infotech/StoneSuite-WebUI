@@ -10,13 +10,13 @@ interface Wf {
 const wf = (key: string, name = key, description = ''): Wf => ({ key, name, description });
 
 describe('groupWorkflows', () => {
-  it('splits the seeded workflows into CRM, Sales, Purchases, Finance and Inventory', () => {
+  it('splits the seeded workflows into CRM, Sales, Purchases, Finance, Inventory and Staff', () => {
     const all = WORKFLOW_GROUPS.flatMap((g) => g.keys).map((k) => wf(k));
 
     const sections = groupWorkflows(all);
 
-    expect(sections.map((s) => s.group.id)).toEqual(['crm', 'sales', 'purchases', 'finance', 'inventory']);
-    expect(sections.map((s) => s.workflows.length)).toEqual([3, 8, 8, 1, 1]);
+    expect(sections.map((s) => s.group.id)).toEqual(['crm', 'sales', 'purchases', 'finance', 'inventory', 'staff']);
+    expect(sections.map((s) => s.workflows.length)).toEqual([3, 8, 8, 1, 1, 1]);
   });
 
   // Bin Transfer is the one inventory module with an approver chain, so it is

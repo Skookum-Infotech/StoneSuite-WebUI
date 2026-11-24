@@ -1,6 +1,6 @@
-import { describe, it, expect } from "vitest"
+import { describe, it, expect, vi } from "vitest"
 import type * as JsPdfModule from "jspdf"
-import { vi } from "vitest"
+
 
 // jsPDF falls back to writing a real file via Node's fs when no browser download
 // mechanism is available (as under jsdom) — stub `save` so tests don't litter the

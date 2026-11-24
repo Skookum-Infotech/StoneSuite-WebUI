@@ -77,11 +77,27 @@ export const onboardingService = {
 
 // ----- Platform admin (Phase 1) ---------------------------------------------
 
+// The platform tenant list is fetched a page at a time and stitched together so
+// no single response grows with the tenant count. The cursor is the server's
+// opaque value, passed back untouched.
+const TENANT_PAGE_SIZE = 200;
+const MAX_TENANT_PAGES = 500; // safety valve against a server that never ends the list
+
 export const platformService = {
-  listTenants: () =>
-    tenantClient
-      .get<{ success: boolean; tenants: Tenant[] }>('/platform/tenants')
-      .then((r) => r.data.tenants ?? []),
+  listTenants: async (): Promise<Tenant[]> => {
+    const all: Tenant[] = [];
+    let cursor = '';
+    for (let page = 0; page < MAX_TENANT_PAGES; page += 1) {
+      const { data } = await tenantClient.get<{ success: boolean; tenants: Tenant[]; nextCursor?: string }>(
+        '/platform/tenants',
+        { params: { limit: TENANT_PAGE_SIZE, ...(cursor ? { cursor } : {}) } },
+      );
+      all.push(...(data.tenants ?? []));
+      cursor = data.nextCursor ?? '';
+      if (!cursor) break;
+    }
+    return all;
+  },
   // Owner-filled form → provisions immediately (no approval).
   onboardCustomer: (formData: OnboardingFormData) =>
     tenantClient.post<CreateTenantResult>('/platform/tenants', { formData }).then((r) => r.data),

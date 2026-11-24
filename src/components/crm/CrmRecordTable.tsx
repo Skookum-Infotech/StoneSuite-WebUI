@@ -2,10 +2,7 @@ import { Select } from '@/components/ui/select';
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import {
-  Search, ArrowUp, ArrowDown, ArrowUpDown, X, Inbox, Pencil,
-  ChevronLeft, ChevronRight, Download, Loader2,
-} from 'lucide-react';
+import { Search, X, Inbox, Pencil, ChevronLeft, ChevronRight, Download, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { LIST_DATE_OPTIONS } from '@/lib/dateUtils';
 import { crmService, CRM_WORKFLOW_KEYS } from '@/services/crmService';
@@ -24,6 +21,8 @@ import {
   recordApprovalState,
   type StatusInfo, type FilterRequest, type FilterClause, type WorkflowRecord,
 } from '@/types/tenant';
+import { SortIcon } from '@/components/ui/SortIcon';
+import { useListUrlState } from '@/hooks/useListUrlState';
 
 // ── Avatar helpers ─────────────────────────────────────────────────────────────
 
@@ -66,7 +65,6 @@ export type CrmTableConfig = {
 // ── Internal types ─────────────────────────────────────────────────────────────
 
 type SortField = 'createdAt' | 'updatedAt';
-type SortDir   = 'asc' | 'desc';
 
 const PAGE_SIZE = 25;
 // Larger page size for CSV export — fewer round trips while paging through every
@@ -77,6 +75,8 @@ const SORT_LABELS: Record<SortField, string> = {
   createdAt: 'Date Created',
   updatedAt: 'Date Modified',
 };
+
+const SORT_FIELDS = Object.keys(SORT_LABELS) as SortField[];
 
 const SORT_KEY: Record<SortField, string> = {
   createdAt: 'created_at',
@@ -125,11 +125,13 @@ export function CrmRecordTable({ config }: Props) {
   });
 
   // ── filter / sort state ────────────────────────────────────────────────────
-  const [nameFilter,    setNameFilter]    = useState('');
-  const [debouncedName, setDebouncedName] = useState('');
+  // Search text and sort live in the URL so a reload / Back lands on the same view.
+  const { search: debouncedName, sortBy, sortDir, setSearch: setDebouncedName, setSort } = useListUrlState<SortField>({
+    sortFields: SORT_FIELDS,
+    defaultSort: { field: 'createdAt', dir: 'desc' },
+  });
+  const [nameFilter,    setNameFilter]    = useState(debouncedName);
   const [statusFilter,  setStatusFilter]  = useState('');
-  const [sortBy,        setSortBy]        = useState<SortField>('createdAt');
-  const [sortDir,       setSortDir]       = useState<SortDir>('desc');
 
   // ── cursor-stack pagination ────────────────────────────────────────────────
   // cursor     = the cursor sent with the current request ('' = page 1)
@@ -146,7 +148,7 @@ export function CrmRecordTable({ config }: Props) {
       setPrevCursors([]);
     }, 300);
     return () => clearTimeout(t);
-  }, [nameFilter]);
+  }, [nameFilter, setDebouncedName]);
 
   // ── statuses ───────────────────────────────────────────────────────────────
   const { data: statusData } = useQuery({
@@ -229,19 +231,9 @@ export function CrmRecordTable({ config }: Props) {
   }
 
   function handleSort(field: SortField) {
-    if (sortBy === field) {
-      setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
-    } else {
-      setSortBy(field);
-      setSortDir('desc');
-    }
+    setSort(field, sortBy === field ? (sortDir === 'asc' ? 'desc' : 'asc') : 'desc');
     setCursor('');
     setPrevCursors([]);
-  }
-
-  function SortIcon({ field }: { field: SortField }) {
-    if (sortBy !== field) return <ArrowUpDown className="size-2.5 opacity-40" />;
-    return sortDir === 'asc' ? <ArrowUp className="size-2.5" /> : <ArrowDown className="size-2.5" />;
   }
 
   // ── CSV export ─────────────────────────────────────────────────────────────
@@ -351,7 +343,7 @@ export function CrmRecordTable({ config }: Props) {
               )}
             >
               {label}
-              <SortIcon field={field} />
+              <SortIcon active={sortBy === field} dir={sortDir} />
             </button>
           ))}
         </div>

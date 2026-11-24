@@ -37,7 +37,7 @@ export function AreaSummary() {
   return (
     <div className="w-72 rounded-lg bg-stone-900 p-3 text-xs text-white shadow-xl">
       <p className="mb-2 font-semibold">Total Project Measurements (sq ft)</p>
-      <div className="mb-1 flex items-baseline justify-between gap-6 text-2xs uppercase tracking-wide text-stone-400">
+      <div className="mb-1 flex items-baseline justify-between gap-6 text-2xs uppercase tracking-wide text-stone-500">
         <span>&nbsp;</span>
         <span className="flex shrink-0 gap-4">
           <span className="w-16 text-right">Countertop</span>

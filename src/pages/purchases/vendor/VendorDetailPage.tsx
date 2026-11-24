@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Building, Upload, Pencil, FileDown, Loader2 } from 'lucide-react';
+import { Building, Upload, Pencil, FileDown, Loader2, UserRound } from 'lucide-react';
 import { vendorService } from '@/services/vendorService';
 import { lookupService } from '@/services/lookupService';
 import { apiErrorMessage } from '@/api/tenantClient';
@@ -75,7 +75,7 @@ export default function VendorDetailPage() {
     setExportingPdf(true);
     try {
       const { exportPurchasesRecordToPdf } = await import('@/lib/purchasesPdfExport');
-      const isPerson = vendor.vendorType === 'Person';
+      const isPerson = vendor.vendorType !== 'Organization';
       await exportPurchasesRecordToPdf({
         recordType: 'vendor',
         title: vendor.displayName || 'Vendor',
@@ -196,6 +196,7 @@ export default function VendorDetailPage() {
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
             <p className="text-xs font-semibold text-stone-500">Quick Actions</p>
             <div className="space-y-0.5">
+              {vendor.vendorType !== 'Employee' && (
               <button
                 type="button"
                 onClick={() => navigate(`/purchases/vendor/${id}/edit`, { state: { initialTab: 'files' } })}
@@ -204,7 +205,8 @@ export default function VendorDetailPage() {
                 <Upload className="size-4 text-stone-400 shrink-0" />
                 Upload file
               </button>
-              {canEdit && (
+              )}
+              {canEdit && vendor.vendorType !== 'Employee' && (
                 <button
                   type="button"
                   onClick={() => navigate(`/purchases/vendor/${id}/edit`)}
@@ -212,6 +214,17 @@ export default function VendorDetailPage() {
                 >
                   <Pencil className="size-4 text-stone-400 shrink-0" />
                   Edit vendor
+                </button>
+              )}
+              {vendor.vendorType === 'Employee' && vendor.employeeId && (
+                <button
+                  type="button"
+                  onClick={() => navigate(`/config/employees/${vendor.employeeId}`)}
+                  aria-label="Open this vendor's employee record"
+                  className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs text-stone-700 w-full transition-colors text-left"
+                >
+                  <UserRound className="size-4 text-stone-400 shrink-0" />
+                  Open employee
                 </button>
               )}
               <button

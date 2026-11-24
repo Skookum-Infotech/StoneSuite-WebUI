@@ -33,7 +33,7 @@ export function AnomalyRow({ anomaly, busy, onReview }: Props) {
           {ANOMALY_SEVERITY_LABELS[anomaly.severity]}
         </span>
         <span className="text-2xs font-medium text-stone-500">{anomalyRuleLabel(anomaly.ruleKey)}</span>
-        <span className="text-2xs text-stone-400">
+        <span className="text-2xs text-stone-500">
           · Detected {new Date(anomaly.detectedAt).toLocaleString()}
         </span>
         <span className="ml-auto rounded-md bg-stone-100 px-2 py-0.5 text-2xs font-medium text-stone-600">

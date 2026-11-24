@@ -9,8 +9,10 @@
 // `/api/tenant/expenses*`.
 //
 // Structurally simpler than Requisition (spec AD-3): no vendor, no tax, no
-// priority. The claimant is never a request field (spec AD-2) — it is always
-// the acting employee, resolved server-side from the caller's JWT.
+// priority. The claimant defaults to the acting employee (spec AD-2); sending
+// `claimantEmployeeId` files the claim for another Active employee instead.
+// Approving a claim raises a Vendor Bill from it; the claim becomes Paid when
+// that bill is paid.
 import type { FilterClause, RecordApprover, SortKey } from '@/types/tenant';
 
 // ── Create / update inputs (client → server) ─────────────────────────────────
@@ -28,6 +30,8 @@ export interface ExpenseLineInput {
 }
 
 export interface ExpenseCreatePayload {
+  /** The employee the claim is for; omitted = the caller. Must be Active. */
+  claimantEmployeeId?: number;
   department?: string;
   memo?: string;
   customFields?: Record<string, unknown>;
@@ -43,7 +47,32 @@ export type ExpenseUpdatePayload = ExpenseCreatePayload;
 /** `lkp_record_status` codes seeded for the EXPN record type. RJCT is only
  *  reachable via the dedicated Reject endpoint, never the generic transition
  *  map (spec AD-5). */
-export type ExpenseStatusCode = 'DRFT' | 'SUBM' | 'APPV' | 'RJCT' | 'REIM';
+export type ExpenseStatusCode = 'DRFT' | 'SUBM' | 'APPV' | 'RJCT' | 'PAID';
+
+/** The vendor bill an approved claim raised (GET /api/tenant/expenses/{id}). */
+export interface ExpenseBillRef {
+  id: string;
+  number: string;
+  statusCode: string;
+  status: string;
+}
+
+/** An approved claim still waiting for a vendor bill (GET /api/tenant/expenses/billable) —
+ *  what the Vendor Bill form's expense picker lists for an employee vendor. */
+export interface ExpenseBillableClaim {
+  id: string;
+  expenseNumber: string;
+  claimantName: string;
+  total: number;
+  memo?: string;
+}
+
+/** An Active employee a claim can be filed for (GET /api/tenant/expenses/claimants). */
+export interface ExpenseClaimant {
+  id: number;
+  code: string; // the employee's email
+  name: string;
+}
 
 /** A response line carries the resolved category snapshot, not just the code
  *  submitted at save time. */
@@ -77,6 +106,9 @@ export interface Expense {
   callerAlreadyApproved: boolean;
 
   claimantEmployeeId: number;
+  claimantName?: string;
+  /** Set once the claim is approved: the bill that pays it. */
+  vendorBill?: ExpenseBillRef;
   department: string;
   memo?: string;
 
@@ -99,7 +131,7 @@ export interface Expense {
 export type ExpenseSummary = Pick<
   Expense,
   | 'id' | 'expenseNumber' | 'status' | 'statusCode' | 'approvalStatus' | 'nextStatusCodes'
-  | 'claimantEmployeeId' | 'department' | 'total' | 'createdAt' | 'updatedAt'
+  | 'claimantEmployeeId' | 'claimantName' | 'department' | 'total' | 'createdAt' | 'updatedAt'
 >;
 
 /** Search request = the shared `query.Request` plus the optional global-search

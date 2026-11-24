@@ -6,6 +6,7 @@ import type { ReorderItem } from '@/types/replenishment';
 
 vi.mock('react-router-dom', async () => ({
   Link: (await import('@/test/routerLinkStub')).RouterLinkStub,
+  useSearchParams: (await import('@/test/routerSearchParamsStub')).useSearchParams,
 }));
 vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn() } }));
 vi.mock('@/services/replenishmentService', () => ({ replenishmentService: { draft: vi.fn() } }));

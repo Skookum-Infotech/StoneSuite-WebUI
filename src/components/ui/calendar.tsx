@@ -1,7 +1,14 @@
 import { ChevronLeft, ChevronRight } from "lucide-react"
-import { DayPicker, type DayPickerProps } from "react-day-picker"
-
+import { DayPicker, type ChevronProps, type DayPickerProps } from "react-day-picker"
 import { cn } from "@/lib/utils"
+
+function CalendarChevron({ orientation, ...chevronProps }: ChevronProps) {
+  return orientation === "left" ? (
+    <ChevronLeft className="size-4" {...chevronProps} />
+  ) : (
+    <ChevronRight className="size-4" {...chevronProps} />
+  )
+}
 
 // Thin shadcn-style wrapper around react-day-picker, styled to match the
 // app's stone/brand palette (same tokens StatusSelect.tsx uses) instead of
@@ -40,12 +47,7 @@ function Calendar({ className, classNames, ...props }: DayPickerProps) {
         ...classNames,
       }}
       components={{
-        Chevron: ({ orientation, ...chevronProps }) =>
-          orientation === "left" ? (
-            <ChevronLeft className="size-4" {...chevronProps} />
-          ) : (
-            <ChevronRight className="size-4" {...chevronProps} />
-          ),
+        Chevron: CalendarChevron,
       }}
       {...props}
     />
