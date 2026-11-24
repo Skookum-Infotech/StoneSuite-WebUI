@@ -1,10 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import {
-  Search, ArrowUp, ArrowDown, ArrowUpDown, X, Landmark, Pencil, Filter,
-  ChevronLeft, ChevronRight, Download, Loader2,
-} from 'lucide-react';
+import { Search, X, Landmark, Pencil, Filter, ChevronLeft, ChevronRight, Download, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { chartOfAccountsService } from '@/services/chartOfAccountsService';
@@ -21,6 +18,8 @@ import { AccountFilterDrawer } from './AccountFilterDrawer';
 import { BulkActionBar } from './BulkActionBar';
 import { AccountFormDrawer } from './AccountFormDrawer';
 import { formatDateValue, LIST_DATE_OPTIONS } from '@/lib/dateUtils';
+import { SortIcon } from '@/components/ui/SortIcon';
+import { useListUrlState } from '@/hooks/useListUrlState';
 
 import { buttonVariants } from '@/components/ui/button';
 const EXPORT_PAGE_SIZE = 200;
@@ -31,13 +30,14 @@ const PAGE_SIZE = 25;
 // limited to code/created_at/updated_at (resolver.go); "code" is this
 // module's record_number equivalent.
 type SortField = 'code' | 'createdAt' | 'updatedAt';
-type SortDir = 'asc' | 'desc';
 
 const SORT_LABELS: Record<SortField, string> = {
   code: 'Code',
   createdAt: 'Created',
   updatedAt: 'Updated',
 };
+
+const SORT_FIELDS = Object.keys(SORT_LABELS) as SortField[];
 
 const SORT_KEY: Record<SortField, string> = {
   code: 'code',
@@ -57,10 +57,11 @@ export function AccountTableView() {
   const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
   const canUpdate = permissionsLoading || hasPermission('chart_of_account', 'update');
 
-  const [term, setTerm] = useState('');
-  const [debounced, setDebounced] = useState('');
-  const [sortBy, setSortBy] = useState<SortField>('code');
-  const [sortDir, setSortDir] = useState<SortDir>('asc');
+  const { search: debounced, sortBy, sortDir, setSearch: setDebounced, setSort } = useListUrlState<SortField>({
+    sortFields: SORT_FIELDS,
+    defaultSort: { field: 'code', dir: 'asc' },
+  });
+  const [term, setTerm] = useState(debounced);
   const [filters, setFilters] = useState<AccountTableFilterState>(EMPTY_ACCOUNT_TABLE_FILTER_STATE);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [includeInactive, setIncludeInactive] = useState(false);
@@ -82,7 +83,7 @@ export function AccountTableView() {
       setPrevCursors([]);
     }, 300);
     return () => clearTimeout(t);
-  }, [term]);
+  }, [term, setDebounced]);
 
   const req: AccountSearchRequest = {
     search: debounced || undefined,
@@ -147,12 +148,7 @@ export function AccountTableView() {
   }
 
   function handleSort(field: SortField) {
-    if (sortBy === field) {
-      setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
-    } else {
-      setSortBy(field);
-      setSortDir('asc');
-    }
+    setSort(field, sortBy === field ? (sortDir === 'asc' ? 'desc' : 'asc') : 'asc');
     resetPaging();
   }
 
@@ -162,11 +158,6 @@ export function AccountTableView() {
       if (next.has(id)) next.delete(id); else next.add(id);
       return next;
     });
-  }
-
-  function SortIcon({ field }: { field: SortField }) {
-    if (sortBy !== field) return <ArrowUpDown className="size-2.5 opacity-40" />;
-    return sortDir === 'asc' ? <ArrowUp className="size-2.5" /> : <ArrowDown className="size-2.5" />;
   }
 
   async function handleDownloadCsv() {
@@ -248,7 +239,7 @@ export function AccountTableView() {
               )}
             >
               {label}
-              <SortIcon field={field} />
+              <SortIcon active={sortBy === field} dir={sortDir} />
             </button>
           ))}
         </div>

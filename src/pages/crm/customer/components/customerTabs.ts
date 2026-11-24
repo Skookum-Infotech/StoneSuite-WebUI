@@ -4,6 +4,7 @@ import { useLocation, useSearchParams } from 'react-router-dom';
 export const CUSTOMER_TABS = [
   { key: 'overview', label: 'Overview' },
   { key: 'transactions', label: 'Transactions' },
+  { key: 'communication', label: 'Communication' },
   { key: 'files', label: 'Files' },
   { key: 'portal', label: 'Portal Access' },
   { key: 'audit', label: 'Audit' },

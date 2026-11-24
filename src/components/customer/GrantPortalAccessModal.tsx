@@ -5,9 +5,8 @@ import { toast } from "sonner";
 import { portalAccessService } from "@/services/portalAccessService";
 import { apiErrorMessage } from "@/api/tenantClient";
 import { ErrorNote } from "@/components/tenant/ui";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 
-import { buttonVariants } from '@/components/ui/button';
 // Long enough to read and act on: a failed invite is something staff must fix.
 const EMAIL_FAILURE_TOAST_MS = 12000;
 

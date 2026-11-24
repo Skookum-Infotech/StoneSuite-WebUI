@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { Drawing, Piece } from '@/types/drawing';
-import { VIEWPORT_HEIGHT, VIEWPORT_WIDTH, ZOOM_MAX } from '@/lib/drawing/constants';
+import { VIEWPORT_HEIGHT, VIEWPORT_WIDTH, ZOOM_MAX, ZOOM_MIN } from '@/lib/drawing/constants';
 import { rectOutline } from '@/lib/drawing/geometry';
 import { DrawingEditorProvider, useDrawingEditor } from './DrawingEditorContext';
 
@@ -132,11 +132,10 @@ describe('fitToArea', () => {
     expect(zoom * widthMm).toBeLessThanOrEqual(VIEWPORT_HEIGHT);
   });
 
-  it('clamps to ZOOM_MIN for content too large to fit even at the 25% floor, rather than under- or over-shooting it', async () => {
-    // A 12ft U-shape — larger than the viewport can show even at 25% zoom
-    // (the spec's own floor). "Fit" can only get as close as that floor
-    // allows; it must not pick something smaller or larger than it.
-    const piece = makePiece('p1', rectOutline(300 * 25.4, 200 * 25.4));
+  it('clamps to ZOOM_MIN for content too large to fit even at the floor, rather than under- or over-shooting it', async () => {
+    // 3000" x 2000" (76 m x 51 m) — larger than the viewport can show even at the 2% floor. "Fit" can only get as close
+    // as that floor allows; it must not pick something smaller or larger than it.
+    const piece = makePiece('p1', rectOutline(3000 * 25.4, 2000 * 25.4));
     render(
       <DrawingEditorProvider
         drawing={{ ...DRAWING, areas: [{ ...DRAWING.areas[0], pieces: [piece] }] }}
@@ -146,7 +145,7 @@ describe('fitToArea', () => {
       </DrawingEditorProvider>,
     );
     await userEvent.click(screen.getByRole('button', { name: 'fit' }));
-    expect(screen.getByTestId('zoom').textContent).toBe('0.25');
+    expect(screen.getByTestId('zoom').textContent).toBe(String(ZOOM_MIN));
   });
 
   it('never zooms in past ZOOM_MAX for a tiny piece', async () => {

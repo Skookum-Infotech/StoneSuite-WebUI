@@ -1,20 +1,19 @@
-// Production-grade ESLint flat config for React 19 + TypeScript
-// Required packages not yet installed — run:
-//   npm install -D eslint-plugin-react eslint-plugin-jsx-a11y eslint-plugin-import
+// Production-grade ESLint flat config for React 19 + TypeScript.
+// eslint-plugin-react / -jsx-a11y / -import only declare peer support up to
+// ESLint 9, so this repo (ESLint 10) uses their maintained successors instead:
+// @eslint-react, eslint-plugin-jsx-a11y-x and eslint-plugin-import-x.
 import js from '@eslint/js'
 import globals from 'globals'
+import eslintReact from '@eslint-react/eslint-plugin'
+import jsxA11y from 'eslint-plugin-jsx-a11y-x'
+import importPlugin from 'eslint-plugin-import-x'
 import reactHooks from 'eslint-plugin-react-hooks'
 import reactRefresh from 'eslint-plugin-react-refresh'
 import tseslint from 'typescript-eslint'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
-// TODO: uncomment after installing: npm install -D eslint-plugin-react eslint-plugin-jsx-a11y eslint-plugin-import
-// import react from 'eslint-plugin-react'
-// import jsxA11y from 'eslint-plugin-jsx-a11y'
-// import importPlugin from 'eslint-plugin-import'
-
 export default defineConfig([
-  globalIgnores(['dist/', 'node_modules/', '*.config.ts', '*.config.js']),
+  globalIgnores(['dist/', 'node_modules/', '.claude/**', '.superpowers/**', '*.config.ts', '*.config.js']),
 
   {
     files: ['**/*.{ts,tsx}'],
@@ -24,6 +23,11 @@ export default defineConfig([
       reactHooks.configs.flat.recommended,
       reactRefresh.configs.vite,
     ],
+    plugins: {
+      '@eslint-react': eslintReact,
+      'jsx-a11y-x': jsxA11y,
+      'import-x': importPlugin,
+    },
     languageOptions: {
       globals: globals.browser,
       parserOptions: {
@@ -53,28 +57,24 @@ export default defineConfig([
       'eqeqeq': ['error', 'always'],
       'no-implicit-coercion': 'error',
 
-      // TODO: enable after installing eslint-plugin-react
-      // 'react/jsx-key': 'error',
-      // 'react/no-array-index-key': 'warn',
-      // 'react/no-unstable-nested-components': 'error',
-      // 'react/self-closing-comp': 'error',
-      // 'react/prop-types': 'off',  // TypeScript handles this
+      // React (@eslint-react; prop-types is off because TypeScript covers it)
+      '@eslint-react/no-missing-key': 'error',
+      '@eslint-react/no-array-index-key': 'warn',
+      '@eslint-react/no-nested-component-definitions': 'error',
 
-      // TODO: enable after installing eslint-plugin-jsx-a11y
-      // 'jsx-a11y/alt-text': 'error',
-      // 'jsx-a11y/aria-props': 'error',
-      // 'jsx-a11y/click-events-have-key-events': 'error',
-      // 'jsx-a11y/interactive-supports-focus': 'error',
-      // 'jsx-a11y/no-noninteractive-element-interactions': 'warn',
+      // Accessibility (jsx-a11y-x)
+      'jsx-a11y-x/alt-text': 'error',
+      'jsx-a11y-x/aria-props': 'error',
+      // 'warn', not 'error': ~90 modal backdrops close on a mouse click while
+      // keyboard users dismiss with Escape (useModalDialog). Splitting the
+      // backdrop from the dialog element is the ModalShell refactor; once that
+      // lands this goes back to 'error'.
+      'jsx-a11y-x/click-events-have-key-events': 'warn',
+      'jsx-a11y-x/interactive-supports-focus': 'error',
+      'jsx-a11y-x/no-noninteractive-element-interactions': 'warn',
 
-      // TODO: enable after installing eslint-plugin-import
-      // 'import/no-unused-modules': 'error',
-      // 'import/order': ['error', {
-      //   groups: ['builtin', 'external', 'internal', 'parent', 'sibling', 'index'],
-      //   'newlines-between': 'always',
-      //   alphabetize: { order: 'asc', caseInsensitive: true },
-      // }],
-      // 'import/no-duplicates': 'error',
+      // Imports (import-x)
+      'import-x/no-duplicates': 'error',
     },
   },
 

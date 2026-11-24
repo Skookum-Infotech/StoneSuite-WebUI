@@ -1,5 +1,6 @@
 import { SUPPORT_PATH } from '@/lib/feedback';
 import { CREATED_ORDERS_PATH } from '@/lib/createdOrderRoutes';
+import { NOTIFICATIONS_PATH } from '@/lib/notificationRoutes';
 
 // Paths a customer-portal session may reach under MainLayout — its four
 // document types (List and Detail; Add/Edit already render "Access Denied" via
@@ -19,6 +20,7 @@ export const CUSTOMER_ALLOWED_PATH_PREFIXES: readonly string[] = [
   '/sales/refund',
   CREATED_ORDERS_PATH,
   '/account/settings',
+  NOTIFICATIONS_PATH,
   '/customer/fabrication-approvals',
   SUPPORT_PATH,
 ];
@@ -29,5 +31,7 @@ export const CUSTOMER_ALLOWED_PATH_PREFIXES: readonly string[] = [
  *  reuses a resource the portal is granted (the Activity Planner reads under
  *  `sales_order:read`) must not show up in their menu. */
 export function isCustomerAllowedPath(pathname: string): boolean {
-  return CUSTOMER_ALLOWED_PATH_PREFIXES.some((prefix) => pathname.startsWith(prefix));
+  return CUSTOMER_ALLOWED_PATH_PREFIXES.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+  );
 }

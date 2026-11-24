@@ -432,6 +432,10 @@ export const FilesContent = forwardRef<EditableFilesPanelHandle, FilesContentPro
             onDragEnter={onDragEnter} onDragLeave={onDragLeave}
             onDragOver={onDragOver}  onDrop={onDrop}
             onClick={() => fileInputRef.current?.click()}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileInputRef.current?.click(); } }}
+            role="button"
+            tabIndex={0}
+            aria-label="Upload files"
             className={cn(
               'relative rounded-lg border-2 border-dashed px-6 py-7 text-center transition-all duration-200 cursor-pointer group',
               dragging

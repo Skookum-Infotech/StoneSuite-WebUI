@@ -2,10 +2,7 @@ import { Select } from '@/components/ui/select';
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import {
-  Search, ArrowUp, ArrowDown, ArrowUpDown, X, Inbox, Pencil,
-  ChevronLeft, ChevronRight, Download, Loader2,
-} from 'lucide-react';
+import { Search, X, Inbox, Pencil, ChevronLeft, ChevronRight, Download, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { LIST_DATE_OPTIONS } from '@/lib/dateUtils';
 import { crmService, CRM_WORKFLOW_KEYS } from '@/services/crmService';
@@ -16,11 +13,16 @@ import { Badge } from '@/components/tenant/ui';
 import { resolveStatusColor } from '@/components/crm/formUtils';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { buildCrmCsvFilename, buildCrmRecordsCsv, downloadCsv } from '@/lib/crmCsvExport';
+import { useIdSelection } from '@/hooks/useIdSelection';
+import { BulkSelectionBar } from '@/components/tenant/BulkSelectionBar';
+import { SelectAllCheckbox, SelectRowCheckbox } from '@/components/tenant/SelectionCheckboxes';
 import { CRM_WORKFLOW_ROUTES } from '@/components/crm/crmWorkflowRoutes';
 import {
   recordApprovalState,
   type StatusInfo, type FilterRequest, type FilterClause, type WorkflowRecord,
 } from '@/types/tenant';
+import { SortIcon } from '@/components/ui/SortIcon';
+import { useListUrlState } from '@/hooks/useListUrlState';
 
 import { buttonVariants } from '@/components/ui/button';
 // ── Avatar helpers ─────────────────────────────────────────────────────────────
@@ -57,12 +59,13 @@ export type CrmTableConfig = {
   editPath:   (id: string) => string;
   queryKey:   readonly [string, string];
   showEmail?: boolean;
+  /** Adds a checkbox column and an "Export selected (CSV)" bar. */
+  selectable?: boolean;
 };
 
 // ── Internal types ─────────────────────────────────────────────────────────────
 
 type SortField = 'createdAt' | 'updatedAt';
-type SortDir   = 'asc' | 'desc';
 
 const PAGE_SIZE = 25;
 // Larger page size for CSV export — fewer round trips while paging through every
@@ -73,6 +76,8 @@ const SORT_LABELS: Record<SortField, string> = {
   createdAt: 'Date Created',
   updatedAt: 'Date Modified',
 };
+
+const SORT_FIELDS = Object.keys(SORT_LABELS) as SortField[];
 
 const SORT_KEY: Record<SortField, string> = {
   createdAt: 'created_at',
@@ -121,11 +126,13 @@ export function CrmRecordTable({ config }: Props) {
   });
 
   // ── filter / sort state ────────────────────────────────────────────────────
-  const [nameFilter,    setNameFilter]    = useState('');
-  const [debouncedName, setDebouncedName] = useState('');
+  // Search text and sort live in the URL so a reload / Back lands on the same view.
+  const { search: debouncedName, sortBy, sortDir, setSearch: setDebouncedName, setSort } = useListUrlState<SortField>({
+    sortFields: SORT_FIELDS,
+    defaultSort: { field: 'createdAt', dir: 'desc' },
+  });
+  const [nameFilter,    setNameFilter]    = useState(debouncedName);
   const [statusFilter,  setStatusFilter]  = useState('');
-  const [sortBy,        setSortBy]        = useState<SortField>('createdAt');
-  const [sortDir,       setSortDir]       = useState<SortDir>('desc');
 
   // ── cursor-stack pagination ────────────────────────────────────────────────
   // cursor     = the cursor sent with the current request ('' = page 1)
@@ -142,7 +149,7 @@ export function CrmRecordTable({ config }: Props) {
       setPrevCursors([]);
     }, 300);
     return () => clearTimeout(t);
-  }, [nameFilter]);
+  }, [nameFilter, setDebouncedName]);
 
   // ── statuses ───────────────────────────────────────────────────────────────
   const { data: statusData } = useQuery({
@@ -184,6 +191,12 @@ export function CrmRecordTable({ config }: Props) {
   });
 
   const records  = data?.records  ?? [];
+  // Ticked rows (only used when config.selectable). Ids that leave the page (a
+  // re-sort can swap them out) stop counting but return with their row, so a
+  // selection survives sorting; a change of search or status clears it.
+  const pageIds   = useMemo(() => (data?.records ?? []).map((r) => r.id), [data?.records]);
+  const selection = useIdSelection(pageIds);
+  const selectable = Boolean(config.selectable);
   const hasMore  = data?.hasMore  ?? false;
   const hasPrev  = prevCursors.length > 0;
   const pageNum  = prevCursors.length + 1;
@@ -211,6 +224,7 @@ export function CrmRecordTable({ config }: Props) {
   const hasFilters = Boolean(nameFilter || statusFilter);
 
   function clearFilters() {
+    selection.clear();
     setNameFilter('');
     setStatusFilter('');
     setCursor('');
@@ -218,19 +232,9 @@ export function CrmRecordTable({ config }: Props) {
   }
 
   function handleSort(field: SortField) {
-    if (sortBy === field) {
-      setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
-    } else {
-      setSortBy(field);
-      setSortDir('desc');
-    }
+    setSort(field, sortBy === field ? (sortDir === 'asc' ? 'desc' : 'asc') : 'desc');
     setCursor('');
     setPrevCursors([]);
-  }
-
-  function SortIcon({ field }: { field: SortField }) {
-    if (sortBy !== field) return <ArrowUpDown className="size-2.5 opacity-40" />;
-    return sortDir === 'asc' ? <ArrowUp className="size-2.5" /> : <ArrowDown className="size-2.5" />;
   }
 
   // ── CSV export ─────────────────────────────────────────────────────────────
@@ -260,13 +264,27 @@ export function CrmRecordTable({ config }: Props) {
 
       downloadCsv(
         buildCrmCsvFilename(config.label),
-        buildCrmRecordsCsv(allRecords, statusMap, Boolean(config.showEmail)),
+        buildCrmRecordsCsv(allRecords, statusMap, Boolean(config.showEmail), userMap),
       );
     } catch (err) {
       setExportError(apiErrorMessage(err));
     } finally {
       setIsExporting(false);
     }
+  }
+
+  function toggleAllOnPage() {
+    if (selection.selected.size === pageIds.length) selection.clear();
+    else selection.setAll(pageIds);
+  }
+
+  // Only the ticked rows, from the page on screen: nothing is fetched.
+  function handleExportSelected() {
+    const chosen = records.filter((r) => selection.selected.has(r.id));
+    downloadCsv(
+      buildCrmCsvFilename(config.label),
+      buildCrmRecordsCsv(chosen, statusMap, Boolean(config.showEmail)),
+    );
   }
 
   const lowerLabel = config.label.toLowerCase();
@@ -284,8 +302,8 @@ export function CrmRecordTable({ config }: Props) {
             type="text"
             placeholder={`Search ${lowerLabel}s…`}
             value={nameFilter}
-            onChange={(e) => setNameFilter(e.target.value)}
-            className="h-8 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-3 type-input placeholder:text-ink-muted focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150 type-input"
+            onChange={(e) => { setNameFilter(e.target.value); selection.clear(); }}
+            className="h-8 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-3 placeholder:text-ink-muted focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150 type-input"
           />
         </div>
 
@@ -293,9 +311,9 @@ export function CrmRecordTable({ config }: Props) {
         <div className="relative w-full sm:w-auto">
           <Select
             value={statusFilter}
-            onChange={(e) => { setStatusFilter(e.target.value); setCursor(''); setPrevCursors([]); }}
+            onChange={(e) => { setStatusFilter(e.target.value); setCursor(''); setPrevCursors([]); selection.clear(); }}
             className={cn(
-              'h-8 w-full rounded-lg border border-stone-200 bg-white pl-3 pr-7 type-input focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150 appearance-none',
+              'h-8 w-full rounded-lg border border-stone-200 bg-white pl-3 pr-7 text-xs focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150 appearance-none',
               statusFilter === '' ? 'text-ink-muted' : 'text-ink-strong',
             )}
             aria-label="Filter by status"
@@ -326,7 +344,7 @@ export function CrmRecordTable({ config }: Props) {
               )}
             >
               {label}
-              <SortIcon field={field} />
+              <SortIcon active={sortBy === field} dir={sortDir} />
             </button>
           ))}
         </div>
@@ -374,6 +392,11 @@ export function CrmRecordTable({ config }: Props) {
           <table className="w-full min-w-[520px] text-left type-cell">
             <thead className="border-b border-stone-200 bg-table-header">
               <tr>
+                {selectable && (
+                  <th className="type-th w-10 px-4 py-3">
+                    <SelectAllCheckbox selectedCount={selection.selected.size} pageCount={pageIds.length} onToggle={toggleAllOnPage} />
+                  </th>
+                )}
                 <th className="px-4 py-3 type-th">Company</th>
                 <th className="px-4 py-3 type-th">Status</th>
                 <th className="px-4 py-3 type-th">Owner</th>
@@ -390,6 +413,7 @@ export function CrmRecordTable({ config }: Props) {
               {isLoading ? (
                 Array.from({ length: 5 }, (_, i) => (
                   <tr key={i}>
+                    {selectable && <td className="w-10 px-4 py-2.5" />}
                     <td className="px-4 py-2.5">
                       <div className="flex items-center gap-3">
                         <div className="animate-pulse size-8 rounded-full bg-stone-100 shrink-0" />
@@ -414,6 +438,15 @@ export function CrmRecordTable({ config }: Props) {
                   const gated      = approvalState === 'pending' || approvalState === 'rejected';
                   return (
                     <tr key={record.id} className="group hover:bg-accent/10 transition-colors duration-150">
+                      {selectable && (
+                        <td className="w-10 px-4 py-2.5">
+                          <SelectRowCheckbox
+                            checked={selection.selected.has(record.id)}
+                            label={`Select ${company}`}
+                            onToggle={() => selection.toggle(record.id)}
+                          />
+                        </td>
+                      )}
                       <td className="px-4 py-2.5">
                         <div className="flex items-center gap-3">
                           <span
@@ -431,7 +464,7 @@ export function CrmRecordTable({ config }: Props) {
                               {company}
                             </Link>
                             {record.recordNumber && (
-                              <p className="font-mono mt-0.5 type-subline">{record.recordNumber}</p>
+                              <p className="font-mono mt-0.5 type-helper">{record.recordNumber}</p>
                             )}
                           </div>
                         </div>
@@ -481,7 +514,7 @@ export function CrmRecordTable({ config }: Props) {
                 })
               ) : (
                 <tr>
-                  <td colSpan={4 + (config.showEmail ? 1 : 0) + (canEdit ? 1 : 0)} className="py-16 text-center">
+                  <td colSpan={4 + (selectable ? 1 : 0) + (config.showEmail ? 1 : 0) + (canEdit ? 1 : 0)} className="py-16 text-center">
                     {!hasFilters ? (
                       <div className="flex flex-col items-center gap-3">
                         <div className="rounded-2xl bg-stone-100 p-4">
@@ -535,6 +568,14 @@ export function CrmRecordTable({ config }: Props) {
           </div>
         )}
       </div>
+
+      {selectable && selection.selected.size > 0 && (
+        <BulkSelectionBar
+          count={selection.selected.size}
+          onExport={handleExportSelected}
+          onClear={selection.clear}
+        />
+      )}
     </div>
   );
 }

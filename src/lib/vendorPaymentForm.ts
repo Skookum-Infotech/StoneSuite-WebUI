@@ -7,10 +7,9 @@
 import type { CrmLookups } from '@/services/lookupService';
 import type { FieldDefinition } from '@/types/tenant';
 import type {
-  VendorPayment, CreateVendorPaymentPayload, UpdateVendorPaymentPayload,
+  VendorPayment, CreateVendorPaymentPayload, UpdateVendorPaymentPayload, VendorPaymentApplicationInput
 } from '@/types/vendorPayment';
 import type { VendorBill } from '@/types/vendorBill';
-import type { VendorPaymentApplicationInput } from '@/types/vendorPayment';
 import { PAYMENT_METHODS } from './paymentMethods';
 
 export const PAGE_TABS = [

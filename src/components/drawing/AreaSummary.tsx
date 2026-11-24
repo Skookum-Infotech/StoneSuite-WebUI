@@ -1,32 +1,60 @@
-// Footer: piece count and sq ft for the active area, plus the sq ft total
-// across the whole drawing. The headline figure is the gross outline area.
-// When cutouts exist, the net surface (outline minus openings) is shown next
-// to it — that is the finished surface, not how much slab will be used, which
-// depends on layout, kerf and waste.
+// The sq ft icon's hover breakdown (DrawingStatusBar): Total Project, each
+// Area, and each Piece's own Countertop and Fabrication sq ft. Fabrication
+// is Countertop sq ft marked up by the tenant's own Company Preferences
+// percentage (Configuration -> Company Info -> Company Preferences); no
+// Profile figure yet — the app has nothing to compute one from.
 
-import { areaMetrics, drawingMetrics, mm2ToSqFt } from '@/lib/drawing/metrics';
+import { useQuery } from '@tanstack/react-query';
+import { companyProfileService } from '@/services/companyProfileService';
+import { DEFAULT_FABRICATION_PERCENT } from '@/types/companyProfile';
+import { measurementSummary, type MeasurementRow } from '@/lib/drawing/measurementSummary';
 import { useDrawingEditor } from './DrawingEditorContext';
 
-function roundSqFt(mm2: number): number {
-  return Math.round(mm2ToSqFt(mm2) * 10) / 10;
+const SQ_FT_DECIMALS = 3;
+
+function fmt(value: number): string {
+  return value.toFixed(SQ_FT_DECIMALS);
+}
+
+function MeasurementRowLine({ row, emphasis }: { row: MeasurementRow; emphasis?: boolean }) {
+  return (
+    <div className={`flex items-baseline justify-between gap-6 ${emphasis ? 'font-semibold text-white' : 'text-stone-300'}`}>
+      <span className="truncate">{row.label}</span>
+      <span className="flex shrink-0 gap-4 tabular-nums">
+        <span className="w-16 text-right">{fmt(row.countertopSqFt)}</span>
+        <span className="w-16 text-right">{fmt(row.fabricationSqFt)}</span>
+      </span>
+    </div>
+  );
 }
 
 export function AreaSummary() {
   const { state } = useDrawingEditor();
-  const activeArea = state.present.areas.find((a) => a.id === state.activeAreaId);
-  const active = areaMetrics(activeArea?.pieces ?? []);
-  const total = drawingMetrics(state.present.areas);
+  const profileQ = useQuery({ queryKey: ['company-profile'], queryFn: companyProfileService.get });
+  const fabricationPercent = profileQ.data?.fabricationPercent ?? DEFAULT_FABRICATION_PERCENT;
+  const summary = measurementSummary(state.present.areas, fabricationPercent);
 
   return (
-    <div className="flex flex-wrap gap-x-4 text-xs text-ink">
-      <span>{active.pieceCount} pieces</span>
-      <span>{roundSqFt(active.grossAreaMm2)} sq ft</span>
-      <span>{roundSqFt(total.grossAreaMm2)} sq ft total</span>
-      {active.cutoutCount > 0 && (
-        <span title="Net surface = outline minus cutouts. It is not slab consumption.">
-          {active.cutoutCount} cutouts · net {roundSqFt(active.netAreaMm2)} sq ft
+    <div className="w-72 rounded-lg bg-stone-900 p-3 text-xs text-white shadow-xl">
+      <p className="mb-2 font-semibold">Total Project Measurements (sq ft)</p>
+      <div className="mb-1 flex items-baseline justify-between gap-6 type-subline">
+        <span>&nbsp;</span>
+        <span className="flex shrink-0 gap-4">
+          <span className="w-16 text-right">Countertop</span>
+          <span className="w-16 text-right">Fabrication</span>
         </span>
-      )}
+      </div>
+      <MeasurementRowLine row={summary} emphasis />
+      {summary.areas.map((area) => (
+        <div key={area.id} className="mt-2 border-t border-stone-700 pt-2">
+          <MeasurementRowLine row={{ ...area, label: `Area: ${area.label}` }} />
+          {area.pieces.map((piece) => (
+            <div key={piece.id} className="pl-3">
+              <MeasurementRowLine row={{ ...piece, label: `Piece: ${piece.label}` }} />
+            </div>
+          ))}
+        </div>
+      ))}
     </div>
   );
 }

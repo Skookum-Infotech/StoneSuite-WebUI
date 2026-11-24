@@ -5,13 +5,12 @@ import { Loader2, Plus, ShieldCheck, X } from "lucide-react";
 import { userService, rbacService } from "@/services/tenantServices";
 import { apiErrorMessage } from "@/api/tenantClient";
 import { ErrorNote } from "@/components/tenant/ui";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { useUserPermissions } from "@/hooks/useUserPermissions";
 import { invalidateUserRoleQueries } from "@/lib/userRoleQueries";
 import { SUPER_ADMIN_ROLE_KEY, isSuperAdminUser } from "@/lib/userBulk";
 import type { WorkspaceUser } from "@/types/tenant";
 
-import { buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 export function ManageUserRoles({ user }: { user: WorkspaceUser }) {
   const qc = useQueryClient();

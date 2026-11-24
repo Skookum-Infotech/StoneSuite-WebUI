@@ -9,11 +9,10 @@ import { apiErrorMessage } from "@/api/tenantClient";
 import { ErrorNote } from "@/components/tenant/ui";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { useAuthStore } from "@/store/useAuthStore";
 import type { WorkspaceUser } from "@/types/tenant";
 
-import { buttonVariants } from '@/components/ui/button';
 const editNameSchema = z.object({
   fullName: z.string().min(1, "Name is required").max(120),
 });

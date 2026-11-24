@@ -24,6 +24,8 @@ import { ActivityLogPanel } from "@/components/crm/ActivityLogPanel";
 import { CustomerDetailTabs } from "@/pages/crm/customer/components/CustomerDetailTabs";
 import { useCustomerTab } from "@/pages/crm/customer/components/customerTabs";
 import { CustomerTransactionsTab } from "@/pages/crm/customer/components/transactions/CustomerTransactionsTab";
+import { RecordCommunicationTab } from "@/components/tenant/RecordCommunicationTab";
+import { cn } from "@/lib/utils";
 import { PortalAccessPanel } from "@/pages/crm/customer/components/PortalAccessPanel";
 import { PortalAccessStatusCard } from "@/pages/crm/customer/components/PortalAccessStatusCard";
 import { useBreadcrumbStore } from "@/store/useBreadcrumbStore";
@@ -227,7 +229,9 @@ export default function CustomerDetailPage() {
       <div className="flex flex-col lg:flex-row gap-6 px-4 py-4 sm:px-5 sm:py-5 3xl:px-12 3xl:py-8 3xl:gap-10 4xl:px-16 4xl:py-10 4xl:gap-14">
 
         {/* Left column — main content */}
-        <div className="flex-1 space-y-3 min-w-0">
+        {/* The Communication tab fills the column, so its note box can sit at the
+            bottom of the screen even when the timeline is empty. */}
+        <div className={cn("flex-1 space-y-3 min-w-0", activeTab === "communication" && "flex flex-col")}>
           {activeTab === "overview" && (
             <>
               <CustomerSummaryStrip customerId={id} />
@@ -252,6 +256,10 @@ export default function CustomerDetailPage() {
           )}
 
           {activeTab === "transactions" && <CustomerTransactionsTab customerId={id} />}
+
+          {activeTab === "communication" && (
+            <RecordCommunicationTab recordId={id} audience="internal" canReply={canEdit} />
+          )}
 
           {activeTab === "portal" && canViewPortalAccess && (
             <PortalAccessPanel

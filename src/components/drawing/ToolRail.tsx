@@ -1,106 +1,108 @@
-// Left-edge icon rail that replaces the old always-open panel list. Each
-// icon opens a flyout with that section's tools over the canvas, instead of
-// everything being visible (and scrolled through) at once. Only one flyout
-// is open at a time; Escape or a click outside closes it.
+// The tool rail down the left of the board: a slim dark pill holding the
+// tools you draw with — Select (the pointer), Draw (drops and resizes
+// pieces), Dimension (measures between two points), Seams (cuts a piece with a
+// line between two points), Text, Border (reshapes a side into a curve or a bump), Corner
+// (clips, rounds, bumps or notches a corner), Edges (paints a side in one of
+// the shop's edge types) and Profiles (attaches a Backsplash/Lamination/
+// Waterfall/etc. piece to a side); Border and Corner open a flyout that picks
+// which, Edges and Profiles pick their type in the bottom bar. Cutouts and
+// materials live under their own tabs in the top bar, so nothing else belongs
+// here. The armed tool lights up lime, the same accent as the bottom bar; a
+// tool's name appears beside it on hover or keyboard focus. Pressing an armed
+// tool again hands back to Select.
 
-import { useEffect, useRef, useState, type ComponentType } from 'react';
-import { AnnotationPanel } from './AnnotationPanel';
-import { CutoutLibrary } from './CutoutLibrary';
-import { useDrawingEditor } from './DrawingEditorContext';
-import { MaterialSummary } from './MaterialSummary';
-import { ShapePalette } from './ShapePalette';
-import { CutoutsIcon, LineIcon, MaterialsIcon, NotesIcon, SelectIcon, ShapesIcon } from './ToolRailIcons';
+import type { LucideIcon } from 'lucide-react';
+import { Layers, MousePointer2, Pencil, Ruler, Scissors, SquareDashed, SquareRoundCorner, TriangleRight, Type } from 'lucide-react';
+import { BORDER_STYLES, type BorderStyle } from '@/lib/drawing/borders';
+import { CORNER_STYLES, type CornerStyle } from '@/lib/drawing/corners';
+import { useDrawingEditor, type EditorTool } from './DrawingEditorContext';
+import { BorderStyleIcon } from './BorderStyleIcon';
+import { CornerStyleIcon } from './CornerStyleIcon';
+import { RailFlyoutButton, type RailFlyoutTool } from './RailFlyoutButton';
+import { RAIL_BUTTON_CLASS, RAIL_NAME_CLASS } from './railStyles';
 
-type Section = 'shapes' | 'cutouts' | 'annotations' | 'materials';
-
-interface SectionDef {
-  id: Section;
+interface ToolDef {
+  tool: EditorTool;
   label: string;
-  Icon: typeof ShapesIcon;
-  Content: ComponentType<{ bare?: boolean }>;
+  Icon: LucideIcon;
+  /** The name shown on hover, with its shortcut key; defaults to `label`. */
+  hint?: string;
 }
 
-const SECTIONS: SectionDef[] = [
-  { id: 'shapes', label: 'Shapes', Icon: ShapesIcon, Content: ShapePalette },
-  { id: 'cutouts', label: 'Cutouts', Icon: CutoutsIcon, Content: CutoutLibrary },
-  { id: 'annotations', label: 'Annotations', Icon: NotesIcon, Content: AnnotationPanel },
-  { id: 'materials', label: 'Materials', Icon: MaterialsIcon, Content: MaterialSummary },
+const TOOLS: ToolDef[] = [
+  { tool: 'select', label: 'Select', Icon: MousePointer2 },
+  { tool: 'draw', label: 'Draw', Icon: Pencil },
+  { tool: 'dimension', label: 'Dimension', hint: 'Dimension (D)', Icon: Ruler },
+  // The tool's id is still `line` — a line drawn across a piece is stored as one of its seams.
+  { tool: 'line', label: 'Seams', hint: 'Seams (S)', Icon: Scissors },
+  { tool: 'text', label: 'Text', Icon: Type },
 ];
 
-const RAIL_BUTTON_CLASS = 'flex h-9 w-9 items-center justify-center rounded text-ink hover:bg-stone-100 aria-pressed:bg-brand/10 aria-pressed:text-brand';
+/** After Border and Corner, so the rail reads Select, Draw, Dimension, Seams, Text, Border, Corner, Edges, Profiles. */
+const EDGES_TOOL: ToolDef = { tool: 'edge', label: 'Edges', Icon: TriangleRight };
+const PROFILES_TOOL: ToolDef = { tool: 'profile', label: 'Profiles', Icon: Layers };
+
+const BORDER_TOOL: RailFlyoutTool = { label: 'Border', hint: 'Border (B)', title: 'Borders (B)', Icon: SquareDashed };
+const CORNER_TOOL: RailFlyoutTool = { label: 'Corner', hint: 'Corner (C)', title: 'Corners (C)', Icon: SquareRoundCorner };
+
+/** A plain rail button: arms its tool, or hands back to Select if it is already armed. */
+function PlainToolButton({ def }: { def: ToolDef }) {
+  const { tool, setTool } = useDrawingEditor();
+  const { tool: id, label, hint, Icon } = def;
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        aria-label={label}
+        aria-pressed={tool === id}
+        onClick={() => setTool(id === 'select' || tool === id ? 'select' : id)}
+        className={RAIL_BUTTON_CLASS}
+      >
+        <Icon className="h-5 w-5" strokeWidth={1.75} aria-hidden="true" />
+      </button>
+      {/* Beside the button, over the canvas — the rail is too narrow to hold names. */}
+      <span aria-hidden="true" className={RAIL_NAME_CLASS}>{hint ?? label}</span>
+    </div>
+  );
+}
 
 export function ToolRail() {
-  const { tool, setTool } = useDrawingEditor();
-  const [open, setOpen] = useState<Section | null>(null);
-  const rootRef = useRef<HTMLDivElement>(null);
-  const active = SECTIONS.find((s) => s.id === open);
-
-  useEffect(() => {
-    if (!open) return undefined;
-    const onPointerDown = (e: PointerEvent) => {
-      if (rootRef.current && !rootRef.current.contains(e.target as Node)) setOpen(null);
-    };
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setOpen(null);
-    };
-    document.addEventListener('pointerdown', onPointerDown);
-    document.addEventListener('keydown', onKeyDown);
-    return () => {
-      document.removeEventListener('pointerdown', onPointerDown);
-      document.removeEventListener('keydown', onKeyDown);
-    };
-  }, [open]);
+  const { tool, setTool, border, corner } = useDrawingEditor();
 
   return (
-    <div ref={rootRef} className="relative flex h-full shrink-0">
-      <nav aria-label="Drawing tools" className="flex w-11 flex-col items-center gap-1 border-r border-stone-200 py-1.5">
-        <button
-          type="button"
-          aria-label="Select"
-          aria-pressed={tool === 'select'}
-          onClick={() => { setTool('select'); setOpen(null); }}
-          className={RAIL_BUTTON_CLASS}
-        >
-          <SelectIcon />
-        </button>
-        <button
-          type="button"
-          aria-label="Line"
-          aria-pressed={tool === 'line'}
-          onClick={() => { setTool(tool === 'line' ? 'select' : 'line'); setOpen(null); }}
-          className={RAIL_BUTTON_CLASS}
-        >
-          <LineIcon />
-        </button>
-        <span className="my-0.5 h-px w-6 bg-stone-200" aria-hidden="true" />
-        {SECTIONS.map(({ id, label, Icon }) => (
-          <button
-            key={id}
-            type="button"
-            aria-label={label}
-            aria-pressed={open === id}
-            onClick={() => setOpen((current) => (current === id ? null : id))}
-            className={RAIL_BUTTON_CLASS}
-          >
-            <Icon />
-          </button>
-        ))}
-      </nav>
-      {active && (
-        <div
-          role="region"
-          aria-label={active.label}
-          className="modal-scrollbar absolute left-full top-0 z-10 max-h-full w-60 overflow-y-auto overflow-x-hidden rounded-r border border-l-0 border-stone-200 bg-white p-2 shadow-lg"
-        >
-          <div className="mb-1.5 flex items-center justify-between">
-            <h3 className="type-overline">{active.label}</h3>
-            <button type="button" aria-label={`Close ${active.label}`} onClick={() => setOpen(null)} className="text-ink-muted hover:text-ink">
-              ✕
-            </button>
-          </div>
-          <active.Content bare />
-        </div>
-      )}
-    </div>
+    <nav aria-label="Drawing tools" className="flex flex-col items-center">
+      <div className="flex flex-col items-center gap-1 rounded-2xl bg-stone-900 p-1.5 shadow-lg">
+        {TOOLS.map((def) => <PlainToolButton key={def.tool} def={def} />)}
+
+        <RailFlyoutButton
+          tool={BORDER_TOOL}
+          armed={tool === 'border'}
+          items={BORDER_STYLES.map(({ id, label }) => ({
+            id, label, active: tool === 'border' && border.style === id, icon: <BorderStyleIcon style={id} className="h-5 w-5" />,
+          }))}
+          onPick={(id) => {
+            border.setStyle(id as BorderStyle);
+            setTool('border');
+          }}
+          onDisarm={() => setTool('select')}
+        />
+
+        <RailFlyoutButton
+          tool={CORNER_TOOL}
+          armed={tool === 'corner'}
+          items={CORNER_STYLES.map(({ id, label }) => ({
+            id, label, active: tool === 'corner' && corner.style === id, icon: <CornerStyleIcon style={id} className="h-5 w-5" />,
+          }))}
+          onPick={(id) => {
+            corner.setStyle(id as CornerStyle);
+            setTool('corner');
+          }}
+          onDisarm={() => setTool('select')}
+        />
+
+        <PlainToolButton def={EDGES_TOOL} />
+        <PlainToolButton def={PROFILES_TOOL} />
+      </div>
+    </nav>
   );
 }

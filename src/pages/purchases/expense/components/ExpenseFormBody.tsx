@@ -6,6 +6,7 @@ import { DynamicFieldInput } from '@/components/tenant/DynamicFieldInput';
 import { workflowService } from '@/services/tenantServices';
 import { activeCustomFields } from '@/lib/customFields';
 import { ExpenseSectionGrid } from './ExpenseFormFields';
+import { ExpenseClaimantField } from './ExpenseClaimantField';
 import { ExpenseSummaryCard } from './ExpenseSummaryCard';
 import { ExpenseLinesTable } from './ExpenseLinesTable';
 import { ExpenseAuditTab } from './ExpenseAuditTab';
@@ -17,13 +18,13 @@ import {
 // Shared tab bar + tab content for both the Add and Edit Expense pages —
 // mirrors RequisitionFormBody. Custom fields render from the `expense`
 // legacy workflow's field definitions (DynamicFieldInput), same as
-// Requisition. There is no claimant field and no vendor/tax section (spec
-// AD-2/AD-3) — the header is just Department + Memo.
+// Requisition. The header is the Employee picker (who the claim is for) plus
+// Department and Memo; there is no vendor/tax section (spec AD-3).
 export function ExpenseFormBody({
   activeTab, setActiveTab, expenseId,
   data, set, lineItems, setLineItems,
   customFieldValues, setCustomField,
-  total, filesPanelRef,
+  total, filesPanelRef, claimantName,
 }: {
   activeTab: PageTab;
   setActiveTab: (t: PageTab) => void;
@@ -38,6 +39,8 @@ export function ExpenseFormBody({
   setCustomField: (key: string, value: unknown) => void;
   total: number;
   filesPanelRef?: Ref<EditableFilesPanelHandle>;
+  /** The loaded claim's claimant, shown if they are no longer in the Active list. */
+  claimantName?: string;
 }) {
   const { data: allWorkflows = [] } = useQuery({ queryKey: ['workflows'], queryFn: workflowService.list });
   const expWorkflow = allWorkflows.find((wf) => wf.key.toLowerCase() === 'expense');
@@ -76,6 +79,12 @@ export function ExpenseFormBody({
               <ModernSection title="Primary Information" index={0}>
                 <div className="flex flex-col gap-5 lg:flex-row lg:items-start">
                   <div className="flex-1 min-w-0 space-y-4">
+                    <ExpenseClaimantField
+                      value={String(data.claimantEmployeeId ?? '')}
+                      onChange={(v) => set('claimantEmployeeId', v)}
+                      allowSelf={!expenseId}
+                      currentName={claimantName}
+                    />
                     <ExpenseSectionGrid
                       fields={PRIMARY_INFO_FIELDS.filter((f) => f.key !== 'exp_doc_num' || Boolean(expenseId))}
                       data={data} set={set}

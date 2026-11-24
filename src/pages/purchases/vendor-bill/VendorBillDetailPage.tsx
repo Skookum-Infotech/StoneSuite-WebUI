@@ -321,6 +321,19 @@ export default function VendorBillDetailPage() {
                       </button>
                     </div>
                   )}
+                  {bill.expense && (
+                    <div className="space-y-1">
+                      <label className={fieldLabelCls}>Expense Claim</label>
+                      <button
+                        type="button"
+                        onClick={() => navigate(`/purchases/expense/${bill.expense!.id}`)}
+                        aria-label={`Open expense claim ${bill.expense.number}`}
+                        className={cn(readonlyCls, 'text-left text-accent-foreground hover:underline cursor-pointer')}
+                      >
+                        {bill.expense.number}
+                      </button>
+                    </div>
+                  )}
                   {bill.memo && <ReadonlyField label="Memo" value={bill.memo} full />}
                   {bill.notes && <ReadonlyField label="Notes" value={bill.notes} full />}
                   {bill.internalNotes && <ReadonlyField label="Internal Notes" value={bill.internalNotes} full />}
@@ -481,6 +494,19 @@ export default function VendorBillDetailPage() {
                 {bill.vendor.name}
               </button>
             </div>
+            {bill.expense && (
+              <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
+                <span className="text-ink-muted">Expense Claim</span>
+                <button
+                  type="button"
+                  onClick={() => navigate(`/purchases/expense/${bill.expense!.id}`)}
+                  aria-label={`Open expense claim ${bill.expense.number}`}
+                  className="text-ink hover:text-accent-foreground truncate max-w-[140px] transition-colors"
+                >
+                  {bill.expense.number}
+                </button>
+              </div>
+            )}
             {bill.purchaseOrder && (
               <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
                 <span className="text-ink-muted">Purchase Order</span>

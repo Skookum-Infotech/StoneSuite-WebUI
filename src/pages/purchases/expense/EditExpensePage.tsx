@@ -181,6 +181,7 @@ export default function EditExpensePage() {
           customFieldValues={customFieldValues}
           setCustomField={setCustomField}
           total={total}
+          claimantName={exp.claimantName}
         />
 
         <FormActionBar

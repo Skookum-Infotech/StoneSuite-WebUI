@@ -4,7 +4,7 @@
 // (capped at MAX_UNDO_STEPS) and clear `future`; "view-only" actions
 // (selection, zoom, pan) touch neither.
 
-import type { Cutout, Dimension, Drawing, Note, Piece, Point, Seam } from '@/types/drawing';
+import type { Cutout, Dimension, Drawing, Note, Piece, Point, Seam, SlabPlacement } from '@/types/drawing';
 import { ZOOM_MAX, ZOOM_MIN } from './constants';
 import {
   NO_SELECTION, copyPieces, duplicateInto, keepSavedVersion, movePieces, mutateDocument, newArea, normalizeDegrees,
@@ -23,6 +23,12 @@ export type EditorAction =
   | { type: 'setActiveArea'; areaId: string }
   | { type: 'addPiece'; areaId: string; piece: Piece }
   | { type: 'updatePiece'; areaId: string; pieceId: string; patch: Partial<Piece> }
+  /** Where the Material tab laid one painted Profiles side on a slab —
+   *  the attached-profile-piece equivalent of updatePiece's own `slab` patch. */
+  | { type: 'updateAttachedProfileSlab'; areaId: string; pieceId: string; edgeIndex: number; slab: SlabPlacement | undefined }
+  /** Lays many pieces and painted profile sides on slabs in one go — one undo step
+   *  for the Material tab's "Nest all". `edgeIndex` set means that side's profile piece. */
+  | { type: 'placeOnSlabs'; placements: Array<{ areaId: string; pieceId: string; edgeIndex?: number; slab: SlabPlacement }> }
   | { type: 'deletePiece'; areaId: string; pieceId: string }
   | { type: 'duplicatePiece'; areaId: string; pieceId: string; newId: string }
   | { type: 'movePiece'; areaId: string; pieceId: string; delta: Point }
@@ -40,12 +46,24 @@ export type EditorAction =
   | { type: 'setSeams'; areaId: string; pieceId: string; seams: Seam[] }
   /** Replaces an area's notes and/or manual dimensions as one undo step. */
   | { type: 'setAnnotations'; areaId: string; notes?: Note[]; dimensions?: Dimension[] }
+  /** Edits one note. Successive edits to the same note (every keystroke in
+   *  the Text tool's box) fold into a single undo step. */
+  | { type: 'updateNote'; areaId: string; noteId: string; patch: Partial<Omit<Note, 'id'>> }
   | { type: 'selectPiece'; pieceId: string | null; additive?: boolean }
   | { type: 'selectPieces'; pieceIds: string[] }
   | { type: 'selectCutout'; pieceId: string; cutoutId: string | null }
   | { type: 'selectEdge'; pieceId: string; edgeIndex: number | null }
   | { type: 'setZoom'; zoom: number }
   | { type: 'pan'; delta: Point }
+  /** Puts the drawing point `center` in the middle of the canvas — the corner
+   *  map's way to move the view. Absolute, so repeating it is harmless
+   *  (unlike `pan`, which adds up). */
+  | { type: 'centerView'; center: Point }
+  /** Zooms by `factor` about whatever is in the middle of the canvas. */
+  | { type: 'zoomView'; factor: number }
+  /** Zooms by `factor` about the drawing point `anchor`, which stays exactly
+   *  where it is on screen — a scroll wheel zooming at the mouse pointer. */
+  | { type: 'zoomAt'; factor: number; anchor: Point }
   | { type: 'undo' }
   | { type: 'redo' }
   | { type: 'loadDrawing'; drawing: Drawing }
@@ -53,14 +71,14 @@ export type EditorAction =
 
 const QUARTER_TURN = 90;
 
-export function createInitialEditorState(drawing: Drawing): EditorState {
+export function createInitialEditorState(drawing: Drawing, zoom = 1): EditorState {
   return {
     past: [],
     present: drawing,
     future: [],
     activeAreaId: drawing.areas[0]?.id ?? '',
     ...NO_SELECTION,
-    zoom: 1,
+    zoom,
     pan: { x: 0, y: 0 },
   };
 }
@@ -118,6 +136,30 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
       return mutateDocument(state, (drawing) => updatePieceIn(drawing, action.areaId, action.pieceId, (p) => ({
         ...p, ...action.patch,
       })));
+
+    case 'updateAttachedProfileSlab':
+      return mutateDocument(state, (drawing) => updatePieceIn(drawing, action.areaId, action.pieceId, (p) => ({
+        ...p,
+        edges: p.edges.map((e) => (e.index === action.edgeIndex && e.attachedProfile
+          ? { ...e, attachedProfile: { ...e.attachedProfile, slab: action.slab } }
+          : e)),
+      })));
+
+    case 'placeOnSlabs':
+      if (action.placements.length === 0) return state;
+      return mutateDocument(state, (drawing) => action.placements.reduce(
+        (doc, placement) => updatePieceIn(doc, placement.areaId, placement.pieceId, (p) => (
+          placement.edgeIndex === undefined
+            ? { ...p, slab: placement.slab }
+            : {
+              ...p,
+              edges: p.edges.map((e) => (e.index === placement.edgeIndex && e.attachedProfile
+                ? { ...e, attachedProfile: { ...e.attachedProfile, slab: placement.slab } }
+                : e)),
+            }
+        )),
+        drawing,
+      ));
 
     case 'deletePiece':
       return sanitizeSelection(mutateDocument(state, (drawing) => updateArea(drawing, action.areaId, (area) => ({
@@ -201,6 +243,15 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
         dimensions: action.dimensions ?? area.dimensions,
       })));
 
+    case 'updateNote': {
+      const edit = (drawing: Drawing) => updateArea(drawing, action.areaId, (area) => ({
+        ...area,
+        notes: area.notes.map((n) => (n.id === action.noteId ? { ...n, ...action.patch } : n)),
+      }));
+      if (state.noteEditId === action.noteId) return { ...state, present: edit(state.present) };
+      return { ...mutateDocument(state, edit), noteEditId: action.noteId };
+    }
+
     case 'selectPiece':
       return selectPiece(state, action.pieceId, action.additive === true);
 
@@ -219,11 +270,31 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
     case 'pan':
       return { ...state, pan: { x: state.pan.x + action.delta.x, y: state.pan.y + action.delta.y } };
 
+    // The canvas draws world points at (x, -y) inside translate(pan) scale(zoom),
+    // so the point in the middle of the canvas is (-pan.x / zoom, pan.y / zoom).
+    case 'centerView':
+      return { ...state, pan: { x: -state.zoom * action.center.x, y: state.zoom * action.center.y } };
+
+    case 'zoomView': {
+      const zoom = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, state.zoom * action.factor));
+      const center = { x: -state.pan.x / state.zoom, y: state.pan.y / state.zoom };
+      return { ...state, zoom, pan: { x: -zoom * center.x, y: zoom * center.y } };
+    }
+
+    case 'zoomAt': {
+      const zoom = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, state.zoom * action.factor));
+      // A point on screen sits at pan + zoom * (x, -y); solving for the pan
+      // that leaves `anchor` where it was at the new zoom gives this.
+      const shift = state.zoom - zoom;
+      return { ...state, zoom, pan: { x: state.pan.x + shift * action.anchor.x, y: state.pan.y - shift * action.anchor.y } };
+    }
+
     case 'undo': {
       if (state.past.length === 0) return state;
       const previous = state.past[state.past.length - 1];
       return sanitizeSelection({
         ...state,
+        noteEditId: undefined,
         past: state.past.slice(0, -1),
         present: keepSavedVersion(previous, state.present),
         future: [state.present, ...state.future],
@@ -235,6 +306,7 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
       const [next, ...rest] = state.future;
       return sanitizeSelection({
         ...state,
+        noteEditId: undefined,
         past: [...state.past, state.present],
         present: keepSavedVersion(next, state.present),
         future: rest,
@@ -245,7 +317,7 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
     // save conflict, or restoring a version) is not an undoable edit of the
     // current one — past/future reset, same as opening a different file.
     case 'loadDrawing':
-      return sanitizeSelection({ ...state, past: [], present: action.drawing, future: [] });
+      return sanitizeSelection({ ...state, past: [], present: action.drawing, future: [], noteEditId: undefined });
 
     // A background autosave completing is not an undoable edit either, and
     // must not revert any edit made while it was in flight — only the

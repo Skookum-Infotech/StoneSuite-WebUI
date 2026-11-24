@@ -3,6 +3,7 @@ import { CreditCard, LayoutGrid, Receipt, Wallet, CheckCircle2 } from 'lucide-re
 import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/store/useAuthStore'
 import { CurrentPlanCard } from './components/CurrentPlanCard'
+import { UsagePanel } from './components/UsagePanel'
 import { PlanCard, type PlanAction } from './components/PlanCard'
 import { BillingHistory } from './components/BillingHistory'
 import { PaymentMethodCard } from './components/PaymentMethod'
@@ -228,6 +229,7 @@ export default function SubscriptionPage() {
               onUpgrade={() => nextTier && setUpgradeTarget(nextTier)}
               onCancel={() => setCancelling(true)}
             />
+            <UsagePanel />
             <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
               {PLAN_TIERS.map((tier) => {
                 const action = actionFor(tier, currentPlan.tier.id)

@@ -155,19 +155,20 @@ export function Select({
               onKeyDown={onListKeyDown}
               placeholder="Search…"
               aria-label={`Search ${ariaLabel ?? 'options'}`}
-              className="w-full rounded-lg border border-stone-200 px-2.5 py-1.5 text-xs text-ink-strong outline-none focus:border-brand focus:ring-2 focus:ring-brand/30"
+              className="w-full rounded-lg border border-stone-200 px-2.5 py-1.5 outline-none focus:border-brand focus:ring-2 focus:ring-brand/30 type-input"
             />
           </div>
         )}
         <div
           ref={listRef}
           role="listbox"
+          tabIndex={-1}
           aria-label={ariaLabel}
           onKeyDown={onListKeyDown}
           onWheel={(e) => e.stopPropagation()}
           className={cn(LISTBOX_MAX_HEIGHT_CLS, 'modal-scrollbar overflow-y-auto p-1')}
         >
-          {filtered.length === 0 && <p className="px-2.5 py-2 text-xs text-ink-muted">No matches</p>}
+          {filtered.length === 0 && <p className="px-2.5 py-2 type-helper">No matches</p>}
           {filtered.map((o, i) => {
             const header = o.group && o.group !== filtered[i - 1]?.group ? o.group : null;
             const isSelected = o.value === current;

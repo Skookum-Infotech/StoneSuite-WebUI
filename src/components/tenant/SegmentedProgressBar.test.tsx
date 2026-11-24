@@ -20,6 +20,18 @@ describe('SegmentedProgressBar', () => {
     expect(litSegments(container, 'bg-orange-500')).toBe(0);
   });
 
+  it('a quota bar stays orange while partway, like a progress bar', () => {
+    const { container } = render(<SegmentedProgressBar percent={81} ariaLabel="Tokens used" variant="quota" />);
+    expect(litSegments(container, 'bg-orange-500')).toBe(8);
+    expect(litSegments(container, 'bg-red-500')).toBe(0);
+  });
+
+  it('a quota bar turns red, not green, once the limit is reached', () => {
+    const { container } = render(<SegmentedProgressBar percent={100} ariaLabel="Tokens used" variant="quota" />);
+    expect(litSegments(container, 'bg-red-500')).toBe(10);
+    expect(litSegments(container, 'bg-emerald-500')).toBe(0);
+  });
+
   it('lights nothing at zero', () => {
     const { container } = render(<SegmentedProgressBar percent={0} ariaLabel="PO-1 received" />);
     expect(litSegments(container, 'bg-orange-500')).toBe(0);

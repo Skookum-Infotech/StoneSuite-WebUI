@@ -68,6 +68,11 @@ export function ImportUploadStep({ workflowKey, onStaged }: Props) {
         onDragOver={(e) => e.preventDefault()}
         onDrop={onDrop}
         onClick={() => !busy && fileInputRef.current?.click()}
+        onKeyDown={(e) => { if (!busy && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); fileInputRef.current?.click(); } }}
+        role="button"
+        tabIndex={busy ? -1 : 0}
+        aria-disabled={busy}
+        aria-label="Choose a file to import"
         className={cn(
           'relative rounded-lg border-2 border-dashed px-6 py-10 text-center transition-all duration-200 group',
           busy ? 'cursor-not-allowed opacity-70' : 'cursor-pointer',

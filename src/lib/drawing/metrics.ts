@@ -7,6 +7,7 @@
 // remnants, which this editor does not model.
 
 import type { DrawingArea, Piece } from '@/types/drawing';
+import { outlineAreaWithArcs, perimeterWithArcs } from './arcs';
 import { cutoutArea } from './cutouts';
 import { edgeTotals, type EdgeTotals } from './edges';
 import { area, distance, outlineEdges, perimeter } from './geometry';
@@ -32,7 +33,7 @@ export interface PieceMetrics {
 }
 
 export function pieceMetrics(piece: Pick<Piece, 'outline' | 'cutouts'> & { edges?: Piece['edges'] }): PieceMetrics {
-  const grossAreaMm2 = area(piece.outline);
+  const grossAreaMm2 = outlineAreaWithArcs(piece.outline, piece.edges, area(piece.outline));
   const cutoutAreaMm2 = piece.cutouts.reduce((sum, c) => sum + cutoutArea(c), 0);
   const angles = interiorAngles(piece.outline);
   return {
@@ -40,7 +41,7 @@ export function pieceMetrics(piece: Pick<Piece, 'outline' | 'cutouts'> & { edges
     grossAreaMm2,
     cutoutAreaMm2,
     netAreaMm2: Math.max(0, grossAreaMm2 - cutoutAreaMm2),
-    perimeterMm: perimeter(piece.outline),
+    perimeterMm: piece.edges ? perimeterWithArcs(piece.outline, piece.edges) : perimeter(piece.outline),
     edges: outlineEdges(piece.outline).map(([a, b], index) => ({
       index, lengthMm: distance(a, b), startAngleDeg: angles[index],
     })),
@@ -74,4 +75,15 @@ export function drawingMetrics(areas: DrawingArea[]): AreaMetrics {
 
 export function mm2ToSqFt(mm2: number): number {
   return mm2 / MM2_PER_FT2;
+}
+
+const PERCENT_DIVISOR = 100;
+
+/** Fabrication sq ft = countertop sq ft * (1 + fabricationPercent / 100) —
+ *  the Company Preferences tab's markup (types/companyProfile.ts), shown
+ *  alongside Countertop in the drawing editor's sq ft breakdown
+ *  (components/drawing/AreaSummary.tsx). Takes sq ft rather than mm² since
+ *  every caller already has the countertop figure in sq ft. */
+export function fabricationSqFt(countertopSqFt: number, fabricationPercent: number): number {
+  return countertopSqFt * (1 + fabricationPercent / PERCENT_DIVISOR);
 }

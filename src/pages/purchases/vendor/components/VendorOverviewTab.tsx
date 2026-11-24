@@ -6,6 +6,7 @@ import { readonlyCls, fieldLabelCls } from '@/components/crm/formUtils';
 import { cn } from '@/lib/utils';
 import type { Vendor } from '@/types/vendor';
 import { formatDateValue } from '@/lib/dateUtils';
+import { isHttpUrl } from '@/lib/safeExternalUrl';
 import { VendorSummaryStrip } from './transactions/VendorSummaryStrip';
 
 function fmtDate(iso?: string): string {
@@ -19,7 +20,7 @@ function ReadonlyField({ label, value, full, link, multiline, flag }: {
   return (
     <div className={cn('space-y-1', full && 'col-span-full')}>
       <label className={fieldLabelCls}>{label}</label>
-      {value && link ? (
+      {value && link && isHttpUrl(value) ? (
         <a
           href={value}
           target="_blank"
@@ -61,7 +62,7 @@ function ChipList({ items, emptyLabel }: { items: string[]; emptyLabel: ReactNod
 // SalesOrderDetailPage's ModernSection + ReadonlyField pattern, branching on
 // vendorType the same way VendorFormBody does for the Add/Edit forms.
 export function VendorOverviewTab({ vendor, countryName, countryCode }: { vendor: Vendor; countryName?: string; countryCode?: string }) {
-  const isPerson = vendor.vendorType === 'Person';
+  const isPerson = vendor.vendorType !== 'Organization'; // an Employee vendor reads like a person
   const associatedBrands = vendor.associatedBrands ?? [];
   const acceptedPaymentMethods = vendor.acceptedPaymentMethods ?? [];
 

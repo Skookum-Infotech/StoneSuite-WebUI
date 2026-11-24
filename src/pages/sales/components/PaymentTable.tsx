@@ -1,10 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import {
-  Search, ArrowUp, ArrowDown, ArrowUpDown, X, Inbox, Pencil,
-  ChevronLeft, ChevronRight, Download, Loader2,
-} from 'lucide-react';
+import { Search, X, Inbox, Pencil, ChevronLeft, ChevronRight, Download, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { paymentService } from '@/services/paymentService';
 import { apiErrorMessage } from '@/api/tenantClient';
@@ -16,6 +13,8 @@ import { exportPagedCsv, fmtCsvDate } from '@/lib/csvExport';
 import type { PaymentSearchRequest } from '@/types/payment';
 import { formatDateValue, LIST_DATE_OPTIONS } from '@/lib/dateUtils';
 import { CustomerLink } from '@/components/crm/CustomerLink';
+import { SortIcon } from '@/components/ui/SortIcon';
+import { useListUrlState } from '@/hooks/useListUrlState';
 
 import { buttonVariants } from '@/components/ui/button';
 const EXPORT_PAGE_SIZE = 200;
@@ -26,7 +25,6 @@ const EXPORT_PAGE_SIZE = 200;
 // crmService. Mirrors InvoiceTable's search/sort/cursor-pagination UX.
 
 type SortField = 'payment_date' | 'amount' | 'unapplied_amount' | 'record_number' | 'created_at';
-type SortDir = 'asc' | 'desc';
 
 const PAGE_SIZE = 25;
 
@@ -37,6 +35,8 @@ const SORT_LABELS: Record<SortField, string> = {
   record_number: 'Payment #',
   created_at: 'Payment Created',
 };
+
+const SORT_FIELDS = Object.keys(SORT_LABELS) as SortField[];
 
 function currency(n: number | undefined): string {
   return (n ?? 0).toLocaleString(undefined, { style: 'currency', currency: 'USD' });
@@ -61,10 +61,11 @@ export function PaymentTable() {
     },
   });
 
-  const [term, setTerm] = useState('');
-  const [debounced, setDebounced] = useState('');
-  const [sortBy, setSortBy] = useState<SortField>('created_at');
-  const [sortDir, setSortDir] = useState<SortDir>('desc');
+  const { search: debounced, sortBy, sortDir, setSearch: setDebounced, setSort } = useListUrlState<SortField>({
+    sortFields: SORT_FIELDS,
+    defaultSort: { field: 'created_at', dir: 'desc' },
+  });
+  const [term, setTerm] = useState(debounced);
 
   const [cursor, setCursor] = useState('');
   const [prevCursors, setPrevCursors] = useState<string[]>([]);
@@ -79,7 +80,7 @@ export function PaymentTable() {
       setPrevCursors([]);
     }, 300);
     return () => clearTimeout(t);
-  }, [term]);
+  }, [term, setDebounced]);
 
   const req: PaymentSearchRequest = {
     search: debounced || undefined,
@@ -126,19 +127,9 @@ export function PaymentTable() {
   }
 
   function handleSort(field: SortField) {
-    if (sortBy === field) {
-      setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
-    } else {
-      setSortBy(field);
-      setSortDir('desc');
-    }
+    setSort(field, sortBy === field ? (sortDir === 'asc' ? 'desc' : 'asc') : 'desc');
     setCursor('');
     setPrevCursors([]);
-  }
-
-  function SortIcon({ field }: { field: SortField }) {
-    if (sortBy !== field) return <ArrowUpDown className="size-2.5 opacity-40" />;
-    return sortDir === 'asc' ? <ArrowUp className="size-2.5" /> : <ArrowDown className="size-2.5" />;
   }
 
   async function handleDownloadCsv() {
@@ -196,7 +187,7 @@ export function PaymentTable() {
               )}
             >
               {label}
-              <SortIcon field={field} />
+              <SortIcon active={sortBy === field} dir={sortDir} />
             </button>
           ))}
         </div>

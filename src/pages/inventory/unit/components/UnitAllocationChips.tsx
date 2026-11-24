@@ -1,6 +1,6 @@
 import { ShoppingCart, UserRound, Wrench } from 'lucide-react';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
-import { allocationOf, allocationSentence, customerPath, customerReservationOf, fabricationJobPath, salesOrderPath } from '@/lib/unitAllocation';
+import { allocationOf, allocationSentence, customerPath, customerReservationOf, fabricationJobPath, orderHoldOf, salesOrderPath } from '@/lib/unitAllocation';
 import type { InventoryUnit } from '@/types/inventory';
 import { UnitAllocationChip } from './UnitAllocationChip';
 
@@ -12,7 +12,21 @@ export function UnitAllocationChips({ unit }: { unit: InventoryUnit }) {
   const { hasPermission, isLoading } = useUserPermissions();
   const allocation = allocationOf(unit);
   const customer = customerReservationOf(unit);
+  const orderHold = orderHoldOf(unit);
   if (!allocation) {
+    if (orderHold) {
+      return (
+        <div className="flex flex-wrap items-center gap-1.5" title={allocationSentence(unit)}>
+          <UnitAllocationChip
+            icon={ShoppingCart}
+            tone="order"
+            label={orderHold.salesOrderNumber || 'Sales order'}
+            to={isLoading || hasPermission('sales_order', 'read') ? salesOrderPath(orderHold.salesOrderId) : undefined}
+            ariaLabel={`Sales order ${orderHold.salesOrderNumber}`.trim()}
+          />
+        </div>
+      );
+    }
     if (!customer) return null;
     return (
       <div className="flex flex-wrap items-center gap-1.5" title={allocationSentence(unit)}>

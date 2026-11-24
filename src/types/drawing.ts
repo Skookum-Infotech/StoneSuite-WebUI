@@ -12,16 +12,115 @@ export type Point = { x: number; y: number };
  *  is seeded; narrowing it later is additive, not breaking. */
 export type EdgeCode = string;
 
-export type CutoutType = 'sink' | 'cooktop' | 'faucet' | 'soap_dispenser' | 'outlet' | 'custom';
+/** `sink` … `other` are the master-data types every tenant is seeded with
+ *  (lkp_cutout_type); `soap_dispenser`, `outlet` and `custom` are older ones,
+ *  still valid on drawings saved before the list moved to master data. */
+export type CutoutType =
+  | 'sink' | 'cooktop' | 'faucet' | 'fireplace' | 'bathtub' | 'other'
+  | 'soap_dispenser' | 'outlet' | 'custom';
 
-/** How a cutout's opening is drawn. `rect` uses widthMm x depthMm, `round`
- *  uses diameterMm, `polygon` uses its own `outline`. Absent on drawings
- *  saved before this field existed — see `cutoutShape` in lib/drawing/cutouts.ts. */
-export type CutoutShape = 'rect' | 'round' | 'polygon';
+/** How the distance from one side of a cutout to the piece's edge is shown:
+ *  measured from the cutout's centre, from its border, or not at all. */
+export type DistanceLineMode = 'center' | 'border' | 'hidden';
+
+export interface DistanceLines {
+  top: DistanceLineMode;
+  right: DistanceLineMode;
+  bottom: DistanceLineMode;
+  left: DistanceLineMode;
+}
+
+/** How a cutout's opening is drawn. `rect`, `ellipse`, `arc` (flat bottom,
+ *  domed top) and `stadium` (a rectangle with fully rounded ends) all fill
+ *  widthMm x depthMm; `round` uses diameterMm, `polygon` its own `outline`.
+ *  Absent on drawings saved before this field existed — see `cutoutShape` in
+ *  lib/drawing/cutouts.ts. */
+export type CutoutShape = 'rect' | 'round' | 'polygon' | 'ellipse' | 'arc' | 'stadium';
 
 /** What role a piece plays in the layout. Label/preset only — geometry is
  *  identical for every kind. */
 export type PieceKind = 'countertop' | 'island' | 'peninsula';
+
+/** The Border tool's reshapes (lib/drawing/borders.ts). */
+export type BorderStyle = 'fullRadiusOut' | 'fullRadiusIn' | 'bumpOut' | 'bumpIn' | 'arcBumpOut' | 'arcBumpIn';
+
+/** The Corner tool's changes (lib/drawing/corners.ts). */
+export type CornerStyle = 'clip' | 'radius' | 'radiusIn' | 'bumpOut' | 'bumpIn' | 'notch';
+
+/** The profile an edge type will show in 3D (lib/drawing/edgeTypes.ts lists them
+ *  with their names). `none` is a plain square edge. Not drawn on the sketch. */
+export type EdgeFinish = 'none' | 'raw' | 'ogee' | 'beveled' | 'eased' | 'waterfall' | 'halfBullnose' | 'bullnose';
+
+/** How an edge type is priced. Only a rate per linear length so far. */
+export type EdgePricingType = 'linear';
+
+/** One kind of edge the Edges tool paints onto a side (Ease, Appliance ...): the
+ *  shop's own list, kept on the server (GET /tenant/settings/edge-types). */
+export interface EdgeType {
+  id: string;
+  name: string;
+  pricingType: EdgePricingType;
+  /** The rate, per linear unit of the type's pricing. */
+  price: number;
+  /** A short tag (e.g. "A"); may be empty. */
+  alias: string;
+  /** The colour the side is drawn in, as #rrggbb. */
+  color: string;
+  finish: EdgeFinish;
+  /** One of the four every shop starts with. They can be edited, not duplicated. */
+  isSystem: boolean;
+}
+
+/** How an attached-profile type stands relative to its parent piece in 3D:
+ *  90 = upright on the counter's top face (a backsplash), 180 = flat, running
+ *  on in the same plane (a lamination build-up), 270 = dropped flush down the
+ *  side (a waterfall). */
+export type ProfileAngle = 90 | 180 | 270;
+
+/** Whether two painted sides meeting at a piece's corner get a mitered joint
+ *  or a plain square one. Not drawn on the sketch directly — it shapes the
+ *  derived attached-profile geometry at that corner. */
+export type ProfileFinish = 'none' | 'mitered';
+
+/** How an attached-profile type is priced. Only a rate per linear length so far. */
+export type ProfilePricingType = 'linear';
+
+/** One kind of attached piece the Profiles tool paints onto a side (Backsplash,
+ *  Lamination, Miter Edge, Waterfall ...): the shop's own list, kept on the
+ *  server (GET /tenant/settings/attached-profile-types). Named "attached
+ *  profile" to stay distinct from the edge-code dropdown (also loosely called
+ *  "edge profile") and from EdgeFinish's 3D cross-section shape. Supersedes
+ *  PieceEdge's old plain splashHeightMm/waterfallHeightMm fields. */
+export interface AttachedProfileType {
+  id: string;
+  name: string;
+  pricingType: ProfilePricingType;
+  /** The rate, per linear unit of the type's pricing. */
+  price: number;
+  /** A short tag (e.g. "BS"); may be empty. */
+  alias: string;
+  /** The colour the side is drawn in, as #rrggbb. */
+  color: string;
+  /** Preset widths/heights (mm) offered when painting this type onto a side —
+   *  the "Measurements" list in the type's editor. Always at least one. */
+  measurementPresetsMm: number[];
+  angle: ProfileAngle;
+  finish: ProfileFinish;
+  /** One of the four every shop starts with. They can be edited, not duplicated. */
+  isSystem: boolean;
+}
+
+/** The attached-profile type (Profiles tool) painted onto a side, plus the
+ *  measurement chosen for this one instance (one of the type's presets, or a
+ *  value carried over from a migrated splashHeightMm/waterfallHeightMm). */
+export interface AttachedProfile {
+  profileTypeId: string;
+  measurementMm: number;
+  /** Where the Material tab laid this profile piece on a slab; absent until
+   *  it is placed. Same shape and meaning as Piece.slab — a profile piece
+   *  sits on one slab at a time, independently of its parent piece. */
+  slab?: SlabPlacement;
+}
 
 export interface PieceEdge {
   index: number;
@@ -29,10 +128,27 @@ export interface PieceEdge {
   code?: EdgeCode;
   /** How far the stone projects past its support. Informational. */
   overhangMm?: number;
-  /** Backsplash standing along this side. */
-  splashHeightMm?: number;
-  /** Waterfall panel dropping from this side. */
-  waterfallHeightMm?: number;
+  /** Bows this side into a circular arc: the gap between the chord (corner to
+   *  corner) and the arc's crown, in mm. Positive bulges to the left of corner
+   *  i -> i+1 — away from the stone on the usual clockwise outline — negative
+   *  to the right. Absent is a straight side. See lib/drawing/arcs.ts. */
+  arcHeightMm?: number;
+  /** Set on every side a Border reshape made (one id per reshape, shared by all
+   *  its sides): a side with it already carries a border and must be made
+   *  standard again before another can go on. `borderStyle` says which. */
+  borderId?: string;
+  borderStyle?: BorderStyle;
+  /** Same idea for the Corner tool: set on every side a corner change made, one
+   *  id per change. Such a side takes no second corner change or border until the
+   *  corner is made standard again. */
+  cornerId?: string;
+  cornerStyle?: CornerStyle;
+  /** The edge type the Edges tool painted onto this side (EdgeType.id). Absent is
+   *  a side nobody has painted. */
+  edgeTypeId?: string;
+  /** The attached-profile type the Profiles tool painted onto this side.
+   *  Independent of edgeTypeId — a side can carry both at once. */
+  attachedProfile?: AttachedProfile;
 }
 
 export interface Seam {
@@ -61,30 +177,68 @@ export interface Cutout {
   /** Edge treatment around the opening — a code from the tenant's edge list. */
   edgeCode?: EdgeCode;
   label?: string;
+  /** Leave the name / the size text off the drawing (the two Hide boxes in
+   *  the Cutout dialog). The opening itself is always drawn. */
+  hideName?: boolean;
+  hideMeasurements?: boolean;
+  /** Which picture the opening is drawn as (lib/drawing/cutoutShapes.ts, e.g.
+   *  `sink.farmhouse`). Absent is "No Picture": the plain rectangle. */
+  shapeCode?: string;
+  /** Faucet holes drilled with a sink; the radius is in mm. */
+  faucetHoleCount?: number;
+  faucetHoleRadiusMm?: number;
+  distanceLines?: DistanceLines;
 }
 
 export interface Piece {
   id: string;
   label: string; // 'A-1'
-  shape: 'rect' | 'L' | 'U' | 'polygon';
+  shape: 'rect' | 'L' | 'U' | 'polygon' | 'circle';
   kind?: PieceKind;
-  outline: Point[]; // local coords, clockwise, closed implicitly
+  /** local coords, clockwise, closed implicitly — for `shape: 'circle'` this
+   *  is a `radiusMm`-sized regular polygon approximation (lib/drawing/geometry.ts
+   *  `circleOutline`), centred on the origin, so area/export/slab-fit work on
+   *  it exactly like any other outline; `position` is the circle's centre. */
+  outline: Point[];
   position: Point;
   /** Clockwise rotation about the local origin, in degrees (any value). */
   rotationDeg: number;
   thicknessMm: number;
   cornerRadiusMm?: number;
+  /** Only for `shape: 'circle'` — the exact radius the outline approximates,
+   *  used for its true-circle dimension lines rather than per-edge ones. */
+  radiusMm?: number;
   salesOrderLineId?: string;
   edges: PieceEdge[];
   seams: Seam[];
   cutouts: Cutout[];
+  /** Where the Material tab laid this piece on a slab; absent until it is placed.
+   *  A piece sits on one slab at a time. */
+  slab?: SlabPlacement;
+}
+
+/** A piece's spot on one inventory slab. The piece's outline is flipped to
+ *  y-down, rotated clockwise by `rotationDeg` about its own origin, then moved so
+ *  the top-left of its bounding box sits at (x, y) millimetres from the slab's
+ *  top-left corner. `slabId` is the inventory unit's uuid. */
+export interface SlabPlacement {
+  slabId: string;
+  x: number;
+  y: number;
+  rotationDeg: number;
 }
 
 export interface Note {
   id: string;
+  /** May hold several lines (the Text tool's textarea). */
   text: string;
   at: Point;
   pieceId?: string;
+  /** Text-tool formatting; absent on a plain note. `fontSize` is in screen
+   *  pixels — a note keeps its size on screen at any zoom. */
+  bold?: boolean;
+  italic?: boolean;
+  fontSize?: number;
 }
 
 /** A manual measurement between two points, in the area's world millimetres.

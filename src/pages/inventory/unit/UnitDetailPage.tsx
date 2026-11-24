@@ -12,7 +12,7 @@ import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { consumptionState, formatUnitArea, usageOf } from '@/lib/unitConsumption';
 import { UNIT_STATUS_AVAILABLE, UNIT_STATUS_IN_TRANSIT, UNIT_STATUS_ON_ORDER, UNIT_STATUS_RECEIVED, type UnitHistoryEntry } from '@/types/inventory';
-import { customerReservationOf } from '@/lib/unitAllocation';
+import { customerReservationOf, orderHoldOf } from '@/lib/unitAllocation';
 import { historyActionLabel } from '@/lib/inventoryWarehouse';
 import { ScrapUnitDialog } from './components/ScrapUnitDialog';
 import { CutUnitDialog } from './components/CutUnitDialog';
@@ -22,6 +22,7 @@ import { UnitAllocationBanner } from './components/UnitAllocationBanner';
 import { UnitOnOrderBanner } from './components/UnitOnOrderBanner';
 import { UnitUsageTab } from './components/UnitUsageTab';
 import { UnitDetailsTab } from './components/UnitDetailsTab';
+import { SlabPhotoCard } from './components/SlabPhotoCard';
 
 // Usage first: it is what someone opening a slab wants to know. The static facts
 // sit on Details, the operational trail on History.
@@ -104,7 +105,9 @@ export default function UnitDetailPage() {
   const onOrder = unit.status === UNIT_STATUS_ON_ORDER;
   const actionable = unit.status === UNIT_STATUS_AVAILABLE;
   const received = unit.status === UNIT_STATUS_RECEIVED;
-  const heldForCustomer = customerReservationOf(unit) !== null;
+  // A hold from Inventory (a customer) or from a sales order's drawing: either can
+  // be released here, so a stalled order never leaves a slab stuck.
+  const heldByReservation = customerReservationOf(unit) !== null || orderHoldOf(unit) !== null;
   const disabledReason = inTransit
     ? 'This unit is in transit between locations — it cannot be moved, cut or scrapped until received.'
     : onOrder
@@ -213,7 +216,12 @@ export default function UnitDetailPage() {
             </>
           )}
 
-          {activeTab === 'details' && <UnitDetailsTab unit={unit} />}
+          {activeTab === 'details' && (
+            <>
+              <SlabPhotoCard unitId={unit.id} canEdit={canUpdate} />
+              <UnitDetailsTab unit={unit} />
+            </>
+          )}
 
           {activeTab === 'history' && (
             <div className="rounded-xl border border-stone-200 bg-white p-4">
@@ -267,7 +275,7 @@ export default function UnitDetailPage() {
               <button type="button" disabled={Boolean(disabledReason) || unit.inspectionStatus === 'pending' || unit.inspectionStatus === 'rejected'} onClick={() => setDialog('cut')} className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 text-xs text-ink w-full transition-colors text-left disabled:opacity-40 disabled:cursor-not-allowed">
                 <Scissors className="size-4 text-ink-faint shrink-0" /> Cut
               </button>
-              {heldForCustomer ? (
+              {heldByReservation ? (
                 <button type="button" disabled={isReleasing} onClick={() => releaseReservation()} className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 text-xs text-ink w-full transition-colors text-left disabled:opacity-40 disabled:cursor-not-allowed">
                   <UserX className="size-4 text-ink-faint shrink-0" /> Release reservation
                 </button>

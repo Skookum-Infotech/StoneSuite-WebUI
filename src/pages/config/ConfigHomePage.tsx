@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Workflow, ShieldCheck, ArrowRight, UsersRound, ScrollText, Upload, Building2, Sparkles, Timer } from 'lucide-react';
+import { Workflow, ShieldCheck, ArrowRight, UsersRound, UserRound, ScrollText, Upload, Building2, Sparkles, Timer } from 'lucide-react';
 import { PageHeader } from '@/components/tenant/ui';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 
@@ -41,6 +41,13 @@ const sections: ConfigSection[] = [
     icon: UsersRound,
     title: 'Users',
     description: 'Invite team members, assign roles, suspend or deactivate accounts, and manage pending invitations.',
+  },
+  {
+    to: '/config/employees',
+    icon: UserRound,
+    title: 'Employee',
+    description: 'Your staff directory — add employees (with or without a login); an active employee also gets a vendor record so expense claims can be paid.',
+    requires: { resource: 'employee', action: 'read' },
   },
   {
     to: '/config/audit',

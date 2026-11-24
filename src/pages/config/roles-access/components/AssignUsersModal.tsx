@@ -5,11 +5,10 @@ import { Loader2, Plus, X } from "lucide-react";
 import { userService } from "@/services/tenantServices";
 import { apiErrorMessage } from "@/api/tenantClient";
 import { ErrorNote, Spinner } from "@/components/tenant/ui";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { invalidateUserRoleQueries } from "@/lib/userRoleQueries";
 import type { Role } from "@/types/tenant";
 
-import { buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 export function AssignUsersModal({
   role,

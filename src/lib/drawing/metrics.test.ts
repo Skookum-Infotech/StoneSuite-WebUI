@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Cutout, Piece } from '@/types/drawing';
 import { lShapeOutline, rectOutline } from './geometry';
-import { areaMetrics, mm2ToSqFt, pieceMetrics } from './metrics';
+import { areaMetrics, fabricationSqFt, mm2ToSqFt, pieceMetrics } from './metrics';
 
 const piece = (outline = rectOutline(2000, 600), cutouts: Cutout[] = []): Piece => ({
   id: 'p', label: 'A-1', shape: 'rect', outline, position: { x: 0, y: 0 }, rotationDeg: 0,
@@ -18,6 +18,22 @@ describe('pieceMetrics', () => {
     expect(m.perimeterMm).toBe(5200);
     expect(m.edges.map((e) => e.lengthMm)).toEqual([2000, 600, 2000, 600]);
     m.edges.forEach((e) => expect(e.startAngleDeg).toBeCloseTo(90));
+  });
+
+  it('counts a bowed side in the area, the perimeter and the finished edge length', () => {
+    // The 600 mm side (index 1) bowed out by half its length is a half circle of radius 300.
+    const bowed = { ...piece(), edges: [{ index: 1, code: 'EE', arcHeightMm: 300 }] };
+    const m = pieceMetrics(bowed);
+    expect(m.grossAreaMm2).toBeCloseTo(1_200_000 + (Math.PI * 300 * 300) / 2);
+    expect(m.perimeterMm).toBeCloseTo(5200 - 600 + Math.PI * 300);
+    expect(m.edgeTotals.finishedLengthMm).toBeCloseTo(Math.PI * 300);
+    // The side's own length stays the straight line across it, the way the drawing labels it.
+    expect(m.edges[1].lengthMm).toBe(600);
+  });
+
+  it('takes a bowed-in side out of the area', () => {
+    const m = pieceMetrics({ ...piece(), edges: [{ index: 1, arcHeightMm: -300 }] });
+    expect(m.grossAreaMm2).toBeCloseTo(1_200_000 - (Math.PI * 300 * 300) / 2);
   });
 
   it('has no cutout area without cutouts', () => {
@@ -51,5 +67,16 @@ describe('areaMetrics', () => {
 describe('mm2ToSqFt', () => {
   it('converts square millimetres to square feet', () => {
     expect(mm2ToSqFt(92903.04)).toBeCloseTo(1);
+  });
+});
+
+describe('fabricationSqFt', () => {
+  it.each([
+    [100, 20, 120],
+    [100, 0, 100],
+    [58.252, 20, 69.9024],
+    [50, 100, 100],
+  ])('countertop %s sq ft at %s%% -> %s sq ft', (countertopSqFt, percent, want) => {
+    expect(fabricationSqFt(countertopSqFt, percent)).toBeCloseTo(want);
   });
 });

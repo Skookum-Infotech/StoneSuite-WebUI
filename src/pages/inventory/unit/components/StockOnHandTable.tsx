@@ -46,7 +46,7 @@ export function StockOnHandTable() {
       setPrevCursors([]);
     }, SEARCH_DEBOUNCE_MS);
     return () => clearTimeout(t);
-  }, [term]);
+  }, [term, setDebounced]);
 
   const req: InventoryItemSearchRequest = {
     search: debounced || undefined,
@@ -103,7 +103,7 @@ export function StockOnHandTable() {
               <tr>
                 <th className="type-th w-10 px-3 py-3"><span className="sr-only">Show by location</span></th>
                 {HEADERS.map((h) => (
-                  <th key={h.label} className={`px-4 py-3 type-th ${h.right ? 'text-right' : ''}`}>
+                  <th key={h.label} className={`px-4 py-3 text-xs font-semibold uppercase tracking-wider text-ink-muted ${h.right ? 'text-right' : ''}`}>
                     {h.label}
                   </th>
                 ))}

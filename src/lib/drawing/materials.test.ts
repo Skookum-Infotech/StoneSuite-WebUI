@@ -19,10 +19,13 @@ describe('materialUsage', () => {
     expect(usage[0].grossAreaMm2).toBe(1_000_000);
   });
 
-  it('adds backsplash and waterfall panels to billable area but not cutouts', () => {
+  it('adds attached-profile panels to billable area but not cutouts', () => {
     const [u] = materialUsage([area([piece('p1', {
       salesOrderLineId: 'L1',
-      edges: [{ index: 0, splashHeightMm: 100 }, { index: 1, waterfallHeightMm: 900 }],
+      edges: [
+        { index: 0, attachedProfile: { profileTypeId: 'backsplash-1', measurementMm: 100 } },
+        { index: 1, attachedProfile: { profileTypeId: 'waterfall-1', measurementMm: 900 } },
+      ],
       cutouts: [{ id: 'c', type: 'sink', shape: 'rect', center: { x: 500, y: -250 }, widthMm: 300, depthMm: 200 }],
     })])]);
     expect(u.verticalAreaMm2).toBe(100_000 + 450_000);

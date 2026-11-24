@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  area, bounds, isClockwise, lShapeOutline, outlineEdges, perimeter, rectOutline,
+  area, bounds, circleOutline, isClockwise, lShapeOutline, outlineEdges, perimeter, rectOutline,
   snapToGrid, squareFeet, transformOutline, uShapeOutline,
 } from './geometry';
 
@@ -12,6 +12,32 @@ describe('rectOutline', () => {
       { x: 600, y: -400 },
       { x: 0, y: -400 },
     ]);
+  });
+});
+
+describe('circleOutline', () => {
+  it('returns a regular polygon of the given radius and segment count, centred on the origin', () => {
+    const outline = circleOutline(100, 8);
+    expect(outline).toHaveLength(8);
+    outline.forEach((p) => expect(Math.hypot(p.x, p.y)).toBeCloseTo(100));
+    // First point sits on the +X axis.
+    expect(outline[0].x).toBeCloseTo(100);
+    expect(outline[0].y).toBeCloseTo(0);
+  });
+
+  it('winds clockwise, like rectOutline', () => {
+    expect(isClockwise(circleOutline(100, 8))).toBe(true);
+  });
+
+  it('closely approximates a circle\'s true area at the default segment count', () => {
+    const r = 100;
+    const exact = Math.PI * r * r;
+    const relativeError = Math.abs(area(circleOutline(r)) - exact) / exact;
+    expect(relativeError).toBeLessThan(0.01);
+  });
+
+  it('defaults to ROUND_CUTOUT_SEGMENTS points when none is given', () => {
+    expect(circleOutline(100)).toHaveLength(48);
   });
 });
 

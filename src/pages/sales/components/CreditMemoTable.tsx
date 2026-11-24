@@ -1,10 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import {
-  Search, ArrowUp, ArrowDown, ArrowUpDown, X, Inbox, Pencil,
-  ChevronLeft, ChevronRight, Download, Loader2,
-} from 'lucide-react';
+import { Search, X, Inbox, Pencil, ChevronLeft, ChevronRight, Download, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { creditMemoService } from '@/services/creditMemoService';
 import { apiErrorMessage } from '@/api/tenantClient';
@@ -14,6 +11,8 @@ import { exportPagedCsv, fmtCsvDate } from '@/lib/csvExport';
 import type { CreditMemoSearchRequest } from '@/types/creditMemo';
 import { formatDateValue, LIST_DATE_OPTIONS } from '@/lib/dateUtils';
 import { CustomerLink } from '@/components/crm/CustomerLink';
+import { SortIcon } from '@/components/ui/SortIcon';
+import { useListUrlState } from '@/hooks/useListUrlState';
 
 import { buttonVariants } from '@/components/ui/button';
 import { StatusPill } from '@/components/ui/StatusPill';
@@ -26,7 +25,6 @@ const EXPORT_PAGE_SIZE = 200;
 // pagination UX for visual consistency.
 
 type SortField = 'createdAt' | 'creditMemoDate' | 'grandTotal' | 'unappliedAmount';
-type SortDir = 'asc' | 'desc';
 
 const PAGE_SIZE = 25;
 
@@ -36,6 +34,8 @@ const SORT_LABELS: Record<SortField, string> = {
   grandTotal: 'Grand Total',
   unappliedAmount: 'Unapplied',
 };
+
+const SORT_FIELDS = Object.keys(SORT_LABELS) as SortField[];
 
 const SORT_KEY: Record<SortField, string> = {
   createdAt: 'created_at',
@@ -55,10 +55,11 @@ export function CreditMemoTable() {
   const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
   const canEdit = permissionsLoading || hasPermission('credit_memo', 'update');
 
-  const [term, setTerm] = useState('');
-  const [debounced, setDebounced] = useState('');
-  const [sortBy, setSortBy] = useState<SortField>('createdAt');
-  const [sortDir, setSortDir] = useState<SortDir>('desc');
+  const { search: debounced, sortBy, sortDir, setSearch: setDebounced, setSort } = useListUrlState<SortField>({
+    sortFields: SORT_FIELDS,
+    defaultSort: { field: 'createdAt', dir: 'desc' },
+  });
+  const [term, setTerm] = useState(debounced);
 
   const [cursor, setCursor] = useState('');
   const [prevCursors, setPrevCursors] = useState<string[]>([]);
@@ -73,7 +74,7 @@ export function CreditMemoTable() {
       setPrevCursors([]);
     }, 300);
     return () => clearTimeout(t);
-  }, [term]);
+  }, [term, setDebounced]);
 
   const req: CreditMemoSearchRequest = {
     search: debounced || undefined,
@@ -120,19 +121,9 @@ export function CreditMemoTable() {
   }
 
   function handleSort(field: SortField) {
-    if (sortBy === field) {
-      setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
-    } else {
-      setSortBy(field);
-      setSortDir('desc');
-    }
+    setSort(field, sortBy === field ? (sortDir === 'asc' ? 'desc' : 'asc') : 'desc');
     setCursor('');
     setPrevCursors([]);
-  }
-
-  function SortIcon({ field }: { field: SortField }) {
-    if (sortBy !== field) return <ArrowUpDown className="size-2.5 opacity-40" />;
-    return sortDir === 'asc' ? <ArrowUp className="size-2.5" /> : <ArrowDown className="size-2.5" />;
   }
 
   async function handleDownloadCsv() {
@@ -192,7 +183,7 @@ export function CreditMemoTable() {
               )}
             >
               {label}
-              <SortIcon field={field} />
+              <SortIcon active={sortBy === field} dir={sortDir} />
             </button>
           ))}
         </div>

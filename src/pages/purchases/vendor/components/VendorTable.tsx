@@ -1,10 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import {
-  Search, ArrowUp, ArrowDown, ArrowUpDown, X, Inbox, Pencil,
-  ChevronLeft, ChevronRight, User, Building2, Download, Loader2,
-} from 'lucide-react';
+import { Search, X, Inbox, Pencil, ChevronLeft, ChevronRight, User, Building2, Download, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { vendorService } from '@/services/vendorService';
 import { apiErrorMessage } from '@/api/tenantClient';
@@ -12,9 +9,10 @@ import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { VENDOR_STATUS_COLORS } from '@/types/vendor';
 import { exportPagedCsv } from '@/lib/csvExport';
 import type { VendorSearchRequest } from '@/types/vendor';
+import { SortIcon } from '@/components/ui/SortIcon';
+import { useListUrlState } from '@/hooks/useListUrlState';
 
 import { buttonVariants } from '@/components/ui/button';
-import { StatusPill } from '@/components/ui/StatusPill';
 const EXPORT_PAGE_SIZE = 200;
 
 // Vendors are a dedicated relational module (mirrors salesorder), not a
@@ -23,7 +21,6 @@ const EXPORT_PAGE_SIZE = 200;
 // search/sort/cursor-pagination UX for visual consistency.
 
 type SortField = 'createdAt' | 'updatedAt' | 'vendorNumber';
-type SortDir = 'asc' | 'desc';
 
 const PAGE_SIZE = 25;
 
@@ -32,6 +29,8 @@ const SORT_LABELS: Record<SortField, string> = {
   updatedAt: 'Last Updated',
   vendorNumber: 'Vendor #',
 };
+
+const SORT_FIELDS = Object.keys(SORT_LABELS) as SortField[];
 
 // Only fields vendors.resolver.go whitelists for ORDER BY (record_number is
 // the built-in alias for vendor_number).
@@ -48,10 +47,11 @@ export function VendorTable() {
   const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
   const canEdit = permissionsLoading || hasPermission('vendor', 'update');
 
-  const [term, setTerm] = useState('');
-  const [debounced, setDebounced] = useState('');
-  const [sortBy, setSortBy] = useState<SortField>('createdAt');
-  const [sortDir, setSortDir] = useState<SortDir>('desc');
+  const { search: debounced, sortBy, sortDir, setSearch: setDebounced, setSort } = useListUrlState<SortField>({
+    sortFields: SORT_FIELDS,
+    defaultSort: { field: 'createdAt', dir: 'desc' },
+  });
+  const [term, setTerm] = useState(debounced);
 
   const [cursor, setCursor] = useState('');
   const [prevCursors, setPrevCursors] = useState<string[]>([]);
@@ -66,7 +66,7 @@ export function VendorTable() {
       setPrevCursors([]);
     }, 300);
     return () => clearTimeout(t);
-  }, [term]);
+  }, [term, setDebounced]);
 
   const req: VendorSearchRequest = {
     search: debounced || undefined,
@@ -113,19 +113,9 @@ export function VendorTable() {
   }
 
   function handleSort(field: SortField) {
-    if (sortBy === field) {
-      setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
-    } else {
-      setSortBy(field);
-      setSortDir('desc');
-    }
+    setSort(field, sortBy === field ? (sortDir === 'asc' ? 'desc' : 'asc') : 'desc');
     setCursor('');
     setPrevCursors([]);
-  }
-
-  function SortIcon({ field }: { field: SortField }) {
-    if (sortBy !== field) return <ArrowUpDown className="size-2.5 opacity-40" />;
-    return sortDir === 'asc' ? <ArrowUp className="size-2.5" /> : <ArrowDown className="size-2.5" />;
   }
 
   async function handleDownloadCsv() {
@@ -182,7 +172,7 @@ export function VendorTable() {
               )}
             >
               {label}
-              <SortIcon field={field} />
+              <SortIcon active={sortBy === field} dir={sortDir} />
             </button>
           ))}
         </div>
@@ -248,7 +238,7 @@ export function VendorTable() {
                 ))
               ) : records.length > 0 ? (
                 records.map((vendor) => {
-                  const TypeIcon = vendor.vendorType === 'Person' ? User : Building2;
+                  const TypeIcon = vendor.vendorType === 'Organization' ? Building2 : User;
                   const statusColor = VENDOR_STATUS_COLORS[vendor.status] ?? '#a8a29e';
                   return (
                     <tr key={vendor.id} className="group hover:bg-accent/10 transition-colors duration-150">
@@ -260,7 +250,7 @@ export function VendorTable() {
                           {vendor.vendorNumber || '—'}
                         </Link>
                       </td>
-                      <td className="px-4 py-2.5 truncate max-w-[240px] type-cell-strong">
+                      <td className="px-4 py-2.5 truncate max-w-[240px] type-cell">
                         {vendor.displayName}
                       </td>
                       <td className="px-4 py-2.5">
@@ -270,21 +260,29 @@ export function VendorTable() {
                         </span>
                       </td>
                       <td className="px-4 py-2.5">
-                        <StatusPill color={statusColor}>{vendor.status}</StatusPill>
+                        <span
+                          className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-ink whitespace-nowrap type-pill"
+                          style={{ backgroundColor: `${statusColor}18` }}
+                        >
+                          <span className="size-1.5 shrink-0 rounded-full" style={{ backgroundColor: statusColor }} aria-hidden="true" />
+                          {vendor.status}
+                        </span>
                       </td>
                       <td className="px-4 py-2.5 whitespace-nowrap type-cell">
                         {vendor.email || '—'}
                       </td>
                       {canEdit && (
                         <td className="px-4 py-2.5 text-right">
-                          <button
-                            type="button"
-                            onClick={() => navigate(`/purchases/vendor/${vendor.id}/edit`)}
-                            aria-label={`Edit vendor ${vendor.displayName}`}
-                            className="inline-flex items-center justify-center rounded-lg border border-stone-200 bg-white p-2 text-ink-muted transition-colors hover:bg-accent hover:border-accent hover:text-accent-foreground cursor-pointer"
-                          >
-                            <Pencil className="size-4" />
-                          </button>
+                          {vendor.vendorType !== 'Employee' && (
+                            <button
+                              type="button"
+                              onClick={() => navigate(`/purchases/vendor/${vendor.id}/edit`)}
+                              aria-label={`Edit vendor ${vendor.displayName}`}
+                              className="inline-flex items-center justify-center rounded-lg border border-stone-200 bg-white p-2 text-ink-muted transition-colors hover:bg-accent hover:border-accent hover:text-accent-foreground cursor-pointer"
+                            >
+                              <Pencil className="size-4" />
+                            </button>
+                          )}
                         </td>
                       )}
                     </tr>

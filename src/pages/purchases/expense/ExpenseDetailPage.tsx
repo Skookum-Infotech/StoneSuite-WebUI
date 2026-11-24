@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
-import { Wallet, Upload, Pencil, FileDown, Loader2 } from 'lucide-react';
+import { Wallet, Upload, Pencil, FileDown, FilePlus, Loader2 } from 'lucide-react';
 import { CopyQuickAction } from '@/components/tenant/CopyQuickAction';
 import { toast } from 'sonner';
 import { expenseService } from '@/services/expenseService';
@@ -21,6 +21,7 @@ import {
   EXPENSE_STATUS_COLORS, EXPENSE_STATUS_CODES, EXPENSE_DELETABLE_STATUSES, EXPENSE_ALLOWED_TRANSITIONS, canRejectExpense,
 } from '@/lib/expenseForm';
 import { statusToastLabel } from '@/lib/statusToast';
+import { VB_STATUS_COLORS } from '@/lib/vendorBillForm';
 import { ExpenseAuditTab } from './components/ExpenseAuditTab';
 import { DeleteExpenseDialog } from './components/DeleteExpenseDialog';
 import { DangerZoneCard } from '@/components/tenant/DangerZoneCard';
@@ -64,6 +65,7 @@ export default function ExpenseDetailPage() {
   const canDelete = permissionsLoading || hasPermission('expense', 'delete');
   const canCopy = permissionsLoading || hasPermission('expense', 'create');
   const canTransition = permissionsLoading || hasPermission('expense', 'transition');
+  const canCreateBill = canTransition && (permissionsLoading || hasPermission('vendor_bill', 'create'));
 
   const { data: exp, isLoading, error } = useQuery({
     queryKey: ['expense', id],
@@ -110,6 +112,18 @@ export default function ExpenseDetailPage() {
     },
   });
 
+  // Raises the Draft vendor bill for an approved claim that has none -- one approved
+  // before bills were automatic, or whose bill was voided.
+  const createBill = useMutation({
+    mutationFn: () => expenseService.createBill(id),
+    onSuccess: (updated) => {
+      queryClient.setQueryData(['expense', id], updated);
+      queryClient.invalidateQueries({ queryKey: ['expenses'] });
+      queryClient.invalidateQueries({ queryKey: ['vendor-bills'] });
+      toast.success(`Vendor bill ${updated.vendorBill?.number ?? ''} created.`.replace('  ', ' '));
+    },
+  });
+
   if (isLoading) return <div className="p-6"><Spinner label="Loading expense claim…" /></div>;
   // A 404 here can mean "exists but is out of your scope" as well as "no such
   // record", so the copy stays non-committal about whether it exists.
@@ -118,15 +132,19 @@ export default function ExpenseDetailPage() {
 
   const color = EXPENSE_STATUS_COLORS[exp.statusCode] ?? '#a8a29e';
   const canDeleteHere = canDelete && EXPENSE_DELETABLE_STATUSES.has(exp.statusCode);
-  const claimantName = exp.claimantEmployeeId
-    ? (lookups?.employees ?? []).find((e) => String(e.id) === String(exp.claimantEmployeeId))?.name
-    : undefined;
+  const claimantName = exp.claimantName
+    || (exp.claimantEmployeeId
+      ? (lookups?.employees ?? []).find((e) => String(e.id) === String(exp.claimantEmployeeId))?.name
+      : undefined);
 
-  // The terminal status (REIM) has no legal transitions, and a user without
+  // A claim that is Approved or Paid has no legal manual transitions, and a user without
   // `expense:transition` sees none either — in both cases the bar renders
   // nothing, so the card would be an empty "Actions" header. Hide it unless it
   // has real content (a transition, an approval gate, a reject option, or a
   // failed transition).
+  // An approved claim with no live bill (approved before bills were automatic, or its
+  // bill was voided) is waiting for one.
+  const needsBill = exp.statusCode === 'APPV' && (!exp.vendorBill || exp.vendorBill.statusCode === 'VOID');
   const hasTransitions = canTransition && (EXPENSE_ALLOWED_TRANSITIONS[exp.statusCode]?.length ?? 0) > 0;
   const canReject = canTransition && canRejectExpense(exp.statusCode);
   const showActions = hasTransitions || canReject || Boolean(transition.error);
@@ -242,6 +260,34 @@ export default function ExpenseDetailPage() {
               <div className="rounded-lg border border-stone-200 bg-white p-4">
                 <Total label="Total" value={exp.total} bold />
               </div>
+              {needsBill && !exp.vendorBill && (
+                <ModernSection title="Vendor Bill" index={1}>
+                  <p className="text-xs text-ink">
+                    This approved claim has no vendor bill yet. Use Create vendor bill to raise one; the claim is paid when it is.
+                  </p>
+                </ModernSection>
+              )}
+              {exp.vendorBill && (
+                <ModernSection title="Vendor Bill" index={1}>
+                  <div className="flex flex-wrap items-center gap-3 text-xs text-ink">
+                    <Link
+                      to={`/purchases/vendor_bill/${exp.vendorBill.id}`}
+                      aria-label={`Open vendor bill ${exp.vendorBill.number}`}
+                      className="hover:text-accent-foreground type-record-id"
+                    >
+                      {exp.vendorBill.number || 'Vendor bill'}
+                    </Link>
+                    <Badge color={VB_STATUS_COLORS[exp.vendorBill.statusCode] ?? '#a8a29e'}>{exp.vendorBill.status}</Badge>
+                    {exp.vendorBill.statusCode === 'VOID' ? (
+                      <span>This bill was voided, so the claim is waiting for a new one. Use Create vendor bill.</span>
+                    ) : exp.statusCode !== 'PAID' && (
+                      <span>
+                        This claim is paid when its vendor bill is paid. Approve and pay the bill from there.
+                      </span>
+                    )}
+                  </div>
+                </ModernSection>
+              )}
             </>
           )}
 
@@ -292,6 +338,18 @@ export default function ExpenseDetailPage() {
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
             <p className="type-card-title">Quick Actions</p>
             <div className="space-y-0.5">
+              {needsBill && canCreateBill && (
+                <button
+                  type="button"
+                  onClick={() => createBill.mutate()}
+                  disabled={createBill.isPending}
+                  aria-label="Create a vendor bill for this expense claim"
+                  className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs font-semibold text-ink-strong w-full transition-colors text-left disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {createBill.isPending ? <Loader2 className="size-4 text-ink-faint shrink-0 animate-spin" /> : <FilePlus className="size-4 text-ink-muted shrink-0" />}
+                  {createBill.isPending ? 'Creating bill…' : 'Create vendor bill'}
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => navigate(`/purchases/expense/${id}/edit`, { state: { initialTab: 'files' } })}
@@ -328,6 +386,9 @@ export default function ExpenseDetailPage() {
             </div>
             {exportPdfError && (
               <p role="alert" className="type-error">{exportPdfError}</p>
+            )}
+            {createBill.error && (
+              <p role="alert" className="type-error">{apiErrorMessage(createBill.error, 'Failed to create the vendor bill.')}</p>
             )}
           </div>
 

@@ -10,9 +10,8 @@ import { parseInviteError, type InviteErrorInfo } from "@/lib/inviteErrors";
 import { ErrorNote } from "@/components/tenant/ui";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 
-import { buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 const inviteSchema = z.object({
   email: z.string().email("Enter a valid email address"),

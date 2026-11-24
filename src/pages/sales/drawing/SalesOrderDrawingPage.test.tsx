@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
@@ -12,12 +12,18 @@ vi.mock('@/services/drawingService', async (importOriginal) => ({
   drawingService: { getDrawing: vi.fn(), saveDrawing: vi.fn(), listVersions: vi.fn() },
 }));
 
+// WebGL does not exist in jsdom; the real viewer is covered by its own geometry tests.
+vi.mock('@/components/drawing/three/DrawingViewer3D', () => ({
+  DrawingViewer3D: () => <div data-testid="viewer-3d" />,
+}));
+
 import SalesOrderDrawingPage from './SalesOrderDrawingPage';
 import { salesOrderService } from '@/services/salesOrderService';
 import { DrawingConflictError, drawingService } from '@/services/drawingService';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import type { SalesOrder } from '@/types/salesOrder';
 import type { Drawing } from '@/types/drawing';
+import { OPEN_ZOOM } from '@/lib/drawing/constants';
 
 function order(overrides: Partial<SalesOrder> = {}): SalesOrder {
   return {
@@ -54,6 +60,7 @@ function renderPage() {
       <MemoryRouter initialEntries={['/sales/sales_order/so-1/drawing']}>
         <Routes>
           <Route path="/sales/sales_order/:id/drawing" element={<SalesOrderDrawingPage />} />
+          <Route path="/sales/sales_order/:id" element={<p>Order page</p>} />
         </Routes>
       </MemoryRouter>
     </QueryClientProvider>,
@@ -75,6 +82,20 @@ function drawing(overrides: Partial<Drawing> = {}): Drawing {
   };
 }
 
+/** Drops one square on the board: the Draw tool, a click, then back to Select
+ *  (the rail's old Shapes flyout is gone — Draw is how a piece gets added). */
+async function addAPiece(user: Pick<typeof userEvent, 'click'>) {
+  vi.spyOn(SVGElement.prototype, 'getBoundingClientRect').mockReturnValue({
+    left: 0, top: 0, width: 800, height: 600, right: 800, bottom: 600, x: 0, y: 0, toJSON: () => undefined,
+  } as DOMRect);
+  await user.click(await screen.findByRole('button', { name: 'Draw' }));
+  const click = { pointerId: 1, button: 0, clientX: 400, clientY: 300 };
+  const sheet = await screen.findByTestId('tool-capture');
+  fireEvent.pointerDown(sheet, click);
+  fireEvent.pointerUp(sheet, click);
+  await user.click(screen.getByRole('button', { name: 'Select' }));
+}
+
 beforeEach(() => {
   vi.clearAllMocks();
   vi.mocked(salesOrderService.getOrder).mockResolvedValue(order());
@@ -83,19 +104,25 @@ beforeEach(() => {
 });
 
 describe('SalesOrderDrawingPage', () => {
-  it('renders the toolbar, one area tab, an empty canvas, and the empty-state inspector when no drawing exists yet', async () => {
+  it('renders the toolbar, the active area in the bottom bar and an empty canvas, with no Properties panel until something is selected, when no drawing exists yet', async () => {
     renderPage();
-    await userEvent.click(await screen.findByRole('button', { name: 'Shapes' }));
-    expect(await screen.findByRole('button', { name: 'Add rectangle' })).toBeDefined();
-    expect(screen.getAllByRole('tab')).toHaveLength(1);
+    expect(await screen.findByRole('button', { name: 'Draw' })).toBeDefined();
+    expect(screen.getByRole('button', { name: /^Areas, Area 1 selected/ })).toBeDefined();
     expect(screen.getByRole('application', { name: 'Drawing canvas' })).toBeDefined();
-    expect(screen.getByText(/no piece selected/i)).toBeDefined();
+    expect(screen.queryByRole('complementary', { name: 'Properties' })).toBeNull();
+  });
+
+  it('opens zoomed out, so there is room on the board for a whole run of counters', async () => {
+    renderPage();
+    await screen.findByRole('application', { name: 'Drawing canvas' });
+    const levels = screen.getAllByLabelText('Zoom level');
+    expect(levels.length).toBeGreaterThan(0);
+    for (const level of levels) expect(level).toHaveTextContent(`${Math.round(OPEN_ZOOM * 100)}%`);
   });
 
   it('sets the breadcrumb label on mount and clears it on unmount', async () => {
     const { unmount } = renderPage();
-    await userEvent.click(await screen.findByRole('button', { name: 'Shapes' }));
-    await screen.findByRole('button', { name: 'Add rectangle' });
+    await screen.findByRole('button', { name: 'Draw' });
     expect(useBreadcrumbStore.getState().labels['so-1']).toBe('SO-1042');
     unmount();
     expect(useBreadcrumbStore.getState().labels['so-1']).toBeUndefined();
@@ -103,25 +130,20 @@ describe('SalesOrderDrawingPage', () => {
 
   it('adding a piece, selecting it, and undoing removes it again', async () => {
     renderPage();
-    await userEvent.click(await screen.findByRole('button', { name: 'Shapes' }));
-    await screen.findByRole('button', { name: 'Add rectangle' });
-
-    await userEvent.click(screen.getByRole('button', { name: 'Add rectangle' }));
-    await userEvent.type(screen.getByLabelText('Length'), '96');
-    await userEvent.type(screen.getByLabelText('Width'), '26');
-    await userEvent.type(screen.getByLabelText('Thickness'), '1.25');
-    await userEvent.click(screen.getByRole('button', { name: 'Add piece' }));
+    await addAPiece(userEvent);
 
     const pieceButton = screen.getByRole('button', { name: /Piece A-1/ });
     expect(pieceButton).toBeDefined();
     await userEvent.click(pieceButton);
-    expect(screen.getByLabelText('Label')).toHaveValue('A-1');
+    // The Properties panel is off by default (toggled separately, see
+    // DrawingStatusBar) — selecting a piece shows up in its own aria-label.
+    expect(screen.getByRole('button', { name: 'Piece A-1, selected' })).toBeDefined();
 
     const undoButton = screen.getByRole('button', { name: 'Undo' });
     expect(undoButton).toBeEnabled();
     await userEvent.click(undoButton);
     expect(screen.queryByRole('button', { name: /Piece A-1/ })).toBeNull();
-    expect(screen.getByText(/no piece selected/i)).toBeDefined();
+    expect(screen.queryByRole('complementary', { name: 'Properties' })).toBeNull();
     expect(screen.getByRole('button', { name: 'Undo' })).toBeDisabled();
   });
 
@@ -132,21 +154,12 @@ describe('SalesOrderDrawingPage', () => {
     // Must not silently fall back to a blank editor over a real error —
     // found in the final review: this used to show a normal, empty
     // drawing with no indication anything went wrong.
-    expect(screen.queryByRole('button', { name: 'Add rectangle' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Draw' })).toBeNull();
   });
 
   it('keeps the editor and its in-memory work when a background order refetch fails, instead of replacing it with an error screen', async () => {
     const { queryClient } = renderPage();
-    await userEvent.click(await screen.findByRole('button', { name: 'Shapes' }));
-    await screen.findByRole('button', { name: 'Add rectangle' });
-
-    // Add a piece — in-memory work that a wrongly-triggered error screen
-    // would throw away.
-    await userEvent.click(screen.getByRole('button', { name: 'Add rectangle' }));
-    await userEvent.type(screen.getByLabelText('Length'), '96');
-    await userEvent.type(screen.getByLabelText('Width'), '26');
-    await userEvent.type(screen.getByLabelText('Thickness'), '1.25');
-    await userEvent.click(screen.getByRole('button', { name: 'Add piece' }));
+    await addAPiece(userEvent);
     expect(screen.getByRole('button', { name: /Piece A-1/ })).toBeDefined();
 
     // Simulate a background refetch (e.g. on window refocus) failing —
@@ -161,7 +174,7 @@ describe('SalesOrderDrawingPage', () => {
   it('loads a real saved drawing instead of a blank one when one exists', async () => {
     vi.mocked(drawingService.getDrawing).mockResolvedValue(drawing());
     renderPage();
-    expect(await screen.findByRole('tab', { name: 'Saved Area' })).toBeDefined();
+    expect(await screen.findByRole('button', { name: /^Areas, Saved Area selected/ })).toBeDefined();
   });
 });
 
@@ -182,14 +195,47 @@ describe('SalesOrderDrawingPage — fills the screen', () => {
     expect(editor.className).toContain('overflow-hidden');
   });
 
-  it('gives the canvas all the room the toolbar and summary leave, and lets only the side panels scroll', async () => {
+  it('gives the canvas all the room the toolbar and summary leave, with no side column taking width from it', async () => {
     renderPage();
     const canvas = await screen.findByRole('application', { name: 'Drawing canvas' });
     expect(canvas.className).toContain('h-full');
-    expect(canvas.parentElement?.className).toContain('min-h-0');
-    expect(canvas.parentElement?.className).toContain('flex-1');
-    const inspectorColumn = (await screen.findByText(/no piece selected/i)).closest('aside.overflow-y-auto');
-    expect(inspectorColumn).not.toBeNull();
+    // The canvas fills the board (absolute inset-0), and the board takes whatever the row leaves.
+    expect(canvas.parentElement?.className).toContain('inset-0');
+    expect(canvas.parentElement?.parentElement?.className).toContain('min-h-0');
+    expect(canvas.parentElement?.parentElement?.className).toContain('flex-1');
+    expect(screen.queryByRole('complementary', { name: 'Properties' })).toBeNull();
+  });
+
+  it('runs the top bar and the status bar full width, with the side panel between them touching both', async () => {
+    const user = userEvent.setup();
+    renderPage();
+    const editor = await screen.findByTestId('drawing-editor');
+    const bar = screen.getByRole('tablist', { name: 'Workspace' }).parentElement?.parentElement;
+    const statusBar = screen.getByRole('button', { name: /^Areas,/ }).parentElement;
+    // Both bars are direct children of the editor, so a panel opening beside the board cannot squeeze them.
+    expect(bar?.parentElement).toBe(editor);
+    expect(statusBar?.parentElement).toBe(editor);
+    expect(bar?.className).toContain('w-full');
+    expect(bar?.className).toContain('shrink-0');
+    expect(editor.className).not.toContain('p-2');
+
+    await user.click(screen.getByRole('tab', { name: 'Cutout' }));
+    const panel = screen.getByRole('complementary', { name: 'Cutouts' });
+    expect(bar?.parentElement).toBe(editor);
+    expect(bar?.contains(panel)).toBe(false);
+    // The panel sits in the row between the two bars.
+    expect(panel.parentElement?.parentElement).toBe(editor);
+    expect(editor.children[0]).toBe(bar);
+    expect(editor.lastElementChild === statusBar || editor.children[editor.children.length - 1] === statusBar).toBe(true);
+  });
+
+  it('floats the tool rail over the board instead of giving it a column of its own', async () => {
+    renderPage();
+    const rail = await screen.findByRole('navigation', { name: 'Drawing tools' });
+    const canvas = screen.getByRole('application', { name: 'Drawing canvas' });
+    const board = canvas.parentElement?.parentElement;
+    expect(board?.contains(rail)).toBe(true);
+    expect(rail.parentElement?.className).toContain('absolute');
   });
 
   it('stretches the drawing to the canvas without distorting it', async () => {
@@ -201,6 +247,73 @@ describe('SalesOrderDrawingPage — fills the screen', () => {
   });
 });
 
+describe('SalesOrderDrawingPage — 2D / 3D', () => {
+  beforeEach(() => {
+    vi.mocked(salesOrderService.getOrder).mockResolvedValue(order());
+    vi.mocked(drawingService.getDrawing).mockResolvedValue(null);
+  });
+
+  it('has one button that offers the other view, and swaps the tools for the 3D view', async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await user.click(await screen.findByRole('button', { name: 'Switch to 3D view' }));
+
+    expect(await screen.findByTestId('viewer-3d')).toBeTruthy();
+    expect(screen.queryByRole('navigation', { name: 'Drawing tools' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Switch to 3D view' })).toBeNull();
+
+    await user.click(screen.getByRole('button', { name: 'Switch to 2D view' }));
+    expect(screen.queryByTestId('viewer-3d')).toBeNull();
+    expect(screen.getByRole('navigation', { name: 'Drawing tools' })).toBeTruthy();
+  });
+
+  it('keeps the 2D canvas mounted but hidden and unreachable while in 3D', async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await user.click(await screen.findByRole('button', { name: 'Switch to 3D view' }));
+    const canvas = await screen.findByTestId('viewer-3d').then(() => document.querySelector('[aria-label="Drawing canvas"]'));
+    const wrapper = canvas?.parentElement;
+    expect(wrapper?.className).toContain('invisible');
+    expect(wrapper?.hasAttribute('inert')).toBe(true);
+  });
+});
+
+describe('SalesOrderDrawingPage — Exit', () => {
+  beforeEach(() => {
+    vi.mocked(salesOrderService.getOrder).mockResolvedValue(order());
+    vi.mocked(drawingService.getDrawing).mockResolvedValue(drawing());
+  });
+
+  it('goes back to the sales order straight away when nothing is unsaved', async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await user.click(await screen.findByRole('button', { name: 'Exit drawing' }));
+    expect(await screen.findByText('Order page')).toBeTruthy();
+    expect(drawingService.saveDrawing).not.toHaveBeenCalled();
+  });
+
+  it('saves unsaved edits first and only leaves once the save has landed', async () => {
+    const user = userEvent.setup();
+    vi.mocked(drawingService.saveDrawing).mockResolvedValue(drawing({ version: 2 }));
+    renderPage();
+    await addAPiece(user);
+    await user.click(screen.getByRole('button', { name: 'Exit drawing' }));
+    await vi.waitFor(() => expect(drawingService.saveDrawing).toHaveBeenCalledTimes(1));
+    expect(await screen.findByText('Order page')).toBeTruthy();
+  });
+
+  it('stays in the editor when that save fails, so nothing is lost', async () => {
+    const user = userEvent.setup();
+    vi.mocked(drawingService.saveDrawing).mockRejectedValue(new Error('network down'));
+    renderPage();
+    await addAPiece(user);
+    await user.click(screen.getByRole('button', { name: 'Exit drawing' }));
+    await vi.waitFor(() => expect(drawingService.saveDrawing).toHaveBeenCalled());
+    expect(await screen.findByRole('button', { name: 'Save drawing' })).toBeTruthy();
+    expect(screen.queryByText('Order page')).toBeNull();
+  });
+});
+
 describe('SalesOrderDrawingPage — autosave, conflicts, and the unsaved-changes guard', () => {
   // Real timers throughout — only Ctrl/Cmd+S (an immediate save, bypassing
   // the debounce) is used to trigger a save here. The debounce's own 3s
@@ -208,13 +321,7 @@ describe('SalesOrderDrawingPage — autosave, conflicts, and the unsaved-changes
   // mixing fake timers with userEvent + TanStack Query at the page level
   // hangs (findByRole's internal polling never advances).
   async function addAPieceAndSave(user: ReturnType<typeof userEvent.setup>) {
-    await user.click(await screen.findByRole('button', { name: 'Shapes' }));
-    await screen.findByRole('button', { name: 'Add rectangle' });
-    await user.click(screen.getByRole('button', { name: 'Add rectangle' }));
-    await user.type(screen.getByLabelText('Length'), '96');
-    await user.type(screen.getByLabelText('Width'), '26');
-    await user.type(screen.getByLabelText('Thickness'), '1.25');
-    await user.click(screen.getByRole('button', { name: 'Add piece' }));
+    await addAPiece(user);
     await user.keyboard('{Control>}s{/Control}');
   }
 
@@ -249,7 +356,7 @@ describe('SalesOrderDrawingPage — autosave, conflicts, and the unsaved-changes
     vi.mocked(drawingService.getDrawing).mockResolvedValue(drawing({ version: 9, areas: [{ id: 'area-9', name: 'Server Area', code: '', sortOrder: 0, pieces: [], cabinets: [], notes: [] }] }));
     await user.click(screen.getByRole('button', { name: 'Reload latest' }));
 
-    expect(await screen.findByRole('tab', { name: 'Server Area' })).toBeDefined();
+    expect(await screen.findByRole('button', { name: /^Areas, Server Area selected/ })).toBeDefined();
     expect(screen.queryByRole('button', { name: /Piece A-1/ })).toBeNull(); // local edit discarded
   });
 
@@ -273,13 +380,7 @@ describe('SalesOrderDrawingPage — autosave, conflicts, and the unsaved-changes
     const user = userEvent.setup();
     vi.mocked(drawingService.saveDrawing).mockResolvedValue(drawing({ version: 2 }));
     renderPage();
-    await user.click(await screen.findByRole('button', { name: 'Shapes' }));
-    await screen.findByRole('button', { name: 'Add rectangle' });
-    await user.click(screen.getByRole('button', { name: 'Add rectangle' }));
-    await user.type(screen.getByLabelText('Length'), '96');
-    await user.type(screen.getByLabelText('Width'), '26');
-    await user.type(screen.getByLabelText('Thickness'), '1.25');
-    await user.click(screen.getByRole('button', { name: 'Add piece' }));
+    await addAPiece(user);
 
     const dirtyEvent = new Event('beforeunload', { cancelable: true });
     window.dispatchEvent(dirtyEvent);

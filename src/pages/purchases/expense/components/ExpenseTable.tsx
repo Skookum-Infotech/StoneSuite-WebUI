@@ -1,10 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import {
-  Search, ArrowUp, ArrowDown, ArrowUpDown, X, Inbox, Pencil, Filter,
-  ChevronLeft, ChevronRight, ShieldCheck, Download, Loader2,
-} from 'lucide-react';
+import { Search, X, Inbox, Pencil, Filter, ChevronLeft, ChevronRight, ShieldCheck, Download, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { expenseService } from '@/services/expenseService';
@@ -19,6 +16,8 @@ import { ExpenseStatusControl } from './ExpenseStatusControl';
 import { ReadOnlyStatusPill } from '@/pages/sales/components/ReadOnlyStatusPill';
 import { EXPENSE_STATUS_COLORS } from '@/lib/expenseForm';
 import type { ExpenseSearchRequest } from '@/types/expense';
+import { SortIcon } from '@/components/ui/SortIcon';
+import { useListUrlState } from '@/hooks/useListUrlState';
 
 import { buttonVariants } from '@/components/ui/button';
 import { StatusPill } from '@/components/ui/StatusPill';
@@ -37,7 +36,6 @@ const PAGE_SIZE = 25;
 // Only fields in expense/resolver.go's `sortableFields` (plus the engine's
 // built-in created_at) are offered.
 type SortField = 'recordNumber' | 'total' | 'status' | 'createdAt';
-type SortDir = 'asc' | 'desc';
 
 const SORT_LABELS: Record<SortField, string> = {
   recordNumber: 'Expense #',
@@ -45,6 +43,8 @@ const SORT_LABELS: Record<SortField, string> = {
   status: 'Status',
   createdAt: 'Created',
 };
+
+const SORT_FIELDS = Object.keys(SORT_LABELS) as SortField[];
 
 const SORT_KEY: Record<SortField, string> = {
   recordNumber: 'record_number',
@@ -84,10 +84,11 @@ export function ExpenseTable() {
   const { hasPermission, isSuperAdmin, isLoading: permissionsLoading } = useUserPermissions();
   const canEdit = permissionsLoading || hasPermission('expense', 'update');
 
-  const [term, setTerm] = useState('');
-  const [debounced, setDebounced] = useState('');
-  const [sortBy, setSortBy] = useState<SortField>('recordNumber');
-  const [sortDir, setSortDir] = useState<SortDir>('desc');
+  const { search: debounced, sortBy, sortDir, setSearch: setDebounced, setSort } = useListUrlState<SortField>({
+    sortFields: SORT_FIELDS,
+    defaultSort: { field: 'recordNumber', dir: 'desc' },
+  });
+  const [term, setTerm] = useState(debounced);
   const [filters, setFilters] = useState<ExpenseFilterState>(EMPTY_FILTER_STATE);
   const [filtersOpen, setFiltersOpen] = useState(false);
 
@@ -111,7 +112,7 @@ export function ExpenseTable() {
       setPrevCursors([]);
     }, 300);
     return () => clearTimeout(t);
-  }, [term]);
+  }, [term, setDebounced]);
 
   const req: ExpenseSearchRequest = {
     search: debounced || undefined,
@@ -168,19 +169,9 @@ export function ExpenseTable() {
   }
 
   function handleSort(field: SortField) {
-    if (sortBy === field) {
-      setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
-    } else {
-      setSortBy(field);
-      setSortDir('desc');
-    }
+    setSort(field, sortBy === field ? (sortDir === 'asc' ? 'desc' : 'asc') : 'desc');
     setCursor('');
     setPrevCursors([]);
-  }
-
-  function SortIcon({ field }: { field: SortField }) {
-    if (sortBy !== field) return <ArrowUpDown className="size-2.5 opacity-40" />;
-    return sortDir === 'asc' ? <ArrowUp className="size-2.5" /> : <ArrowDown className="size-2.5" />;
   }
 
   async function handleDownloadCsv() {
@@ -192,7 +183,7 @@ export function ExpenseTable() {
         ['Expense #', 'Claimant', 'Department', 'Status', 'Approval', 'Total', 'Created'],
         (exp) => [
           exp.expenseNumber ?? '',
-          (exp.claimantEmployeeId ? employeeNames.get(String(exp.claimantEmployeeId)) : undefined) ?? '',
+          exp.claimantName || (exp.claimantEmployeeId ? employeeNames.get(String(exp.claimantEmployeeId)) : undefined) || '',
           exp.department ?? '',
           exp.status ?? '',
           APPROVAL_LABELS[exp.approvalStatus] ?? '',
@@ -255,7 +246,7 @@ export function ExpenseTable() {
               )}
             >
               {label}
-              <SortIcon field={field} />
+              <SortIcon active={sortBy === field} dir={sortDir} />
             </button>
           ))}
         </div>
@@ -323,9 +314,8 @@ export function ExpenseTable() {
               ) : records.length > 0 ? (
                 records.map((exp) => {
                   const approvalLabel = APPROVAL_LABELS[exp.approvalStatus];
-                  const claimantName = exp.claimantEmployeeId
-                    ? employeeNames.get(String(exp.claimantEmployeeId))
-                    : undefined;
+                  const claimantName = exp.claimantName
+                    || (exp.claimantEmployeeId ? employeeNames.get(String(exp.claimantEmployeeId)) : undefined);
                   return (
                     <tr key={exp.id} className="group hover:bg-accent/10 transition-colors duration-150">
                       <td className="px-4 max-sm:px-2 py-2.5">

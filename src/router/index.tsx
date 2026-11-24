@@ -68,6 +68,10 @@ const RolesPage = lazyWithRetry(() => import("@/pages/config/roles-access/RolesP
 const CreateRolePage = lazyWithRetry(() => import("@/pages/config/roles-access/CreateRolePage"));
 const EditRolePage = lazyWithRetry(() => import("@/pages/config/roles-access/EditRolePage"));
 const UsersPage = lazyWithRetry(() => import("@/pages/config/users/UsersPage"));
+const EmployeeListPage = lazyWithRetry(() => import("@/pages/config/employees/EmployeeListPage"));
+const AddEmployeePage = lazyWithRetry(() => import("@/pages/config/employees/AddEmployeePage"));
+const EmployeeDetailPage = lazyWithRetry(() => import("@/pages/config/employees/EmployeeDetailPage"));
+const EditEmployeePage = lazyWithRetry(() => import("@/pages/config/employees/EditEmployeePage"));
 const CompanyProfilePage = lazyWithRetry(
   () => import("@/pages/config/company-profile/CompanyProfilePage"),
 );
@@ -115,9 +119,6 @@ const EntraSamlSetupPage = lazyWithRetry(
 const CustomSamlSetupPage = lazyWithRetry(
   () => import("@/pages/config/saml-setup/CustomSamlSetupPage"),
 );
-const WorkflowPlaceholderPage = lazyWithRetry(
-  () => import("@/pages/common/WorkflowPlaceholderPage"),
-);
 const AccountSettingsPage = lazyWithRetry(
   () => import("@/pages/account/AccountSettingsPage"),
 );
@@ -127,6 +128,9 @@ const TransactionsPage = lazyWithRetry(
 const SupportPage = lazyWithRetry(() => import("@/pages/support/SupportPage"));
 const ApprovalsInboxPage = lazyWithRetry(
   () => import("@/pages/approvals/ApprovalsInboxPage"),
+);
+const NotificationsPage = lazyWithRetry(
+  () => import("@/pages/notifications/NotificationsPage"),
 );
 const AnomaliesPage = lazyWithRetry(
   () => import("@/pages/anomalies/AnomaliesPage"),
@@ -461,6 +465,11 @@ export const router = createBrowserRouter([
       { path: "", element: <Navigate to="/dashboard" replace /> },
       { path: "dashboard", element: lazy_(<DashboardPage />) },
       { path: "search", element: lazy_(<SearchResultsPage />) },
+      // The backend's portal emails (welcome, note receipt, and every PDF email
+      // sent before document links went direct) link to <app>/portal. It is not a
+      // page of its own: signed-out visitors are sent to sign in by MainLayout,
+      // and a customer lands on the first document list the portal offers.
+      { path: "portal", element: <Navigate to="/sales/sales_order" replace /> },
       { path: "account/settings", element: lazy_(<AccountSettingsPage />) },
       { path: "transactions", element: lazy_(<TransactionsPage />) },
       // Open to every signed-in user, customer-portal sessions included (see
@@ -474,6 +483,9 @@ export const router = createBrowserRouter([
       // the server returns only what the caller may approve, so a non-approver
       // simply sees the empty state.
       { path: "approvals", element: lazy_(<ApprovalsInboxPage />) },
+      // Everyone (customer portal sessions included, see CUSTOMER_ALLOWED_PATH_PREFIXES):
+      // the server returns only the caller's own notifications, so no PermissionGuard.
+      { path: "notifications", element: lazy_(<NotificationsPage />) },
       {
         path: "subscription",
         element: lazy_(
@@ -1699,20 +1711,6 @@ export const router = createBrowserRouter([
         ),
       },
 
-      // Sales, Purchases & Inventory modules (placeholder pages — full functionality coming soon)
-      {
-        path: "sales/:moduleKey",
-        element: lazy_(<WorkflowPlaceholderPage />),
-      },
-      {
-        path: "purchases/:moduleKey",
-        element: lazy_(<WorkflowPlaceholderPage />),
-      },
-      {
-        path: "inventory/:moduleKey",
-        element: lazy_(<WorkflowPlaceholderPage />),
-      },
-
       // Configuration hub
       { path: "config", element: lazy_(<ConfigHomePage />) },
       {
@@ -1760,6 +1758,39 @@ export const router = createBrowserRouter([
         element: lazy_(
           <PermissionGuard resource="user" action="read">
             <UsersPage />
+          </PermissionGuard>,
+        ),
+      },
+      // Employees (specific routes before the :id routes)
+      {
+        path: "config/employees",
+        element: lazy_(
+          <PermissionGuard resource="employee" action="read">
+            <EmployeeListPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "config/employees/new",
+        element: lazy_(
+          <PermissionGuard resource="employee" action="create">
+            <AddEmployeePage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "config/employees/:id",
+        element: lazy_(
+          <PermissionGuard resource="employee" action="read">
+            <EmployeeDetailPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "config/employees/:id/edit",
+        element: lazy_(
+          <PermissionGuard resource="employee" action="update">
+            <EditEmployeePage />
           </PermissionGuard>,
         ),
       },

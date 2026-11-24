@@ -5,8 +5,8 @@
 //
 // Deliberately simpler than requisitionForm: no vendor, no tax, no priority
 // (spec AD-3 — a reimbursement claim isn't a priced commitment against a
-// counterparty), and the claimant is never a form field at all (spec AD-2 —
-// always the acting employee, resolved server-side).
+// counterparty). The claimant is the Employee picker (spec AD-2: defaults to the
+// acting employee), kept in the form state as `claimantEmployeeId`.
 
 import type { FieldDefinition } from '@/types/tenant';
 import type {
@@ -116,7 +116,7 @@ export const EXPENSE_STATUS_CODES: { code: string; label: string }[] = [
   { code: 'SUBM', label: 'Submitted' },
   { code: 'APPV', label: 'Approved' },
   { code: 'RJCT', label: 'Rejected' },
-  { code: 'REIM', label: 'Reimbursed' },
+  { code: 'PAID', label: 'Paid' },
 ];
 
 /** Legal next-moves per status via the generic transition endpoint — mirrors
@@ -124,15 +124,17 @@ export const EXPENSE_STATUS_CODES: { code: string; label: string }[] = [
  *  `SUBM` deliberately excludes `RJCT`: rejection is only reachable through
  *  the dedicated Reject action (spec AD-5), which always captures a reason
  *  and never requires quorum — a generic `POST .../transition {toStatusCode:
- *  "RJCT"}` 409s server-side. The terminal status (REIM) maps to an empty
- *  list. The backend (ValidateTransition) stays authoritative; an illegal
- *  pick is rejected with 409, so this only keeps the UI from offering one. */
+ *  "RJCT"}` 409s server-side. Approved has no manual way out either: a claim
+ *  becomes Paid only when the vendor bill raised from it is paid. Paid is
+ *  terminal and maps to an empty list. The backend (ValidateTransition) stays
+ *  authoritative; an illegal pick is rejected with 409, so this only keeps the
+ *  UI from offering one. */
 export const EXPENSE_ALLOWED_TRANSITIONS: Record<string, string[]> = {
   DRFT: ['SUBM'],
   SUBM: ['APPV', 'DRFT'],
-  APPV: ['REIM'],
+  APPV: [],
   RJCT: ['DRFT'],
-  REIM: [],
+  PAID: [],
 };
 
 /** Button label per (from, to) status-code pair — a plain `to`-keyed map
@@ -140,10 +142,9 @@ export const EXPENSE_ALLOWED_TRANSITIONS: Record<string, string[]> = {
  *  so the key is `${from}:${to}`. */
 export const EXPENSE_TRANSITION_LABELS: Record<string, string> = {
   'DRFT:SUBM': 'Submit for Approval',
-  'DRFT:REIM': 'Mark Reimbursed', // offered directly when nobody is configured to approve (backend nextStatusCodes)
+  'DRFT:APPV': 'Submit & Approve', // offered directly when nobody is configured to approve (backend nextStatusCodes)
   'SUBM:APPV': 'Approve & Advance',
   'SUBM:DRFT': 'Recall to Draft',
-  'APPV:REIM': 'Mark Reimbursed',
   'RJCT:DRFT': 'Revise',
 };
 
@@ -174,7 +175,7 @@ export const EXPENSE_STATUS_COLORS: Record<string, string> = {
   SUBM: '#f59e0b',
   APPV: '#22c55e',
   RJCT: '#ef4444',
-  REIM: '#3b82f6',
+  PAID: '#3b82f6',
 };
 
 /** Statuses `expenseService.updateExpense` rejects edits against
@@ -198,6 +199,8 @@ export function canRejectExpense(statusCode: string): boolean {
 export function expenseDefaults(): Record<string, unknown> {
   return {
     exp_status: 'Draft',
+    // "" = the acting employee (the server's default); otherwise an employee id.
+    claimantEmployeeId: '',
   };
 }
 
@@ -205,6 +208,12 @@ export function expenseDefaults(): Record<string, unknown> {
 
 function toStr(v: unknown): string {
   return v === null || v === undefined ? '' : String(v);
+}
+
+/** The picked claimant as an id, or undefined for "the caller". */
+function parseClaimantId(v: unknown): number | undefined {
+  const n = Number(toStr(v));
+  return Number.isInteger(n) && n > 0 ? n : undefined;
 }
 
 /** Maps one editable line row to the create/update contract's line shape. */
@@ -221,14 +230,15 @@ function toLineInput(item: ExpenseLineItem, lineNo: number): ExpenseLineInput {
 /** Maps the Add/Edit page form state + line items to the backend's
  *  `ExpenseCreatePayload`. Status is intentionally omitted: every new claim
  *  starts at DRFT server-side; status changes go through the `/transition`,
- *  `/approve`, and `/reject` endpoints. There is no claimant field to map —
- *  the server always resolves it from the caller (AD-2). */
+ *  `/approve`, and `/reject` endpoints. The claimant is sent only when a
+ *  different employee was picked; otherwise the server uses the caller (AD-2). */
 export function toCreatePayload(
   data: Record<string, unknown>,
   lineItems: ExpenseLineItem[],
   customFields: Record<string, unknown> = {},
 ): ExpenseCreatePayload {
   return {
+    claimantEmployeeId: parseClaimantId(data.claimantEmployeeId),
     department: toStr(data.department),
     memo: toStr(data.memo),
     customFields,
@@ -260,6 +270,7 @@ export function fromExpense(exp: Expense): {
     exp_doc_num: exp.expenseNumber,
     department: exp.department ?? '',
     memo: exp.memo ?? '',
+    claimantEmployeeId: exp.claimantEmployeeId ? String(exp.claimantEmployeeId) : '',
   };
 
   const lineItems: ExpenseLineItem[] = exp.items.map(fromLine);

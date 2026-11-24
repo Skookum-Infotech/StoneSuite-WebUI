@@ -1,18 +1,22 @@
-// Top toolbar: save, undo/redo, zoom, DXF export and version history. The tools
-// that add pieces and cutouts live in the left panel (ShapePalette,
-// CutoutLibrary).
+// Top bar, a dark full-width strip joined to the app header above it and framing the board
+// with the status bar below. Left: Exit (back to the sales order), then full screen, DXF export
+// and version history as small icons; middle: the Sketch / Cutout / Material switch; right: undo,
+// redo and the save button. The tools that add pieces live in the floating rail on the board,
+// the cutout tools in the Cutout panel. The side panel opens below this bar, never beside it.
 
 import { useState } from 'react';
+import { AlertTriangle, ArrowLeft, Check, Download, FileText, History, Loader2, Maximize2, Minimize2, Redo2, Save, Undo2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { buildAreaExport, downloadDxf } from '@/lib/drawing/dxfDownload';
-import { ZOOM_STEP } from '@/lib/drawing/constants';
 import type { Drawing } from '@/types/drawing';
 import type { AutosaveStatus } from './useDrawingAutosave';
+import { useAttachedProfileTypeList } from './AttachedProfileTypesContext';
 import { VersionDrawer } from './VersionDrawer';
 import { useDrawingEditor } from './DrawingEditorContext';
+import { useDrawingPdfExport } from './useDrawingPdfExport';
 import { useFullscreen } from './useFullscreen';
+import { WorkspaceTabs } from './WorkspaceTabs';
 
-import { buttonVariants } from '@/components/ui/button';
 const SAVE_BUTTON_LABEL: Record<AutosaveStatus, string> = {
   idle: 'Saved',
   dirty: 'Save',
@@ -29,14 +33,39 @@ const SAVE_STATUS_TEXT: Record<AutosaveStatus, string> = {
   error: 'Save failed — your changes are not saved',
 };
 
-const BUTTON_CLASS = 'rounded border border-stone-200 px-2 py-1 text-xs disabled:opacity-40';
+const SAVE_ICON: Record<AutosaveStatus, typeof Save> = {
+  idle: Check,
+  dirty: Save,
+  saving: Loader2,
+  saved: Check,
+  error: AlertTriangle,
+};
 
-export function DrawingToolbar(
-  { saveStatus, onSave, orderNumber }: { saveStatus: AutosaveStatus; onSave: () => void; orderNumber: string },
-) {
-  const { state, dispatch, fitToArea } = useDrawingEditor();
+const SAVE_TONE: Record<AutosaveStatus, string> = {
+  idle: 'text-ink-muted',
+  dirty: 'bg-brand text-ink-strong hover:bg-brand-hover',
+  saving: 'text-ink-muted',
+  saved: 'text-ink-muted',
+  error: 'border border-red-400 text-red-300 hover:bg-stone-800',
+};
+
+const ICON_BUTTON_CLASS = 'flex h-8 w-8 items-center justify-center rounded text-stone-300 hover:bg-stone-700 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-stone-300';
+const ICON_CLASS = 'h-4 w-4';
+
+interface DrawingToolbarProps {
+  saveStatus: AutosaveStatus;
+  onSave: () => void;
+  orderNumber: string;
+  /** Leaves the editor for the sales order. */
+  onExit: () => void;
+}
+
+export function DrawingToolbar({ saveStatus, onSave, orderNumber, onExit }: DrawingToolbarProps) {
+  const { state, dispatch } = useDrawingEditor();
+  const profileTypes = useAttachedProfileTypeList();
   const [showVersions, setShowVersions] = useState(false);
   const { isFullscreen, toggle: toggleFullscreen } = useFullscreen();
+  const { exportPdf, isExporting: isExportingPdf } = useDrawingPdfExport(orderNumber);
 
   const restoreVersion = (restored: Drawing) => {
     dispatch({ type: 'loadDrawing', drawing: restored });
@@ -44,66 +73,98 @@ export function DrawingToolbar(
   };
 
   const exportDxf = () => {
-    const file = buildAreaExport(state.present, state.activeAreaId, orderNumber);
+    const file = buildAreaExport(state.present, state.activeAreaId, orderNumber, profileTypes);
     if (!file) return;
     downloadDxf(file.fileName, file.content);
     toast.success(`Exported ${file.fileName}`);
   };
   const canSave = saveStatus === 'dirty' || saveStatus === 'error';
-  const statusTone = saveStatus === 'error' ? 'text-danger-ink' : saveStatus === 'dirty' ? 'text-amber-700' : 'text-ink-muted';
+  const SaveIcon = SAVE_ICON[saveStatus];
+  const fullscreenLabel = isFullscreen ? 'Exit full screen' : 'Full screen';
+  const FullscreenIcon = isFullscreen ? Minimize2 : Maximize2;
 
   return (
-    <div className="flex items-center gap-2">
-      <button
-        type="button"
-        aria-label="Save drawing"
-        disabled={!canSave}
-        onClick={onSave}
-        className={buttonVariants({ size: 'sm' })}
-      >
-        {SAVE_BUTTON_LABEL[saveStatus]}
-      </button>
-      <span role="status" className={`min-w-44 text-micro ${statusTone}`}>{SAVE_STATUS_TEXT[saveStatus]}</span>
+    <div className="flex h-11 w-full shrink-0 items-center gap-3 bg-stone-900 px-2 text-white">
+      <div className="flex items-center gap-0.5">
+        <button
+          type="button"
+          aria-label="Exit drawing"
+          title="Exit drawing — back to the sales order"
+          onClick={onExit}
+          className="flex h-8 items-center gap-1 rounded bg-stone-800 px-2.5 text-xs font-medium text-stone-100 hover:bg-stone-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand"
+        >
+          <ArrowLeft className={ICON_CLASS} aria-hidden="true" />
+          Exit
+        </button>
+        <span aria-hidden="true" className="mx-1.5 h-5 w-px bg-stone-700" />
+        <button
+          type="button"
+          aria-label={fullscreenLabel}
+          title={fullscreenLabel}
+          aria-pressed={isFullscreen}
+          onClick={(e) => toggleFullscreen(e.currentTarget.closest('[data-drawing-editor]'))}
+          className={ICON_BUTTON_CLASS}
+        >
+          <FullscreenIcon className={ICON_CLASS} aria-hidden="true" />
+        </button>
+        <button type="button" aria-label="Export DXF" title="Export DXF" onClick={exportDxf} className={ICON_BUTTON_CLASS}>
+          <Download className={ICON_CLASS} aria-hidden="true" />
+        </button>
+        <button
+          type="button"
+          aria-label="Export PDF"
+          title="Export PDF — a printable drawing"
+          disabled={isExportingPdf}
+          onClick={() => exportPdf(state.present)}
+          className={ICON_BUTTON_CLASS}
+        >
+          {isExportingPdf ? <Loader2 className={`${ICON_CLASS} animate-spin`} aria-hidden="true" /> : <FileText className={ICON_CLASS} aria-hidden="true" />}
+        </button>
+        <button type="button" aria-label="Version history" title="Version history" onClick={() => setShowVersions(true)} className={ICON_BUTTON_CLASS}>
+          <History className={ICON_CLASS} aria-hidden="true" />
+        </button>
+      </div>
 
-      <span className="mx-2 h-5 w-px bg-stone-200" aria-hidden="true" />
+      <div className="flex flex-1 justify-center">
+        <WorkspaceTabs />
+      </div>
 
-      <button type="button" aria-label="Undo" disabled={state.past.length === 0} onClick={() => dispatch({ type: 'undo' })} className={BUTTON_CLASS}>
-        Undo
-      </button>
-      <button type="button" aria-label="Redo" disabled={state.future.length === 0} onClick={() => dispatch({ type: 'redo' })} className={BUTTON_CLASS}>
-        Redo
-      </button>
-
-      <span className="mx-2 h-5 w-px bg-stone-200" aria-hidden="true" />
-
-      <button type="button" aria-label="Zoom out" onClick={() => dispatch({ type: 'setZoom', zoom: state.zoom - ZOOM_STEP })} className={BUTTON_CLASS}>
-        −
-      </button>
-      <span className="w-10 text-center type-subline" aria-label="Zoom level">{Math.round(state.zoom * 100)}%</span>
-      <button type="button" aria-label="Zoom in" onClick={() => dispatch({ type: 'setZoom', zoom: state.zoom + ZOOM_STEP })} className={BUTTON_CLASS}>
-        +
-      </button>
-      <button type="button" aria-label="Fit area" onClick={fitToArea} className={BUTTON_CLASS}>
-        Fit
-      </button>
-
-      <span className="mx-2 h-5 w-px bg-stone-200" aria-hidden="true" />
-
-      <button
-        type="button"
-        aria-label={isFullscreen ? 'Exit full screen' : 'Full screen'}
-        aria-pressed={isFullscreen}
-        onClick={(e) => toggleFullscreen(e.currentTarget.closest('[data-drawing-editor]'))}
-        className={`${BUTTON_CLASS} ml-auto`}
-      >
-        {isFullscreen ? 'Exit full screen' : 'Full screen'}
-      </button>
-      <button type="button" aria-label="Export DXF" onClick={exportDxf} className={BUTTON_CLASS}>
-        Export DXF
-      </button>
-      <button type="button" onClick={() => setShowVersions(true)} className={BUTTON_CLASS}>
-        Version history
-      </button>
+      <div className="flex items-center gap-0.5">
+        <button
+          type="button"
+          aria-label="Undo"
+          title="Undo"
+          disabled={state.past.length === 0}
+          onClick={() => dispatch({ type: 'undo' })}
+          className={ICON_BUTTON_CLASS}
+        >
+          <Undo2 className={ICON_CLASS} aria-hidden="true" />
+        </button>
+        <button
+          type="button"
+          aria-label="Redo"
+          title="Redo"
+          disabled={state.future.length === 0}
+          onClick={() => dispatch({ type: 'redo' })}
+          className={ICON_BUTTON_CLASS}
+        >
+          <Redo2 className={ICON_CLASS} aria-hidden="true" />
+        </button>
+        {/* The status sentence is the button's tooltip and, for screen readers,
+            a live region — it no longer takes room on the bar. */}
+        <span role="status" className="sr-only">{SAVE_STATUS_TEXT[saveStatus]}</span>
+        <button
+          type="button"
+          aria-label="Save drawing"
+          title={SAVE_STATUS_TEXT[saveStatus] || SAVE_BUTTON_LABEL[saveStatus]}
+          disabled={!canSave}
+          onClick={onSave}
+          className={`ml-1 flex h-8 items-center gap-1 rounded px-2.5 text-xs font-medium ${SAVE_TONE[saveStatus]}`}
+        >
+          <SaveIcon className={`${ICON_CLASS} ${saveStatus === 'saving' ? 'animate-spin' : ''}`} aria-hidden="true" />
+          {SAVE_BUTTON_LABEL[saveStatus]}
+        </button>
+      </div>
 
       {showVersions && (
         <VersionDrawer

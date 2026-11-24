@@ -15,11 +15,14 @@ import { DRAWING_SCHEMA_VERSION, type Drawing } from '@/types/drawing';
 import type { SalesOrder } from '@/types/salesOrder';
 import { DrawingEditorProvider, useDrawingEditor } from '@/components/drawing/DrawingEditorContext';
 import { DrawingToolbar } from '@/components/drawing/DrawingToolbar';
-import { AreaTabs } from '@/components/drawing/AreaTabs';
-import { DrawingCanvas } from '@/components/drawing/DrawingCanvas';
-import { PieceInspector } from '@/components/drawing/PieceInspector';
-import { ToolRail } from '@/components/drawing/ToolRail';
-import { AreaSummary } from '@/components/drawing/AreaSummary';
+import { DrawingBoard } from '@/components/drawing/DrawingBoard';
+import { useExitDrawing } from '@/components/drawing/useExitDrawing';
+import { EdgeTypesProvider } from '@/components/drawing/EdgeTypesContext';
+import { AttachedProfileTypesProvider } from '@/components/drawing/AttachedProfileTypesContext';
+import { MaterialPickerProvider } from '@/components/drawing/MaterialPickerContext';
+import { WorkspacePanel } from '@/components/drawing/WorkspacePanel';
+import { OPEN_ZOOM } from '@/lib/drawing/constants';
+import { DrawingStatusBar } from '@/components/drawing/DrawingStatusBar';
 import { ConflictDialog } from '@/components/drawing/ConflictDialog';
 import { SquareFootageBanner } from '@/components/drawing/SquareFootageBanner';
 import { useDrawingAutosave } from '@/components/drawing/useDrawingAutosave';
@@ -79,12 +82,18 @@ export default function SalesOrderDrawingPage() {
   const drawing = drawingQuery.data ?? blankDrawing(id);
 
   return (
-    <DrawingEditorProvider drawing={drawing} materialLines={orderQuery.data.items}>
-      <DrawingEditorBody
-        salesOrderId={id}
-        order={orderQuery.data}
-        onOrderUpdated={(updated) => queryClient.setQueryData(['sales-order', id], updated)}
-      />
+    <DrawingEditorProvider drawing={drawing} materialLines={orderQuery.data.items} initialZoom={OPEN_ZOOM}>
+      <EdgeTypesProvider>
+        <AttachedProfileTypesProvider>
+          <MaterialPickerProvider>
+            <DrawingEditorBody
+              salesOrderId={id}
+              order={orderQuery.data}
+              onOrderUpdated={(updated) => queryClient.setQueryData(['sales-order', id], updated)}
+            />
+          </MaterialPickerProvider>
+        </AttachedProfileTypesProvider>
+      </EdgeTypesProvider>
     </DrawingEditorProvider>
   );
 }
@@ -134,6 +143,7 @@ function DrawingEditorBody({ salesOrderId, order, onOrderUpdated }: {
     onConflict,
     paused: conflictOpen,
   });
+  const exit = useExitDrawing(salesOrderId, status, saveNow);
 
   // Warn before leaving with unsaved changes (build spec §5 Task 5) — not
   // once a save has actually landed.
@@ -177,21 +187,20 @@ function DrawingEditorBody({ salesOrderId, order, onOrderUpdated }: {
       ref={fillRef}
       data-testid="drawing-editor"
       data-drawing-editor
-      className="flex h-[calc(100dvh-var(--fill-top))] flex-col gap-2 overflow-hidden bg-white p-2 [&:fullscreen]:h-dvh"
+      className="relative flex h-[calc(100dvh-var(--fill-top))] flex-col overflow-hidden bg-white [&:fullscreen]:h-dvh"
     >
-      <DrawingToolbar saveStatus={status} onSave={saveNow} orderNumber={order.salesOrderNumber} />
-      <AreaTabs />
-      <SquareFootageBanner areas={state.present.areas} order={order} onLineUpdated={onOrderUpdated} />
-      <div className="flex min-h-0 flex-1 gap-2">
-        <ToolRail />
-        <div className="min-h-0 min-w-0 flex-1">
-          <DrawingCanvas />
+      {/* The top bar runs the full width under the app header, and the status bar the full width
+          at the bottom. Between them the board and the side panel sit side by side, the panel
+          touching both bars, so opening it never squeezes either bar. */}
+      <DrawingToolbar saveStatus={status} onSave={saveNow} orderNumber={order.salesOrderNumber} onExit={exit} />
+      <div className="flex min-h-0 flex-1">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+          <SquareFootageBanner areas={state.present.areas} order={order} onLineUpdated={onOrderUpdated} />
+          <DrawingBoard />
         </div>
-        <aside aria-label="Properties" className="modal-scrollbar w-72 shrink-0 overflow-y-auto overflow-x-hidden border-l border-stone-200 pl-2">
-          <PieceInspector />
-        </aside>
+        <WorkspacePanel />
       </div>
-      <AreaSummary />
+      <DrawingStatusBar />
       {conflictOpen && (
         <ConflictDialog onReloadLatest={reloadLatest} onSaveAsCopy={saveAsCopy} onClose={() => setConflictOpen(false)} />
       )}

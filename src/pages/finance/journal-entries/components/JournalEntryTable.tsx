@@ -1,10 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import {
-  Search, ArrowUp, ArrowDown, ArrowUpDown, X, ArrowLeftRight, Pencil, Filter,
-  ChevronLeft, ChevronRight, Download, Loader2,
-} from 'lucide-react';
+import { Search, X, ArrowLeftRight, Pencil, Filter, ChevronLeft, ChevronRight, Download, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { journalEntryService } from '@/services/journalEntryService';
@@ -18,6 +15,8 @@ import {
 import { JournalEntryFilterDrawer } from './JournalEntryFilterDrawer';
 import type { JournalEntrySearchRequest } from '@/types/journalEntry';
 import { formatDateValue, LIST_DATE_OPTIONS } from '@/lib/dateUtils';
+import { SortIcon } from '@/components/ui/SortIcon';
+import { useListUrlState } from '@/hooks/useListUrlState';
 
 import { buttonVariants } from '@/components/ui/button';
 import { StatusPill } from '@/components/ui/StatusPill';
@@ -31,7 +30,6 @@ const EXPORT_PAGE_SIZE = 200;
 // sort/filter chip (mirrors ItemReceiptTable's identical omission).
 
 type SortField = 'recordNumber' | 'transferDate' | 'amount';
-type SortDir = 'asc' | 'desc';
 
 const PAGE_SIZE = 25;
 
@@ -40,6 +38,8 @@ const SORT_LABELS: Record<SortField, string> = {
   transferDate: 'Date',
   amount: 'Amount',
 };
+
+const SORT_FIELDS = Object.keys(SORT_LABELS) as SortField[];
 
 const SORT_KEY: Record<SortField, string> = {
   recordNumber: 'record_number',
@@ -63,10 +63,11 @@ export function JournalEntryTable() {
   const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
   const canEdit = permissionsLoading || hasPermission('cash_transfer', 'update');
 
-  const [term, setTerm] = useState('');
-  const [debounced, setDebounced] = useState('');
-  const [sortBy, setSortBy] = useState<SortField>('recordNumber');
-  const [sortDir, setSortDir] = useState<SortDir>('desc');
+  const { search: debounced, sortBy, sortDir, setSearch: setDebounced, setSort } = useListUrlState<SortField>({
+    sortFields: SORT_FIELDS,
+    defaultSort: { field: 'recordNumber', dir: 'desc' },
+  });
+  const [term, setTerm] = useState(debounced);
   const [filters, setFilters] = useState<JournalEntryFilterState>(EMPTY_FILTER_STATE);
   const [filtersOpen, setFiltersOpen] = useState(false);
 
@@ -90,7 +91,7 @@ export function JournalEntryTable() {
       setPrevCursors([]);
     }, 300);
     return () => clearTimeout(t);
-  }, [term]);
+  }, [term, setDebounced]);
 
   const req: JournalEntrySearchRequest = {
     search: debounced || undefined,
@@ -146,19 +147,9 @@ export function JournalEntryTable() {
   }
 
   function handleSort(field: SortField) {
-    if (sortBy === field) {
-      setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
-    } else {
-      setSortBy(field);
-      setSortDir('desc');
-    }
+    setSort(field, sortBy === field ? (sortDir === 'asc' ? 'desc' : 'asc') : 'desc');
     setCursor('');
     setPrevCursors([]);
-  }
-
-  function SortIcon({ field }: { field: SortField }) {
-    if (sortBy !== field) return <ArrowUpDown className="size-2.5 opacity-40" />;
-    return sortDir === 'asc' ? <ArrowUp className="size-2.5" /> : <ArrowDown className="size-2.5" />;
   }
 
   async function handleDownloadCsv() {
@@ -231,7 +222,7 @@ export function JournalEntryTable() {
               )}
             >
               {label}
-              <SortIcon field={field} />
+              <SortIcon active={sortBy === field} dir={sortDir} />
             </button>
           ))}
         </div>

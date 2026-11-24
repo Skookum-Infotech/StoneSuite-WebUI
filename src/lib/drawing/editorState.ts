@@ -18,6 +18,9 @@ export interface EditorState {
   selectedEdgeIndex: number | null;
   zoom: number;
   pan: Point;
+  /** The note whose edits are being folded into one undo step (typing in the
+   *  Text tool's control bar). Any other document change ends the run. */
+  noteEditId?: string;
 }
 
 export const NO_SELECTION = {
@@ -131,6 +134,7 @@ export function mutateDocument(state: EditorState, update: (drawing: Drawing) =>
     past: [...state.past, state.present].slice(-MAX_UNDO_STEPS),
     present: update(state.present),
     future: [],
+    noteEditId: undefined,
   };
 }
 

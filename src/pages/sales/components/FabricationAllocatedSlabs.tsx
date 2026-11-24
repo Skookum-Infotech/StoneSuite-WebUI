@@ -1,10 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { isAxiosError } from 'axios';
 import { useFabricationAction } from '@/hooks/useFabricationAction';
-import { tenantClient } from '@/api/tenantClient';
+import { tenantClient, apiErrorMessage } from '@/api/tenantClient';
 import { Unlink } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { apiErrorMessage } from '@/api/tenantClient';
 import { Spinner } from '@/components/tenant/ui';
 import { fabricationService } from '@/services/fabricationService';
 

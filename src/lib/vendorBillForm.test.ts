@@ -4,6 +4,7 @@ import {
   isVbTransitionBlocked, vbTransitionLabel, vbStatusLabel,
   vbNextCodes, vbCanVoid, vbDropdownTransitions, isVbConfirmedTransition,
   calcLineItem, calcHeaderTotals, toCreatePayload, fromVendorBill, validateVendorBillCustomFields,
+  expenseLineDescription, vendorBillLinesFromExpense,
 } from './vendorBillForm'
 import type { FieldDefinition } from '@/types/tenant'
 import type { VendorBill } from '@/types/vendorBill'
@@ -317,5 +318,33 @@ describe('toCreatePayload line kit label', () => {
   it('sends no kit for an ordinary line', () => {
     const payload = toCreatePayload(baseData, [line])
     expect(payload.items[0]).not.toHaveProperty('kitUuid')
+  })
+})
+
+describe('vendorBillLinesFromExpense', () => {
+  const claimLines = [
+    { id: 'a', lineNumber: 1, categoryId: 1, categoryCode: 'TRAVEL', categoryName: 'Travel', expenseDate: '2026-11-24', amount: 100, description: 'Taxi to site' },
+    { id: 'b', lineNumber: 2, categoryId: 2, categoryCode: 'MEALS', categoryName: 'Meals', expenseDate: '2026-11-25', amount: 25.5, description: '' },
+  ]
+
+  it('words each line the way the server does when it raises the bill itself', () => {
+    expect(expenseLineDescription(claimLines[0])).toBe('Travel - Taxi to site (2026-11-24)')
+    expect(expenseLineDescription(claimLines[1])).toBe('Meals (2026-11-25)')
+  })
+
+  it('makes one quantity-1 line per claim line, priced at its amount', () => {
+    const lines = vendorBillLinesFromExpense(claimLines, 0)
+    expect(lines).toHaveLength(2)
+    expect(lines[0]).toMatchObject({ lineNo: 1, itemName: 'Travel - Taxi to site (2026-11-24)', quantity: '1', unitPrice: '100', discount: '0', amount: '100.00', total: '100.00' })
+    expect(lines[1]).toMatchObject({ lineNo: 2, unitPrice: '25.5', amount: '25.50' })
+  })
+
+  it('applies the header tax percent to each line total', () => {
+    expect(vendorBillLinesFromExpense(claimLines, 10)[0].total).toBe('110.00')
+  })
+
+  it('carries the expense link into the create payload only when one is set', () => {
+    expect(toCreatePayload({ vendor_uuid: 'v1', expense_uuid: 'e1' }, []).expenseUuid).toBe('e1')
+    expect(toCreatePayload({ vendor_uuid: 'v1', expense_uuid: '' }, []).expenseUuid).toBeUndefined()
   })
 })

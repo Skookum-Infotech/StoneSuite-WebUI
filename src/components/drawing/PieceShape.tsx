@@ -14,7 +14,8 @@
 
 import { memo, useId, useMemo, useState } from 'react';
 import type { Piece, Point } from '@/types/drawing';
-import { centroid, snapToGrid, transformOutline } from '@/lib/drawing/geometry';
+import { hasArcs, outlinePath } from '@/lib/drawing/arcs';
+import { snapToGrid, transformOutline } from '@/lib/drawing/geometry';
 import { GRID_SIZE_MM, MIN_DRAG_MM, SNAP_TOLERANCE_MM } from '@/lib/drawing/constants';
 import { validateCutouts } from '@/lib/drawing/cutouts';
 import { snapNudge } from '@/lib/drawing/snapping';
@@ -22,6 +23,15 @@ import { pixelDeltaToMm } from '@/lib/drawing/viewport';
 import { CutoutShape } from './CutoutShape';
 import { useDragPreview } from './DragPreviewContext';
 import { useDrawingEditor } from './DrawingEditorContext';
+import { useMaterialPicker } from './MaterialPickerContext';
+import { PieceEdgeColors } from './PieceEdgeColors';
+import { PieceSlabTexture } from './PieceSlabTexture';
+import { usePieceSlabTexture } from './usePieceSlabTexture';
+import { useEdgeTypeList } from './EdgeTypesContext';
+import { PieceLabel } from './PieceLabel';
+
+/** On-screen outline weight, shared by selected and unselected pieces. */
+const PIECE_STROKE_PX = 2;
 
 interface DragState {
   pointerId: number;
@@ -32,8 +42,12 @@ interface DragState {
 }
 
 function PieceShapeBase({ piece, selected }: { piece: Piece; selected: boolean }) {
-  const { state, dispatch, tool } = useDrawingEditor();
+  const { state, dispatch, tool, workspace } = useDrawingEditor();
   const { preview, setPreview } = useDragPreview();
+  const { pickingSlab, pickPiece } = useMaterialPicker();
+  // The slab's photo, when this piece fits on a slab that has one.
+  const slabTexture = usePieceSlabTexture(piece);
+  const edgeTypes = useEdgeTypeList();
   const [drag, setDrag] = useState<DragState | null>(null);
   const [previewPosition, setPreviewPosition] = useState<Point | null>(null);
   // useId() contains colons; they are legal in a url(#...) fragment but
@@ -46,7 +60,13 @@ function PieceShapeBase({ piece, selected }: { piece: Piece; selected: boolean }
     ?? (followDelta ? { x: piece.position.x + followDelta.x, y: piece.position.y + followDelta.y } : piece.position);
   const worldOutline = transformOutline(piece.outline, displayPosition, piece.rotationDeg);
   const points = worldOutline.map((p) => `${p.x},${-p.y}`).join(' ');
-  const labelAt = centroid(worldOutline);
+  // A piece with a curved side is drawn as a path (true arcs); a plain one stays a polygon.
+  const curved = hasArcs(piece.edges);
+  // Over a slab photo the fill must not wash the stone out: transparent, with only the
+  // selection tint left.
+  const shapeClass = slabTexture
+    ? (selected ? 'fill-brand/20 stroke-stone-900' : 'fill-transparent stroke-stone-900')
+    : (selected ? 'fill-brand/30 stroke-stone-900' : 'fill-white/70 stroke-stone-900');
   const invalidCutoutIds = useMemo(
     () => new Set(validateCutouts(piece).flatMap((issue) => (issue.otherId ? [issue.cutoutId, issue.otherId] : [issue.cutoutId]))),
     [piece],
@@ -56,11 +76,20 @@ function PieceShapeBase({ piece, selected }: { piece: Piece; selected: boolean }
 
   const onPointerDown = (e: React.PointerEvent<SVGGElement>) => {
     if (tool !== 'select') return;
+    // Select Pieces on the Material tab is armed: this click lays the piece on the slab.
+    if (pickingSlab) {
+      select(false);
+      pickPiece(piece.id);
+      return;
+    }
     if (e.shiftKey) {
       select(true);
       return;
     }
     select(false);
+    // In the Cutout / Material tabs a piece can be picked (to add a cutout to
+    // it) but not moved — only cutouts are edited there.
+    if (workspace !== 'sketch') return;
     const inGroup = state.selectedPieceIds.length > 1 && state.selectedPieceIds.includes(piece.id);
     setDrag({
       pointerId: e.pointerId,
@@ -126,16 +155,33 @@ function PieceShapeBase({ piece, selected }: { piece: Piece; selected: boolean }
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
-      className="cursor-move outline-none"
+      className={pickingSlab ? 'cursor-crosshair outline-none' : 'cursor-move outline-none'}
     >
       {/* Strokes and text are divided by the zoom so they keep the same size
           on screen at any scale — a 200" piece zoomed out to fit would
-          otherwise draw its outline and label too fine to read. */}
-      <polygon
-        points={points}
-        className={selected ? 'fill-brand/20 stroke-brand' : 'fill-stone-100 stroke-stone-400'}
-        strokeWidth={(selected ? 2 : 1) / state.zoom}
-      />
+          otherwise draw its outline and label too fine to read.
+          Every piece, selected or not, has the same sharp dark outline at the
+          same weight — brand green is reserved for a specific side
+          (PieceHandles' highlighted edge) and for a side being dragged
+          (EdgeDragLayer). Selection shows only in the inside: a light brand
+          tint on the selected piece, plain white (the board's own colour) on
+          the rest. Fills are slightly see-through, so two pieces overlapping
+          each show their own outline through the other instead of one hiding
+          the other. */}
+      {slabTexture && piece.slab && (
+        <PieceSlabTexture piece={piece} placement={piece.slab} position={displayPosition} texture={slabTexture} />
+      )}
+      {curved ? (
+        <path
+          d={outlinePath(worldOutline.map((p) => ({ x: p.x, y: -p.y })), piece.edges)}
+          className={shapeClass}
+          strokeWidth={PIECE_STROKE_PX / state.zoom}
+        />
+      ) : (
+        <polygon points={points} className={shapeClass} strokeWidth={PIECE_STROKE_PX / state.zoom} />
+      )}
+      {/* The sides the Edges tool has painted, over the outline. */}
+      <PieceEdgeColors piece={piece} worldOutline={worldOutline} types={edgeTypes} zoom={state.zoom} />
       {/* Local coordinates -> screen: position, then rotation, then the
           y-flip every world point gets on its way to SVG. */}
       <g transform={`translate(${displayPosition.x},${-displayPosition.y}) rotate(${piece.rotationDeg}) scale(1,-1)`}>
@@ -146,7 +192,13 @@ function PieceShapeBase({ piece, selected }: { piece: Piece; selected: boolean }
           <>
             <defs>
               <clipPath id={seamClipId}>
-                <polygon points={piece.outline.map((p) => `${p.x},${p.y}`).join(' ')} />
+                {curved ? (
+                  // Drawn in screen orientation, then mirrored back into this
+                  // group's y-up space, so the arcs keep their bow.
+                  <path d={outlinePath(piece.outline.map((p) => ({ x: p.x, y: -p.y })), piece.edges)} transform="scale(1,-1)" />
+                ) : (
+                  <polygon points={piece.outline.map((p) => `${p.x},${p.y}`).join(' ')} />
+                )}
               </clipPath>
             </defs>
             <g clipPath={`url(#${seamClipId})`}>
@@ -177,9 +229,7 @@ function PieceShapeBase({ piece, selected }: { piece: Piece; selected: boolean }
           />
         ))}
       </g>
-      <text x={labelAt.x} y={-labelAt.y} textAnchor="middle" fontSize={14 / state.zoom} className="fill-stone-800 select-none">
-        {piece.label}
-      </text>
+      <PieceLabel label={piece.label} worldOutline={worldOutline} />
     </g>
   );
 }

@@ -52,6 +52,7 @@ const APPROVAL_CHAIN_WORKFLOWS = new Set([
   'credit_memo',
   'refund',
   'bin_transfer',
+  'employee',
 ]);
 
 // Same icon per entity type used on the CRM detail pages, but the badge

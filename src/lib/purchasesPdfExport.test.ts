@@ -4,6 +4,9 @@ import type * as JsPdfModule from "jspdf"
 // jsPDF falls back to writing a real file via Node's fs when no browser download
 // mechanism is available (as under jsdom) — stub `save` so tests don't litter the
 // working directory with .pdf files.
+// Every string drawn via doc.text(), so tests can assert which cards a PDF printed.
+const drawn = vi.hoisted(() => ({ strings: [] as string[] }))
+
 vi.mock("jspdf", async (importOriginal) => {
   const actual = await importOriginal<typeof JsPdfModule>()
   class TestJsPDF extends actual.jsPDF {
@@ -12,12 +15,18 @@ vi.mock("jspdf", async (importOriginal) => {
       // jsPDF assigns `save` as an own instance property in its constructor,
       // so it must be overridden here — a prototype method would be shadowed.
       this.save = (() => this) as unknown as typeof this.save
+      // `text` is likewise an own property, so wrap it here to record what is drawn.
+      const originalText = this.text
+      this.text = ((text: string | string[], ...rest: unknown[]) => {
+        drawn.strings.push(Array.isArray(text) ? text.join(" ") : String(text))
+        return (originalText as (...a: unknown[]) => unknown).call(this, text, ...rest)
+      }) as unknown as typeof this.text
     }
   }
   return { ...actual, default: TestJsPDF, jsPDF: TestJsPDF }
 })
 
-const { buildExportFilename, exportPurchasesRecordToPdf } = await import("./purchasesPdfExport")
+const { buildExportFilename, buildPurchasesRecordPdf, exportPurchasesRecordToPdf } = await import("./purchasesPdfExport")
 
 describe("buildExportFilename", () => {
   it("prefers the record number when present", () => {
@@ -144,5 +153,40 @@ describe("exportPurchasesRecordToPdf", () => {
         ],
       }),
     ).resolves.toBeUndefined()
+  })
+})
+
+describe("buildPurchasesRecordPdf footer cards", () => {
+  beforeEach(() => {
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("no network in tests")))
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  const base = {
+    recordType: "purchase_order" as const,
+    title: "PORD-000001",
+    counterpartyName: "Acme Supply Co",
+    sections: [{ title: "Primary Information", rows: [["Reference #", "R-1"]] as [string, string][] }],
+  }
+
+  /** Every string the builder draws onto the page. */
+  async function drawnText(params: Parameters<typeof buildPurchasesRecordPdf>[0]): Promise<string> {
+    drawn.strings.length = 0
+    await buildPurchasesRecordPdf(params)
+    return drawn.strings.join("\n")
+  }
+
+  it("prints the Terms & Conditions card only when the record has terms", async () => {
+    expect(await drawnText({ ...base, termsText: "Net 30 from delivery." })).toContain("TERMS & CONDITIONS")
+    expect(await drawnText(base)).not.toContain("TERMS & CONDITIONS")
+  })
+
+  it("never prints a Payment Details card or 'coming soon' copy", async () => {
+    const text = await drawnText({ ...base, termsText: "Net 30." })
+    expect(text).not.toContain("PAYMENT DETAILS")
+    expect(text).not.toContain("future update")
   })
 })

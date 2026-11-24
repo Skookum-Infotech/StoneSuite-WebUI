@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { Repeat, AlertCircle, Loader2, Save } from 'lucide-react';
 import { toast } from 'sonner';
 import { inventoryTransferService } from '@/services/inventoryTransferService';
@@ -14,7 +14,6 @@ import { BinPicker } from '@/components/inventory/BinPicker';
 import { useInventoryLookups } from '@/hooks/useInventoryLookups';
 import { useDefaultLocation } from '@/hooks/useDefaultLocation';
 import { useScrollToError } from '@/hooks/useScrollToError';
-import { useQuery } from '@tanstack/react-query';
 import { inventoryBinService } from '@/services/inventoryBinService';
 import { TRACKING_SERIALIZED } from '@/types/inventory';
 import type { TransferLineInput } from '@/types/inventory';

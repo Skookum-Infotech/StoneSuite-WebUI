@@ -18,10 +18,10 @@ import { AnomalyScanSwitch } from './AnomalyScanSwitch';
 import { automationRuleService } from '@/services/automationRuleService';
 import { anomalyService } from '@/services/anomalyService';
 import { automationSettingsService } from '@/services/automationSettingsService';
-import { makeSettings } from '@/test/automationFixtures';
+import { makeSettings, makeRule } from '@/test/automationFixtures';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { toast } from 'sonner';
-import { makeRule } from '@/test/automationFixtures';
+
 
 function rule(overrides: Partial<AutomationRule> = {}): AutomationRule {
   return makeRule({

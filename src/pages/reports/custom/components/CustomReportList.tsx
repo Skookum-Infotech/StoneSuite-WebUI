@@ -72,7 +72,7 @@ export function CustomReportList({ reports, sourceLabels, canCreate, onOpen, onN
   return (
     <section aria-label="Saved reports" className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <div role="tablist" aria-label="Report lists" onKeyDown={handleTabKey} className="flex gap-1 rounded-lg bg-stone-100 p-1">
+        <div role="tablist" tabIndex={-1} aria-label="Report lists" onKeyDown={handleTabKey} className="flex gap-1 rounded-lg bg-stone-100 p-1">
           {TABS.map((t) => (
             <button
               key={t.value}

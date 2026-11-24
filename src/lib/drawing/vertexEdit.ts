@@ -49,26 +49,41 @@ export interface OutlineWithEdges {
   edges: PieceEdge[];
 }
 
+/** The side's settings without its curve: a new chord means a bow that fitted
+ *  the old side would not fit the new one. */
+function straightened(edge: PieceEdge): PieceEdge {
+  const rest = { ...edge };
+  delete rest.arcHeightMm;
+  return rest;
+}
+
 /** Adds a corner at the midpoint of edge `edgeIndex`, splitting it in two.
- *  Both halves inherit the original edge's settings. */
+ *  Both halves inherit the original edge's settings (a curved side's halves
+ *  come out straight). */
 export function insertVertex({ outline, edges }: OutlineWithEdges, edgeIndex: number): OutlineWithEdges {
   const a = outline[edgeIndex];
   const b = outline[(edgeIndex + 1) % outline.length];
   const mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
   const nextOutline = [...outline.slice(0, edgeIndex + 1), mid, ...outline.slice(edgeIndex + 1)];
 
-  const shifted = edges.map((e) => (e.index > edgeIndex ? { ...e, index: e.index + 1 } : e));
+  const shifted = edges.map((e) => {
+    if (e.index > edgeIndex) return { ...e, index: e.index + 1 };
+    return e.index === edgeIndex ? straightened(e) : e;
+  });
   const original = edges.find((e) => e.index === edgeIndex);
-  return { outline: nextOutline, edges: original ? [...shifted, { ...original, index: edgeIndex + 1 }] : shifted };
+  return { outline: nextOutline, edges: original ? [...shifted, { ...straightened(original), index: edgeIndex + 1 }] : shifted };
 }
 
 /** Removes corner `vertexIndex`, joining the two sides that met there. The
- *  merged side keeps the settings of the one that came before the corner. */
+ *  merged side keeps the settings of the one that came before the corner,
+ *  minus any curve (it spans a different chord now). */
 export function removeVertex({ outline, edges }: OutlineWithEdges, vertexIndex: number): OutlineWithEdges {
   const n = outline.length;
   const nextOutline = outline.filter((_, i) => i !== vertexIndex);
+  const previous = (vertexIndex - 1 + n) % n;
   const nextEdges = edges
     .filter((e) => e.index !== vertexIndex)
+    .map((e) => (e.index === previous ? straightened(e) : e))
     .map((e) => (e.index > vertexIndex ? { ...e, index: e.index - 1 } : e))
     // After the removal the merged edge sits at the old "previous" slot; the
     // wrap-around case (removing corner 0) lands on the new last index.

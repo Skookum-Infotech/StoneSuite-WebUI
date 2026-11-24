@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { IDimensionEntity, IPolylineEntity, ITextEntity } from 'dxf-parser';
 import DxfParser from 'dxf-parser';
-import type { DrawingArea } from '@/types/drawing';
+import type { AttachedProfileType, DrawingArea } from '@/types/drawing';
 import { rectOutline } from './geometry';
 import { buildAreaDxf, dxfFileName } from './dxfExport';
 
@@ -43,6 +43,15 @@ describe('buildAreaDxf — piece placement', () => {
     const xs = outlineOf(buildAreaDxf(area, meta)).map((v) => v.x);
     expect(Math.min(...xs)).toBeCloseTo(100, 3);
     expect(Math.max(...xs)).toBeCloseTo(110, 3);
+  });
+
+  it('writes a curved side as short straight pieces, and the piece still reaches the crown of the arc', () => {
+    const area = singlePieceArea(MM_PER_INCH * 10, MM_PER_INCH * 5, 'A-1');
+    // Side 0 runs along the top, so a positive height bows it up past y = 0.
+    area.pieces[0].edges = [{ index: 0, arcHeightMm: MM_PER_INCH * 2 }];
+    const vertices = outlineOf(buildAreaDxf(area, meta));
+    expect(vertices.length).toBeGreaterThan(30);
+    expect(Math.max(...vertices.map((v) => v.y))).toBeCloseTo(2, 3);
   });
 
   it('applies the piece rotation, so a 90 degree piece swaps its extents', () => {
@@ -131,6 +140,16 @@ describe('buildAreaDxf — production detail', () => {
   const meta = { orderNumber: '1', areaIndex: 1, seq: 1, fractionDenominator: 32 as const, displayUnit: 'in' as const };
   const parse = (dxf: string) => new DxfParser().parseSync(dxf)?.entities ?? [];
 
+  const BACKSPLASH: AttachedProfileType = {
+    id: 'bs1', name: 'Backsplash', pricingType: 'linear', price: 0, alias: 'BS', color: '#000000',
+    measurementPresetsMm: [MM_PER_INCH * 4], angle: 90, finish: 'none', isSystem: false,
+  };
+  const WATERFALL: AttachedProfileType = {
+    id: 'wf1', name: 'Waterfall', pricingType: 'linear', price: 0, alias: 'WF', color: '#000000',
+    measurementPresetsMm: [MM_PER_INCH * 36], angle: 270, finish: 'mitered', isSystem: false,
+  };
+  const PROFILE_TYPES = [BACKSPLASH, WATERFALL];
+
   function detailedArea(): DrawingArea {
     const area = singlePieceArea(MM_PER_INCH * 100, MM_PER_INCH * 30, 'A-1');
     area.pieces[0].position = { x: MM_PER_INCH * 10, y: 0 };
@@ -138,14 +157,17 @@ describe('buildAreaDxf — production detail', () => {
       { id: 'c1', type: 'sink', shape: 'rect', center: { x: MM_PER_INCH * 50, y: -MM_PER_INCH * 15 }, widthMm: MM_PER_INCH * 30, depthMm: MM_PER_INCH * 16 },
       { id: 'c2', type: 'faucet', shape: 'round', center: { x: MM_PER_INCH * 80, y: -MM_PER_INCH * 15 }, diameterMm: MM_PER_INCH * 2 },
     ];
-    area.pieces[0].edges = [{ index: 0, code: 'BN', splashHeightMm: MM_PER_INCH * 4 }, { index: 1, waterfallHeightMm: MM_PER_INCH * 36 }];
+    area.pieces[0].edges = [
+      { index: 0, code: 'BN', attachedProfile: { profileTypeId: 'bs1', measurementMm: MM_PER_INCH * 4 } },
+      { index: 1, attachedProfile: { profileTypeId: 'wf1', measurementMm: MM_PER_INCH * 36 } },
+    ];
     area.notes = [{ id: 'n1', text: 'Seam here', at: { x: 0, y: 0 } }];
     area.dimensions = [{ id: 'd1', from: { x: 0, y: 0 }, to: { x: MM_PER_INCH * 20, y: 0 }, offsetMm: 25.4 }];
     return area;
   }
 
   it('writes each cutout as a closed outline on the CUTOUTS layer, in world position', () => {
-    const cutouts = parse(buildAreaDxf(detailedArea(), meta))
+    const cutouts = parse(buildAreaDxf(detailedArea(), meta, PROFILE_TYPES))
       .filter((e) => e.type === 'POLYLINE' && e.layer === 'CUTOUTS') as IPolylineEntity[];
     expect(cutouts).toHaveLength(2);
     expect(cutouts[0].vertices).toHaveLength(4);
@@ -157,13 +179,13 @@ describe('buildAreaDxf — production detail', () => {
   });
 
   it('writes edge profile, backsplash and waterfall notes on the EDGES layer', () => {
-    const texts = (parse(buildAreaDxf(detailedArea(), meta)).filter((e) => e.type === 'TEXT' && e.layer === 'EDGES') as ITextEntity[])
+    const texts = (parse(buildAreaDxf(detailedArea(), meta, PROFILE_TYPES)).filter((e) => e.type === 'TEXT' && e.layer === 'EDGES') as ITextEntity[])
       .map((t) => t.text);
     expect(texts).toEqual(['BN BS 4"', 'WF 36"']);
   });
 
   it('writes notes on NOTES and manual dimensions as extra dimensions', () => {
-    const entities = parse(buildAreaDxf(detailedArea(), meta));
+    const entities = parse(buildAreaDxf(detailedArea(), meta, PROFILE_TYPES));
     expect((entities.filter((e) => e.type === 'TEXT' && e.layer === 'NOTES') as ITextEntity[]).map((t) => t.text)).toEqual(['Seam here']);
     expect(entities.filter((e) => e.type === 'DIMENSION' as string)).toHaveLength(5); // 4 sides + 1 manual
   });
@@ -171,7 +193,7 @@ describe('buildAreaDxf — production detail', () => {
   it('exports each seam as an open LINE on the SEAMS layer, in world position', () => {
     const area = detailedArea();
     area.pieces[0].seams = [{ from: { x: 0, y: 0 }, to: { x: MM_PER_INCH * 50, y: 0 } }];
-    const lines = parse(buildAreaDxf(area, meta)).filter((e) => e.type === 'LINE' && e.layer === 'SEAMS');
+    const lines = parse(buildAreaDxf(area, meta, PROFILE_TYPES)).filter((e) => e.type === 'LINE' && e.layer === 'SEAMS');
     expect(lines).toHaveLength(1);
     // The piece sits 10in from the origin, so the seam does too.
     expect((lines[0] as unknown as { vertices: { x: number }[] }).vertices[0].x).toBeCloseTo(10);

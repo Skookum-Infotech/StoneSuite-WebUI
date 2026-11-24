@@ -7,7 +7,7 @@ import { useState } from 'react';
 import { Select } from '@/components/ui/select';
 import type { Cutout, CutoutShape, Piece, Point } from '@/types/drawing';
 import {
-  centerFromBoundsMm, centerFromOffsets, convertCutoutShape, cutoutArea, cutoutPatchProblem, cutoutShape,
+  centerFromBoundsMm, centerFromOffsets, convertCutoutShape, cutoutArea, cutoutPatchProblem, cutoutShape, isBoxShape,
 } from '@/lib/drawing/cutouts';
 import { isSimplePolygon } from '@/lib/drawing/polygon';
 import { formatLength, LengthParseError, parseLength } from '@/lib/drawing/units';
@@ -16,7 +16,9 @@ import { DegreesInput } from './DegreesInput';
 import { useDrawingEditor } from './DrawingEditorContext';
 import { LengthInput } from './LengthInput';
 
-const SHAPE_LABELS: Record<CutoutShape, string> = { rect: 'Rectangle', round: 'Round', polygon: 'Custom outline' };
+const SHAPE_LABELS: Record<CutoutShape, string> = {
+  rect: 'Rectangle', round: 'Round', polygon: 'Custom outline', ellipse: 'Ellipse', arc: 'Arc', stadium: 'Oval',
+};
 const MIN_CUSTOM_POINTS = 3;
 const MM2_PER_CM2 = 100;
 const MM2_PER_SQ_IN = 645.16;
@@ -115,7 +117,7 @@ export function CutoutGeometryFields({ piece, cutout }: { piece: Piece; cutout: 
         {shapeError && <span role="alert" className="text-micro text-danger-ink">{shapeError}</span>}
       </label>
 
-      {shape === 'rect' && (
+      {isBoxShape(shape) && (
         <>
           <LengthInput label="Width" valueMm={cutout.widthMm ?? 0} onCommit={positive('widthMm')} />
           <LengthInput label="Height" valueMm={cutout.depthMm ?? 0} onCommit={positive('depthMm')} />

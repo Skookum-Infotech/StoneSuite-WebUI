@@ -391,6 +391,11 @@ export interface InventoryUnit {
   reservedCustomerName?: string;
   customerReservedAt?: string | null;
 
+  /** The sales order this unit is held for from its Material drawing (status
+   *  reserved, no fabrication job yet). Empty for every other unit. */
+  reservedSalesOrderId?: string | null;
+  reservedSalesOrderNumber?: string;
+
   createdAt: string;
   updatedAt: string;
 }

@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { Drawing } from '@/types/drawing';
 import { MM_PER_INCH } from '@/lib/drawing/constants';
 import { DrawingEditorProvider, useDrawingEditor } from './DrawingEditorContext';
@@ -8,8 +9,15 @@ import { DrawingToolbar } from './DrawingToolbar';
 import { ShapePalette } from './ShapePalette';
 
 vi.mock('@/services/drawingService', () => ({
-  drawingService: { listVersions: vi.fn().mockResolvedValue({ items: [], nextCursor: null }) },
+  drawingService: {
+    listVersions: vi.fn().mockResolvedValue({ items: [], nextCursor: null }),
+    getEdgeTypes: vi.fn().mockResolvedValue([]),
+    getAttachedProfileTypes: vi.fn().mockResolvedValue([]),
+  },
 }));
+vi.mock('@/lib/drawingPdfExport', () => ({ exportDrawingToPdf: vi.fn().mockResolvedValue(undefined) }));
+
+import { exportDrawingToPdf } from '@/lib/drawingPdfExport';
 
 function blankDrawing(): Drawing {
   return {
@@ -39,13 +47,16 @@ function Readout() {
 }
 
 function renderToolbar(saveStatus: Parameters<typeof DrawingToolbar>[0]['saveStatus'] = 'idle', onSave: () => void = () => {}) {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   render(
-    <DrawingEditorProvider drawing={blankDrawing()} materialLines={[]}>
-      <div data-drawing-editor><DrawingToolbar saveStatus={saveStatus} onSave={onSave} orderNumber="1001" /></div>
-      {/* The add-piece buttons live in the left panel, not the toolbar. */}
-      <ShapePalette />
-      <Readout />
-    </DrawingEditorProvider>,
+    <QueryClientProvider client={queryClient}>
+      <DrawingEditorProvider drawing={blankDrawing()} materialLines={[]}>
+        <div data-drawing-editor><DrawingToolbar saveStatus={saveStatus} onSave={onSave} orderNumber="1001" onExit={() => {}} /></div>
+        {/* The add-piece buttons live in the left panel, not the toolbar. */}
+        <ShapePalette />
+        <Readout />
+      </DrawingEditorProvider>
+    </QueryClientProvider>,
   );
 }
 
@@ -217,6 +228,18 @@ describe('DrawingToolbar — Export DXF', () => {
     expect(created[0].type).toBe('application/dxf');
     click.mockRestore();
     vi.unstubAllGlobals();
+  });
+});
+
+describe('DrawingToolbar — Export PDF', () => {
+  it('hands the live drawing and the order number to the PDF exporter', async () => {
+    renderToolbar();
+    await userEvent.click(screen.getByRole('button', { name: 'Export PDF' }));
+    await vi.waitFor(() => expect(exportDrawingToPdf).toHaveBeenCalledTimes(1));
+    expect(vi.mocked(exportDrawingToPdf).mock.calls[0][0]).toMatchObject({
+      orderNumber: '1001',
+      drawing: { salesOrderId: 'so1' },
+    });
   });
 });
 

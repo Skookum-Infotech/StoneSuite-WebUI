@@ -13,6 +13,8 @@ import { EMPTY_FILTERS, isFiltered, parseFilters, writeFilters } from '@/lib/ven
 import { DEFAULT_PAGE_SIZE } from '@/lib/myTransactions';
 import { ErrorNote, Spinner } from '@/components/tenant/ui';
 import type { VendorTransactionFilters as Filters } from '@/types/vendorTransactions';
+import { VendorAgingCard } from './VendorAgingCard';
+import { VendorExportButton } from './VendorExportButton';
 import { VendorTransactionCards } from './VendorTransactionCards';
 import { VendorTransactionFilters } from './VendorTransactionFilters';
 import { VendorTransactionsPager } from './VendorTransactionsPager';
@@ -104,6 +106,12 @@ export function VendorTransactionsTab({ vendorId }: { vendorId: string }) {
 
   return (
     <div className="flex flex-col gap-4">
+      {overview && <VendorAgingCard vendorId={vendorId} />}
+      {rows.length > 0 && (
+        <div className="flex justify-end">
+          <VendorExportButton vendorId={vendorId} filters={filters} />
+        </div>
+      )}
       <div ref={listTopRef} className="scroll-mt-3 overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm">
         {overview && (
           <VendorTransactionFilters filters={filters} overview={overview} onChange={update} onClear={clear} />

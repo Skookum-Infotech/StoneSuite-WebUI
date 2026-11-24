@@ -4,6 +4,7 @@
 // from the interactive editor's DrawingCanvas/PieceShape rather than a
 // shared one: this view only ever shows a static snapshot.
 
+import { outlinePolyline } from '@/lib/drawing/arcs';
 import { bounds, toWorldPoint, transformOutline } from '@/lib/drawing/geometry';
 import { cutoutOutline } from '@/lib/drawing/cutouts';
 import type { Drawing, DrawingArea } from '@/types/drawing';
@@ -31,7 +32,7 @@ function AreaPreview({ area }: { area: DrawingArea }) {
     );
   }
 
-  const worldOutlines = area.pieces.map((p) => transformOutline(p.outline, p.position, p.rotationDeg));
+  const worldOutlines = area.pieces.map((p) => transformOutline(outlinePolyline(p.outline, p.edges), p.position, p.rotationDeg));
   // World y points up; SVG y points down — flip once here, same convention
   // DrawingCanvas/PieceShape use, so the viewBox and every polygon agree.
   const screenOutlines = worldOutlines.map((outline) => outline.map((pt) => ({ x: pt.x, y: -pt.y })));

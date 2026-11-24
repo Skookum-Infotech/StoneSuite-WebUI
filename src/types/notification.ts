@@ -16,3 +16,17 @@ export interface AppNotification {
   readAt?: string;
   createdAt: string;
 }
+
+/** Paging block of Notify's `/api/notifications/history`. */
+export interface NotificationPagination {
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+}
+
+/** One page of the full notification history. */
+export interface NotificationHistoryPage {
+  notifications: AppNotification[];
+  pagination: NotificationPagination;
+}
