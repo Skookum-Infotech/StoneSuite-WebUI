@@ -12,6 +12,9 @@ export const RULE_KEY = {
   estimateExpiry: 'estimate_expiry',
   approvalStuck: 'approval_stuck',
   anomalyScan: 'anomaly_scan',
+  installTomorrow: 'install_tomorrow',
+  vendorBillDue: 'vendor_bill_due',
+  dailyDigest: 'daily_digest',
 } as const;
 
 export const ANOMALIES_PATH = '/anomalies';
@@ -24,6 +27,9 @@ const RULE_DESCRIPTIONS: Record<string, string> = {
   [RULE_KEY.quoteExpiry]: 'Reminds the quote owner before a quote expires.',
   [RULE_KEY.estimateExpiry]: 'Reminds the estimate owner before an estimate expires.',
   [RULE_KEY.approvalStuck]: 'Reminds approvers when a record has been waiting for approval too long.',
+  [RULE_KEY.installTomorrow]: 'Emails customers the day before their installation, with a copy in their portal notifications.',
+  [RULE_KEY.vendorBillDue]: 'Reminds the bill owner (or the bill approvers) before a vendor bill is due.',
+  [RULE_KEY.dailyDigest]: 'Sends each person who turns it on a daily summary of their installations, vendor bills due and pending approvals.',
   [RULE_KEY.anomalyScan]: 'Checks the workspace for unusual activity and alerts the people who can act on it.',
 };
 const FALLBACK_DESCRIPTION = 'A scheduled reminder StoneSuite sends on your behalf.';
@@ -38,6 +44,8 @@ const ANCHOR_BY_RULE: Record<string, CadenceAnchor> = {
   [RULE_KEY.arDunning]: { before: 'before due date', after: 'after due date', on: 'On the due date' },
   [RULE_KEY.quoteExpiry]: { before: 'before expiry', after: 'after expiry', on: 'On the expiry date' },
   [RULE_KEY.estimateExpiry]: { before: 'before expiry', after: 'after expiry', on: 'On the expiry date' },
+  [RULE_KEY.installTomorrow]: { before: 'before the installation', after: 'after the installation', on: 'On the installation day' },
+  [RULE_KEY.vendorBillDue]: { before: 'before due date', after: 'after due date', on: 'On the due date' },
   [RULE_KEY.approvalStuck]: {
     before: 'before entering approval',
     after: 'after entering approval',
@@ -47,6 +55,7 @@ const ANCHOR_BY_RULE: Record<string, CadenceAnchor> = {
 const FALLBACK_ANCHOR: CadenceAnchor = { before: 'before the date', after: 'after the date', on: 'On the date' };
 const ANOMALY_CADENCE = 'Checked every 15 minutes';
 const NO_CADENCE = 'No schedule';
+const DIGEST_CADENCE = 'Daily, at the hour each person chooses';
 
 export function ruleDescription(ruleKey: string): string {
   return RULE_DESCRIPTIONS[ruleKey] ?? FALLBACK_DESCRIPTION;
@@ -71,6 +80,7 @@ function stageText(ruleKey: string, offsetDays: number): string {
 /** The cadence in words, e.g. "3 days before due date, On the due date, 7 days after due date". */
 export function cadenceText(ruleKey: string, cadence: ReadonlyArray<AutomationCadenceStage>): string {
   if (ruleKey === RULE_KEY.anomalyScan) return ANOMALY_CADENCE;
+  if (ruleKey === RULE_KEY.dailyDigest) return DIGEST_CADENCE;
   if (cadence.length === 0) return NO_CADENCE;
   return cadence.map((c) => stageText(ruleKey, c.offsetDays)).join(', ');
 }
