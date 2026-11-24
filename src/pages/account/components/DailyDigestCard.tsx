@@ -40,8 +40,8 @@ export function DailyDigestCard() {
   const change = (patch: Partial<DigestPrefs>) => {
     if (current) setDraft({ ...current, ...patch })
   }
-  const dirty = Boolean(draft) && Boolean(saved.data) && !sameDigestPrefs(draft, saved.data)
-  const needsSection = Boolean(current) && current.enabled && !hasDigestSection(current)
+  const dirty = draft !== null && saved.data !== undefined && !sameDigestPrefs(draft, saved.data)
+  const needsSection = current !== undefined && current.enabled && !hasDigestSection(current)
 
   return (
     <div className="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm">
