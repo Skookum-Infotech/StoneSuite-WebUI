@@ -42,10 +42,10 @@ const SAVE_ICON: Record<AutosaveStatus, typeof Save> = {
 };
 
 const SAVE_TONE: Record<AutosaveStatus, string> = {
-  idle: 'text-ink-muted',
-  dirty: 'bg-brand text-ink-strong hover:bg-brand-hover',
-  saving: 'text-ink-muted',
-  saved: 'text-ink-muted',
+  idle: 'text-stone-400',
+  dirty: 'bg-brand text-stone-900 hover:bg-brand-hover',
+  saving: 'text-stone-400',
+  saved: 'text-stone-400',
   error: 'border border-red-400 text-red-300 hover:bg-stone-800',
 };
 

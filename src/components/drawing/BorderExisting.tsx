@@ -11,7 +11,6 @@ import { edgeLetter } from '@/lib/drawing/labels';
 import { validatePiece } from '@/lib/drawing/validation';
 import { useDrawingEditor } from './DrawingEditorContext';
 
-import { buttonVariants } from '@/components/ui/button';
 export function BorderExisting({ piece, edgeIndex }: { piece: Piece; edgeIndex: number }) {
   const { state, dispatch, border } = useDrawingEditor();
   const [error, setError] = useState<string | null>(null);
@@ -54,11 +53,11 @@ export function BorderExisting({ piece, edgeIndex }: { piece: Piece; edgeIndex: 
         type="button"
         autoFocus
         onClick={makeStandard}
-        className={buttonVariants()}
+        className="rounded-md bg-brand px-3 py-1.5 text-xs font-semibold text-stone-900 hover:bg-brand-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-white"
       >
         Make standard
       </button>
-      {error && <p role="alert" className="basis-full type-error">{error}</p>}
+      {error && <p role="alert" className="basis-full text-xs text-red-400">{error}</p>}
     </div>
   );
 }

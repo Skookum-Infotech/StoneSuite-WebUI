@@ -83,7 +83,7 @@ export function AreaSidebar({ onClose }: { onClose: () => void }) {
           return (
             <li
               key={area.id}
-              className={`flex flex-col gap-1.5 border-b border-stone-800 px-3 py-2 ${active ? 'bg-brand text-ink-strong' : ''}`}
+              className={`flex flex-col gap-1.5 border-b border-stone-800 px-3 py-2 ${active ? 'bg-brand text-stone-900' : ''}`}
             >
               <div className="flex items-center gap-1">
                 {renamingId === area.id ? (
@@ -94,7 +94,7 @@ export function AreaSidebar({ onClose }: { onClose: () => void }) {
                     onChange={(e) => setRenameValue(e.target.value)}
                     onBlur={() => commitRename(area.id)}
                     onKeyDown={(e) => e.key === 'Enter' && commitRename(area.id)}
-                    className="min-w-0 flex-1 rounded border border-stone-300 px-1.5 py-0.5 text-sm text-ink-strong"
+                    className="min-w-0 flex-1 rounded border border-stone-300 px-1.5 py-0.5 text-sm text-stone-900"
                   />
                 ) : (
                   <button
@@ -167,7 +167,7 @@ function AreaCodeInput({ areaId, areaName, code }: { areaId: string; areaName: s
       onBlur={commit}
       onKeyDown={(e) => e.key === 'Enter' && commit()}
       placeholder="Code"
-      className="w-full rounded border border-stone-300 bg-white px-1.5 py-0.5 text-xs text-ink-strong"
+      className="w-full rounded border border-stone-300 bg-white px-1.5 py-0.5 text-xs text-stone-900"
     />
   );
 }
@@ -186,12 +186,12 @@ function DeleteAreaDialog({ areaName, onConfirm, onClose }: {
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       <div ref={contentRef} tabIndex={-1} className="mx-4 w-full max-w-sm rounded-xl bg-white p-6 shadow-2xl">
-        <h3 id="delete-area-dialog-title" className="text-sm font-bold text-ink-strong">
+        <h3 id="delete-area-dialog-title" className="text-sm font-bold text-stone-900">
           Delete {areaName}?
         </h3>
-        <p className="mt-1 text-xs text-ink-muted">Every piece in this area will be removed. This cannot be undone from here.</p>
+        <p className="mt-1 text-xs text-stone-500">Every piece in this area will be removed. This cannot be undone from here.</p>
         <div className="mt-4 flex justify-end gap-2">
-          <button type="button" onClick={onClose} className="rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-ink">
+          <button type="button" onClick={onClose} className="rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600">
             Cancel
           </button>
           <button type="button" onClick={onConfirm} className="rounded-lg bg-destructive px-3 py-1.5 text-xs font-semibold text-white">

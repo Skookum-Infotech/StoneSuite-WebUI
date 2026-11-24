@@ -8,8 +8,7 @@ import { apiErrorMessage } from '@/api/tenantClient';
 import { attachmentService, type Attachment } from '@/services/attachmentService';
 import { DxfDrawingBody } from './DxfDrawingBody';
 
-import { buttonVariants } from '@/components/ui/button';
-const ACTION_CLASS = 'inline-flex items-center gap-1 rounded px-2 py-1 text-micro font-medium text-ink hover:bg-stone-100 disabled:opacity-50';
+const ACTION_CLASS = 'inline-flex items-center gap-1 rounded px-2 py-1 text-2xs font-medium text-stone-600 hover:bg-stone-100 disabled:opacity-50';
 
 type Props = { orderId: string; attachment: Attachment; label: string; canEdit: boolean };
 
@@ -65,7 +64,7 @@ export function DxfFilePanel({ orderId, attachment, label, canEdit }: Props) {
               aria-label={`Confirm delete ${label}`}
               disabled={remove.isPending}
               onClick={() => remove.mutate()}
-              className={buttonVariants({ variant: 'destructive', size: 'sm' })}
+              className="rounded bg-destructive px-2 py-1 text-2xs font-medium text-white hover:bg-destructive/90 disabled:opacity-50"
             >
               {remove.isPending ? <Loader2 className="size-3 animate-spin" /> : 'Delete'}
             </button>

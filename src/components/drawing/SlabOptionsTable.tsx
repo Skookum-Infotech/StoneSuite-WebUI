@@ -9,7 +9,6 @@ import { formatLength } from '@/lib/drawing/units';
 import { formatUnitArea } from '@/lib/unitConsumption';
 import { useDrawingEditor } from './DrawingEditorContext';
 
-import { buttonVariants } from '@/components/ui/button';
 const AWAITING_INSPECTION_HINT = 'This slab has not been inspected yet. Accept it on its Inventory page, then add it here.';
 
 const HEADERS = ['Photo', 'Serial', 'Size (L × W × T)', 'Area', 'Bin', 'Status', ''];
@@ -27,10 +26,10 @@ export function SlabOptionsTable({ units, addingId, onAdd }: SlabOptionsTablePro
   const length = (mm: number) => formatLength(mm, displayUnit, fractionDenominator);
 
   return (
-    <table className="w-full text-left type-cell">
+    <table className="w-full text-left text-xs">
       <thead>
-        <tr className="border-b border-stone-200 type-th">
-          {HEADERS.map((h, i) => <th key={h || `action-${i}`} scope="col" className="type-th px-2 py-1.5">{h}</th>)}
+        <tr className="border-b border-stone-200 text-2xs uppercase text-stone-500">
+          {HEADERS.map((h, i) => <th key={h || `action-${i}`} scope="col" className="px-2 py-1.5 font-semibold">{h}</th>)}
         </tr>
       </thead>
       <tbody>
@@ -45,17 +44,17 @@ export function SlabOptionsTable({ units, addingId, onAdd }: SlabOptionsTablePro
                     : <ImageIcon className="size-4 text-stone-300" aria-label="No photo" />}
                 </div>
               </td>
-              <td className="type-cell px-2 py-1.5 font-medium">
+              <td className="px-2 py-1.5 font-medium text-stone-900">
                 {unit.serial}
-                {unit.kind === 'remnant' && <span className="ml-1.5 rounded bg-stone-100 px-1 py-0.5 text-micro font-normal text-ink">Remnant</span>}
+                {unit.kind === 'remnant' && <span className="ml-1.5 rounded bg-stone-100 px-1 py-0.5 text-2xs font-normal text-stone-600">Remnant</span>}
               </td>
-              <td className="type-cell px-2 py-1.5">{length(unit.lengthMm)} × {length(unit.widthMm)} × {length(unit.thicknessMm)}</td>
-              <td className="type-cell px-2 py-1.5">{formatUnitArea(unit.area, unit.areaUnitCode)}</td>
-              <td className="type-cell px-2 py-1.5">{unit.binPath || '—'}</td>
-              <td className="type-cell px-2 py-1.5 capitalize">{added ? 'On this order' : isAwaitingInspection(unit) ? 'Awaiting inspection' : unit.status.replace('_', ' ')}</td>
+              <td className="px-2 py-1.5 text-stone-700">{length(unit.lengthMm)} × {length(unit.widthMm)} × {length(unit.thicknessMm)}</td>
+              <td className="px-2 py-1.5 text-stone-700">{formatUnitArea(unit.area, unit.areaUnitCode)}</td>
+              <td className="px-2 py-1.5 text-stone-600">{unit.binPath || '—'}</td>
+              <td className="px-2 py-1.5 capitalize text-stone-600">{added ? 'On this order' : isAwaitingInspection(unit) ? 'Awaiting inspection' : unit.status.replace('_', ' ')}</td>
               <td className="px-2 py-1.5 text-right">
                 {added ? (
-                  <span className="inline-flex items-center gap-1 text-micro font-semibold text-success-ink">
+                  <span className="inline-flex items-center gap-1 text-2xs font-semibold text-emerald-700">
                     <Check className="size-3.5" aria-hidden="true" /> Added
                   </span>
                 ) : (
@@ -65,7 +64,7 @@ export function SlabOptionsTable({ units, addingId, onAdd }: SlabOptionsTablePro
                     disabled={!canAddToDrawing(unit) || addingId !== null}
                     title={isAwaitingInspection(unit) ? AWAITING_INSPECTION_HINT : undefined}
                     onClick={() => onAdd(unit.id)}
-                    className={buttonVariants({ size: 'sm' })}
+                    className="inline-flex items-center gap-1 rounded bg-brand px-2.5 py-1 text-2xs font-semibold text-stone-900 hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     <Plus className="size-3" aria-hidden="true" />
                     {addingId === unit.id ? 'Adding…' : 'Add'}

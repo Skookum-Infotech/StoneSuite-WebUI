@@ -78,19 +78,19 @@ export function DimensionLine(
     />
   );
   const dot = (p: Point) => (
-    <circle cx={p.x} cy={p.y} r={px(POINT_RADIUS_PX)} fill="currentColor" className="text-ink-muted" />
+    <circle cx={p.x} cy={p.y} r={px(POINT_RADIUS_PX)} fill="currentColor" className="text-ink-faint" />
   );
   // A zero-offset dimension (a circle's radius) has no extension lines.
   const hasExtension = from.x !== edgeFrom.x || from.y !== edgeFrom.y;
 
   return (
     <g aria-hidden="true" pointerEvents="none">
-      {hasExtension && dashed(from, edgeFrom, 'text-ink-muted')}
-      {hasExtension && dashed(to, edgeTo, 'text-ink-muted')}
+      {hasExtension && dashed(from, edgeFrom, 'text-ink-faint')}
+      {hasExtension && dashed(to, edgeTo, 'text-ink-faint')}
       {/* The dimension line in two halves, each dashed from its own corner
        *  inward; they meet in the middle, under the measurement's halo. */}
-      {dashed(from, textAt, 'text-ink-muted')}
-      {dashed(to, textAt, 'text-ink-muted')}
+      {dashed(from, textAt, 'text-ink-faint')}
+      {dashed(to, textAt, 'text-ink-faint')}
       {dot(edgeFrom)}
       {dot(edgeTo)}
       {/* Always shown, at every zoom: a measurement that disappears when the

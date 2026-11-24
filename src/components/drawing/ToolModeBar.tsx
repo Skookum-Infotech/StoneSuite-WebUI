@@ -7,8 +7,7 @@
 
 import { useEffect, type ReactNode } from 'react';
 
-import { buttonVariants } from '@/components/ui/button';
-const STYLE_BUTTON_CLASS = 'flex h-9 w-11 items-center justify-center rounded text-stone-200 hover:bg-stone-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand aria-pressed:bg-brand aria-pressed:text-ink-strong';
+const STYLE_BUTTON_CLASS = 'flex h-9 w-11 items-center justify-center rounded text-stone-200 hover:bg-stone-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand aria-pressed:bg-brand aria-pressed:text-stone-900';
 
 export interface ModeChoice {
   id: string;
@@ -41,11 +40,11 @@ export function ToolModeBar({ name, title, choices, onClose, children }: {
       className="pointer-events-auto absolute bottom-3 left-1/2 z-10 flex max-w-[95%] -translate-x-1/2 flex-col gap-2 rounded-lg bg-stone-900 px-3 py-2 shadow-lg"
     >
       <div className="flex items-center justify-between gap-6">
-        <h3 className="text-white type-card-title">{title}</h3>
+        <h3 className="text-sm font-semibold text-white">{title}</h3>
         <button
           type="button"
           onClick={onClose}
-          className={buttonVariants({ size: 'sm' })}
+          className="rounded-md bg-brand px-3 py-1 text-xs font-semibold text-stone-900 hover:bg-brand-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-white"
         >
           Close (Esc)
         </button>

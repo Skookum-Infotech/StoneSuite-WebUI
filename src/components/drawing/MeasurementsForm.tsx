@@ -8,8 +8,7 @@ import { useState } from 'react';
 import { formatLength, LengthParseError, parseLength } from '@/lib/drawing/units';
 import { useDrawingEditor } from './DrawingEditorContext';
 
-import { buttonVariants } from '@/components/ui/button';
-const INPUT_CLASS = 'w-24 rounded border border-stone-300 bg-white px-1.5 py-1 text-sm text-ink-strong focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand';
+const INPUT_CLASS = 'w-24 rounded border border-stone-300 bg-white px-1.5 py-1 text-sm text-stone-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand';
 
 export interface MeasurementField<K extends string> {
   key: K;
@@ -71,7 +70,7 @@ export function MeasurementsForm<K extends string>({ label, fields, values, onPr
   return (
     <form onSubmit={apply} aria-label={label} className="flex flex-wrap items-center gap-x-3 gap-y-2">
       {fields.map(({ key, letters, caption }, i) => (
-        <label key={key} className="flex items-center gap-1.5 type-field-label">
+        <label key={key} className="flex items-center gap-1.5 text-xs text-stone-300">
           <span className="font-semibold text-brand">{letters}</span>
           {caption}
           <input
@@ -87,11 +86,11 @@ export function MeasurementsForm<K extends string>({ label, fields, values, onPr
       ))}
       <button
         type="submit"
-        className={buttonVariants()}
+        className="rounded-md bg-brand px-3 py-1.5 text-xs font-semibold text-stone-900 hover:bg-brand-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-white"
       >
         Apply
       </button>
-      {error && <p role="alert" className="basis-full type-error">{error}</p>}
+      {error && <p role="alert" className="basis-full text-xs text-red-400">{error}</p>}
     </form>
   );
 }

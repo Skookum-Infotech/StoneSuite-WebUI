@@ -48,7 +48,7 @@ export function ToolFlyout({ title, items, onPick, onClose }: {
       aria-label={title}
       className="absolute left-full top-0 z-40 ml-2 w-56 overflow-hidden rounded-lg bg-stone-800 shadow-xl"
     >
-      <h3 className="px-3 py-2 text-white type-card-title">{title}</h3>
+      <h3 className="px-3 py-2 text-sm font-semibold text-white">{title}</h3>
       {items.map(({ id, label, icon, active }) => (
         <button key={id} type="button" role="menuitem" aria-label={label} aria-pressed={active} onClick={() => onPick(id)} className={ITEM_CLASS}>
           <span className="flex h-5 w-5 shrink-0 items-center justify-center">{icon}</span>

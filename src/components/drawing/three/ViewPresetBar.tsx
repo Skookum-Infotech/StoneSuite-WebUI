@@ -2,8 +2,6 @@
 
 import { VIEW_PRESETS, type ViewPreset } from '@/lib/drawing/three/cameraViews';
 
-import { buttonVariants } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
 export function ViewPresetBar({ onPick, onSave }: { onPick: (preset: ViewPreset) => void; onSave: () => void }) {
   return (
     <div
@@ -17,7 +15,7 @@ export function ViewPresetBar({ onPick, onSave }: { onPick: (preset: ViewPreset)
           type="button"
           aria-label={`${label} view`}
           onClick={() => onPick(id)}
-          className={buttonVariants({ variant: 'ghost', size: 'sm' })}
+          className="rounded-md px-3 py-1 text-xs font-medium text-white hover:bg-stone-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-lime-400"
         >
           {label}
         </button>
@@ -26,7 +24,7 @@ export function ViewPresetBar({ onPick, onSave }: { onPick: (preset: ViewPreset)
         type="button"
         aria-label="Reset view"
         onClick={() => onPick('iso')}
-        className={buttonVariants({ variant: 'ghost', size: 'sm' })}
+        className="rounded-md px-3 py-1 text-xs font-medium text-lime-300 hover:bg-stone-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-lime-400"
       >
         Reset
       </button>
@@ -35,7 +33,7 @@ export function ViewPresetBar({ onPick, onSave }: { onPick: (preset: ViewPreset)
         aria-label="Save view as PNG"
         title="Save this view as a PNG picture"
         onClick={onSave}
-        className={cn(buttonVariants({ variant: 'ghost', size: 'sm' }), 'ml-1')}
+        className="ml-1 rounded-md border-l border-stone-600 px-3 py-1 text-xs font-medium text-white hover:bg-stone-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-lime-400"
       >
         Save PNG
       </button>

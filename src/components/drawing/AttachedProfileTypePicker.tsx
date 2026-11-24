@@ -9,7 +9,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import type { AttachedProfileType } from '@/types/drawing';
 import { ColorSwatch } from './ColorSwatch';
 
-const ROW_CLASS = 'flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-left text-xs text-ink outline-none transition-colors hover:bg-stone-100 focus-visible:bg-stone-100';
+const ROW_CLASS = 'flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-left text-xs text-stone-700 outline-none transition-colors hover:bg-stone-100 focus-visible:bg-stone-100';
 
 export function AttachedProfileTypePicker({ types, selected, onPick, onAdd }: {
   types: AttachedProfileType[];
@@ -43,7 +43,7 @@ export function AttachedProfileTypePicker({ types, selected, onPick, onAdd }: {
         >
           {selected && <ColorSwatch color={selected.color} />}
           <span className="flex-1 truncate">{selected?.name ?? 'No profile types'}</span>
-          <ChevronDown className="size-3.5 shrink-0 text-ink-faint" aria-hidden="true" />
+          <ChevronDown className="size-3.5 shrink-0 text-stone-400" aria-hidden="true" />
         </button>
       </PopoverTrigger>
       <PopoverContent
@@ -69,11 +69,11 @@ export function AttachedProfileTypePicker({ types, selected, onPick, onAdd }: {
                   onPick(t.id);
                   setOpen(false);
                 }}
-                className={`${ROW_CLASS} aria-selected:bg-brand/10 aria-selected:font-medium aria-selected:text-ink-strong`}
+                className={`${ROW_CLASS} aria-selected:bg-brand/10 aria-selected:font-medium aria-selected:text-stone-900`}
               >
                 <ColorSwatch color={t.color} />
                 <span className="flex-1 truncate">{t.name}</span>
-                {t.id === selected?.id && <Check className="size-3.5 shrink-0 text-link" aria-hidden="true" />}
+                {t.id === selected?.id && <Check className="size-3.5 shrink-0 text-brand-dark" aria-hidden="true" />}
               </button>
             ))}
           </div>
@@ -84,7 +84,7 @@ export function AttachedProfileTypePicker({ types, selected, onPick, onAdd }: {
               setOpen(false);
               onAdd();
             }}
-            className={`${ROW_CLASS} mt-1 border-t border-stone-100 font-medium text-ink-strong`}
+            className={`${ROW_CLASS} mt-1 border-t border-stone-100 font-medium text-stone-900`}
           >
             <Plus className="size-4 shrink-0" aria-hidden="true" />
             <span>Add new</span>

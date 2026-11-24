@@ -4,7 +4,6 @@
 import type { EditorWorkspace } from './DrawingEditorContext';
 import { useDrawingEditor } from './DrawingEditorContext';
 
-import { buttonVariants } from '@/components/ui/button';
 const TABS: Array<{ id: EditorWorkspace; label: string }> = [
   { id: 'sketch', label: 'Sketch' },
   { id: 'cutout', label: 'Cutout' },
@@ -23,7 +22,7 @@ export function WorkspaceTabs() {
           role="tab"
           aria-selected={workspace === id}
           onClick={() => setWorkspace(id)}
-          className={buttonVariants({ variant: 'ghost', size: 'sm' })}
+          className="px-4 py-1 text-xs font-medium text-stone-300 hover:bg-stone-700 hover:text-white aria-selected:bg-brand aria-selected:text-stone-900"
         >
           {label}
         </button>

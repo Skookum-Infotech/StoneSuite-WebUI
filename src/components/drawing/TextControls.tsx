@@ -16,7 +16,7 @@ import { useDrawingEditor } from './DrawingEditorContext';
 
 type NotePatch = Partial<Omit<Note, 'id'>>;
 
-const BUTTON_CLASS = 'flex h-8 w-8 items-center justify-center rounded-md text-stone-200 hover:bg-stone-700 disabled:opacity-40 disabled:hover:bg-transparent aria-pressed:bg-brand aria-pressed:text-ink-strong';
+const BUTTON_CLASS = 'flex h-8 w-8 items-center justify-center rounded-md text-stone-200 hover:bg-stone-700 disabled:opacity-40 disabled:hover:bg-transparent aria-pressed:bg-brand aria-pressed:text-stone-900';
 const ICON_CLASS = 'h-4 w-4';
 const FOCUS_DELAY_MS = 0;
 
@@ -99,7 +99,7 @@ export function TextControls() {
             selectNote(null);
           }
         }}
-        className="h-14 w-56 resize-none rounded-md border border-stone-600 bg-stone-800 px-2 py-1 text-sm text-white placeholder:text-ink-muted focus:border-brand focus:outline-none"
+        className="h-14 w-56 resize-none rounded-md border border-stone-600 bg-stone-800 px-2 py-1 text-sm text-white placeholder:text-stone-500 focus:border-brand focus:outline-none"
         placeholder="Type your text"
       />
       <div className="flex items-center gap-0.5">
@@ -148,7 +148,7 @@ export function TextControls() {
           onKeyDown={(e) => {
             if (e.key === 'Enter') commitSizeDraft();
           }}
-          className="h-8 w-12 rounded-md border border-stone-600 bg-stone-800 text-center text-white focus:border-brand focus:outline-none type-input"
+          className="h-8 w-12 rounded-md border border-stone-600 bg-stone-800 text-center text-sm text-white focus:border-brand focus:outline-none"
         />
         <button
           type="button"

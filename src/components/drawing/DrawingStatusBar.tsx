@@ -18,7 +18,7 @@ import { SlabsRequiredBadge } from './SlabsRequiredBadge';
 const SQ_FT_DECIMALS = 3;
 const PERCENT = 100;
 
-const BAR_BUTTON_CLASS = 'flex h-7 items-center justify-center rounded px-2.5 text-sm font-medium text-stone-200 hover:bg-stone-700 disabled:opacity-40 disabled:hover:bg-transparent aria-pressed:bg-brand aria-pressed:text-ink-strong aria-expanded:bg-brand aria-expanded:text-ink-strong';
+const BAR_BUTTON_CLASS = 'flex h-7 items-center justify-center rounded px-2.5 text-sm font-medium text-stone-200 hover:bg-stone-700 disabled:opacity-40 disabled:hover:bg-transparent aria-pressed:bg-brand aria-pressed:text-stone-900 aria-expanded:bg-brand aria-expanded:text-stone-900';
 
 export function DrawingStatusBar() {
   const {

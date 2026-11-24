@@ -20,7 +20,7 @@ export function ViewModeToggle({ mode, onChange }: { mode: ViewMode; onChange: (
       className="flex h-12 w-12 flex-col items-center justify-center rounded-2xl bg-stone-900 text-lime-300 shadow-lg hover:bg-stone-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand"
     >
       <Icon className="size-4" strokeWidth={1.75} aria-hidden="true" />
-      <span className="text-micro font-semibold leading-none">{label}</span>
+      <span className="text-2xs font-semibold leading-none">{label}</span>
     </button>
   );
 }

@@ -54,7 +54,7 @@ function ProfileBar() {
             title="Edit profile"
             disabled={!selected}
             onClick={() => setDialog('edit')}
-            className="flex h-8 w-9 items-center justify-center rounded-md bg-brand text-ink-strong hover:bg-brand-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-white disabled:opacity-40"
+            className="flex h-8 w-9 items-center justify-center rounded-md bg-brand text-stone-900 hover:bg-brand-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-white disabled:opacity-40"
           >
             <Pencil className="h-4 w-4" aria-hidden="true" />
           </button>
