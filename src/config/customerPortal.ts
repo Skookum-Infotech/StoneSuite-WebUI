@@ -20,6 +20,7 @@ export const CUSTOMER_ALLOWED_PATH_PREFIXES: readonly string[] = [
   '/sales/refund',
   CREATED_ORDERS_PATH,
   '/account/settings',
+  NOTIFICATIONS_PATH,
   '/customer/fabrication-approvals',
   SUPPORT_PATH,
 ];
