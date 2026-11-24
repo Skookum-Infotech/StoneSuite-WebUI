@@ -1,5 +1,6 @@
 import { SUPPORT_PATH } from '@/lib/feedback';
 import { CREATED_ORDERS_PATH } from '@/lib/createdOrderRoutes';
+import { NOTIFICATIONS_PATH } from '@/lib/notificationRoutes';
 
 // Paths a customer-portal session may reach under MainLayout — its four
 // document types (List and Detail; Add/Edit already render "Access Denied" via

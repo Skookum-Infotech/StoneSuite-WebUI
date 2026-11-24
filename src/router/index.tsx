@@ -125,6 +125,9 @@ const SupportPage = lazyWithRetry(() => import("@/pages/support/SupportPage"));
 const ApprovalsInboxPage = lazyWithRetry(
   () => import("@/pages/approvals/ApprovalsInboxPage"),
 );
+const NotificationsPage = lazyWithRetry(
+  () => import("@/pages/notifications/NotificationsPage"),
+);
 const AnomaliesPage = lazyWithRetry(
   () => import("@/pages/anomalies/AnomaliesPage"),
 );
@@ -476,6 +479,9 @@ export const router = createBrowserRouter([
       // the server returns only what the caller may approve, so a non-approver
       // simply sees the empty state.
       { path: "approvals", element: lazy_(<ApprovalsInboxPage />) },
+      // Everyone (customer portal sessions included, see CUSTOMER_ALLOWED_PATH_PREFIXES):
+      // the server returns only the caller's own notifications, so no PermissionGuard.
+      { path: "notifications", element: lazy_(<NotificationsPage />) },
       {
         path: "subscription",
         element: lazy_(
