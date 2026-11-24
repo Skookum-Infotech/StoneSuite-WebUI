@@ -1,5 +1,5 @@
 import { notifyClient } from '@/api/notifyClient';
-import type { AppNotification } from '@/types/notification';
+import type { AppNotification, NotificationHistoryPage } from '@/types/notification';
 
 // Talks to stonesuite-notify directly (not proxied through StoneSuite-Backend
 // — see notifyClient). Every response is wrapped in
@@ -16,6 +16,16 @@ export const notificationService = {
         params: { unreadOnly: unreadOnly || undefined, limit },
       })
       .then((r) => r.data.data.notifications ?? []),
+
+  history: (page: number, pageSize: number, unreadOnly = false): Promise<NotificationHistoryPage> =>
+    notifyClient
+      .get<{ success: boolean; data: NotificationHistoryPage }>('/api/notifications/history', {
+        params: { page, pageSize, unreadOnly: unreadOnly || undefined },
+      })
+      .then((r) => ({
+        notifications: r.data.data.notifications ?? [],
+        pagination: r.data.data.pagination,
+      })),
 
   markRead: (id: string): Promise<void> =>
     notifyClient.post(`/api/notifications/${id}/read`).then(() => undefined),
