@@ -7,11 +7,12 @@ import type { ReplacedSessionInfo, SessionStatusResponse } from '@/types/auth';
 
 /**
  * How often a visible signed-in tab asks whether its session is still the
- * live one. Hidden tabs do not ask at all (they check again the moment they
+ * live one (paused, like all polling, while the user is idle -- see
+ * useActivityWatch). Hidden tabs do not ask at all (they check again the moment they
  * are shown), so an open but unused browser never keeps the scale-to-zero
  * backend and database awake. Any normal API call also finds out at once.
  */
-export const SESSION_POLL_MS = 30_000;
+export const SESSION_POLL_MS = 60_000;
 
 const SYNC_CHANNEL = 'session-sync';
 
