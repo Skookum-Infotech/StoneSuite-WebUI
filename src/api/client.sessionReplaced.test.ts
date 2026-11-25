@@ -127,4 +127,49 @@ describe('apiClient — session replaced by a sign-in elsewhere', () => {
     pending.release?.();
     await vi.waitFor(() => expect(location.href).toBe('/auth/login'));
   });
+
+  it('never renews a user idle for 60 minutes: signs out with a notice, no request', async () => {
+    const { client, useAuthStore } = await loadFresh();
+    const { resetActivityForTests } = await import('@/lib/userActivity');
+    resetActivityForTests(Date.now() - 61 * 60_000);
+    useAuthStore.setState({ token: 'jwt', isAuthenticated: true, replacedSession: null });
+    const calls = stubAdapter(client.apiClient, {});
+
+    await expect(client.attemptRefresh()).resolves.toBe('rejected');
+    expect(calls).not.toContain('/auth/refresh');
+    expect(sessionStorage.getItem('auth-notice')).toBe('You were signed out after 60 minutes of inactivity.');
+  });
+
+  it('tells the server when the user was last active on every renewal', async () => {
+    const { client, useAuthStore } = await loadFresh();
+    const { resetActivityForTests } = await import('@/lib/userActivity');
+    const lastActive = Date.now() - 3 * 60_000;
+    resetActivityForTests(lastActive);
+    useAuthStore.setState({ token: 'jwt', isAuthenticated: true, replacedSession: null });
+    let body: unknown;
+    client.apiClient.defaults.adapter = async (config: InternalAxiosRequestConfig) => {
+      body = JSON.parse(String(config.data));
+      return { data: { success: true, token: 'new', expiresAt: Date.now() + 3_600_000 }, status: 200, statusText: '', headers: {}, config };
+    };
+
+    await expect(client.attemptRefresh()).resolves.toBe('ok');
+    expect(body).toEqual({ lastActiveAt: lastActive });
+  });
+
+  it.each([
+    ['session_idle', 'You were signed out after 60 minutes of inactivity.'],
+    ['session_max_age', 'For security, sessions last 12 hours. Please sign in again.'],
+    ['session_ended', 'Your session has ended. Please sign in again.'],
+  ])('a refresh refused with %s signs out and explains why', async (code, message) => {
+    const { client, useAuthStore } = await loadFresh();
+    const { resetActivityForTests } = await import('@/lib/userActivity');
+    resetActivityForTests(Date.now());
+    useAuthStore.setState({ token: 'jwt', isAuthenticated: true, replacedSession: null });
+    stubAdapter(client.apiClient, { '/auth/refresh': { status: 401, data: { success: false, code, message } } });
+
+    await expect(client.attemptRefresh()).resolves.toBe('rejected');
+    expect(sessionStorage.getItem('auth-notice')).toBe(message);
+    expect(useAuthStore.getState().replacedSession).toBeNull(); // no "another computer" countdown
+  });
 });
+

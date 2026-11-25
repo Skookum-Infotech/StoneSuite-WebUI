@@ -18,6 +18,11 @@ vi.mock('react-router-dom', () => ({
 import { useSessionTimer } from './useSessionTimer';
 import { apiClient, attemptRefresh, invalidateSession, isRefreshInFlight, type RefreshOutcome } from '@/api/client';
 import { useAuthStore } from '@/store/useAuthStore';
+import { resetActivityForTests } from '@/lib/userActivity';
+
+// These tests exercise the warning modal, which only an idle user sees (an
+// active user is renewed quietly): start each one 56 minutes idle.
+const IDLE_AT_MOUNT_MS = 56 * 60_000;
 
 const refreshMock = vi.mocked(attemptRefresh);
 const postMock = vi.mocked(apiClient.post);
@@ -39,6 +44,7 @@ describe('useSessionTimer failsafe vs. Stay', () => {
     vi.clearAllMocks();
     localStorage.clear();
     vi.useFakeTimers();
+    resetActivityForTests(Date.now() - IDLE_AT_MOUNT_MS);
   });
   afterEach(() => {
     vi.useRealTimers();
@@ -81,6 +87,7 @@ describe('useSessionTimer expiry failsafe', () => {
     localStorage.clear();
     inFlightMock.mockResolvedValue(false);
     vi.useFakeTimers();
+    resetActivityForTests(Date.now() - IDLE_AT_MOUNT_MS);
   });
   afterEach(() => {
     vi.useRealTimers();
@@ -142,6 +149,7 @@ describe('useSessionTimer onStay', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     localStorage.clear();
+    resetActivityForTests(Date.now() - IDLE_AT_MOUNT_MS);
   });
 
   const cases: Array<{
@@ -180,3 +188,58 @@ describe('useSessionTimer onStay', () => {
     },
   );
 });
+
+describe('useSessionTimer inactivity', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    localStorage.clear();
+    sessionStorage.clear();
+    vi.useFakeTimers();
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('renews an active user quietly near token expiry, with no warning', async () => {
+    resetActivityForTests(Date.now() - 60_000); // used a minute ago
+    refreshMock.mockResolvedValue('ok');
+    useAuthStore.setState({ sessionExpiresAt: Date.now() + MS_UNTIL_EXPIRY, isAuthenticated: true });
+    const { result, unmount } = renderHook(() => useSessionTimer());
+    await act(async () => { await Promise.resolve(); });
+    expect(result.current.showWarning).toBe(false);
+    expect(refreshMock).toHaveBeenCalledTimes(1);
+    unmount();
+  });
+
+  it('warns at 55 minutes idle and signs out at 60, even with a long-lived token', async () => {
+    resetActivityForTests(Date.now() - 54 * 60_000);
+    useAuthStore.setState({ sessionExpiresAt: Date.now() + 50 * 60_000, isAuthenticated: true });
+    const { result, unmount } = renderHook(() => useSessionTimer());
+    expect(result.current.showWarning).toBe(false);
+
+    await act(async () => { await vi.advanceTimersByTimeAsync(75_000); });
+    expect(result.current.showWarning).toBe(true);
+    expect(result.current.secondsRemaining).toBeLessThanOrEqual(5 * 60);
+
+    await act(async () => { await vi.advanceTimersByTimeAsync(5 * 60_000); });
+    await act(async () => { await vi.advanceTimersByTimeAsync(10); });
+    expect(navigateMock).toHaveBeenCalledWith('/auth/login', { replace: true });
+    expect(postMock).toHaveBeenCalledWith('/auth/logout');
+    expect(sessionStorage.getItem('auth-notice')).toBe('You were signed out after 60 minutes of inactivity.');
+    unmount();
+  });
+
+  it('closes the inactivity warning when the user comes back', async () => {
+    resetActivityForTests(Date.now() - 56 * 60_000);
+    useAuthStore.setState({ sessionExpiresAt: Date.now() + 50 * 60_000, isAuthenticated: true });
+    const { result, unmount } = renderHook(() => useSessionTimer());
+    expect(result.current.showWarning).toBe(true);
+
+    resetActivityForTests(Date.now()); // any input
+    await act(async () => { await vi.advanceTimersByTimeAsync(16_000); });
+    expect(result.current.showWarning).toBe(false);
+    expect(navigateMock).not.toHaveBeenCalled();
+    unmount();
+  });
+});
+

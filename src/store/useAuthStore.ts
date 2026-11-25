@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import type { UserProfile, PortalCustomer, PortalWorkspace, ReplacedSessionInfo } from '@/types/auth';
 import { queryClient } from '@/lib/queryClient';
 import { clearAllDrafts } from '@/lib/documentReviewDraft';
+import { markActivity } from '@/lib/userActivity';
 
 // Token is set as httpOnly cookie by the backend on login.
 // Do not store in localStorage — any XSS script can read localStorage.
@@ -137,6 +138,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ replacedSession: info });
   },
   setAuth: (user, token, expiresAt) => {
+    markActivity(Date.now(), true); // signing in is activity: the idle clock starts now
     localStorage.setItem(USER_KEY, JSON.stringify(user));
     localStorage.setItem(SESSION_EXPIRY_KEY, String(expiresAt));
     // A staff sign-in always clears any stale portal state from a previous
@@ -151,6 +153,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     });
   },
   setPortalAuth: ({ user, token, expiresAt, tenantId, workspaces }) => {
+    markActivity(Date.now(), true);
     localStorage.setItem(USER_KEY, JSON.stringify(user));
     localStorage.setItem(SESSION_EXPIRY_KEY, String(expiresAt));
     localStorage.setItem(KIND_KEY, 'portal');
