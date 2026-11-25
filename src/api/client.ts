@@ -1,7 +1,8 @@
 import axios, { isAxiosError, type AxiosRequestConfig } from 'axios';
 import { useAuthStore } from '@/store/useAuthStore';
 import { setAuthNotice, workspaceUnavailableMessage } from '@/lib/authNotice';
-import { isSessionReplacedBody, isSessionReplacedError } from '@/lib/singleSession';
+import { isSessionReplacedBody, isSessionReplacedError, sessionEndedNotice } from '@/lib/singleSession';
+import { IDLE_LOGOUT_MS, IDLE_SIGNOUT_NOTICE, getLastActivity, idleFor } from '@/lib/userActivity';
 import type { ReplacedSessionInfo } from '@/types/auth';
 
 /** Base URL every API call goes to — shared by apiClient and by `fetch`-based
@@ -104,6 +105,12 @@ let isLoggingOut = false;
 // /auth/refresh of its own. Retries transient failures before giving up, so a
 // `transient` result means the backend stayed unreachable for the whole window.
 export async function attemptRefresh(): Promise<RefreshOutcome> {
+  // An idle user is never renewed, whatever background request asked: the
+  // session ends at the inactivity limit (the server refuses it too).
+  if (idleFor() >= IDLE_LOGOUT_MS) {
+    setAuthNotice(IDLE_SIGNOUT_NOTICE);
+    return 'rejected';
+  }
   // Only one refresh at a time — share the promise across concurrent callers.
   if (!refreshPromise) {
     refreshPromise = withCrossTabRefreshLock(async () => {
@@ -211,7 +218,9 @@ async function refreshOnce(): Promise<RefreshOutcome> {
     const { user } = useAuthStore.getState();
     const res = await apiClient.post<{ success: boolean; token?: string; expiresAt?: number }>(
       '/auth/refresh',
-      user?.selectedRoleId ? { activeRoleId: user.selectedRoleId } : undefined,
+      // lastActiveAt: the user's last real use of the app, which the server
+      // checks against its inactivity limit before renewing.
+      { ...(user?.selectedRoleId ? { activeRoleId: user.selectedRoleId } : {}), lastActiveAt: getLastActivity() },
     );
     if (epoch !== sessionEpoch) return 'rejected'; // logged out while in flight
     if (res.data.success && res.data.expiresAt) {
@@ -240,7 +249,8 @@ async function refreshOnce(): Promise<RefreshOutcome> {
     // A refresh refused because the workspace itself is suspended or deleted:
     // remember why, so the login page the caller is about to be sent to can
     // say so instead of looking like a silent expiry.
-    const notice = workspaceUnavailableMessage(isAxiosError(err) ? err.response?.data : undefined);
+    const body = isAxiosError(err) ? err.response?.data : undefined;
+    const notice = workspaceUnavailableMessage(body) ?? sessionEndedNotice(body);
     if (notice) setAuthNotice(notice);
     return 'rejected';
   }
