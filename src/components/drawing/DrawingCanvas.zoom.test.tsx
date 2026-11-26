@@ -6,6 +6,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import type { Drawing } from '@/types/drawing';
+import { WHEEL_ZOOM_STEP } from '@/lib/drawing/constants';
 import { DrawingCanvas } from './DrawingCanvas';
 import { DrawingEditorProvider, useDrawingEditor } from './DrawingEditorContext';
 
@@ -48,7 +49,7 @@ describe('DrawingCanvas wheel zoom', () => {
   it('zooming in at the middle of the canvas leaves the view where it was', () => {
     const canvas = open();
     fireEvent.wheel(canvas, { deltaY: -100, clientX: 400, clientY: 300 });
-    expect(num('zoom')).toBeCloseTo(1.25, 9);
+    expect(num('zoom')).toBeCloseTo(1 + WHEEL_ZOOM_STEP, 9);
     expect(num('pan-x')).toBeCloseTo(0, 9);
     expect(num('pan-y')).toBeCloseTo(0, 9);
   });
@@ -70,7 +71,7 @@ describe('DrawingCanvas wheel zoom', () => {
     fireEvent.wheel(canvas, { deltaY: -100, clientX: 600, clientY: 200 });
     const zoomedIn = num('zoom');
     fireEvent.wheel(canvas, { deltaY: 100, clientX: 600, clientY: 200 });
-    expect(num('zoom')).toBeCloseTo(zoomedIn * 0.75, 9);
+    expect(num('zoom')).toBeCloseTo(zoomedIn * (1 - WHEEL_ZOOM_STEP), 9);
     expect(num('pan-x') + num('zoom') * 200).toBeCloseTo(200, 9);
   });
 
