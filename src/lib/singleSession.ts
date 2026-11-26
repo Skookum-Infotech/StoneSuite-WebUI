@@ -31,6 +31,18 @@ function bodyCode(body: unknown): string | null {
   return typeof code === 'string' ? code : null;
 }
 
+/** Codes of a session that ended on its own: inactivity, the 12-hour limit,
+ *  or a logout/revocation elsewhere. The browser just signs out. */
+const SESSION_ENDED_CODES: readonly string[] = ['session_idle', 'session_max_age', 'session_ended'];
+
+/** The login-page notice for a session that ended on its own, or null. */
+export function sessionEndedNotice(body: unknown): string | null {
+  const code = bodyCode(body);
+  if (code === null || !SESSION_ENDED_CODES.includes(code)) return null;
+  const { message } = body as { message?: unknown };
+  return typeof message === 'string' && message !== '' ? message : 'Your session has ended. Please sign in again.';
+}
+
 /** True when an API error body says this session was replaced by another sign-in. */
 export function isSessionReplacedBody(body: unknown): boolean {
   return bodyCode(body) === SESSION_REPLACED_CODE;

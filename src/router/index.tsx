@@ -107,6 +107,12 @@ const PlatformAIPage = lazyWithRetry(
 const PlatformAutomationPage = lazyWithRetry(
   () => import("@/pages/platform/automation/PlatformAutomationPage"),
 );
+const TenantUsagePage = lazyWithRetry(
+  () => import("@/pages/platform/usage/TenantUsagePage"),
+);
+const TenantUsageDetailPage = lazyWithRetry(
+  () => import("@/pages/platform/usage/TenantUsageDetailPage"),
+);
 const SystemHealthPage = lazyWithRetry(
   () => import("@/pages/platform/system-health/SystemHealthPage"),
 );
@@ -1966,6 +1972,23 @@ export const router = createBrowserRouter([
         element: lazy_(
           <PermissionGuard platformAdminOnly>
             <PlatformAutomationPage />
+          </PermissionGuard>,
+        ),
+      },
+      // Platform-owner only: cross-tenant resource usage and the watch list.
+      {
+        path: "platform/tenant-usage",
+        element: lazy_(
+          <PermissionGuard platformAdminOnly>
+            <TenantUsagePage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "platform/tenant-usage/:tenantId",
+        element: lazy_(
+          <PermissionGuard platformAdminOnly>
+            <TenantUsageDetailPage />
           </PermissionGuard>,
         ),
       },

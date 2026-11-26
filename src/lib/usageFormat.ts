@@ -36,6 +36,16 @@ export function formatTokenCount(n: number): string {
   return unit ? `${trimmed(n / unit.size)}${unit.suffix}` : String(Math.round(n));
 }
 
+const COMPUTE_WHOLE_FROM = 100;
+const COMPUTE_TWO_DECIMALS_BELOW = 10;
+
+/** Compute hours: 0.42 h, 36.2 h, 318 h. Null (not measured) → "—". */
+export function formatComputeHours(hours: number | null): string {
+  if (hours === null || !Number.isFinite(hours) || hours < 0) return '—';
+  if (hours >= COMPUTE_WHOLE_FROM) return `${Math.round(hours).toLocaleString('en-US')} h`;
+  return `${hours.toFixed(hours < COMPUTE_TWO_DECIMALS_BELOW ? 2 : 1)} h`;
+}
+
 /** Whole percent of limit used (capped at 100), or null when there is no limit. */
 export function usagePercent(used: number, limit: number | null): number | null {
   if (limit === null || limit <= 0) return null;

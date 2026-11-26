@@ -2,6 +2,17 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/useAuthStore';
 import { apiClient, attemptRefresh, invalidateSession, isRefreshInFlight } from '@/api/client';
+import { setAuthNotice } from '@/lib/authNotice';
+import { IDLE_LOGOUT_MS, IDLE_SIGNOUT_NOTICE, IDLE_WARNING_MS, idleFor, markActivity } from '@/lib/userActivity';
+
+// How often the inactivity warning / sign-out is re-evaluated.
+const IDLE_CHECK_MS = 15_000;
+const MS_PER_SECOND = 1000;
+
+/** True while the user counts as present: idle for less than the warning point. */
+function userIsPresent(): boolean {
+  return idleFor() < IDLE_LOGOUT_MS - IDLE_WARNING_MS;
+}
 
 // Show the warning modal this many milliseconds before the access token expires.
 const WARNING_MS = 5 * 60 * 1000; // 5 minutes
@@ -38,6 +49,8 @@ export function useSessionTimer(): SessionTimerState {
   const warningTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const expiryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const countdownIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // Why the warning is open: 'idle' closes again as soon as the user is back.
+  const warningReasonRef = useRef<'idle' | 'expiry' | null>(null);
 
   const clearAllTimers = useCallback(() => {
     if (warningTimerRef.current) clearTimeout(warningTimerRef.current);
@@ -60,6 +73,7 @@ export function useSessionTimer(): SessionTimerState {
 
   const performLogout = useCallback(async () => {
     clearAllTimers();
+    warningReasonRef.current = null;
     setShowWarning(false);
     // Await logout so the server clears cookies before we navigate. Without this,
     // a fast re-login could race against a late-arriving logout response that
@@ -105,22 +119,32 @@ export function useSessionTimer(): SessionTimerState {
     clearAllTimers();
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setShowWarning(false);
+    warningReasonRef.current = null;
 
     const msUntilWarning = msUntilExpiry - WARNING_MS;
 
-    if (msUntilWarning > 0) {
-      // Token has more than 5 min left — schedule the warning.
-      warningTimerRef.current = setTimeout(() => {
-        setSecondsRemaining(COUNTDOWN_SECONDS);
-        setShowWarning(true);
-        startCountdown();
-      }, msUntilWarning);
-    } else {
-      // Less than 5 min already left — show warning immediately.
-      const remaining = Math.floor(msUntilExpiry / 1000);
-      setSecondsRemaining(remaining);
+    // Near the access token's end: a user who is still using the app is
+    // renewed quietly (the server is told when they were last active); only an
+    // idle user sees the warning. Before this, active users got the
+    // "session expiring" modal every hour.
+    const nearExpiry = (secondsLeft: number) => {
+      if (userIsPresent()) {
+        void attemptRefresh().then((outcome) => {
+          if (outcome === 'rejected') void performLogout();
+        });
+        return;
+      }
+      warningReasonRef.current = 'expiry';
+      setSecondsRemaining(secondsLeft);
       setShowWarning(true);
       startCountdown();
+    };
+    if (msUntilWarning > 0) {
+      // Token has more than 5 min left — schedule the check.
+      warningTimerRef.current = setTimeout(() => nearExpiry(COUNTDOWN_SECONDS), msUntilWarning);
+    } else {
+      // Less than 5 min already left — check now.
+      nearExpiry(Math.floor(msUntilExpiry / 1000));
     }
 
     // Failsafe: hard-logout when the token actually expires.
@@ -132,6 +156,39 @@ export function useSessionTimer(): SessionTimerState {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionExpiresAt]);
 
+  // Inactivity: warn 5 minutes before IDLE_LOGOUT_MS without any input in any
+  // tab, and sign out at IDLE_LOGOUT_MS -- whatever background requests ran
+  // meanwhile. Input while the warning is up (or "Stay logged in") clears it.
+  useEffect(() => {
+    if (!sessionExpiresAt) return undefined;
+    const check = () => {
+      const idle = idleFor();
+      if (idle >= IDLE_LOGOUT_MS) {
+        setAuthNotice(IDLE_SIGNOUT_NOTICE);
+        try {
+          const ch = new BroadcastChannel(SYNC_CHANNEL);
+          ch.postMessage({ type: 'SESSION_LOGOUT' });
+          ch.close();
+        } catch { /* ignore */ }
+        void performLogout();
+      } else if (idle >= IDLE_LOGOUT_MS - IDLE_WARNING_MS) {
+        if (warningReasonRef.current === null) {
+          warningReasonRef.current = 'idle';
+          setSecondsRemaining(Math.ceil((IDLE_LOGOUT_MS - idle) / MS_PER_SECOND));
+          setShowWarning(true);
+          startCountdown();
+        }
+      } else if (warningReasonRef.current === 'idle') {
+        warningReasonRef.current = null;
+        setShowWarning(false);
+        if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
+      }
+    };
+    check();
+    const timer = setInterval(check, IDLE_CHECK_MS);
+    return () => clearInterval(timer);
+  }, [sessionExpiresAt, performLogout, startCountdown]);
+
   // Listen for events from other tabs via BroadcastChannel.
   useEffect(() => {
     let ch: BroadcastChannel | null = null;
@@ -142,6 +199,7 @@ export function useSessionTimer(): SessionTimerState {
           // Another tab extended the session — update our expiry and hide the warning.
           setSessionExpiry(e.data.expiresAt);
           setShowWarning(false);
+          warningReasonRef.current = null;
           clearAllTimers();
         } else if (e.data.type === 'SESSION_EXPIRED' || e.data.type === 'SESSION_LOGOUT') {
           performLogout();
@@ -154,6 +212,9 @@ export function useSessionTimer(): SessionTimerState {
   }, [clearAllTimers, performLogout, setSessionExpiry]);
 
   const onStay = useCallback(async () => {
+    // Choosing to stay is activity: the refresh below reports it to the server.
+    markActivity(Date.now(), true);
+    warningReasonRef.current = null;
     setIsExtending(true);
     // Stand the hard-logout failsafe down while the refresh is in flight. Left
     // armed, it can fire mid-request (the refresh can take seconds on a cold
@@ -170,6 +231,7 @@ export function useSessionTimer(): SessionTimerState {
       const outcome = await attemptRefresh();
       if (outcome === 'ok') {
         setShowWarning(false);
+        warningReasonRef.current = null;
       } else if (outcome === 'rejected') {
         // Only an explicit refusal ends the session.
         await performLogout();

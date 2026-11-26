@@ -24,6 +24,7 @@ import { hidesBreadcrumbs } from '@/layouts/breadcrumbVisibility';
 import { SessionExpiryModal } from '@/components/SessionExpiryModal';
 import { SessionReplacedOverlay } from '@/components/SessionReplacedOverlay';
 import { useSessionWatch } from '@/hooks/useSessionWatch';
+import { useActivityWatch } from '@/hooks/useActivityWatch';
 import { ConfirmLeaveDialog } from '@/components/ConfirmLeaveDialog';
 import { apiClient } from '@/api/client';
 import { rbacService } from '@/services/tenantServices';
@@ -78,6 +79,8 @@ export default function MainLayout(): React.JSX.Element {
   const { showWarning, secondsRemaining, onStay, onLogout, isExtending } = useSessionTimer();
   // Signed in on another computer: the countdown overlay replaces everything.
   useSessionWatch();
+  // Tracks real use of the app; pauses all polling while the user is idle.
+  useActivityWatch();
   const replacedSession = useAuthStore((s) => s.replacedSession);
 
   // Tickets are filed from /support; remember the page the user was on before
