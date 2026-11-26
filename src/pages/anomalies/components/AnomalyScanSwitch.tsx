@@ -76,7 +76,7 @@ export function AnomalyScanSwitch() {
       <div className="text-right">
         <p className="text-xs font-medium text-stone-700">Anomaly scanning</p>
         <p className="whitespace-nowrap text-2xs text-stone-500">
-          {rule.enabled ? 'On — checked every 15 minutes' : 'Off — nothing is checked or sent'}
+          {rule.enabled ? 'On — checked once a day' : 'Off — nothing is checked or sent'}
         </p>
       </div>
       <Switch

@@ -76,7 +76,7 @@ describe('AnomalyScanSwitch', () => {
     const toggle = await screen.findByRole('switch', { name: 'Anomaly scanning' });
     expect(toggle).toBeChecked();
     expect(toggle).toBeDisabled();
-    expect(screen.getByText('On — checked every 15 minutes')).toBeInTheDocument();
+    expect(screen.getByText('On — checked once a day')).toBeInTheDocument();
   });
 
   it('turns scanning off for the whole workspace', async () => {
