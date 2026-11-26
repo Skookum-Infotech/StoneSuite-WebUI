@@ -1,6 +1,6 @@
 // Platform › Tenant Usage — cross-tenant resource usage for platform admins.
-// Mirrors the backend contract in docs/platform-usage-dashboard.md
-// (GET /api/platform/usage/*). Sizes are bytes, compute is hours. A metric
+// Mirrors the backend contract for GET /api/platform/usage/* (spec lives
+// with the backend work in the StoneSuite repo). Sizes are bytes, compute is hours. A metric
 // the backend has not measured yet is null, never 0.
 
 import type { TokenUsageBySource } from '@/types/subscription';
