@@ -10,7 +10,7 @@
 // drag so it does not rescale under the pointer.
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ZOOM_STEP } from '@/lib/drawing/constants';
+import { WHEEL_ZOOM_STEP, ZOOM_STEP } from '@/lib/drawing/constants';
 import { outlinePolyline } from '@/lib/drawing/arcs';
 import { transformOutline } from '@/lib/drawing/geometry';
 import {
@@ -84,7 +84,7 @@ export function MiniMap() {
     if (!map) return undefined;
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
-      dispatch({ type: 'zoomView', factor: e.deltaY < 0 ? 1 + ZOOM_STEP : 1 - ZOOM_STEP });
+      dispatch({ type: 'zoomView', factor: e.deltaY < 0 ? 1 + WHEEL_ZOOM_STEP : 1 - WHEEL_ZOOM_STEP });
     };
     map.addEventListener('wheel', onWheel, { passive: false });
     return () => map.removeEventListener('wheel', onWheel);

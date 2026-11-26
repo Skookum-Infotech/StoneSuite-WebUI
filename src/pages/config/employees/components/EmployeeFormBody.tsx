@@ -16,8 +16,8 @@ export function EmployeeFormBody({ value, onChange, errors, emailLocked }: {
   const set = (key: keyof EmployeeFields, v: string) => onChange({ ...value, [key]: v });
 
   return (
-    <div className="flex-1 min-h-0 overflow-y-auto modal-scrollbar px-4 py-4 sm:px-5 sm:py-5 3xl:px-12 4xl:px-16">
-      <div className="mx-auto max-w-4xl space-y-3">
+    <div className="flex-1 min-h-0 overflow-y-auto modal-scrollbar">
+      <div className="px-4 py-3 space-y-2 3xl:px-10 3xl:py-5 4xl:px-16 4xl:py-8">
         <ModernSection title="Personal Information" index={0}>
           <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2">
             <ModernFieldShell label="First name" required>
