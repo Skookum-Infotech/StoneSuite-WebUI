@@ -119,12 +119,14 @@ describe('Sidebar permission gating', () => {
     setup({ grants: [], isPlatformAdmin: true });
 
     expect(screen.getByText('Onboarding')).toBeInTheDocument();
+    expect(screen.getByText('Tenant Usage')).toBeInTheDocument();
   });
 
   it('hides platformAdminOnly links from a non-platform-admin', () => {
     setup({ grants: [{ resource: '*', action: '*' }], isPlatformAdmin: false });
 
     expect(screen.queryByText('Onboarding')).toBeNull();
+    expect(screen.queryByText('Tenant Usage')).toBeNull();
   });
 
   it('reveals only the groups a grant actually covers', () => {

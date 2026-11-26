@@ -54,6 +54,7 @@ import {
   ShieldAlert,
   PackagePlus,
   BarChart3,
+  Gauge,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -866,6 +867,15 @@ export const sidebarNav: SidebarNavConfig = {
       label: "Platform",
       platformAdminOnly: true,
       entries: [
+        {
+          type: "link",
+          id: "tenant-usage",
+          label: "Tenant Usage",
+          path: "/platform/tenant-usage",
+          icon: Gauge,
+          iconColor: "text-rose-500 dark:text-rose-400",
+          platformAdminOnly: true,
+        },
         {
           type: "link",
           id: "onboarding",

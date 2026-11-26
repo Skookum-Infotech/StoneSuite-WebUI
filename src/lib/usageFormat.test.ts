@@ -1,5 +1,29 @@
 import { describe, it, expect } from 'vitest';
-import { formatBytes, formatPeriod, formatTokenCount, groupTokenSources, usagePercent } from './usageFormat';
+import {
+  formatBytes,
+  formatComputeHours,
+  formatPeriod,
+  formatTokenCount,
+  groupTokenSources,
+  usagePercent,
+} from './usageFormat';
+
+describe('formatComputeHours', () => {
+  it.each<[number | null, string]>([
+    [0, '0.00 h'],
+    [0.42, '0.42 h'],
+    [9.999, '10.00 h'],
+    [36.24, '36.2 h'],
+    [99.94, '99.9 h'],
+    [318.4, '318 h'],
+    [12_345, '12,345 h'],
+    [null, '—'],
+    [-1, '—'],
+    [Number.NaN, '—'],
+  ])('%s → %s', (hours, expected) => {
+    expect(formatComputeHours(hours)).toBe(expected);
+  });
+});
 
 describe('formatBytes', () => {
   it.each([
