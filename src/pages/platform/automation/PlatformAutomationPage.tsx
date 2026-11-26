@@ -20,7 +20,7 @@ function formatTimestamp(iso: string | null | undefined): string {
   return d.toLocaleString(undefined, { year: 'numeric', month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit' });
 }
 
-// Platform-admin master switch for the 15-minute automation scheduler. Off by
+// Platform-admin master switch for the daily (14:00 UTC) automation scheduler. Off by
 // default: every scheduler run wakes the backend and database, which costs
 // money, so turning it ON asks for confirmation; turning it off does not.
 export default function PlatformAutomationPage() {
@@ -67,7 +67,7 @@ export default function PlatformAutomationPage() {
             <h2 className="text-sm font-semibold text-stone-950 dark:text-white">What this controls</h2>
             <p className="mt-1 text-xs text-stone-500">
               {settings?.message ??
-                'Controls the 15-minute scheduler for all organizations, including scheduled vendor-payment dispatch.'}{' '}
+                'Controls the daily scheduler (runs once a day at 14:00 UTC) for all organizations, including scheduled vendor-payment dispatch.'}{' '}
               While off, nothing runs and the servers are not woken up, so it adds no cost. It is off by default.
             </p>
           </div>
@@ -158,7 +158,7 @@ export default function PlatformAutomationPage() {
                   Turn on the automation scheduler?
                 </AlertDialog.Title>
                 <AlertDialog.Description id="enable-automation-dialog-desc" className="mt-0.5 text-xs text-stone-500">
-                  The scheduler will run every 15 minutes for every organization, waking the servers each time. This
+                  The scheduler will run once a day (14:00 UTC) for every organization, waking the servers each time. This
                   increases hosting cost.
                 </AlertDialog.Description>
               </div>

@@ -22,7 +22,7 @@ describe('cadenceText', () => {
     ['estimate_expiry', [-3], '3 days before expiry'],
     ['approval_stuck', [2, 4, 6], '2 days after entering approval, 4 days after entering approval, 6 days after entering approval'],
     ['approval_stuck', [1], '1 day after entering approval'],
-    ['anomaly_scan', [], 'Checked every 15 minutes'],
+    ['anomaly_scan', [], 'Checked once a day'],
     ['mystery', [-1], '1 day before the date'],
     ['mystery', [], 'No schedule'],
   ])('%s %j', (key, offsets, want) => {

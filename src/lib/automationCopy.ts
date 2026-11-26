@@ -53,7 +53,7 @@ const ANCHOR_BY_RULE: Record<string, CadenceAnchor> = {
   },
 };
 const FALLBACK_ANCHOR: CadenceAnchor = { before: 'before the date', after: 'after the date', on: 'On the date' };
-const ANOMALY_CADENCE = 'Checked every 15 minutes';
+const ANOMALY_CADENCE = 'Checked once a day';
 const NO_CADENCE = 'No schedule';
 const DIGEST_CADENCE = 'Daily, at the hour each person chooses';
 
