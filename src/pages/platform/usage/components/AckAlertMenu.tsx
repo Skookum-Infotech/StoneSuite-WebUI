@@ -37,9 +37,9 @@ export function AckAlertMenu({ alert }: { alert: UsageAlert }) {
         </button>
       </PopoverTrigger>
       <PopoverContent align="end" className="w-44 p-1" aria-label="Alert actions">
-        <div role="menu" aria-label="Alert actions" className="flex flex-col">
+        <div className="flex flex-col">
           {OPTIONS.map((o) => (
-            <button key={o.label} type="button" role="menuitem" className={ITEM_CLASS} onClick={() => choose(o.snoozeDays)}>
+            <button key={o.label} type="button" className={ITEM_CLASS} onClick={() => choose(o.snoozeDays)}>
               {o.label}
             </button>
           ))}

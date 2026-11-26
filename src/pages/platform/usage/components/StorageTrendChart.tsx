@@ -38,14 +38,12 @@ export function StorageTrendChart({ series }: { series: UsagePoint[] }) {
         <h2 id="storage-chart-heading" className="text-sm font-bold text-stone-950">
           Storage over time
         </h2>
-        <div role="radiogroup" aria-label="Storage type" className={TAB_LIST_CLASS}>
+        <div role="group" aria-label="Storage type" className={TAB_LIST_CLASS}>
           {KINDS.map((k) => (
             <button
               key={k.key}
               type="button"
-              role="radio"
-              aria-checked={kind === k.key}
-              aria-label={`Show ${k.label} storage`}
+              aria-pressed={kind === k.key}
               onClick={() => setKind(k.key)}
               className={tabClass(kind === k.key)}
             >

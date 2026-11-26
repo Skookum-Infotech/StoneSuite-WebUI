@@ -42,6 +42,11 @@ function renderPage(path = '/platform/tenant-usage') {
   );
 }
 
+/** The tenant-name links inside the desktop table. */
+function tenantLinks(): HTMLElement[] {
+  return within(screen.getByRole('table')).getAllByRole('link');
+}
+
 beforeEach(() => {
   vi.clearAllMocks();
   setUser(true);
@@ -56,7 +61,7 @@ describe('TenantUsagePage', () => {
     expect(await screen.findByRole('heading', { level: 1, name: 'Tenant Usage' })).toBeInTheDocument();
     const totals = await screen.findByRole('region', { name: 'Fleet totals' });
     expect(within(totals).getByText('Active tenants')).toBeInTheDocument();
-    expect(screen.getAllByRole('row', { name: /^Open usage for / })).toHaveLength(10);
+    expect(tenantLinks()).toHaveLength(10);
   });
 
   it('lists watch-list alerts most severe first', async () => {
@@ -79,38 +84,44 @@ describe('TenantUsagePage', () => {
     const list = await screen.findByRole('list', { name: 'Alerts' });
     const first = within(list).getAllByRole('listitem')[0];
     await userEvent.click(within(first).getByRole('button', { name: /Acknowledge or snooze/ }));
-    await userEvent.click(await screen.findByRole('menuitem', { name: 'Snooze for 7 days' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Snooze for 7 days' }));
     expect(platformUsageService.ackAlert).toHaveBeenCalledWith(expect.any(String), 7);
     expect(toast.success).toHaveBeenCalledWith('Alert snoozed for 7 days');
   });
 
   it('filters the table by search', async () => {
     renderPage();
-    await screen.findAllByRole('row', { name: /^Open usage for / });
+    await screen.findByRole('table');
     await userEvent.type(screen.getByRole('searchbox', { name: 'Search tenants' }), 'granite');
-    expect(screen.getAllByRole('row', { name: /^Open usage for / })).toHaveLength(1);
+    expect(tenantLinks()).toHaveLength(1);
     expect(screen.getByText('Showing 1 of 10 tenants')).toBeInTheDocument();
   });
 
   it('sorts by a column header', async () => {
     renderPage();
-    await screen.findAllByRole('row', { name: /^Open usage for / });
+    await screen.findByRole('table');
     await userEvent.click(screen.getByRole('button', { name: 'Sort by Tenant' }));
-    const rows = screen.getAllByRole('row', { name: /^Open usage for / });
-    expect(rows[0]).toHaveAccessibleName('Open usage for Acme Stone');
+    expect(tenantLinks()[0]).toHaveAccessibleName('Acme Stone');
   });
 
-  it('opens a tenant when its row is chosen with the keyboard', async () => {
+  it('opens a tenant from its name link with the keyboard', async () => {
     renderPage();
-    const row = await screen.findByRole('row', { name: 'Open usage for Granite Co' });
-    row.focus();
+    const table = await screen.findByRole('table');
+    within(table).getByRole('link', { name: 'Granite Co' }).focus();
     await userEvent.keyboard('{Enter}');
+    expect(await screen.findByText('Tenant detail page')).toBeInTheDocument();
+  });
+
+  it('opens a tenant when its row is clicked', async () => {
+    renderPage();
+    const table = await screen.findByRole('table');
+    await userEvent.click(within(table).getByText('3.9 GB'));
     expect(await screen.findByText('Tenant detail page')).toBeInTheDocument();
   });
 
   it('reloads with the chosen period', async () => {
     renderPage();
-    await userEvent.click(await screen.findByRole('radio', { name: 'Last 7 days' }));
+    await userEvent.click(await screen.findByRole('radio', { name: /^7d/ }));
     expect(platformUsageService.getOverview).toHaveBeenLastCalledWith('7d');
   });
 

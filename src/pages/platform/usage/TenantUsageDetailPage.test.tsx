@@ -77,7 +77,7 @@ describe('TenantUsageDetailPage', () => {
     const banner = await screen.findByRole('alert');
     expect(banner).toHaveTextContent('R2 storage up 211% in 7 days');
     await userEvent.click(within(banner).getByRole('button', { name: /Acknowledge or snooze/ }));
-    await userEvent.click(await screen.findByRole('menuitem', { name: 'Acknowledge' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Acknowledge' }));
     expect(platformUsageService.ackAlert).toHaveBeenCalledWith('a-1', undefined);
     expect(toast.success).toHaveBeenCalledWith('Alert acknowledged');
   });

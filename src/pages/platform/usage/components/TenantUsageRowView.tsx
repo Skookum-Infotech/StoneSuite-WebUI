@@ -1,5 +1,4 @@
-import type { KeyboardEvent } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { formatBytes, formatComputeHours, formatTokenCount } from '@/lib/usageFormat';
 import { NOTABLE_CHANGE_PCT, SEVERITY_LABEL, percentChange } from '@/lib/usageWatchlist';
@@ -42,32 +41,30 @@ function ErrorCell({ row }: { row: TenantUsageRow }) {
   );
 }
 
-/** One tenant in the usage table. The whole row opens the tenant's detail. */
+/** One tenant in the usage table. The tenant name is the link (keyboard and
+ *  screen readers); clicking anywhere else on the row is a mouse shortcut. */
 export function TenantUsageRowView({ row }: { row: TenantUsageRow }) {
   const navigate = useNavigate();
-  const open = () => navigate(usageDetailPath(row.tenantId));
-  const onKeyDown = (e: KeyboardEvent<HTMLTableRowElement>) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      open();
-    }
-  };
+  const to = usageDetailPath(row.tenantId);
   const r2Jump = percentChange(row.r2Bytes, row.r2BytesPrev);
   const alertText = row.topSeverity ? `${SEVERITY_LABEL[row.topSeverity]} alert` : 'No open alerts';
 
   return (
     <tr
-      tabIndex={0}
-      aria-label={`Open usage for ${row.displayName}`}
-      onClick={open}
-      onKeyDown={onKeyDown}
-      className="cursor-pointer border-b border-stone-100 text-sm last:border-b-0 hover:bg-stone-50 focus-visible:bg-stone-50 focus-visible:outline-none"
+      onClick={() => navigate(to)}
+      className="cursor-pointer border-b border-stone-100 text-sm last:border-b-0 hover:bg-stone-50"
     >
       <td className={CELL}>
         <div className="flex items-center gap-2.5">
           <TenantAvatar name={row.displayName} status={row.status} />
           <div className="min-w-0">
-            <span className="block font-semibold text-stone-900">{row.displayName}</span>
+            <Link
+              to={to}
+              onClick={(e) => e.stopPropagation()}
+              className="block font-semibold text-stone-900 hover:underline"
+            >
+              {row.displayName}
+            </Link>
             <span className="block font-mono text-2xs text-stone-500">{row.slug}</span>
           </div>
         </div>

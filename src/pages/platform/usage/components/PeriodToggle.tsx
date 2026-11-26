@@ -2,7 +2,12 @@ import { useRef, type KeyboardEvent } from 'react';
 import { TAB_LIST_CLASS, tabClass } from '@/components/ui/tabStyles';
 import { USAGE_PERIODS, type UsagePeriod } from '@/types/platformUsage';
 
-const PERIOD_LABEL: Record<UsagePeriod, string> = { '7d': 'Last 7 days', '30d': 'Last 30 days', '90d': 'Last 90 days' };
+// Starts with the visible text, so voice control ("click 7d") still matches.
+const PERIOD_LABEL: Record<UsagePeriod, string> = {
+  '7d': '7d (last 7 days)',
+  '30d': '30d (last 30 days)',
+  '90d': '90d (last 90 days)',
+};
 
 /** 7d / 30d / 90d switch. A radio group: arrow keys move the choice. */
 export function PeriodToggle({ value, onChange }: { value: UsagePeriod; onChange: (p: UsagePeriod) => void }) {
