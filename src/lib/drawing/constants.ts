@@ -116,6 +116,9 @@ export const SHIFT_ARROW_KEY_STEP_MM = MM_PER_INCH;
 export const ZOOM_MIN = 0.02;
 export const ZOOM_MAX = 4;
 export const ZOOM_STEP = 0.25;
+/** One scroll-wheel notch zooms by this much — gentler than a +/- button press
+ *  (ZOOM_STEP), so a notch or two doesn't fling the drawing far off the board. */
+export const WHEEL_ZOOM_STEP = 0.1;
 
 /** The zoom the editor opens at: about 10 ft of board across on a laptop
  *  screen, so a default 25 5/8" square is a small part of it, not most of it. */

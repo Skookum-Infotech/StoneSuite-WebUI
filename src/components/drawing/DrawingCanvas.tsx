@@ -11,7 +11,7 @@ import { bounds, isClockwise, transformOutline } from '@/lib/drawing/geometry';
 import { areaLetter, nextPieceLabel } from '@/lib/drawing/labels';
 import { validateOutline } from '@/lib/drawing/validation';
 import {
-  ARROW_KEY_STEP_MM, CANVAS_EXTENT_MM, CLOSE_POLYGON_HIT_PX, DEFAULT_PIECE_THICKNESS_MM, SHIFT_ARROW_KEY_STEP_MM, VIEWPORT_HEIGHT, VIEWPORT_WIDTH, ZOOM_STEP,
+  ARROW_KEY_STEP_MM, CANVAS_EXTENT_MM, CLOSE_POLYGON_HIT_PX, DEFAULT_PIECE_THICKNESS_MM, SHIFT_ARROW_KEY_STEP_MM, VIEWPORT_HEIGHT, VIEWPORT_WIDTH, WHEEL_ZOOM_STEP,
 } from '@/lib/drawing/constants';
 import { pixelDeltaToViewboxUnits, screenPointToMm } from '@/lib/drawing/viewport';
 import { DragPreviewContext, type DragPreview } from './DragPreviewContext';
@@ -191,7 +191,7 @@ export function DrawingCanvas() {
   const onWheel = (e: React.WheelEvent<HTMLDivElement>) => {
     e.preventDefault();
     const anchor = screenPointToMm(e.clientX, e.clientY, e.currentTarget.getBoundingClientRect(), state.zoom, state.pan);
-    dispatch({ type: 'zoomAt', factor: e.deltaY < 0 ? 1 + ZOOM_STEP : 1 - ZOOM_STEP, anchor });
+    dispatch({ type: 'zoomAt', factor: e.deltaY < 0 ? 1 + WHEEL_ZOOM_STEP : 1 - WHEEL_ZOOM_STEP, anchor });
   };
 
   const pointerMm = (e: React.PointerEvent<SVGRectElement>): Point | null => {

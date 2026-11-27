@@ -8,6 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { Drawing } from '@/types/drawing';
+import { WHEEL_ZOOM_STEP } from '@/lib/drawing/constants';
 import { fitExtent, mapExtent, piecesBounds, viewportRect } from '@/lib/drawing/minimap';
 import { DrawingEditorProvider, useDrawingEditor } from './DrawingEditorContext';
 import { MiniMap } from './MiniMap';
@@ -155,7 +156,7 @@ describe('MiniMap', () => {
     expect(centre().x).toBeCloseTo(before.x, 3);
     expect(centre().y).toBeCloseTo(before.y, 3);
     fireEvent.wheel(screen.getByRole('region', { name: 'Drawing map' }), { deltaY: 100 });
-    expect(num('zoom')).toBeCloseTo(1.25 * 0.75, 6);
+    expect(num('zoom')).toBeCloseTo((1 + WHEEL_ZOOM_STEP) * (1 - WHEEL_ZOOM_STEP), 6);
   });
 
   it('the wheel does not also scroll the page behind the map', () => {
